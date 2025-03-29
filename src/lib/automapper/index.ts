@@ -88,6 +88,8 @@ createMap<ContentDetailsDto, ContentDetails>(
           return "Blog Post";
         case "release":
           return "Release Note";
+        case "page":
+          return "Page";
         default:
           return s.type;
       }
@@ -106,6 +108,8 @@ createMap<ContentDetails, ContentUpdateDto>(
           return "post";
         case "Release Note":
           return "release";
+        case "Page":
+          return "page";
         default:
           return s.type;
       }
@@ -124,6 +128,8 @@ createMap<ContentDetails, ContentCreateDto>(
           return "post";
         case "Release Note":
           return "release";
+        case "Page":
+          return "page";
         default:
           return s.type;
       }

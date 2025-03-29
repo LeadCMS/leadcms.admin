@@ -60,6 +60,9 @@ const configuration: Configuration = {
   },
   devServer: {
     historyApiFallback: true,
+    hot: true, // Enable Hot Module Replacement
+    port: 3000, // Specify a port (optional)
+    open: true, // Open browser when server starts (optional)
     // proxy: {
     //   "/api/**": process.env.CORE_API,
     //   changeOrigin: true,
