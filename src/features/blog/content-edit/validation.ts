@@ -13,7 +13,7 @@ export const ContentEditAvailableTypes = [
   "About",
   "Page",
   "DocumentIndex",
-  "Document"
+  "Document",
 ] as const;
 
 export const ContentEditMaximumImageSize = 3 * 1000 * 1000; // 3 megabytes
