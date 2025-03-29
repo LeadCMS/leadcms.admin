@@ -256,7 +256,6 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   disabled={isLoading || formik.isSubmitting}
                   options={languages}
                   getOptionLabel={(option) => option.label}
-                  placeholder="Select language"
                   size="small"
                   fullWidth
                   value={languages.find((c) => c.value === formik.values.language) || null}
@@ -443,7 +442,6 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   disabled={isLoading || formik.isSubmitting}
                   options={timezones}
                   getOptionLabel={(option) => option.label}
-                  placeholder="Select language"
                   size="small"
                   fullWidth
                   value={timezones.find((c) => c.value === formik.values.timezone) || null}
