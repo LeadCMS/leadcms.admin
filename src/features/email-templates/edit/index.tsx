@@ -8,13 +8,12 @@ import { useRequestContext } from "@providers/request-provider";
 import { useParams } from "react-router-dom";
 import { EmailTemplateDetailsDto, HttpResponse, ProblemDetails } from "@lib/network/swagger-client";
 import { FormikHelpers, useFormik } from "formik";
-import { networkErrorToStringArray } from "utils/general-helper";
 import { EmailTemplateEditValidationScheme } from "./validation";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { emailTemplateFormBreadcrumbLinks } from "../constants";
 import { EmailTemplateDeleteContainer, EmailTemplateEditContainer } from "./index.styled";
-import { Autocomplete, Button, Card, CardContent, Grid, TextField } from "@mui/material";
+import { Button, Card, CardContent, Grid, TextField } from "@mui/material";
 import useLocalStorage from "use-local-storage";
 import {
   EmailTemplateEditData,
@@ -330,12 +329,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                       </Button>
                     </Grid>
                     <Grid item xs={2}>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        fullWidth
-                        size="large"
-                      >
+                      <Button type="submit" variant="contained" fullWidth size="large">
                         Save
                       </Button>
                     </Grid>
