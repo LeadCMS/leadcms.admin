@@ -1,25 +1,18 @@
 import dayjs from "dayjs";
 import zod from "zod";
 import { TypeDefaultValues } from "./types";
+import pageTypesEN from "../../../locales/en/pageTypes.json";
 
-export const ContentEditAvailableTypes = [
-  "Landing",
-  "Pricing",
-  "BlogIndex",
-  "BlogPost",
-  "ReleaseIndex",
-  "Release",
-  "Contact",
-  "About",
-  "Page",
-  "DocumentIndex",
-  "Document"
-] as const;
+// Define PageType type using the keys from the JSON file
+export type PageType = keyof typeof pageTypesEN;
+
+// Extract page type keys for validation and dropdown options
+export const ContentEditAvailableTypes = Object.keys(pageTypesEN) as PageType[];
 
 export const ContentEditMaximumImageSize = 3 * 1000 * 1000; // 3 megabytes
 
 // Default template for creating consistent default values
-const createDefaultValues = (type: string) => ({
+const createDefaultValues = (type: PageType) => ({
   id: null,
   type: type,
   title: "",
@@ -42,53 +35,62 @@ const createDefaultValues = (type: string) => ({
 
 export const ContentEditDefaultValues: TypeDefaultValues[] = [
   {
-    type: "Landing",
-    defaultValues: createDefaultValues("Landing"),
+    type: "home",
+    defaultValues: createDefaultValues("home"),
   },
   {
-    type: "Pricing",
-    defaultValues: createDefaultValues("Pricing"),
+    type: "landing",
+    defaultValues: createDefaultValues("landing"),
   },
   {
-    type: "BlogIndex",
-    defaultValues: createDefaultValues("BlogIndex"),
+    type: "product",
+    defaultValues: createDefaultValues("product"),
   },
   {
-    type: "BlogPost",
-    defaultValues: createDefaultValues("BlogPost"),
+    type: "blog",
+    defaultValues: createDefaultValues("blog"),
   },
   {
-    type: "ReleaseIndex",
-    defaultValues: createDefaultValues("ReleaseIndex"),
+    type: "testimonial",
+    defaultValues: createDefaultValues("testimonial"),
   },
   {
-    type: "Release",
-    defaultValues: createDefaultValues("Release"),
+    type: "faq",
+    defaultValues: createDefaultValues("faq"),
   },
   {
-    type: "Contact",
-    defaultValues: createDefaultValues("Contact"),
+    type: "pricing",
+    defaultValues: createDefaultValues("pricing"),
   },
   {
-    type: "About",
-    defaultValues: createDefaultValues("About"),
+    type: "releasenote",
+    defaultValues: createDefaultValues("releasenote"),
   },
   {
-    type: "Page",
-    defaultValues: createDefaultValues("Page"),
+    type: "contact",
+    defaultValues: createDefaultValues("contact"),
   },
   {
-    type: "DocumentIndex",
-    defaultValues: createDefaultValues("DocumentIndex"),
+    type: "about",
+    defaultValues: createDefaultValues("about"),
   },
   {
-    type: "Document",
-    defaultValues: createDefaultValues("Document"),
+    type: "document",
+    defaultValues: createDefaultValues("document"),
+  },
+  {
+    type: "legal",
+    defaultValues: createDefaultValues("legal"),
+  },
+  {
+    type: "general",
+    defaultValues: createDefaultValues("general"),
   },
 ];
 
 export const ContentEditValidationScheme = zod.object({
-  type: zod.enum(ContentEditAvailableTypes),
+  // Fix: Convert array to tuple type with spread operator for Zod enum
+  type: zod.enum([...ContentEditAvailableTypes] as [string, ...string[]]),
   title: zod.string(),
   description: zod.string(),
   body: zod.string(),

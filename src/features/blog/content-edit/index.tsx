@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ContentDetailsDto,
   ContentUpdateDto,
@@ -62,6 +63,18 @@ interface ContentEditProps {
 }
 
 export const ContentEdit = (props: ContentEditProps) => {
+  const { t } = useTranslation("pageTypes");
+
+  const translate = (key: string): string => {
+    try {
+      // @ts-ignore - Ignore type checking for this call
+      return t(key) || key;
+    } catch (e) {
+      console.warn("Translation error:", e);
+      return key.replace(/\.(label|description)$/, "");
+    }
+  };
+
   const { setSaving, setBusy } = useModuleWrapperContext();
   const { Show: showErrorModal } = useErrorDetailsModal()!;
   const { notificationsService } = useNotificationsService();
@@ -318,6 +331,17 @@ export const ContentEdit = (props: ContentEditProps) => {
                       onChange={typeFieldUpdate}
                       autoSelect
                       options={ContentEditAvailableTypes}
+                      getOptionLabel={(option) => translate(`${option}.label`)}
+                      renderOption={(props, option) => (
+                        <li {...props}>
+                          <div>
+                            <div>{translate(`${option}.label`)}</div>
+                            <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                              {translate(`${option}.description`)}
+                            </div>
+                          </div>
+                        </li>
+                      )}
                       renderInput={(params) => (
                         <TextField
                           {...params}

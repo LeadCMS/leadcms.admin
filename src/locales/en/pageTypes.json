@@ -1,0 +1,54 @@
+{
+  "home": {
+    "label": "Home",
+    "description": "The main entry point to your site, highlighting key offerings and the core value proposition."
+  },
+  "landing": {
+    "label": "Landing",
+    "description": "A focused, campaign-driven page tailored to capture leads or spotlight a specific feature."
+  },
+  "product": {
+    "label": "Product",
+    "description": "Explains key features, benefits, and use cases of your SaaS product."
+  },
+  "blog": {
+    "label": "Blog",
+    "description": "A collection of articles, updates, and thought leadership related to your product or industry."
+  },
+  "testimonial": {
+    "label": "Testimonial",
+    "description": "Showcases quotes, case studies, or endorsements from satisfied clients."
+  },
+  "faq": {
+    "label": "FAQ",
+    "description": "Addresses common user questions to reduce friction and provide quick clarity."
+  },
+  "pricing": {
+    "label": "Pricing",
+    "description": "Outlines subscription tiers, costs, and plan benefits for prospective customers."
+  },
+  "releasenote": {
+    "label": "Release Note",
+    "description": "Details recent product updates, bug fixes, and new functionalities."
+  },
+  "contact": {
+    "label": "Contact",
+    "description": "Offers support and inquiry channels (email, phone, forms) for questions or assistance."
+  },
+  "about": {
+    "label": "About",
+    "description": "Presents your company's story, mission, team background, and core values."
+  },
+  "document": {
+    "label": "Document",
+    "description": "Provides technical instructions, integration guides, or user manuals."
+  },
+  "legal": {
+    "label": "Legal",
+    "description": "Hosts important policies such as Terms of Service, Privacy Policy, and compliance statements."
+  },
+  "general": {
+    "label": "General",
+    "description": "A catch-all category for pages that do not fall under any of the above specific types."
+  }
+}
