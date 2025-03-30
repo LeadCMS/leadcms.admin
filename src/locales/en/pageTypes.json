@@ -27,7 +27,7 @@
     "label": "Pricing",
     "description": "Outlines subscription tiers, costs, and plan benefits for prospective customers."
   },
-  "releasenote": {
+  "releaseNote": {
     "label": "Release Note",
     "description": "Details recent product updates, bug fixes, and new functionalities."
   },

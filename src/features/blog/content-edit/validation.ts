@@ -63,8 +63,8 @@ export const ContentEditDefaultValues: TypeDefaultValues[] = [
     defaultValues: createDefaultValues("pricing"),
   },
   {
-    type: "releasenote",
-    defaultValues: createDefaultValues("releasenote"),
+    type: "releaseNote",
+    defaultValues: createDefaultValues("releaseNote"),
   },
   {
     type: "contact",

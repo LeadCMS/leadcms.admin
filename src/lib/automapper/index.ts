@@ -87,7 +87,7 @@ createMap<ContentDetailsDto, ContentDetails>(
         case "post":
           return "blog";
         case "release":
-          return "releasenote";
+          return "releaseNote";
         case "page":
           return "general";
         default:
