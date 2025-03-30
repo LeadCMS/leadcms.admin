@@ -8,8 +8,8 @@ import pageTypesEN from "./locales/en/pageTypes.json";
 // the translations
 const resources = {
   en: {
-    pageTypes: pageTypesEN
-  }
+    pageTypes: pageTypesEN,
+  },
 };
 
 i18n
@@ -22,14 +22,14 @@ i18n
     resources,
     fallbackLng: "en",
     debug: process.env.NODE_ENV === "development",
-    
+
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },
-    
+
     // have a common namespace used around the full app
     ns: ["pageTypes"],
-    defaultNS: "pageTypes"
+    defaultNS: "pageTypes",
   });
 
 export default i18n;

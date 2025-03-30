@@ -93,8 +93,8 @@ createMap<ContentDetailsDto, ContentDetails>(
         default:
           return s.type;
       }
-    })
-  )
+    }),
+  ),
 );
 
 createMap<ContentDetails, ContentUpdateDto>(
@@ -108,8 +108,8 @@ createMap<ContentDetails, ContentUpdateDto>(
         default:
           return s.type;
       }
-    })
-  )
+    }),
+  ),
 );
 
 createMap<ContentDetails, ContentCreateDto>(
@@ -123,6 +123,6 @@ createMap<ContentDetails, ContentCreateDto>(
         default:
           return s.type;
       }
-    })
-  )
+    }),
+  ),
 );

@@ -85,7 +85,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     { data: [] },
     {
       logger: (error) => console.log(error),
-    }
+    },
   );
   const { client } = networkContext;
   const { id } = useParams();
@@ -94,7 +94,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [frontmatterState, setfrontmatterState] = useState<ValidateFrontmatterError | null>(null);
   const [restoreDataState, setRestoreDataState] = useState<ContentEditRestoreState>(
-    ContentEditRestoreState.Idle
+    ContentEditRestoreState.Idle,
   );
 
   const autoSave = useDebouncedCallback((value) => {
@@ -146,7 +146,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       const content = Automapper.map<ContentDetails, ContentUpdateDto>(
         values,
         "ContentDetails",
-        "ContentUpdateDto"
+        "ContentUpdateDto",
       );
       response = await client.api.contentPartialUpdate(Number(values.id), {
         ...content,
@@ -156,7 +156,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       const content = Automapper.map<ContentDetails, ContentCreateDto>(
         values,
         "ContentDetails",
-        "ContentCreateDto"
+        "ContentCreateDto",
       );
       response = await client.api.contentCreate({
         ...content,
@@ -167,8 +167,8 @@ export const ContentEdit = (props: ContentEditProps) => {
       Automapper.map<ContentDetailsDto, ContentDetails>(
         response.data,
         "ContentDetailsDto",
-        "ContentDetails"
-      )
+        "ContentDetails",
+      ),
     );
     await helpers.setFieldValue("coverImagePending", {
       url: buildAbsoluteUrl(response.data.coverImageUrl!),
@@ -192,7 +192,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       submitFunc,
       notificationsService,
       showErrorModal,
-      "post"
+      "post",
     );
   };
 
@@ -267,7 +267,7 @@ export const ContentEdit = (props: ContentEditProps) => {
             break;
           case ContentEditRestoreState.Accepted:
             await formik.setValues(
-              localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData
+              localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData,
             );
             if (
               localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData
@@ -284,8 +284,8 @@ export const ContentEdit = (props: ContentEditProps) => {
             Automapper.map<ContentDetailsDto, ContentDetails>(
               data,
               "ContentDetailsDto",
-              "ContentDetails"
-            )
+              "ContentDetails",
+            ),
           );
           await formik.setFieldValue("coverImagePending", {
             url: buildAbsoluteUrl(data.coverImageUrl!),
