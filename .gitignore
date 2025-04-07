@@ -4,3 +4,6 @@ dist/
 .idea
 
 .env
+
+# User-specific settings
+.vscode/settings.json

@@ -83,17 +83,20 @@ createMap<ContentDetailsDto, ContentDetails>(
   forMember(
     (d) => d.type,
     mapFrom((s) => {
-      switch (s.type) {
+      switch (s.type.toLowerCase()) {
         case "post":
-          return "Blog Post";
+          return "blog";
         case "release":
-          return "Release Note";
+          return "releaseNote";
+        case "page":
+          return "general";
         default:
           return s.type;
       }
     })
   )
 );
+
 createMap<ContentDetails, ContentUpdateDto>(
   Automapper,
   "ContentDetails",
@@ -101,17 +104,14 @@ createMap<ContentDetails, ContentUpdateDto>(
   forMember(
     (d) => d.type,
     mapFrom((s) => {
-      switch (s.type) {
-        case "Blog Post":
-          return "post";
-        case "Release Note":
-          return "release";
+      switch (s.type.toLowerCase()) {
         default:
           return s.type;
       }
     })
   )
 );
+
 createMap<ContentDetails, ContentCreateDto>(
   Automapper,
   "ContentDetails",
@@ -119,11 +119,7 @@ createMap<ContentDetails, ContentCreateDto>(
   forMember(
     (d) => d.type,
     mapFrom((s) => {
-      switch (s.type) {
-        case "Blog Post":
-          return "post";
-        case "Release Note":
-          return "release";
+      switch (s.type.toLowerCase()) {
         default:
           return s.type;
       }
