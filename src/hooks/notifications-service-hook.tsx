@@ -97,7 +97,7 @@ export class NotificationsService {
 }
 
 export const useNotificationsService = (
-  settings: NotificationsServiceSettings = {}
+  settings: NotificationsServiceSettings = {},
 ): { notificationsService: NotificationsService } => {
   const notificationsService = new NotificationsService(settings);
   return { notificationsService: notificationsService };

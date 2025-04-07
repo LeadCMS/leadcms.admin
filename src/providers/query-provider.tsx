@@ -8,7 +8,7 @@ export const getBasicFilterQuery = (
   filterLimit: number,
   sortColumn: string,
   sortOrder: string,
-  skipLimit: number
+  skipLimit: number,
 ) => {
   const basicFilters: FilterParams = {
     "filter[limit]": filterLimit,
@@ -35,7 +35,7 @@ export const totalCountHeaderName = "x-total-count";
 export const getWhereFilterQuery = (
   whereField: string,
   whereFieldValue: string,
-  operatorValue: string
+  operatorValue: string,
 ) => {
   if (!whereField) return "";
   if (operatorValue === "isAnyOf" && (!whereFieldValue || whereFieldValue.length === 0)) return "";
@@ -79,7 +79,7 @@ const generateFilterQuery = (whereField: string, operatorValue: string, whereFie
 
 const getWhereOperatorAndValue = (
   operatorValue: string,
-  whereFieldValue: any
+  whereFieldValue: any,
 ): { operator: string; value: string } => {
   switch (operatorValue) {
     case "equals":

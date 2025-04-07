@@ -32,7 +32,7 @@ export const CommentsModule = () => {
           ({
             value: item.id,
             displayText: `${item.id}: ${item.title}`,
-          } as DictItem)
+          }) as DictItem,
       );
       setContentDict({ label: "Content", items: dictItems });
     });
@@ -50,7 +50,7 @@ export const CommentsModule = () => {
           ({
             value: item.id,
             displayText: `${item.id}: ${item.body}`,
-          } as DictItem)
+          }) as DictItem,
       );
       setCommentsDict({ label: "Parent", items: dictItems });
     });

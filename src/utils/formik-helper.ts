@@ -8,7 +8,7 @@ export async function execSubmitWithToast<T>(
   submitFunc: (values: T, helpers: FormikHelpers<T>) => Promise<void>,
   notificationsService: NotificationsService,
   showErrorModalFunc: (value: string[]) => void,
-  entityName: string
+  entityName: string,
 ): Promise<void> {
   const nameWithCapFirstLetter =
     entityName.charAt(0).toUpperCase() + entityName.slice(1).toLowerCase();

@@ -30,7 +30,7 @@ export const Contacts = () => {
   const { client } = useRequestContext();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     contactGridSettingsStorageKey,
-    undefined
+    undefined,
   );
 
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");

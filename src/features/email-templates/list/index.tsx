@@ -75,7 +75,7 @@ export const EmailTemplatesList = () => {
   const { client } = useRequestContext();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     emailTemplateGridSettingsStorageKey,
-    undefined
+    undefined,
   );
 
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");

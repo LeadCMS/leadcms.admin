@@ -59,7 +59,7 @@ export const ActivityLogList = () => {
   const { client } = useRequestContext();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     activityLogGridSettingsStorageKey,
-    undefined
+    undefined,
   );
 
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");

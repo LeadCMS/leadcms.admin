@@ -18,7 +18,7 @@ const ImageUploadingCtx = createContext<ImageUploadingContext | null>(null);
 const EditorViewFunc = (
   value: string,
   onChange: any,
-  onErrorChange: onFrontmatterErrorChangeFunc
+  onErrorChange: onFrontmatterErrorChangeFunc,
 ) => {
   const { notificationsService } = useNotificationsService();
   const editorCtx = useContext(EditorContext);
@@ -91,7 +91,7 @@ const MarkdownEditor = ({
   const { notificationsService } = useNotificationsService();
   const [currentError, setCurrentError] = useState<string>("");
   const [currentImageCtxValue, setCurrentImageCtxValue] = useState<ImageUploadingContext | null>(
-    null
+    null,
   );
 
   const customCommands = commands.getCommands().concat([

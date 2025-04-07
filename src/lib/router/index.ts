@@ -25,7 +25,7 @@ export const coreModuleRoute = route(
   {
     moduleName: coreModuleParser,
   },
-  {}
+  {},
 );
 
 export const editFormRoute = route(
@@ -33,7 +33,7 @@ export const editFormRoute = route(
   {
     id: intParser,
   },
-  {}
+  {},
 );
 
 export const viewFormRoute = route(
@@ -41,7 +41,7 @@ export const viewFormRoute = route(
   {
     id: intParser,
   },
-  {}
+  {},
 );
 
 export const addFormRoute = route("add", {}, {});

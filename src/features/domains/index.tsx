@@ -31,7 +31,7 @@ export const Domains = () => {
   const { client } = useRequestContext();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     domainGridSettingsStorageKey,
-    undefined
+    undefined,
   );
 
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");

@@ -63,7 +63,7 @@ export interface BasicTypeForGeneric {
 
 export const getBreadcrumbLinks = (
   moduleName: string,
-  modulePath: CoreModule
+  modulePath: CoreModule,
 ): BreadcrumbLink[] => {
   return [
     ...dataListBreadcrumbLinks,

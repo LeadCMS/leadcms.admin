@@ -30,7 +30,7 @@ export const CommentList = ({ contentId }: CommentListProps) => {
             },
             {
               signal: controller.signal,
-            }
+            },
           );
           const getReplays = (parentId: number): CommentExtendedDto[] => {
             return data
@@ -40,7 +40,7 @@ export const CommentList = ({ contentId }: CommentListProps) => {
                   ({
                     ...i,
                     replays: i.id && getReplays(i.id),
-                  } as CommentExtendedDto)
+                  }) as CommentExtendedDto,
               );
           };
 
@@ -51,7 +51,7 @@ export const CommentList = ({ contentId }: CommentListProps) => {
                 ({
                   ...i,
                   replays: i.id && getReplays(i.id),
-                } as CommentExtendedDto)
+                }) as CommentExtendedDto,
             );
 
           setComments(extendedResult);

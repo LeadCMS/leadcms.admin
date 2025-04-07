@@ -23,7 +23,7 @@ const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement<any, any>;
   },
-  ref: React.Ref<unknown>
+  ref: React.Ref<unknown>,
 ) {
   return <Fade ref={ref} {...props} />;
 });
@@ -35,7 +35,7 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
 
   const submitFunc = async (
     values: EmailGroupCreateDto,
-    helpers: FormikHelpers<EmailGroupCreateDto>
+    helpers: FormikHelpers<EmailGroupCreateDto>,
   ) => {
     const { data } = await client.api.emailGroupsCreate(values);
     onChange({
@@ -48,7 +48,7 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
 
   const submit = async (
     values: EmailGroupCreateDto,
-    helpers: FormikHelpers<EmailGroupCreateDto>
+    helpers: FormikHelpers<EmailGroupCreateDto>,
   ) => {
     notificationsService.promise(submitFunc(values, helpers), {
       pending: "Creating a group...",

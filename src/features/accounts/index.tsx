@@ -30,7 +30,7 @@ export const Accounts = () => {
   const { client } = useRequestContext();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     accountGridSettingsStorageKey,
-    undefined
+    undefined,
   );
 
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");

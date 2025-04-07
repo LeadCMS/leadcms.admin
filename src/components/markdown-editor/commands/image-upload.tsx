@@ -57,7 +57,7 @@ export const ImageUpload = (contentDetails: ContentDetails, isInToolbar: boolean
         });
         if (imageUploadingResponse.error) {
           notificationsService.error(
-            `Failed to upload image ${imageUploadingResponse.error.detail}`
+            `Failed to upload image ${imageUploadingResponse.error.detail}`,
           );
         }
         api.setSelectionRange({

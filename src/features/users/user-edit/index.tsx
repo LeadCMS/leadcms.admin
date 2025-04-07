@@ -91,7 +91,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
       submitFunc,
       notificationsService,
       showErrorModal,
-      "user"
+      "user",
     );
   };
 

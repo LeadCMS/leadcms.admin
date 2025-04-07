@@ -7,7 +7,7 @@ import { domainFormBreadcrumbLinks } from "../constants";
 export const DomainForm = (
   key: string,
   currentBreadcrumb: string,
-  formProps: GenericFormProps<DomainDetailsDto, DomainCreateDto, DomainUpdateDto>
+  formProps: GenericFormProps<DomainDetailsDto, DomainCreateDto, DomainUpdateDto>,
 ) => {
   const genericForm = GenericForm<DomainDetailsDto, DomainCreateDto, DomainUpdateDto>(formProps);
 

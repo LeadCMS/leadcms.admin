@@ -91,8 +91,8 @@ createMap<ContentDetailsDto, ContentDetails>(
         default:
           return s.type;
       }
-    })
-  )
+    }),
+  ),
 );
 createMap<ContentDetails, ContentUpdateDto>(
   Automapper,
@@ -109,8 +109,8 @@ createMap<ContentDetails, ContentUpdateDto>(
         default:
           return s.type;
       }
-    })
-  )
+    }),
+  ),
 );
 createMap<ContentDetails, ContentCreateDto>(
   Automapper,
@@ -127,6 +127,6 @@ createMap<ContentDetails, ContentCreateDto>(
         default:
           return s.type;
       }
-    })
-  )
+    }),
+  ),
 );

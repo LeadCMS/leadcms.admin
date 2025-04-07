@@ -42,7 +42,7 @@ export const DataList = ({
   const { setBusy } = useModuleWrapperContext();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     gridSettingsStorageKey,
-    undefined
+    undefined,
   );
   const [modelData, setModelData] = useState<any[] | undefined>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,7 +67,7 @@ export const DataList = ({
     getWhereFilterQuery(
       filterState.whereField!,
       filterState.whereFieldValue!,
-      filterState.whereOperator!
+      filterState.whereOperator!,
     );
   const basicFilterQuery =
     filterState &&
@@ -75,7 +75,7 @@ export const DataList = ({
       filterState.filterLimit!,
       filterState.sortColumn!,
       filterState.sortOrder!,
-      filterState.skipLimit!
+      filterState.skipLimit!,
     );
   const basicExportFilterQuery =
     filterState && getBasicExportFilterQuery(filterState.sortColumn!, filterState.sortOrder!);
@@ -162,7 +162,7 @@ export const DataList = ({
     setBusy(async () => {
       const result = await getModelDataList(
         `${searchTerm}&${basicFilterQuery}${whereFilterQuery}`,
-        `${searchTerm}&${basicExportFilterQuery}${whereFilterQuery}`
+        `${searchTerm}&${basicExportFilterQuery}${whereFilterQuery}`,
       );
       if (result) {
         const { data, headers } = result;

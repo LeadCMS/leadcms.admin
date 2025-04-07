@@ -5599,7 +5599,9 @@ export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" 
 export interface ApiConfig<SecurityDataType = unknown> {
   baseUrl?: string;
   baseApiParams?: Omit<RequestParams, "baseUrl" | "cancelToken" | "signal">;
-  securityWorker?: (securityData: SecurityDataType | null) => Promise<RequestParams | void> | RequestParams | void;
+  securityWorker?: (
+    securityData: SecurityDataType | null,
+  ) => Promise<RequestParams | void> | RequestParams | void;
   customFetch?: typeof fetch;
 }
 
@@ -5657,7 +5659,11 @@ export class HttpClient<SecurityDataType = unknown> {
     const query = rawQuery || {};
     const keys = Object.keys(query).filter((key) => "undefined" !== typeof query[key]);
     return keys
-      .map((key) => (Array.isArray(query[key]) ? this.addArrayQueryParam(query, key) : this.addQueryParam(query, key)))
+      .map((key) =>
+        Array.isArray(query[key])
+          ? this.addArrayQueryParam(query, key)
+          : this.addQueryParam(query, key),
+      )
       .join("&");
   }
 
@@ -5668,8 +5674,11 @@ export class HttpClient<SecurityDataType = unknown> {
 
   private contentFormatters: Record<ContentType, (input: any) => any> = {
     [ContentType.Json]: (input: any) =>
-      input !== null && (typeof input === "object" || typeof input === "string") ? JSON.stringify(input) : input,
-    [ContentType.Text]: (input: any) => (input !== null && typeof input !== "string" ? JSON.stringify(input) : input),
+      input !== null && (typeof input === "object" || typeof input === "string")
+        ? JSON.stringify(input)
+        : input,
+    [ContentType.Text]: (input: any) =>
+      input !== null && typeof input !== "string" ? JSON.stringify(input) : input,
     [ContentType.FormData]: (input: any) =>
       Object.keys(input || {}).reduce((formData, key) => {
         const property = input[key];
@@ -5678,8 +5687,8 @@ export class HttpClient<SecurityDataType = unknown> {
           property instanceof Blob
             ? property
             : typeof property === "object" && property !== null
-            ? JSON.stringify(property)
-            : `${property}`,
+              ? JSON.stringify(property)
+              : `${property}`,
         );
         return formData;
       }, new FormData()),
@@ -5743,15 +5752,18 @@ export class HttpClient<SecurityDataType = unknown> {
     const payloadFormatter = this.contentFormatters[type || ContentType.Json];
     const responseFormat = format || requestParams.format;
 
-    return this.customFetch(`${baseUrl || this.baseUrl || ""}${path}${queryString ? `?${queryString}` : ""}`, {
-      ...requestParams,
-      headers: {
-        ...(requestParams.headers || {}),
-        ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
+    return this.customFetch(
+      `${baseUrl || this.baseUrl || ""}${path}${queryString ? `?${queryString}` : ""}`,
+      {
+        ...requestParams,
+        headers: {
+          ...(requestParams.headers || {}),
+          ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
+        },
+        signal: cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal,
+        body: typeof body === "undefined" || body === null ? null : payloadFormatter(body),
       },
-      signal: cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal,
-      body: typeof body === "undefined" || body === null ? null : payloadFormatter(body),
-    }).then(async (response) => {
+    ).then(async (response) => {
       const r = response as HttpResponse<T, E>;
       r.data = null as unknown as T;
       r.error = null as unknown as E;
@@ -6552,7 +6564,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request PATCH:/api/deal-pipelines/{id}
      * @secure
      */
-    dealPipelinesPartialUpdate: (id: number, data: DealPipelineUpdateDto, params: RequestParams = {}) =>
+    dealPipelinesPartialUpdate: (
+      id: number,
+      data: DealPipelineUpdateDto,
+      params: RequestParams = {},
+    ) =>
       this.request<DealPipelineDetailsDto, void | ProblemDetails>({
         path: `/api/deal-pipelines/${id}`,
         method: "PATCH",
@@ -6693,7 +6709,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request PATCH:/api/deal-pipeline-stages/{id}
      * @secure
      */
-    dealPipelineStagesPartialUpdate: (id: number, data: DealPipelineStageUpdateDto, params: RequestParams = {}) =>
+    dealPipelineStagesPartialUpdate: (
+      id: number,
+      data: DealPipelineStageUpdateDto,
+      params: RequestParams = {},
+    ) =>
       this.request<DealPipelineStageDetailsDto, void | ProblemDetails>({
         path: `/api/deal-pipeline-stages/${id}`,
         method: "PATCH",
@@ -7192,7 +7212,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request PATCH:/api/email-templates/{id}
      * @secure
      */
-    emailTemplatesPartialUpdate: (id: number, data: EmailTemplateUpdateDto, params: RequestParams = {}) =>
+    emailTemplatesPartialUpdate: (
+      id: number,
+      data: EmailTemplateUpdateDto,
+      params: RequestParams = {},
+    ) =>
       this.request<EmailTemplateDetailsDto, void | ProblemDetails>({
         path: `/api/email-templates/${id}`,
         method: "PATCH",
@@ -7453,7 +7477,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request POST:/api/users/{userId}/imap-accounts
      * @secure
      */
-    usersImapAccountsCreate: (userId: string, data: ImapAccountCreateDto, params: RequestParams = {}) =>
+    usersImapAccountsCreate: (
+      userId: string,
+      data: ImapAccountCreateDto,
+      params: RequestParams = {},
+    ) =>
       this.request<ImapAccountDetailsDto, void | ProblemDetails>({
         path: `/api/users/${userId}/imap-accounts`,
         method: "POST",

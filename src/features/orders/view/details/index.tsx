@@ -247,7 +247,7 @@ export const OrderView = () => {
 
   const submitFunc = async (
     values: OrderItemDetailsDto,
-    helpers: FormikHelpers<OrderItemDetailsDto>
+    helpers: FormikHelpers<OrderItemDetailsDto>,
   ) => {
     try {
       if (values?.id) {
@@ -267,7 +267,7 @@ export const OrderView = () => {
       submitFunc,
       notificationsService,
       showErrorModal,
-      "order item"
+      "order item",
     );
   };
 

@@ -100,7 +100,7 @@ export const execDeleteWithToast = async (
   deleteFunc: () => Promise<void>,
   notificationsService: NotificationsService,
   entity: string,
-  showErrorModalFunc: (value: string[]) => void
+  showErrorModalFunc: (value: string[]) => void,
 ) => {
   const entityNameWithCapFirstLetter =
     entity.charAt(0).toUpperCase() + entity.slice(1).toLowerCase();

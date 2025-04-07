@@ -86,7 +86,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
           setContactList([]);
         }
         setIsLoading(false);
-      }, 800)
+      }, 800),
     );
   };
 
@@ -123,7 +123,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
       submitFunc,
       notificationsService,
       showErrorModal,
-      "order"
+      "order",
     );
   };
 

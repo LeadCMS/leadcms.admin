@@ -40,7 +40,7 @@ interface ExtraActions {
     showButton?: boolean;
     exportItemsFn?: (
       query?: { query?: string },
-      params?: RequestParams
+      params?: RequestParams,
     ) => Promise<HttpResponse<any, void | ProblemDetails>>;
   };
   import?: {
@@ -48,7 +48,7 @@ interface ExtraActions {
     importSchema?: DtoSchema;
     importItemsFn?: (
       data: any[],
-      params: RequestParams
+      params: RequestParams,
     ) => Promise<HttpResponse<ImportResult, void | ProblemDetails>>;
   };
 }
@@ -85,7 +85,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         ...tableProps,
         searchText: searchText,
       },
-      genericDataGridRef
+      genericDataGridRef,
     );
 
     const searchBox = (
@@ -178,7 +178,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
   const getForm = (
     key: string,
     currentBreadcrumb: string,
-    formProps: GenericFormProps<TView, TCreate, TUpdate>
+    formProps: GenericFormProps<TView, TCreate, TUpdate>,
   ) => {
     const genericForm = GenericForm<TView, TCreate, TUpdate>(formProps);
 

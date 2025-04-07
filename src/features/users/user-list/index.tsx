@@ -65,7 +65,7 @@ export const UserList = () => {
   const { client } = useRequestContext();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     UserGridStorageKey,
-    undefined
+    undefined,
   );
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");
 

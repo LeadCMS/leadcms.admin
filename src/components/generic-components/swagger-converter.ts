@@ -2,7 +2,7 @@ import { DtoSchema, DtoSchemaSource } from "@components/generic-components/commo
 
 const convertSchemaToDtoSchema = (
   schema: DtoSchemaSource,
-  allSchemas: { [x: string]: DtoSchemaSource }
+  allSchemas: { [x: string]: DtoSchemaSource },
 ): DtoSchema => {
   const dtoSchema: DtoSchema = {
     type: schema.type,
@@ -75,7 +75,7 @@ const convertSchemaToDtoSchema = (
 
 export const getSchemaDto = (
   name: string,
-  allSchemas: { [x: string]: DtoSchemaSource }
+  allSchemas: { [x: string]: DtoSchemaSource },
 ): DtoSchema => {
   if (name in allSchemas) {
     const schema = allSchemas[name];

@@ -27,7 +27,7 @@ export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
   key: string;
   getItemsFn: (
     query?: { query?: string },
-    params?: RequestParams
+    params?: RequestParams,
   ) => Promise<HttpResponse<T[], void | ProblemDetails>>;
   schema: DtoSchema;
   detailsNavigate?: (item: T) => void;
@@ -50,7 +50,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     searchText,
     initiallyShownColumns,
   }: GenericDataGridProps<T>,
-  ref: Ref<GenericDataGridRef>
+  ref: Ref<GenericDataGridRef>,
 ) {
   const { setBusy, isBusy } = useModuleWrapperContext();
 
@@ -60,7 +60,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
       sortColumn: "id",
       sortDirection: "desc",
       columnVisibilityModel: {},
-    }
+    },
   );
 
   const actionsColumn: GridColDef = {
@@ -107,7 +107,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
                 }
               : undefined,
           filterOperators: getGridStringOperators().filter(
-            (operator) => operator.value === "contains"
+            (operator) => operator.value === "contains",
           ),
         };
         return column;
@@ -203,7 +203,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
       const initialValue: GridColumnVisibilityModel = {};
 
       const availableColumns = Object.keys(schema.properties).filter(
-        (key) => !schema.properties[key].hide
+        (key) => !schema.properties[key].hide,
       );
 
       for (const columnName of availableColumns) {
@@ -214,7 +214,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
       }
 
       return initialValue;
-    }
+    },
   );
 
   useEffect(() => {

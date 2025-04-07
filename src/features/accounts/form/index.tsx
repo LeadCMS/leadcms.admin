@@ -96,7 +96,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
 
   const handleCountryChange = (
     e: SyntheticEvent<Element, Event>,
-    value: { code: string; name: string } | null
+    value: { code: string; name: string } | null,
   ) => {
     if (value) {
       formik.setFieldValue("countryCode", value.code);
@@ -105,7 +105,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
 
   const handleContinentChange = (
     e: SyntheticEvent<Element, Event>,
-    value: { code: string; name: string } | null
+    value: { code: string; name: string } | null,
   ) => {
     if (value) {
       formik.setFieldValue("continentCode", value.code);
@@ -114,7 +114,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
 
   const handleSocialMediaChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    key: string
+    key: string,
   ) => {
     const socialMedia = { ...formik.values.socialMedia };
     (socialMedia![key] = e.target.value), formik.setFieldValue("socialMedia", socialMedia);
@@ -139,7 +139,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
 
   const submitFunc = async (
     values: AccountDetailsDto,
-    helpers: FormikHelpers<AccountDetailsDto>
+    helpers: FormikHelpers<AccountDetailsDto>,
   ) => {
     try {
       await handleSave(values);
@@ -157,7 +157,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
       submitFunc,
       notificationsService,
       showErrorModal,
-      "account"
+      "account",
     );
   };
 

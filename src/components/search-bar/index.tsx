@@ -22,7 +22,7 @@ export const SearchBar = ({
     setTimer(
       setTimeout(() => {
         setSearchTermOnChange(event.target.value);
-      }, 800)
+      }, 800),
     );
   };
 

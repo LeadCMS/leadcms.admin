@@ -57,16 +57,16 @@ export interface GenericFormProps<TView extends BasicTypeForGeneric, TCreate, TU
   editable: boolean;
   getItemFn: (
     id: number,
-    params?: RequestParams
+    params?: RequestParams,
   ) => Promise<HttpResponse<TView, void | ProblemDetails>>;
   updateItemFn: (
     id: number,
     data: TUpdate,
-    params: RequestParams
+    params: RequestParams,
   ) => Promise<HttpResponse<TView, void | ProblemDetails>>;
   createItemFn: (
     data: TCreate,
-    params: RequestParams
+    params: RequestParams,
   ) => Promise<HttpResponse<TView, void | ProblemDetails>>;
   detailsSchema: DtoSchema;
   updateSchema: DtoSchema;
@@ -395,7 +395,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
                   <Grid key={field.name} item xs={3} sm={3}>
                     {getView(field)}
                   </Grid>
-                )
+                ),
               )}
           </Grid>
           <Grid container spacing={4} justifyContent="flex-end">

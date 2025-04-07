@@ -92,13 +92,13 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       submitFunc,
       notificationsService,
       showErrorModal,
-      "contact"
+      "contact",
     );
   };
 
   const submitFunc = async (
     values: ContactDetailsDto,
-    helpers: FormikHelpers<ContactDetailsDto>
+    helpers: FormikHelpers<ContactDetailsDto>,
   ) => {
     try {
       await handleSave(values);
@@ -127,7 +127,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
 
   const handleCountryChange = (
     e: SyntheticEvent<Element, Event>,
-    value: { code: string; name: string } | null
+    value: { code: string; name: string } | null,
   ) => {
     if (value) {
       formik.setFieldValue("countryCode", value.code);
@@ -136,7 +136,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
 
   const handleContinentChange = (
     e: SyntheticEvent<Element, Event>,
-    value: { code: string; name: string } | null
+    value: { code: string; name: string } | null,
   ) => {
     if (value) {
       formik.setFieldValue("continentCode", value.code);
@@ -145,7 +145,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
 
   const handleLanguageChange = (
     e: SyntheticEvent<Element, Event>,
-    value: { value: string; label: string } | null
+    value: { value: string; label: string } | null,
   ) => {
     if (value) {
       formik.setFieldValue("language", value.value);
@@ -154,7 +154,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
 
   const handleTimezoneChange = (
     e: SyntheticEvent<Element, Event>,
-    value: { value: number; label: string } | null
+    value: { value: number; label: string } | null,
   ) => {
     if (value) {
       formik.setFieldValue("timezone", value.value);
@@ -169,7 +169,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
 
   const handleSocialMediaChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    key: string
+    key: string,
   ) => {
     const socialMedia = { ...formik.values.socialMedia };
     (socialMedia![key] = e.target.value), formik.setFieldValue("socialMedia", socialMedia);

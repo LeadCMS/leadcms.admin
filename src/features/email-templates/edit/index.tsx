@@ -46,10 +46,10 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     { data: [] },
     {
       logger: (error) => console.log(error),
-    }
+    },
   );
   const [restoreDataState, setRestoreDataState] = useState<EmailTemplateEditRestoreState>(
-    EmailTemplateEditRestoreState.Idle
+    EmailTemplateEditRestoreState.Idle,
   );
   const [wasModified, setWasModified] = useState<boolean>(false);
 
@@ -77,7 +77,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
 
   const submitFunc = async (
     values: EmailTemplateDetailsDto,
-    helpers: FormikHelpers<EmailTemplateDetailsDto>
+    helpers: FormikHelpers<EmailTemplateDetailsDto>,
   ) => {
     let response: HttpResponse<EmailTemplateDetailsDto, void | ProblemDetails>;
     if (id === undefined) {
@@ -96,7 +96,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
 
   const submit = async (
     values: EmailTemplateDetailsDto,
-    helpers: FormikHelpers<EmailTemplateDetailsDto>
+    helpers: FormikHelpers<EmailTemplateDetailsDto>,
   ) => {
     execSubmitWithToast<EmailTemplateDetailsDto>(
       values,
@@ -104,7 +104,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       submitFunc,
       notificationsService,
       showErrorModal,
-      "email template"
+      "email template",
     );
   };
 
@@ -167,7 +167,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
             break;
           case EmailTemplateEditRestoreState.Accepted:
             await formik.setValues(
-              localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData
+              localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData,
             );
             setWasModified(true);
             return;
@@ -330,12 +330,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                       </Button>
                     </Grid>
                     <Grid item xs={2}>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        fullWidth
-                        size="large"
-                      >
+                      <Button type="submit" variant="contained" fullWidth size="large">
                         Save
                       </Button>
                     </Grid>
