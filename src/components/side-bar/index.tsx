@@ -82,6 +82,14 @@ export const Sidebar = () => {
             selected={moduleName === CoreModule.domains}
           />
         </ListItem>
+        <ListItem>
+          <SidebarLinkButton
+            title="Activity logs"
+            to={getCoreModuleRoute(CoreModule.activityLogs)}
+            Icon={Book}
+            selected={moduleName === CoreModule.activityLogs}
+          />
+        </ListItem>
       </List>
       <List component="nav" subheader={<ListSubheaderStyled>MARKETING</ListSubheaderStyled>}>
         <ListItem>
@@ -102,14 +110,6 @@ export const Sidebar = () => {
         </ListItem>
       </List>
       <List component="nav" subheader={<ListSubheaderStyled>General</ListSubheaderStyled>}>
-        <ListItem>
-          <SidebarLinkButton
-            title="Activity logs"
-            to={getCoreModuleRoute(CoreModule.activityLogs)}
-            Icon={Book}
-            selected={moduleName === CoreModule.activityLogs}
-          />
-        </ListItem>
         <ListItem>
           <SidebarLinkButton
             title="Users"

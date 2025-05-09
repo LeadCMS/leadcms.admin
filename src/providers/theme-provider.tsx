@@ -13,18 +13,18 @@ export const themeOptions: ThemeOptions = {
   },
   palette: {
     primary: {
-      main: "#5664D2",
-      light: "#7783DB",
-      dark: "#3C4693",
+      main: "#3878FF",
+      light: "#6096FF",
+      dark: "#2854B2",
     },
     secondary: {
-      main: "#E91E63",
-      light: "#F06191",
-      dark: "#BE134D",
+      main: "#0B111A",
+      light: "#343A42",
+      dark: "#060A10",
     },
     text: {
-      primary: "#253858",
-      secondary: "rgba(66, 82, 110, 0.86)",
+      primary: "#0B0B0D",
+      secondary: "rgba(11, 11, 13, 0.86)",
       disabled: "rgba(0, 0, 0, 0.38)",
     },
     info: {
@@ -34,15 +34,15 @@ export const themeOptions: ThemeOptions = {
       contrastText: "#FFF",
     },
     success: {
-      main: "#4CAF50",
-      light: "#7BC67E",
-      dark: "#3B873E",
+      main: "#52AF21",
+      light: "#7BC652",
+      dark: "#3B7E17",
       contrastText: "#FFF",
     },
     error: {
-      main: "#F44336",
-      light: "#F88078",
-      dark: "#E31B0C",
+      main: "#C82828",
+      light: "#D55858",
+      dark: "#8E1C1C",
       contrastText: "#FFF",
     },
     warning: {
@@ -52,11 +52,11 @@ export const themeOptions: ThemeOptions = {
       contrastText: "rgba(0, 0, 0, 0.87)",
     },
     background: {
-      default: "#F4F5F7",
-      primary: "rgba(86, 100, 210, 0.08)",
-      primaryHover: "rgba(86, 100, 210, 0.04)",
+      default: "#FBFCFF",
+      primary: "rgba(56, 120, 255, 0.08)",
+      primaryHover: "rgba(56, 120, 255, 0.04)",
     },
-  },
+  }
 };
 
 const mainTheme = createTheme(themeOptions);

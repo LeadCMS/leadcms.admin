@@ -1,6 +1,10 @@
 node_modules/
 dist/
 .vscode/
+.vs/
 .idea
 
 .env
+
+# User-specific settings
+.vscode/settings.json

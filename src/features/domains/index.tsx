@@ -90,7 +90,8 @@ export const Domains = () => {
           <ListItemAvatar>
             <Avatar
               sizes="64"
-              src={"http://www.google.com/s2/favicons?domain=" + row.name + "&sz=32"}
+              // Use local favicons if available, fallback to Google service
+              src={row.faviconUrl || `http://www.google.com/s2/favicons?domain=${row.name}&sz=32`}
               sx={{
                 width: 32,
                 height: 32,

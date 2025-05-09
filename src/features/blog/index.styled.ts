@@ -68,11 +68,11 @@ export const ContentListWrapper = styled("div")`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f8f0;
+  background-color: ${({ theme }) => theme.palette.background.default};
 `;
 
 export const DummyDiv = styled("div")`
   width: 100%;
   height: 100%;
-  background-color: #f4f5f7;
+  background-color: ${({ theme }) => theme.palette.background.default};
 `;

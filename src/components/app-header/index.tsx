@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { rootRoute } from "lib/router";
 import { GhostLink } from "components/ghost-link";
 import { AppBarStyled, AppBarToolbar, LogoComponent } from "./index.styled";
@@ -8,15 +8,17 @@ export const AppHeader = () => {
   return (
     <AppBarStyled>
       <AppBarToolbar>
-        <LogoComponent />
-        <Typography
-          component={GhostLink}
-          to={rootRoute}
-          variant="h6"
-          style={{ textTransform: "uppercase", marginLeft: "54px" }}
-        >
-          Online Sales
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <LogoComponent />
+          <Typography
+            component={GhostLink}
+            to={rootRoute}
+            variant="h6"
+            style={{ marginLeft: "20px" }}
+          >
+            LeadCMS Admin
+          </Typography>
+        </Box>
         <DropdownMenu />
       </AppBarToolbar>
     </AppBarStyled>
