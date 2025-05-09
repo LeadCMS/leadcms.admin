@@ -1,6 +1,6 @@
-# onlinesales.admin
+# leadcms.admin
 
-React based Admin UI for OnlineSales (lightweight, extendable headless CMS for product websites)
+React based Admin UI for LeadCMS (lightweight, extendable headless CMS for product websites)
 
 ## Project status
 

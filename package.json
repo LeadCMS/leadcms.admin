@@ -1,10 +1,10 @@
 {
-  "name": "onlinesales.admin",
+  "name": "leadcms.admin",
   "version": "1.2.7-pre",
   "private": true,
-  "description": "React based Admin UI for OnlineSales (lightweight, extendable headless CMS for product websites)",
+  "description": "React based Admin UI for LeadCMS (lightweight, extendable headless CMS for product websites)",
   "keywords": [
-    "onlinesales"
+    "leadcms"
   ],
   "scripts": {
     "start": "cross-env TS_NODE_PROJECT=\"./webpack/tsconfig.json\" webpack serve --config=\"./webpack/webpack.config.ts\"  --mode=development",
@@ -16,13 +16,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/peterliapin/onlinesales.admin.git"
+    "url": "git+https://github.com/LeadCMS/leadcms.admin.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/peterliapin/onlinesales.admin/issues"
+    "url": "https://github.com/LeadCMS/leadcms.admin/issues"
   },
-  "homepage": "https://github.com/peterliapin/onlinesales.admin#readme",
+  "homepage": "https://leadcms.ai",
   "engines": {
     "node": "^18.13.0",
     "npm": "^9.3.0"

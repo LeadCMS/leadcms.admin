@@ -42,7 +42,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const handleNavigation = useCoreModuleNavigation();
   const { id } = useParams();
   const [editorLocalStorage, setEditorLocalStorage] = useLocalStorage<EmailTemplateEditData>(
-    "onlinesales_emailTemplateEditor_autosave",
+    "leadcms_emailTemplateEditor_autosave",
     { data: [] },
     {
       logger: (error) => console.log(error),

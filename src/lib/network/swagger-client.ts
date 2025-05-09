@@ -5783,7 +5783,7 @@ export class HttpClient<SecurityDataType = unknown> {
 }
 
 /**
- * @title OnlineSales API
+ * @title LeadCMS API
  * @version 1.2.9.0
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {

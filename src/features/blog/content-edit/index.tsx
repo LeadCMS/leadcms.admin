@@ -68,7 +68,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const networkContext = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
   const [editorLocalStorage, setEditorLocalStorage] = useLocalStorage<ContentEditData>(
-    "onlinesales_editor_autosave",
+    "leadcms_editor_autosave",
     { data: [] },
     {
       logger: (error) => console.log(error),
