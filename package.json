@@ -24,8 +24,8 @@
   },
   "homepage": "https://leadcms.ai",
   "engines": {
-    "node": "^18.13.0",
-    "npm": "^9.3.0"
+    "node": "^20.19.0",
+    "npm": "^10.8.2"
   },
   "devDependencies": {
     "@types/dotenv-webpack": "^7.0.3",
@@ -63,6 +63,10 @@
     "@automapper/pojos": "^8.7.7",
     "@azure/msal-browser": "^2.34.0",
     "@azure/msal-react": "^1.5.2",
+    "@chakra-ui/icon": "^3.2.0",
+    "@chakra-ui/popper": "^3.1.0",
+    "@chakra-ui/system": "^2.6.2",
+    "@chakra-ui/transition": "^2.1.0",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
     "@mui/icons-material": "^5.11.11",

@@ -60,6 +60,14 @@ const configuration: Configuration = {
       {
         test: /\.tsx?$/,
         include: resolve(__dirname, "../src"), // Use include instead of exclude
+        use: [
+          {
+            loader: "ts-loader",
+            options: {
+              transpileOnly: true, // Speed up compilation by skipping type checking
+            },
+          },
+        ],
       },
     ],
   },
