@@ -17,13 +17,7 @@ declare module "@mui/material/styles" {
       primary?: string;
       primaryHover?: string;
     };
-  }
-}
-
-// For styled-components
-declare module "styled-components" {
-  export interface DefaultTheme extends MuiTheme {
-    // Your theme properties
+    unstable_sx?: Record<string, unknown>; // Use a more specific type for unstable_sx
   }
 }
 

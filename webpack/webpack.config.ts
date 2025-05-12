@@ -2,7 +2,7 @@
 delete process.env.TS_NODE_PROJECT;
 
 import {resolve} from "path";
-import {container, ProvidePlugin} from "webpack";
+import {container, ProvidePlugin, ProgressPlugin} from "webpack";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import {CleanWebpackPlugin} from "clean-webpack-plugin";
 import TsconfigPathsPlugin from "tsconfig-paths-webpack-plugin";
@@ -91,6 +91,7 @@ const configuration: Configuration = {
     new ProvidePlugin({
       Buffer: ["buffer", "Buffer"],
     }),
+    new ProgressPlugin(),
   ],
 };
 
