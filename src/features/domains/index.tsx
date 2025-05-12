@@ -18,7 +18,7 @@ import useLocalStorage from "use-local-storage";
 import { DataListSettings } from "types";
 import { Fragment, useRef, useState } from "react";
 import { getModelByName } from "@lib/network/swagger-models";
-import { Result } from "@wavepoint/react-spreadsheet-import/types/types";
+import { Result } from "react-spreadsheet-import/types/types";
 import { SearchBar } from "@components/search-bar";
 import { Button } from "@mui/material";
 import { Add, Download, Upload } from "@mui/icons-material";

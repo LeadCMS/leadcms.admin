@@ -21,7 +21,7 @@ import { Add, Download, Upload } from "@mui/icons-material";
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
 import { getModelByName } from "lib/network/swagger-models";
-import { Result } from "@wavepoint/react-spreadsheet-import/types/types";
+import { Result } from "react-spreadsheet-import/types/types";
 import { CsvExport } from "@components/export";
 import useLocalStorage from "use-local-storage";
 import { DataListSettings } from "types";

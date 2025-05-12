@@ -33,7 +33,7 @@ import {
 } from "@lib/network/swagger-client";
 import { CsvExport } from "@components/export";
 import { CsvImport } from "@components/spreadsheet-import";
-import { Result } from "@wavepoint/react-spreadsheet-import/types/types";
+import { Result } from "react-spreadsheet-import/types/types";
 
 interface ExtraActions {
   export?: {

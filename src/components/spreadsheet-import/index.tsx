@@ -1,7 +1,7 @@
 import { CircularProgress } from "@mui/material";
 import { Fragment, useState } from "react";
-import { ReactSpreadsheetImport } from "@wavepoint/react-spreadsheet-import";
-import { Result } from "@wavepoint/react-spreadsheet-import/types/types";
+import { ReactSpreadsheetImport } from "react-spreadsheet-import";
+import { Result } from "react-spreadsheet-import/types/types";
 import { StyledBackdrop } from "./index.styled";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { getImportFields } from "utils/import-file-helper";
