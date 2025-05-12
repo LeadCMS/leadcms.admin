@@ -29,8 +29,11 @@ const configuration: Configuration = {
     filename: "[name].[contenthash:8].js",
     publicPath: "/",
   },
+  cache: {
+    type: "filesystem", // Enable persistent caching
+  },
   resolve: {
-    extensions: [".ts", ".tsx", ".js", ".json"],
+    extensions: [".tsx", ".ts", ".js"], // Limit extensions to reduce overhead
     plugins: [new TsconfigPathsPlugin({configFile: resolve(__dirname, "../tsconfig.json")})],
     alias:{
       "@providers" : resolve(__dirname, "../src/providers"),
@@ -42,6 +45,9 @@ const configuration: Configuration = {
       "buffer": require.resolve("buffer/")
     },
   },
+  devtool: process.env.NODE_ENV === "production"
+    ? false // Disable source maps in production
+    : "source-map", // Enable source maps in development
   module: {
     rules: [
       {
@@ -53,8 +59,7 @@ const configuration: Configuration = {
       },
       {
         test: /\.tsx?$/,
-        exclude: /node_modules/,
-        loader: "ts-loader",
+        include: resolve(__dirname, "../src"), // Use include instead of exclude
       },
     ],
   },
