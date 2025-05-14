@@ -1,4 +1,4 @@
-import { DateValueFormatter } from "@components/data-list";
+import { DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { ActionButtonContainer } from "@features/contacts/index.styled";
 import { useNotificationsService } from "@hooks";
 import { ActivityLogDetailsDto } from "@lib/network/swagger-client";
@@ -70,12 +70,13 @@ export const ContactLogs = () => {
       headerName: "Created Date",
       flex: 2,
       type: "date",
-      valueGetter: DateValueFormatter,
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
     },
     {
       field: "data",
       headerName: "Data",
-      flex: 2,
+      flex: 2,      
       hide: true,
     },
     {

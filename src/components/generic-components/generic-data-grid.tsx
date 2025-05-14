@@ -8,6 +8,8 @@ import {
   GridColumnVisibilityModel,
   GridFilterModel,
   GridSortModel,
+  GridColType,
+  GridValidRowModel,
 } from "@mui/x-data-grid";
 import { totalCountHeaderName } from "@providers/query-provider";
 import {
@@ -37,7 +39,7 @@ export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
 }
 
 export interface GenericDataGridRef {
-  getExportFilters: () => any;
+  getExportFilters: () => Record<string, unknown>;
 }
 
 export function GenericDataGrid<T extends BasicTypeForGeneric>(
@@ -72,7 +74,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     filterable: false,
     sortable: false,
     disableColumnMenu: true,
-    renderCell: ({ row }: any) => {
+    renderCell: ({ row }: GridValidRowModel) => {
       return (
         <ActionButtonContainer>
           {editNavigate && (
@@ -96,14 +98,14 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
       .map((key) => {
         const column: GridColDef = {
           field: key,
-          type: schema.properties[key].type,
+          type: mapToGridColType(schema.properties[key].type),
           width: 200,
           description: schema.properties[key].description,
           headerName: camelCaseToTitleCase(key),
           valueFormatter:
             schema.properties[key].format === "date-time"
-              ? (params) => {
-                  return params.value ? dayjs(params.value).format("L HH:mm") : undefined;
+              ? (value) => {
+                  return value ? dayjs(value).format("L HH:mm") : undefined;
                 }
               : undefined,
           filterOperators: getGridStringOperators().filter(
@@ -124,7 +126,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
   const [whereFilters, setWhereFilters] = useState<{ [x: string]: string }>({});
 
   const getFilters = () => {
-    const query: any = {
+    const query: Record<string, unknown> = {
       ...whereFilters,
       "filter[limit]": pageSize,
       "filter[order]": sortColumn ? `${sortColumn} ${sortDirection}` : undefined,
@@ -188,7 +190,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     const newWhereFilters: { [x: string]: string } = {};
 
     for (const item of filterModel.items) {
-      newWhereFilters[`filter[where][${item.columnField}][like]`] = item.value;
+      newWhereFilters[`filter[where][${item.field}][like]`] = item.value;
     }
 
     setWhereFilters(newWhereFilters);
@@ -238,13 +240,17 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
       checkboxSelection={false}
       autoHeight={false}
       rowCount={totalItemsCount}
-      rowsPerPageOptions={[10, 25, 50, 100]}
+      pageSizeOptions={[10, 25, 50, 100]}
       pagination
-      page={pageNumber}
-      pageSize={pageSize}
+      paginationModel={{
+        page: pageNumber,
+        pageSize: pageSize
+      }}
       paginationMode="server"
-      onPageChange={(newPage) => setPageNumber(newPage)}
-      onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
+      onPaginationModelChange={(model) => {
+        setPageNumber(model.page);
+        setPageSize(model.pageSize);
+      }}
       sortingMode="server"
       onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}
       filterMode="server"
@@ -255,4 +261,25 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
       columnVisibilityModel={columnVisibilityModel}
     />
   );
+}
+
+// Helper function to map schema types to GridColType
+function mapToGridColType(schemaType: string | undefined): GridColType | undefined {
+  if (!schemaType) return undefined;
+  
+  switch (schemaType) {
+    case "string":
+      return "string";
+    case "number":
+    case "integer":
+      return "number";
+    case "boolean":
+      return "boolean";
+    case "date":
+      return "date";
+    case "datetime":
+      return "dateTime";
+    default:
+      return undefined;
+  }
 }

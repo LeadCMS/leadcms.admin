@@ -25,7 +25,6 @@ import { SearchBar } from "@components/search-bar";
 import { GhostLink } from "@components/ghost-link";
 import { Download, Upload } from "@mui/icons-material";
 import {
-  CommentImportDto,
   HttpResponse,
   ImportResult,
   ProblemDetails,

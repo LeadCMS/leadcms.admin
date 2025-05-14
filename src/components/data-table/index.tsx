@@ -84,11 +84,12 @@ export const DataTableGrid = ({
     navigate(getViewFormRoute(row.id!), { state: row });
   };
 
-  const handlePageChange = (page: number) => {
+  const handlePaginationModelChange = (model: { page: number, pageSize: number }) => {
     if (setFilterState) {
       setFilterState({
-        pageNumber: page,
-        skipLimit: page * pageSize!,
+        pageNumber: model.page,
+        skipLimit: model.page * model.pageSize,
+        filterLimit: model.pageSize,
       });
     }
   };
@@ -127,23 +128,15 @@ export const DataTableGrid = ({
     }
 
     const filterModelItem = filterModel.items[0];
-    const column = filterModelItem.columnField;
+    const column = filterModelItem.field;
     const columnValue = filterModelItem.value;
-    const operator = filterModelItem.operatorValue;
+    const operator = filterModelItem.operator;
 
     if (column) {
       setFilterState({
         whereFieldValue: columnValue,
         whereField: column,
         whereOperator: operator,
-      });
-    }
-  };
-
-  const handlePageSizeChange = (newPageSize: number) => {
-    if (setFilterState) {
-      setFilterState({
-        filterLimit: newPageSize,
       });
     }
   };
@@ -167,15 +160,16 @@ export const DataTableGrid = ({
         checkboxSelection={false}
         autoHeight={autoHeight}
         rowCount={totalRowCount}
-        rowsPerPageOptions={rowsPerPageOptions}
+        pageSizeOptions={rowsPerPageOptions}
         pagination
-        page={pageNumber}
-        pageSize={pageSize}
+        paginationModel={{
+          page: pageNumber || 0,
+          pageSize: pageSize || 25,
+        }}
         hideFooter={disablePagination}
         disableColumnFilter={disableColumnFilter}
         paginationMode={dataViewMode}
-        onPageChange={(newPage) => handlePageChange(newPage)}
-        onPageSizeChange={(newPageSize) => handlePageSizeChange(newPageSize)}
+        onPaginationModelChange={handlePaginationModelChange}
         sortingMode={dataViewMode}
         onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}
         filterMode={dataViewMode}

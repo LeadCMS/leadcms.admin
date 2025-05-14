@@ -14,7 +14,7 @@ import { DataGrid, GridCellParams, GridColDef } from "@mui/x-data-grid";
 import { ActionButtonContainer, ContactHref } from "@features/contacts/index.styled";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useNavigate } from "react-router-dom";
-import { DateValueFormatter } from "@components/data-list";
+import { DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { DataManagementBlock } from "@components/data-management";
 
 export const ContactView = () => {
@@ -157,7 +157,8 @@ export const ContactView = () => {
       headerName: "Created Date",
       flex: 2,
       type: "date",
-      valueGetter: DateValueFormatter,
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
     },
     {
       field: "total",

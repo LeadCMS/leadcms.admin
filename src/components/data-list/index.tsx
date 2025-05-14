@@ -6,7 +6,7 @@ import {
   getWhereFilterQuery,
   totalCountHeaderName,
 } from "@providers/query-provider";
-import { GridColDef, GridSortDirection } from "@mui/x-data-grid";
+import { GridColDef, GridSortDirection, GridValidRowModel } from "@mui/x-data-grid";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
 import { DataListContainer } from "./index.styled";
 import { DataTableGrid } from "@components/data-table";
@@ -15,19 +15,25 @@ import { DataListSettings, GridDataFilterState } from "types";
 import { useNotificationsService } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 
-type dataListProps = {
-  columns: GridColDef<any>[];
+// Define response type for API model data
+interface ModelDataResponse {
+  data: unknown[];
+  headers: Headers;
+}
+
+type dataListProps<TModel extends GridValidRowModel> = {
+  columns: GridColDef<TModel>[];
   gridSettingsStorageKey: string;
   searchText: string;
   defaultFilterOrderColumn: string;
   defaultFilterOrderDirection: string;
   initialGridState: GridInitialStateCommunity | undefined;
-  getModelDataList: (mainQuery: string, exportQuery?: string) => any;
+  getModelDataList: (mainQuery: string, exportQuery?: string) => Promise<ModelDataResponse | null>;
   showEditButton?: boolean;
   showViewButton?: boolean;
 };
 
-export const DataList = ({
+export const DataList = <TModel extends GridValidRowModel>({
   columns,
   gridSettingsStorageKey,
   searchText,
@@ -37,14 +43,14 @@ export const DataList = ({
   getModelDataList,
   showEditButton = true,
   showViewButton = true,
-}: dataListProps) => {
+}: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     gridSettingsStorageKey,
     undefined
   );
-  const [modelData, setModelData] = useState<any[] | undefined>([]);
+  const [modelData, setModelData] = useState<unknown[] | undefined>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [totalRowCount, setTotalRowCount] = useState<number>();
 
@@ -65,20 +71,24 @@ export const DataList = ({
   const whereFilterQuery =
     filterState &&
     getWhereFilterQuery(
-      filterState.whereField!,
-      filterState.whereFieldValue!,
-      filterState.whereOperator!
+      filterState.whereField || "",
+      filterState.whereFieldValue || "",
+      filterState.whereOperator || ""
     );
   const basicFilterQuery =
     filterState &&
     getBasicFilterQuery(
-      filterState.filterLimit!,
-      filterState.sortColumn!,
-      filterState.sortOrder!,
-      filterState.skipLimit!
+      filterState.filterLimit || defaultFilterLimit,
+      filterState.sortColumn || defaultFilterOrderColumn,
+      filterState.sortOrder || defaultFilterOrderDirection,
+      filterState.skipLimit || 0
     );
   const basicExportFilterQuery =
-    filterState && getBasicExportFilterQuery(filterState.sortColumn!, filterState.sortOrder!);
+    filterState && 
+    getBasicExportFilterQuery(
+      filterState.sortColumn || defaultFilterOrderColumn, 
+      filterState.sortOrder || defaultFilterOrderDirection
+    );
 
   useEffect(() => {
     if (gridSettings) {
@@ -95,15 +105,15 @@ export const DataList = ({
         columnVisibilityModel,
       } = gridSettings;
       setFilterState({
-        filterLimit: filterLimit,
-        skipLimit: skipLimit,
-        sortColumn: sortColumn,
-        sortOrder: sortOrder,
-        whereField: whereField,
-        whereFieldValue: whereFieldValue,
-        whereOperator: whereOperator,
-        pageNumber: pageNumber,
-        columnVisibilityModel: columnVisibilityModel,
+        filterLimit,
+        skipLimit,
+        sortColumn,
+        sortOrder,
+        whereField,
+        whereFieldValue,
+        whereOperator,
+        pageNumber,
+        columnVisibilityModel,
       });
       setSearchTerm(searchTerm);
     } else {
@@ -135,19 +145,20 @@ export const DataList = ({
   }, [modelData]);
 
   const saveGridStateInLocalStorage = () => {
-    filterState &&
+    if (filterState) {
       setGridSettings({
         searchTerm,
-        filterLimit: filterState.filterLimit!,
-        skipLimit: filterState.skipLimit!,
-        sortColumn: filterState.sortColumn!,
-        sortOrder: filterState.sortOrder!,
-        whereField: filterState.whereField!,
-        whereFieldValue: filterState.whereFieldValue!,
-        whereOperator: filterState.whereOperator!,
-        pageNumber: filterState.pageNumber!,
-        columnVisibilityModel: filterState.columnVisibilityModel!,
+        filterLimit: filterState.filterLimit || defaultFilterLimit,
+        skipLimit: filterState.skipLimit || 0,
+        sortColumn: filterState.sortColumn || defaultFilterOrderColumn,
+        sortOrder: filterState.sortOrder || defaultFilterOrderDirection,
+        whereField: filterState.whereField || "",
+        whereFieldValue: filterState.whereFieldValue || "",
+        whereOperator: filterState.whereOperator || "",
+        pageNumber: filterState.pageNumber || 0,
+        columnVisibilityModel: filterState.columnVisibilityModel || {},
       });
+    }
   };
 
   const updateFilterState = (state: GridDataFilterState) => {
@@ -161,8 +172,8 @@ export const DataList = ({
   const getDataListAsync = () => {
     setBusy(async () => {
       const result = await getModelDataList(
-        `${searchTerm}&${basicFilterQuery}${whereFilterQuery}`,
-        `${searchTerm}&${basicExportFilterQuery}${whereFilterQuery}`
+        `${searchTerm}&${basicFilterQuery || ""}${whereFilterQuery || ""}`,
+        `${searchTerm}&${basicExportFilterQuery || ""}${whereFilterQuery || ""}`
       );
       if (result) {
         const { data, headers } = result;
@@ -180,27 +191,29 @@ export const DataList = ({
   };
 
   const gridInitialState = gridSettings && {
-    filter: {
+    filter: gridSettings.whereField && gridSettings.whereFieldValue ? {
       filterModel: {
         items: [
           {
-            columnField: gridSettings.whereField,
-            operatorValue: gridSettings.whereOperator,
+            field: gridSettings.whereField,
+            operator: gridSettings.whereOperator || "eq",
             value: gridSettings.whereFieldValue,
           },
         ],
       },
-    },
+    } : undefined,
     sorting: {
       sortModel: [
         { field: gridSettings.sortColumn, sort: gridSettings.sortOrder as GridSortDirection },
       ],
     },
     pagination: {
-      page: gridSettings.pageNumber,
-      pageSize: gridSettings.filterLimit,
+      paginationModel: {
+        page: gridSettings.pageNumber || 0,
+        pageSize: gridSettings.filterLimit || defaultFilterLimit,
+      }
     },
-    columns: { columnVisibilityModel: gridSettings.columnVisibilityModel },
+    columns: { columnVisibilityModel: gridSettings.columnVisibilityModel || {} },
   };
 
   return filterState && totalRowCount != undefined ? (
@@ -227,3 +240,4 @@ export const DataList = ({
 };
 
 export { default as DateValueFormatter } from "./date-value-formatter";
+export { default as DateValueGetter } from "./date-value-getter";

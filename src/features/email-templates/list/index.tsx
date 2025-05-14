@@ -1,4 +1,4 @@
-import { DataList, DateValueFormatter } from "@components/data-list";
+import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { CsvExport } from "@components/export";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
@@ -61,13 +61,15 @@ const columns: GridColDef<EmailTemplateDetailsDto>[] = [
     field: "createdAt",
     headerName: "Created At",
     flex: 2,
-    valueGetter: DateValueFormatter,
+    valueGetter: DateValueGetter,
+    valueFormatter: DateValueFormatter,
   },
   {
     field: "updatedAt",
     headerName: "Updated At",
     flex: 2,
-    valueGetter: DateValueFormatter,
+    valueGetter: DateValueGetter,
+    valueFormatter: DateValueFormatter,
   },
 ];
 

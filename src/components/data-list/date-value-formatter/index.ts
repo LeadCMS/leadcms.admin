@@ -1,9 +1,9 @@
-const DateValueFormatter = (params: any) => {
-  const value = params.value as string | undefined;
-  if (value === undefined || value === "") {
-    return "-";
-  }
-  return new Date(value).toLocaleDateString();
+const DateValueFormatter = (value: Date | string | null) => {
+  if (!value) return "-";
+  
+  return value instanceof Date 
+    ? value.toLocaleDateString() 
+    : new Date(value).toLocaleDateString();
 };
 
 export default DateValueFormatter;
