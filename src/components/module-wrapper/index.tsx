@@ -10,6 +10,8 @@ import {
   AddButtonContainer,
   CenteredCircularProgress,
   ExtraActionsContainer,
+  FixedActionBar,
+  FormContainer,
   LeftContainer,
   LoadingIndicatorContainer,
   ModuleContentContainer,
@@ -29,6 +31,8 @@ export interface ModuleWrapperProps extends PropsWithChildren {
   extraActionsContainerChildren?: ReactNode | undefined;
   addButtonContainerChildren?: ReactNode | undefined;
   saveIndicatorElement?: ReactNode | undefined;
+  actionButtons?: ReactNode | undefined;
+  isForm?: boolean;
 }
 
 export const ModuleWrapper = ({
@@ -38,6 +42,8 @@ export const ModuleWrapper = ({
   extraActionsContainerChildren,
   addButtonContainerChildren,
   saveIndicatorElement,
+  actionButtons,
+  isForm = false,
   children,
 }: ModuleWrapperProps) => {
   const { isSaving, isBusy } = useModuleWrapperContext();
@@ -45,8 +51,8 @@ export const ModuleWrapper = ({
   return (
     <ModuleContainer>
       <ModuleHeaderContainer>
-        <Grid container direction={"row"} justifyContent={"space-between"}>
-          <Grid item>
+        <Grid container direction={"row"} justifyContent={"space-between"} sx={{ pt: 2 }}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <ModuleHeaderSubtitleContainer>
               <BreadCrumbNavigation
                 links={breadcrumbs}
@@ -55,7 +61,7 @@ export const ModuleWrapper = ({
             </ModuleHeaderSubtitleContainer>
           </Grid>
           {isSaving && saveIndicatorElement && (
-            <Grid item>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <SavingIndicatorContainer>{saveIndicatorElement}</SavingIndicatorContainer>
             </Grid>
           )}
@@ -77,7 +83,14 @@ export const ModuleWrapper = ({
         </ActionsContainer>
       )}
       <ModuleContentContainer>
-        <ScrollContainer id="scrollTarget">{children}</ScrollContainer>
+        <ScrollContainer id="scrollTarget">
+          {isForm ? <FormContainer>{children}</FormContainer> : children}
+        </ScrollContainer>
+        {actionButtons && (
+          <FixedActionBar>
+            {actionButtons}
+          </FixedActionBar>
+        )}
         {isBusy && (
           <>
             <LoadingIndicatorContainer />

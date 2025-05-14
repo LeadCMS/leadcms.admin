@@ -1,8 +1,7 @@
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "providers/theme-provider";
-import { AppHeader } from "components/app-header";
-import { Sidebar } from "@components/side-bar";
-import { AppLayoutContainer, MainContentContainer } from "components/layout";
+import { AppLayout } from "@components/app-layout";
+import { MainContentContainer } from "components/layout";
 import { coreModuleRoute, rootRoute } from "@lib/router";
 import { ModuleLoader } from "@features/module-loader";
 import { RequestProvider } from "@providers/request-provider";
@@ -28,13 +27,9 @@ export const App = () => {
                     <Route
                       path={rootRoute}
                       element={
-                        <AppLayoutContainer>
-                          <AppHeader />
-                          <Sidebar />
-                          <MainContentContainer>
-                            <Outlet />
-                          </MainContentContainer>
-                        </AppLayoutContainer>
+                        <AppLayout>
+                          <Outlet />
+                        </AppLayout>
                       }
                     >
                       <Route path={rootRoute} element={<ModuleLoader />} />

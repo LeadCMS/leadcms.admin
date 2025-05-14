@@ -255,12 +255,12 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     <Box sx={{ 
       display: "flex", 
       alignItems: "center", 
-      mb: 1.5, 
-      mt: 3,
-      pb: 0.5,
+      mb: 2.5, 
+      mt: 4,
+      pb: 1,
       borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
     }}>
-      <Box sx={{ mr: 1, display: "flex", color: "primary.main" }}>{icon}</Box>
+      <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
       <Typography variant="subtitle1" fontWeight="500" color="primary.main">
         {title}
       </Typography>
@@ -272,15 +272,42 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       breadcrumbs={contactFormBreadcrumbLinks}
       currentBreadcrumb={header}
       saveIndicatorElement={<SavingBar />}
+      isForm={true}
+      actionButtons={
+        <>
+          <Button
+            disabled={isLoading || formik.isSubmitting}
+            variant="outlined"
+            color="inherit"
+            onClick={handleCancel}
+            startIcon={<CancelIcon />}
+            size="medium"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isLoading || formik.isSubmitting}
+            variant="contained"
+            color="primary"
+            startIcon={<SaveIcon />}
+            size="medium"
+            onClick={() => formik.handleSubmit()}
+          >
+            {isEdit ? "Save" : "Add"}
+          </Button>
+        </>
+      }
     >
       <form onSubmit={formik.handleSubmit}>
         <Paper elevation={0} sx={{ 
           borderRadius: "8px", 
           overflow: "hidden",
-          border: "1px solid rgba(0, 0, 0, 0.12)"
+          border: "1px solid rgba(0, 0, 0, 0.12)",
+          mb: 4
         }}>
           <Box sx={{ 
-            p: { xs: 2, sm: 3 }, 
+            p: { xs: 2, sm: 2.5 }, 
             display: "flex", 
             flexDirection: isMobile ? "column" : "row",
             alignItems: isMobile ? "center" : "flex-start",
@@ -309,10 +336,10 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
             </Box>
           </Box>
           
-          <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ p: { xs: 2.5, sm: 3 } }}>
             <SectionHeader icon={<PersonIcon />} title="Personal Information" />
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 6, sm: 2 }}>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Autocomplete
                   id="prefix"
                   options={prefixOptions}
@@ -324,7 +351,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   renderInput={(params) => <TextField {...params} label="Prefix" />}
                 />
               </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
+              <Grid size={{ xs: 12, sm: 8 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="First Name"
@@ -339,7 +366,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 4, sm: 2 }}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Middle"
@@ -352,7 +379,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 8, sm: 5 }}>
+              <Grid size={{ xs: 12, sm: 8 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Last Name"
@@ -393,7 +420,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
             </Grid>
 
             <SectionHeader icon={<ContactsIcon />} title="Contact Information" />
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
@@ -426,8 +453,8 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
             </Grid>
 
             <SectionHeader icon={<WorkIcon />} title="Job Information" />
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Job title"
@@ -440,7 +467,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 7, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Company"
@@ -453,7 +480,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 5, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Department"
@@ -469,7 +496,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
             </Grid>
 
             <SectionHeader icon={<HomeIcon />} title="Address" />
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
@@ -496,7 +523,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 7, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="City"
@@ -509,7 +536,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 5, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="State"
@@ -522,7 +549,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 4, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Zip"
@@ -535,7 +562,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 8, sm: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 {!isLoading && (
                   <Autocomplete
                     disabled={isLoading || formik.isSubmitting}
@@ -599,9 +626,9 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
             </Grid>
 
             <SectionHeader icon={<ShareIcon />} title="Social Media" />
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               {["facebook", "instagram", "twitter", "linkedin"].map((platform) => (
-                <Grid size={{ xs: 6, sm: 6, md: 3 }} key={platform}>
+                <Grid size={{ xs: 12, sm: 6 }} key={platform}>
                   <TextField
                     disabled={isLoading || formik.isSubmitting}
                     label={platform.charAt(0).toUpperCase() + platform.slice(1)}
@@ -622,35 +649,6 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
             </Grid>
           </Box>
         </Paper>
-
-        <Box sx={{ 
-          display: "flex", 
-          justifyContent: isMobile ? "center" : "flex-end",
-          gap: 2,
-          mt: 3,
-          mb: 3
-        }}>
-          <Button
-            disabled={isLoading || formik.isSubmitting}
-            variant="outlined"
-            color="inherit"
-            onClick={handleCancel}
-            startIcon={<CancelIcon />}
-            size={isMobile ? "small" : "medium"}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isLoading || formik.isSubmitting}
-            variant="contained"
-            color="primary"
-            startIcon={<SaveIcon />}
-            size={isMobile ? "small" : "medium"}
-          >
-            {isEdit ? "Save" : "Add"}
-          </Button>
-        </Box>
       </form>
     </ModuleWrapper>
   );

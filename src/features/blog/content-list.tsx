@@ -21,8 +21,6 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { totalCountHeaderName } from "@providers/query-provider";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { useNavigate } from "react-router-dom";
-import { useRouteParams } from "typesafe-routes";
-import { coreModuleRoute } from "@lib/router";
 
 export const ContentList = () => {
   const { setBusy } = useModuleWrapperContext();
@@ -134,9 +132,9 @@ const ItemCard = ({ item, index }: ItemProps) => {
     return <DummyDiv />;
   }
   return (
-    <Grid item key={`card-${index}`} sm="auto" xs="auto">
+    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={`card-${index}`}>
       <Card
-        sx={{ width: 345, height: 500 }}
+        sx={{ height: 500 }}
         style={{
           position: "relative",
         }}
@@ -160,7 +158,7 @@ const ItemCard = ({ item, index }: ItemProps) => {
         </CardActionArea>
         <CardActions style={{ position: "absolute", bottom: 0, width: "100%" }}>
           <Grid container spacing={1}>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Button size="small" color="primary" onClick={onClickView}>
                 View
               </Button>
@@ -168,7 +166,7 @@ const ItemCard = ({ item, index }: ItemProps) => {
                 Edit
               </Button>
             </Grid>
-            <Grid item xs={6} style={{ display: "flex", justifyContent: "flex-end" }}>
+            <Grid size={{ xs: 6 }} sx={{ display: "flex", justifyContent: "flex-end" }}>
               <TimestampContainer>
                 {item.publishedAt && new Date(item.publishedAt).toLocaleDateString()}
               </TimestampContainer>

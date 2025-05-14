@@ -5,20 +5,43 @@ import {
   ListItemText,
   ListSubheader,
   styled,
+  IconButton,
 } from "@mui/material";
 
-export const SidebarStyled = styled(Drawer)`
-  overflow: hidden;
-  grid-area: sidebar;
-
-  & .MuiDrawer-paper {
+export const SidebarStyled = styled(Drawer)(
+  ({ theme }) => `
+  width: 260px;
+  flex-shrink: 0;
+  
+  .MuiDrawer-paper {
+    width: 260px;
+    overflow-y: auto;
+    height: 100vh;
     box-sizing: border-box;
-    position: static;
+    border-right: 1px solid ${theme.palette.divider};
+    background-color: ${theme.palette.background.paper};
+    position: fixed;
+    top: 64px; // Adjust based on your header height
+    padding-bottom: 64px;
+  }
+`
+);
+
+export const MobileDrawerToggle = styled(IconButton)`
+  position: fixed;
+  top: ${({ theme }) => theme.spacing(2)};
+  left: ${({ theme }) => theme.spacing(2)};
+  z-index: 1201;
+  background-color: ${({ theme }) => theme.palette.primary.main};
+  color: white;
+  &:hover {
+    background-color: ${({ theme }) => theme.palette.primary.dark};
+  }
+  
+  @media (min-width: ${({ theme }) => theme.breakpoints.values.md}px) {
+    display: none;
   }
 `;
-SidebarStyled.defaultProps = {
-  variant: "permanent",
-};
 
 export const ListSubheaderStyled = styled(ListSubheader)`
   font-size: ${({ theme }) => theme.typography.subtitle1.fontSize};

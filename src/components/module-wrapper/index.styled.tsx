@@ -29,15 +29,43 @@ export const AddButtonContainer = styled("div")`
 export const ModuleContentContainer = styled("div")`
   position: relative;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
 export const ScrollContainer = styled("div")`
   overflow-y: auto;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
+  flex: 1;
+`;
+
+export const FormContainer = styled("div")`
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+`;
+
+export const FixedActionBar = styled("div")`
+  position: fixed;
   bottom: 0;
+  right: 0;
+  left: 260px; /* Match the sidebar width */
+  background: ${({ theme }) => theme.palette.background.paper};
+  display: flex;
+  justify-content: flex-end;
+  gap: ${({ theme }) => theme.spacing(3)};
+  padding: ${({ theme }) => theme.spacing(3)};
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.values.md}px) {
+    left: 0;
+    justify-content: center;
+  }
+
+  .sidebar-hidden & {
+    left: 0;
+  }
 `;
 
 export const LoadingIndicatorContainer = styled("div")`

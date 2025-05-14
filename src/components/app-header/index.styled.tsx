@@ -10,6 +10,7 @@ export const AppBarStyled = styled(AppBar)`
 
 export const AppBarToolbar = styled(Toolbar)`
   justify-content: space-between;
+  min-height: 64px;
 `;
 
 export const LogoutStyled = styled(Logout)`
@@ -20,6 +21,19 @@ export const LogoutStyled = styled(Logout)`
 export const LogoImg = styled("img")`
   width: 32px;
   height: 32px;
+  display: flex;
 `;
 
-export const LogoComponent = () => <LogoImg src="/images/icon-192x192.png" alt="LeadCMS Logo" />;
+export const LogoContainer = styled("div")`
+  display: flex;
+  align-items: center;
+`;
+
+export const LogoComponent = () => (
+  <LogoContainer>
+    <LogoImg 
+      src="/images/icon-192x192.png" 
+      alt="LeadCMS Logo" 
+    />
+  </LogoContainer>
+);

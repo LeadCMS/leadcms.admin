@@ -58,5 +58,23 @@ export const DataListContainer = styled("div")`
   display: flex;
   flex-flow: column;
   height: 100%;
+  width: 100%;
   gap: ${({ theme }) => theme.spacing(6)};
+  
+  .MuiDataGrid-root {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .MuiDataGrid-columnHeaders {
+    width: 100% !important;
+  }
+  
+  .MuiDataGrid-columnHeadersInner {
+    width: 100% !important;
+  }
+
+  .MuiDataGrid-footerContainer {
+    width: 100%;
+  }
 `;

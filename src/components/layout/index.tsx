@@ -16,12 +16,13 @@ export const AppLayoutContainer = ({ children }: PropsWithChildren) => {
   return <AppLayoutContainerStyled>{children}</AppLayoutContainerStyled>;
 };
 
-export const MainContentContainer = styled(Box)`
-  grid-area: main;
+// Changing this from Box to div to avoid duplicate main element
+export const MainContentContainer = styled("div")`
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  width: 100%;
   background-color: ${({ theme: { palette } }) => palette.background.default};
-  padding: ${({ theme }) => theme.spacing(1, 6, 6, 6)};
+  padding: ${({ theme }) => theme.spacing(1, 3, 6, 3)};
   overflow: auto;
 `;
-MainContentContainer.defaultProps = {
-  component: "main",
-};
