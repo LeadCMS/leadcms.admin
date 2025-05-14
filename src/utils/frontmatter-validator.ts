@@ -7,9 +7,10 @@ const FrontmatterSideMenu = zod.object({
 });
 
 const FrontmatterValidationScheme = zod.object({
-  SeoTitle: zod.string(),
-  SeoDescription: zod.string(),
-  avatar: zod.string(),
+  seoTitle: zod.string().optional(),
+  seoKeywords: zod.string().optional(),
+  seoDescription: zod.string().optional(),
+  avatar: zod.string().optional(),
   sidemenu: FrontmatterSideMenu.array().optional(),
   sourceHref: zod.string().url().optional(),
 });

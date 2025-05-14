@@ -11,7 +11,6 @@ import "./styles.css";
 import { useNotificationsService } from "@hooks";
 import { ContentEditMaximumImageSize } from "@features/blog/content-edit/validation";
 import { useRequestContext } from "@providers/request-provider";
-import { useUserInfo } from "@providers/user-provider";
 
 const ImageUploadingCtx = createContext<ImageUploadingContext | null>(null);
 
@@ -141,7 +140,7 @@ const MarkdownEditor = ({
       accept={{ key: ["image/*"] } as Accept}
       noClick
     >
-      {({ getRootProps, getInputProps, isDragAccept }) => (
+      {({ getRootProps, getInputProps }) => (
         <div {...getRootProps()}>
           <input {...getInputProps()} />
           <ImageUploadingCtx.Provider value={currentImageCtxValue}>
@@ -157,7 +156,7 @@ const MarkdownEditor = ({
               style={{ padding: 0 }}
               highlightEnable
               components={{
-                preview: (value) => {
+                preview: () => {
                   return MarkdownViewerFunc(`${currentError}${strippedValue}`);
                 },
                 textarea: () => EditorViewFunc(value, onChange, onErrorChange),
