@@ -7,8 +7,8 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { useRequestContext } from "@providers/request-provider";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { useLocation, useNavigate } from "react-router-dom";
-import { contactLogsRoute, getViewFormRoute, viewFormRoute } from "@lib/router";
+import { useNavigate } from "react-router-dom";
+import { getViewFormRoute, viewFormRoute } from "@lib/router";
 import { useEffect, useState } from "react";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRouteParams } from "typesafe-routes";
@@ -76,7 +76,7 @@ export const ContactLogs = () => {
     {
       field: "data",
       headerName: "Data",
-      flex: 2,      
+      flex: 2,
       hide: true,
     },
     {

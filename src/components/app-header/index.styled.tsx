@@ -22,6 +22,4 @@ export const LogoImg = styled("img")`
   height: 32px;
 `;
 
-export const LogoComponent = () => (
-  <LogoImg src="/images/icon-192x192.png" alt="LeadCMS Logo" />
-);
+export const LogoComponent = () => <LogoImg src="/images/icon-192x192.png" alt="LeadCMS Logo" />;

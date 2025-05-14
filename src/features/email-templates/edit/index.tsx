@@ -330,12 +330,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                       </Button>
                     </Grid>
                     <Grid item xs={2}>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        fullWidth
-                        size="large"
-                      >
+                      <Button type="submit" variant="contained" fullWidth size="large">
                         Save
                       </Button>
                     </Grid>

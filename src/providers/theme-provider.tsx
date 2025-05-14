@@ -56,7 +56,7 @@ export const themeOptions: ThemeOptions = {
       primary: "rgba(56, 120, 255, 0.08)",
       primaryHover: "rgba(56, 120, 255, 0.04)",
     },
-  }
+  },
 };
 
 const mainTheme = createTheme(themeOptions);

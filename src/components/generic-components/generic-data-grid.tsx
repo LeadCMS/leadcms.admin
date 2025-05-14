@@ -244,7 +244,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
       pagination
       paginationModel={{
         page: pageNumber,
-        pageSize: pageSize
+        pageSize: pageSize,
       }}
       paginationMode="server"
       onPaginationModelChange={(model) => {
@@ -266,7 +266,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
 // Helper function to map schema types to GridColType
 function mapToGridColType(schemaType: string | undefined): GridColType | undefined {
   if (!schemaType) return undefined;
-  
+
   switch (schemaType) {
     case "string":
       return "string";

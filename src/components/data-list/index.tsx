@@ -84,9 +84,9 @@ export const DataList = <TModel extends GridValidRowModel>({
       filterState.skipLimit || 0
     );
   const basicExportFilterQuery =
-    filterState && 
+    filterState &&
     getBasicExportFilterQuery(
-      filterState.sortColumn || defaultFilterOrderColumn, 
+      filterState.sortColumn || defaultFilterOrderColumn,
       filterState.sortOrder || defaultFilterOrderDirection
     );
 
@@ -191,17 +191,20 @@ export const DataList = <TModel extends GridValidRowModel>({
   };
 
   const gridInitialState = gridSettings && {
-    filter: gridSettings.whereField && gridSettings.whereFieldValue ? {
-      filterModel: {
-        items: [
-          {
-            field: gridSettings.whereField,
-            operator: gridSettings.whereOperator || "eq",
-            value: gridSettings.whereFieldValue,
-          },
-        ],
-      },
-    } : undefined,
+    filter:
+      gridSettings.whereField && gridSettings.whereFieldValue
+        ? {
+            filterModel: {
+              items: [
+                {
+                  field: gridSettings.whereField,
+                  operator: gridSettings.whereOperator || "eq",
+                  value: gridSettings.whereFieldValue,
+                },
+              ],
+            },
+          }
+        : undefined,
     sorting: {
       sortModel: [
         { field: gridSettings.sortColumn, sort: gridSettings.sortOrder as GridSortDirection },
@@ -211,7 +214,7 @@ export const DataList = <TModel extends GridValidRowModel>({
       paginationModel: {
         page: gridSettings.pageNumber || 0,
         pageSize: gridSettings.filterLimit || defaultFilterLimit,
-      }
+      },
     },
     columns: { columnVisibilityModel: gridSettings.columnVisibilityModel || {} },
   };

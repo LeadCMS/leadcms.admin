@@ -84,7 +84,7 @@ export const DataTableGrid = ({
     navigate(getViewFormRoute(row.id!), { state: row });
   };
 
-  const handlePaginationModelChange = (model: { page: number, pageSize: number }) => {
+  const handlePaginationModelChange = (model: { page: number; pageSize: number }) => {
     if (setFilterState) {
       setFilterState({
         pageNumber: model.page,
