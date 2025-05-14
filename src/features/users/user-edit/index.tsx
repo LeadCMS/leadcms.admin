@@ -158,11 +158,11 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
               </Box>
               <TabPanel value={currentPanel} index={0}>
                 <Grid container gap={"2rem"} direction={"column"}>
-                  <Grid item>
+                  <Grid size={{ xs: 12 }}>
                     <Typography>Basic Info</Typography>
                   </Grid>
-                  <Grid item container direction={"row"} gap={"2rem"}>
-                    <Grid item>
+                  <Grid sx={{ display: "flex", flexDirection: "row", gap: "2rem" }}>
+                    <Grid>
                       <Badge
                         overlap="circular"
                         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
@@ -188,16 +188,17 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                         />
                       </Badge>
                     </Grid>
-                    <Grid item container direction={"column"} xs={6} justifyContent={"center"}>
-                      <Grid item>
+                    <Grid sx={{ display: "flex", flexDirection: "column" }} size={{ xs: 6 }} 
+                          justifyContent={"center"}>
+                      <Grid>
                         <Typography>Display name: {formik.values.displayName}</Typography>
                       </Grid>
-                      <Grid item>
+                      <Grid>
                         <Typography>Email: {formik.values.email}</Typography>
                       </Grid>
                     </Grid>
                   </Grid>
-                  <Grid item xs={6} sm={6}>
+                  <Grid size={{ xs: 6, sm: 6 }}>
                     <TextField
                       disabled={readonly}
                       label="Display Name"
@@ -210,7 +211,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                       onChange={valueUpdate}
                     />
                   </Grid>
-                  <Grid item xs={6} sm={6}>
+                  <Grid size={{ xs: 6, sm: 6 }}>
                     <TextField
                       disabled={readonly}
                       label="Username"
@@ -224,7 +225,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                     />
                   </Grid>
                   {!id && (
-                    <Grid item xs={6} sm={6}>
+                    <Grid size={{ xs: 6, sm: 6 }}>
                       <TextField
                         disabled={readonly}
                         label="Email"
@@ -241,14 +242,13 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                 </Grid>
                 {!readonly && (
                   <Grid
-                    container
-                    item
                     spacing={3}
                     sx={{
+                      display: "flex",
                       marginTop: "1rem",
                     }}
                   >
-                    <Grid item xs={1}>
+                    <Grid size={{ xs: 1 }}>
                       <Button
                         disabled={formik.isSubmitting}
                         variant="outlined"
@@ -259,7 +259,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                         Cancel
                       </Button>
                     </Grid>
-                    <Grid item xs={1}>
+                    <Grid size={{ xs: 1 }}>
                       <Button type="submit" variant="contained" fullWidth>
                         Save
                       </Button>
@@ -271,7 +271,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
           </Card>
           {id && readonly && (
             <Grid container spacing={3} marginTop={1}>
-              <Grid item xs={8} sm={8}>
+              <Grid size={{ xs: 8, sm: 8 }}>
                 <DataManagementBlock
                   header="Data Management"
                   description="Please be aware that what

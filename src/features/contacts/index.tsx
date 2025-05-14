@@ -93,7 +93,7 @@ export const Contacts = () => {
       renderCell: ({ row }) => (
         <ContactNameListItem>
           <ListItemAvatar>
-            <Avatar src={row.avatarUrl!}></Avatar>
+            <Avatar src={row.avatarUrl}></Avatar>
           </ListItemAvatar>
           <ContactNameListItemText
             primary={`${row.firstName || ""} ${row.lastName || ""}`}

@@ -1,7 +1,6 @@
 import {
   addFormRoute,
   detailsRoute,
-  contactInvoicesRoute,
   contactLogsRoute,
   editFormRoute,
   viewFormRoute,
@@ -12,7 +11,6 @@ import { ContactEdit } from "./edit";
 import { ContactsLazy } from "./lazy";
 import { ContactView } from "./view/details";
 import { ContactBase } from "./view";
-import { ContactInvoices } from "./view/invoices";
 import { ContactLogs } from "./view/logs";
 
 export const ContactsModule = () => {

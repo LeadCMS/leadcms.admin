@@ -2,13 +2,15 @@ import { ChangeEvent, SyntheticEvent, useEffect, useState } from "react";
 import {
   Autocomplete,
   Button,
-  CardContent,
-  Divider,
-  Grid,
-  IconButton,
   InputAdornment,
   TextField,
   Typography,
+  Box,
+  Paper,
+  Avatar,
+  Grid,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { ContactDetailsDto } from "lib/network/swagger-client";
 import { CoreModule } from "lib/router";
@@ -25,10 +27,22 @@ import { toFormikValidationSchema } from "zod-formik-adapter";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { DateField } from "@mui/x-date-pickers";
-import LinkIcon from "@mui/icons-material/Link";
 import dayjs, { Dayjs } from "dayjs";
-import { CardContainer } from "../index.styled";
 import { languages, prefixOptions, timezones } from "utils/constants";
+
+// Icons
+import PersonIcon from "@mui/icons-material/Person";
+import ContactsIcon from "@mui/icons-material/Contacts";
+import HomeIcon from "@mui/icons-material/Home";
+import WorkIcon from "@mui/icons-material/Work";
+import ShareIcon from "@mui/icons-material/Share";
+import LinkIcon from "@mui/icons-material/Link";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import InstagramIcon from "@mui/icons-material/Instagram";
+import TwitterIcon from "@mui/icons-material/Twitter";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 interface ContactFormProps {
   contact: ContactDetailsDto;
@@ -46,12 +60,22 @@ type Continent = {
   name: string;
 };
 
+interface SocialMedia {
+  [key: string]: string;
+}
+
 export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) => {
   const { notificationsService } = useNotificationsService();
   const context = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
-  const { setSaving, setBusy } = useModuleWrapperContext();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { setBusy } = useModuleWrapperContext();
+  const showErrorModal = useErrorDetailsModal()?.Show;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const noopErrorHandler = (errors: string[]) => { 
+    console.log("Error occurred but error modal is not available:", errors);
+  };
 
   const [countryList, setCountryList] = useState<Country[]>([]);
   const [continentList, setContinentList] = useState<Continent[]>([]);
@@ -91,15 +115,12 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       helpers,
       submitFunc,
       notificationsService,
-      showErrorModal,
+      showErrorModal || noopErrorHandler,
       "contact"
     );
   };
 
-  const submitFunc = async (
-    values: ContactDetailsDto,
-    helpers: FormikHelpers<ContactDetailsDto>
-  ) => {
+  const submitFunc = async (values: ContactDetailsDto) => {
     try {
       await handleSave(values);
       handleNavigation(CoreModule.contacts);
@@ -115,12 +136,31 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     firstName: zod.string().nullable().optional(),
   });
 
-  const formik = useFormik({
+  const formik = useFormik<ContactDetailsDto>({
     validationSchema: toFormikValidationSchema(ContactEditValidationScheme),
     initialValues: {
       email: "",
-      timezone: null,
-    },
+      timezone: null as number | null,
+      firstName: "",
+      lastName: "",
+      prefix: "",
+      middleName: "",
+      socialMedia: {} as SocialMedia,
+      countryCode: null as string | null,
+      continentCode: null as string | null,
+      cityName: "",
+      address1: "",
+      address2: "",
+      jobTitle: "",
+      companyName: "",
+      department: "",
+      state: "",
+      zip: "",
+      phone: "",
+      language: "",
+      birthday: null,
+      id: 0,
+    } as ContactDetailsDto,
     onSubmit: submit,
     validateOnChange: false,
   });
@@ -171,8 +211,9 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     key: string
   ) => {
-    const socialMedia = { ...formik.values.socialMedia };
-    (socialMedia![key] = e.target.value), formik.setFieldValue("socialMedia", socialMedia);
+    const socialMedia = { ...formik.values.socialMedia } as SocialMedia;
+    socialMedia[key] = e.target.value;
+    formik.setFieldValue("socialMedia", socialMedia);
   };
 
   const handleDateChange = (newValue: Dayjs | null) => {
@@ -185,6 +226,47 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     handleNavigation(CoreModule.contacts);
   };
 
+  const getSocialMediaIcon = (platform: string) => {
+    switch (platform) {
+      case "facebook": return <FacebookIcon color="primary" />;
+      case "instagram": return <InstagramIcon sx={{ color: "#E1306C" }} />;
+      case "twitter": return <TwitterIcon sx={{ color: "#1DA1F2" }} />;
+      case "linkedin": return <LinkedInIcon sx={{ color: "#0077B5" }} />;
+      default: return <LinkIcon />;
+    }
+  };
+
+  const getInitials = () => {
+    const firstName = formik.values.firstName || "";
+    const lastName = formik.values.lastName || "";
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  const getFullName = () => {
+    const prefix = formik.values.prefix ? `${formik.values.prefix} ` : "";
+    const firstName = formik.values.firstName || "";
+    const middleName = formik.values.middleName ? `${formik.values.middleName} ` : "";
+    const lastName = formik.values.lastName || "";
+    
+    return `${prefix}${firstName} ${middleName}${lastName}`.trim() || "New Contact";
+  };
+
+  const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
+    <Box sx={{ 
+      display: "flex", 
+      alignItems: "center", 
+      mb: 1.5, 
+      mt: 3,
+      pb: 0.5,
+      borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
+    }}>
+      <Box sx={{ mr: 1, display: "flex", color: "primary.main" }}>{icon}</Box>
+      <Typography variant="subtitle1" fontWeight="500" color="primary.main">
+        {title}
+      </Typography>
+    </Box>
+  );
+
   return (
     <ModuleWrapper
       breadcrumbs={contactFormBreadcrumbLinks}
@@ -192,13 +274,45 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       saveIndicatorElement={<SavingBar />}
     >
       <form onSubmit={formik.handleSubmit}>
-        <CardContainer>
-          <CardContent>
-            <Grid container spacing={4} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
-                <Typography variant="h6">Personal data</Typography>
-              </Grid>
-              <Grid xs={12} sm={1.5} item>
+        <Paper elevation={0} sx={{ 
+          borderRadius: "8px", 
+          overflow: "hidden",
+          border: "1px solid rgba(0, 0, 0, 0.12)"
+        }}>
+          <Box sx={{ 
+            p: { xs: 2, sm: 3 }, 
+            display: "flex", 
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "center" : "flex-start",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
+            backgroundColor: "rgba(0, 0, 0, 0.02)",
+            gap: 2
+          }}>
+            <Avatar 
+              sx={{ 
+                width: { xs: 60, sm: 72 }, 
+                height: { xs: 60, sm: 72 }, 
+                bgcolor: "primary.main",
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                fontWeight: "bold"
+              }}
+            >
+              {getInitials()}
+            </Avatar>
+            <Box sx={{ textAlign: isMobile ? "center" : "left" }}>
+              <Typography variant={isMobile ? "h6" : "h5"} fontWeight="medium">
+                {getFullName()}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {formik.values.email || "No email provided"}
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ p: { xs: 2, sm: 3 } }}>
+            <SectionHeader icon={<PersonIcon />} title="Personal Information" />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 6, sm: 2 }}>
                 <Autocomplete
                   id="prefix"
                   options={prefixOptions}
@@ -210,61 +324,61 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   renderInput={(params) => <TextField {...params} label="Prefix" />}
                 />
               </Grid>
-              <Grid xs={12} sm={3} item>
+              <Grid size={{ xs: 6, sm: 3 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="First Name"
                   name="firstName"
                   value={formik.values.firstName || ""}
-                  placeholder="Enter first name"
+                  placeholder="First name"
                   variant="outlined"
                   onChange={formik.handleChange}
                   error={formik.touched.firstName && Boolean(formik.errors.firstName)}
                   helperText={formik.touched.firstName && formik.errors.firstName}
                   size="small"
                   fullWidth
-                ></TextField>
+                />
               </Grid>
-              <Grid xs={12} sm={3.5} item>
+              <Grid size={{ xs: 4, sm: 2 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
-                  label="Middle Name"
+                  label="Middle"
                   name="middleName"
                   value={formik.values.middleName || ""}
-                  placeholder="Enter middle name"
+                  placeholder="Middle"
                   variant="outlined"
                   onChange={formik.handleChange}
                   size="small"
                   fullWidth
-                ></TextField>
+                />
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 8, sm: 5 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Last Name"
                   name="lastName"
                   value={formik.values.lastName || ""}
-                  placeholder="Enter last name"
+                  placeholder="Last name"
                   variant="outlined"
                   onChange={formik.handleChange}
                   size="small"
                   fullWidth
-                ></TextField>
+                />
               </Grid>
-              <Grid xs={12} sm={2} item>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Autocomplete
                   disabled={isLoading || formik.isSubmitting}
                   options={languages}
                   getOptionLabel={(option) => option.label}
-                  placeholder="Select language"
                   size="small"
                   fullWidth
                   value={languages.find((c) => c.value === formik.values.language) || null}
-                  renderInput={(params) => <TextField {...params} label="Language" />}
+                  renderInput={(params) => 
+                    <TextField {...params} label="Language" placeholder="Select language" />}
                   onChange={handleLanguageChange}
                 />
               </Grid>
-              <Grid xs={12} sm={2} item>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <DateField
                   disabled={isLoading || formik.isSubmitting}
                   label="Birthday"
@@ -277,20 +391,16 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                 />
               </Grid>
             </Grid>
-            <Divider></Divider>
-            <Grid container spacing={4} marginTop={2} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
-                <Typography gutterBottom variant="h6" component="div">
-                  Contact data
-                </Typography>
-              </Grid>
-              <Grid xs={12} sm={3} item>
+
+            <SectionHeader icon={<ContactsIcon />} title="Contact Information" />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Email Address"
                   name="email"
                   value={formik.values.email}
-                  placeholder="Enter email address"
+                  placeholder="Email address"
                   type="email"
                   variant="outlined"
                   onChange={formik.handleChange}
@@ -298,74 +408,137 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                   error={formik.touched.email && Boolean(formik.errors.email)}
                   helperText={formik.touched.email && formik.errors.email}
-                ></TextField>
+                />
               </Grid>
-              <Grid xs={12} sm={3} item>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Phone"
                   name="phone"
                   value={formik.values.phone || ""}
-                  placeholder="Enter phone number"
+                  placeholder="Phone number"
                   variant="outlined"
                   onChange={formik.handleChange}
                   size="small"
                   fullWidth
-                ></TextField>
+                />
               </Grid>
             </Grid>
-            <Divider></Divider>
-            <Grid container spacing={4} marginTop={2} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
-                <Typography gutterBottom variant="h6" component="div">
-                  Address
-                </Typography>
+
+            <SectionHeader icon={<WorkIcon />} title="Job Information" />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  disabled={isLoading || formik.isSubmitting}
+                  label="Job title"
+                  name="jobTitle"
+                  value={formik.values.jobTitle || ""}
+                  placeholder="Job title"
+                  variant="outlined"
+                  onChange={formik.handleChange}
+                  size="small"
+                  fullWidth
+                />
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 7, sm: 4 }}>
+                <TextField
+                  disabled={isLoading || formik.isSubmitting}
+                  label="Company"
+                  name="companyName"
+                  value={formik.values.companyName || ""}
+                  placeholder="Company"
+                  variant="outlined"
+                  onChange={formik.handleChange}
+                  size="small"
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={{ xs: 5, sm: 4 }}>
+                <TextField
+                  disabled={isLoading || formik.isSubmitting}
+                  label="Department"
+                  name="department"
+                  value={formik.values.department || ""}
+                  placeholder="Department"
+                  variant="outlined"
+                  onChange={formik.handleChange}
+                  size="small"
+                  fullWidth
+                />
+              </Grid>
+            </Grid>
+
+            <SectionHeader icon={<HomeIcon />} title="Address" />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Street address"
                   name="address1"
                   value={formik.values.address1 || ""}
-                  placeholder="Enter street address"
+                  placeholder="Street address"
                   variant="outlined"
                   onChange={formik.handleChange}
                   size="small"
                   fullWidth
-                ></TextField>
+                />
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
-                  label="Apt, suite, etc (optional)"
+                  label="Apt, suite, etc"
                   name="address2"
                   value={formik.values.address2 || ""}
-                  placeholder="Enter apt, suite, etc"
+                  placeholder="Apt, suite, etc"
                   variant="outlined"
                   onChange={formik.handleChange}
                   size="small"
                   fullWidth
-                ></TextField>
+                />
               </Grid>
-              <Grid xs={12} sm={4} item></Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 7, sm: 4 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="City"
                   name="cityName"
                   value={formik.values.cityName || ""}
-                  placeholder="Enter state"
+                  placeholder="City"
                   variant="outlined"
                   onChange={formik.handleChange}
                   size="small"
                   fullWidth
-                ></TextField>
+                />
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 5, sm: 4 }}>
+                <TextField
+                  disabled={isLoading || formik.isSubmitting}
+                  label="State"
+                  name="state"
+                  value={formik.values.state || ""}
+                  placeholder="State"
+                  variant="outlined"
+                  onChange={formik.handleChange}
+                  size="small"
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={{ xs: 4, sm: 4 }}>
+                <TextField
+                  disabled={isLoading || formik.isSubmitting}
+                  label="Zip"
+                  name="zip"
+                  value={formik.values.zip || ""}
+                  placeholder="Zip"
+                  variant="outlined"
+                  onChange={formik.handleChange}
+                  size="small"
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={{ xs: 8, sm: 6 }}>
                 {!isLoading && (
                   <Autocomplete
                     disabled={isLoading || formik.isSubmitting}
-                    disablePortal
                     options={countryList}
                     getOptionLabel={(option) => option.name}
                     value={countryList.find((c) => c.code === formik.values.countryCode) || null}
@@ -385,38 +558,10 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   />
                 )}
               </Grid>
-              <Grid xs={12} sm={4} item></Grid>
-              <Grid xs={12} sm={2} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="State"
-                  name="state"
-                  value={formik.values.state || ""}
-                  placeholder="Enter state"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                ></TextField>
-              </Grid>
-              <Grid xs={12} sm={2} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Zip code"
-                  name="zip"
-                  value={formik.values.zip || ""}
-                  placeholder="Enter zip"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                ></TextField>
-              </Grid>
-              <Grid xs={12} sm={2} item>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 {!isLoading && (
                   <Autocomplete
                     disabled={isLoading || formik.isSubmitting}
-                    disablePortal
                     options={continentList}
                     getOptionLabel={(option) => option.name}
                     value={
@@ -428,7 +573,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Continent code"
+                        label="Continent"
                         value={
                           continentList.find((c) => c.code === formik.values.continentCode) || null
                         }
@@ -438,178 +583,74 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   />
                 )}
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Autocomplete
                   disabled={isLoading || formik.isSubmitting}
                   options={timezones}
                   getOptionLabel={(option) => option.label}
-                  placeholder="Select language"
                   size="small"
                   fullWidth
                   value={timezones.find((c) => c.value === formik.values.timezone) || null}
-                  renderInput={(params) => <TextField {...params} label="Timezone" />}
+                  renderInput={(params) => 
+                    <TextField {...params} label="Timezone" placeholder="Select timezone" />}
                   onChange={handleTimezoneChange}
                 />
               </Grid>
             </Grid>
-            <Divider></Divider>
-            <Grid container spacing={4} marginTop={2} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
-                <Typography gutterBottom variant="h6" component="div">
-                  Job
-                </Typography>
-              </Grid>
-              <Grid xs={12} sm={2} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Job title"
-                  name="jobTitle"
-                  value={formik.values.jobTitle || ""}
-                  placeholder="Enter job title"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                ></TextField>
-              </Grid>
-              <Grid xs={12} sm={2} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Company name"
-                  name="companyName"
-                  value={formik.values.companyName || ""}
-                  placeholder="Enter company name"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                ></TextField>
-              </Grid>
-              <Grid xs={12} sm={2} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Department"
-                  name="department"
-                  value={formik.values.department || ""}
-                  placeholder="Enter department"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                ></TextField>
-              </Grid>
+
+            <SectionHeader icon={<ShareIcon />} title="Social Media" />
+            <Grid container spacing={2}>
+              {["facebook", "instagram", "twitter", "linkedin"].map((platform) => (
+                <Grid size={{ xs: 6, sm: 6, md: 3 }} key={platform}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                    size="small"
+                    value={(formik.values.socialMedia as SocialMedia)?.[platform] || ""}
+                    fullWidth
+                    onChange={(event) => handleSocialMediaChange(event, platform)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          {getSocialMediaIcon(platform)}
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+              ))}
             </Grid>
-            <Divider></Divider>
-            <Grid container spacing={4} marginTop={2} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
-                <Typography gutterBottom variant="h6" component="div">
-                  Social media
-                </Typography>
-              </Grid>
-              <Grid xs={12} sm={12} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Facebook"
-                  size="small"
-                  value={formik.values.socialMedia?.["facebook"] || ""}
-                  fullWidth
-                  onChange={(event) => handleSocialMediaChange(event, "facebook")}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <IconButton>
-                          <LinkIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid xs={12} sm={12} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Instagram"
-                  size="small"
-                  fullWidth
-                  value={formik.values.socialMedia?.["instagram"] || ""}
-                  onChange={(event) => handleSocialMediaChange(event, "instagram")}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <IconButton>
-                          <LinkIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid xs={12} sm={12} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Twitter"
-                  size="small"
-                  fullWidth
-                  value={formik.values.socialMedia?.["twitter"] || ""}
-                  onChange={(event) => handleSocialMediaChange(event, "twitter")}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <IconButton>
-                          <LinkIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid xs={12} sm={12} item>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="LinkedIn"
-                  size="small"
-                  fullWidth
-                  value={formik.values.socialMedia?.["linkedin"] || ""}
-                  onChange={(event) => handleSocialMediaChange(event, "linkedin")}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <IconButton>
-                          <LinkIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
-            <Grid container spacing={4} marginTop={2} marginBottom={4} justifyContent="flex-end">
-              <Grid item xs={1}>
-                <Button
-                  disabled={isLoading || formik.isSubmitting}
-                  type="submit"
-                  variant="outlined"
-                  color="primary"
-                  onClick={handleCancel}
-                  fullWidth
-                >
-                  Cancel
-                </Button>
-              </Grid>
-              <Grid item xs={1}>
-                <Button
-                  type="submit"
-                  disabled={isLoading || formik.isSubmitting}
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                >
-                  {isEdit ? "Save" : "Add"}
-                </Button>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </CardContainer>
+          </Box>
+        </Paper>
+
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: isMobile ? "center" : "flex-end",
+          gap: 2,
+          mt: 3,
+          mb: 3
+        }}>
+          <Button
+            disabled={isLoading || formik.isSubmitting}
+            variant="outlined"
+            color="inherit"
+            onClick={handleCancel}
+            startIcon={<CancelIcon />}
+            size={isMobile ? "small" : "medium"}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isLoading || formik.isSubmitting}
+            variant="contained"
+            color="primary"
+            startIcon={<SaveIcon />}
+            size={isMobile ? "small" : "medium"}
+          >
+            {isEdit ? "Save" : "Add"}
+          </Button>
+        </Box>
       </form>
     </ModuleWrapper>
   );

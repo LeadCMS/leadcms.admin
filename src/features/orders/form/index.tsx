@@ -8,7 +8,6 @@ import { CoreModule } from "@lib/router";
 import {
   Autocomplete,
   Button,
-  Card,
   CardContent,
   Grid,
   TextField,
@@ -36,9 +35,13 @@ interface OrderFormProps {
 export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
   const { notificationsService } = useNotificationsService();
   const { client } = useRequestContext();
-  const { setSaving, setBusy } = useModuleWrapperContext();
+  const { setBusy } = useModuleWrapperContext();
   const handleNavigation = useCoreModuleNavigation();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const showErrorModal = useErrorDetailsModal()?.Show;
+
+  const noopErrorHandler = (errors: string[]) => { 
+    console.log("Error occurred but error modal is not available:", errors);
+  };
 
   const [isLoading, setIsLoading] = useState(true);
   const [contactList, setContactList] = useState<ContactDetailsDto[]>([]);
@@ -106,7 +109,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     else return contact.email;
   };
 
-  const submitFunc = async (values: OrderDetailsDto, helpers: FormikHelpers<OrderDetailsDto>) => {
+  const submitFunc = async (values: OrderDetailsDto) => {
     try {
       await handleSave(values);
       handleNavigation(CoreModule.orders);
@@ -122,7 +125,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
       helpers,
       submitFunc,
       notificationsService,
-      showErrorModal,
+      showErrorModal || noopErrorHandler,
       "order"
     );
   };
@@ -132,16 +135,23 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     refNo: zod.string(),
     exchangeRate: zod.number().nullable().optional(),
     currency: zod.string(),
+    orderNumber: zod.string().nullable().optional(),
+    affiliateName: zod.string().nullable().optional(),
+    source: zod.string().nullable().optional(),
   });
 
-  const formik = useFormik({
+  const formik = useFormik<OrderDetailsDto>({
     validationSchema: toFormikValidationSchema(OrderEditValidationScheme),
     initialValues: {
       contactId: 0,
       refNo: "",
       exchangeRate: 0,
       currency: "",
-    },
+      orderNumber: "",
+      affiliateName: "",
+      source: "",
+      contact: undefined as unknown as ContactDetailsDto,
+    } as OrderDetailsDto,
     onSubmit: submit,
     validateOnChange: false,
   });
@@ -157,10 +167,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
           <CardContainer>
             <CardContent>
               <Grid container spacing={3} marginBottom={4}>
-                <Grid xs={12} sm={12} item>
-                  <Typography variant="h6">Contact</Typography>
-                </Grid>
-                <Grid xs={12} sm={6} item>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Autocomplete
                     disabled={formik.isSubmitting}
                     disablePortal
@@ -173,8 +180,9 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     }}
                     options={contactList}
                     getOptionLabel={(option) => getOptionLabel(option)}
-                    value={formik.values.contact || null}
-                    onChange={(event, value) => handleContactChange(value!)}
+                    value={formik.values.contact}
+                    onChange={(event, value) => 
+                      value && handleContactChange(value)}
                     onInputChange={(event, value) => {
                       loadContacts(event, value);
                     }}
@@ -186,7 +194,6 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                       <TextField
                         {...params}
                         label="Contact"
-                        value={formik.values.contact || null}
                         error={formik.touched.contactId && Boolean(formik.errors.contactId)}
                         helperText={formik.touched.contactId && formik.errors.contactId}
                       />
@@ -195,10 +202,10 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                 </Grid>
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
-                <Grid xs={12} sm={12} item>
+                <Grid size={{ xs: 12, sm: 12 }}>
                   <Typography variant="h6">Order</Typography>
                 </Grid>
-                <Grid xs={12} sm={4} item>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     disabled={formik.isSubmitting}
                     label="Ref No"
@@ -213,7 +220,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     size="small"
                   ></TextField>
                 </Grid>
-                <Grid xs={12} sm={4} item>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     disabled={formik.isSubmitting}
                     label="Order No"
@@ -226,7 +233,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     size="small"
                   ></TextField>
                 </Grid>
-                <Grid xs={12} sm={4} item>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     disabled={formik.isSubmitting}
                     label="Affiliate Name"
@@ -241,10 +248,10 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                 </Grid>
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
-                <Grid xs={12} sm={12} item>
+                <Grid size={{ xs: 12, sm: 12 }}>
                   <Typography variant="h6">Currency</Typography>
                 </Grid>
-                <Grid xs={12} sm={4} item>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Tooltip title="Exchange Rate field must contain only numbers">
                     <TextField
                       disabled={formik.isSubmitting}
@@ -262,7 +269,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     ></TextField>
                   </Tooltip>
                 </Grid>
-                <Grid xs={12} sm={4} item>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     disabled={formik.isSubmitting}
                     label="Currency"
@@ -279,10 +286,10 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                 </Grid>
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
-                <Grid xs={12} sm={12} item>
+                <Grid size={{ xs: 12, sm: 12 }}>
                   <Typography variant="h6">Other</Typography>
                 </Grid>
-                <Grid xs={12} sm={4} item>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     disabled={formik.isSubmitting}
                     label="Source"
@@ -297,7 +304,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                 </Grid>
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4} justifyContent="flex-end">
-                <Grid item xs={1}>
+                <Grid size={{ xs: 1 }}>
                   <Button
                     disabled={formik.isSubmitting}
                     type="submit"
@@ -309,7 +316,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     Cancel
                   </Button>
                 </Grid>
-                <Grid item xs={1}>
+                <Grid size={{ xs: 1 }}>
                   <Button
                     type="submit"
                     disabled={formik.isSubmitting}

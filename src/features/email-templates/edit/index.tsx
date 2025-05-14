@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Editor as TinyMCEEditor } from "tinymce";
 import { Editor } from "@tinymce/tinymce-react";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
@@ -8,13 +7,12 @@ import { useRequestContext } from "@providers/request-provider";
 import { useParams } from "react-router-dom";
 import { EmailTemplateDetailsDto, HttpResponse, ProblemDetails } from "@lib/network/swagger-client";
 import { FormikHelpers, useFormik } from "formik";
-import { networkErrorToStringArray } from "utils/general-helper";
 import { EmailTemplateEditValidationScheme } from "./validation";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { emailTemplateFormBreadcrumbLinks } from "../constants";
 import { EmailTemplateDeleteContainer, EmailTemplateEditContainer } from "./index.styled";
-import { Autocomplete, Button, Card, CardContent, Grid, TextField } from "@mui/material";
+import { Button, Card, CardContent, Grid, TextField } from "@mui/material";
 import useLocalStorage from "use-local-storage";
 import {
   EmailTemplateEditData,
@@ -31,13 +29,32 @@ import { execSubmitWithToast } from "utils/formik-helper";
 import { DataManagementBlock } from "@components/data-management";
 import { CoreModule } from "@lib/router";
 
+// Define the TinyMCE Editor type
+type TinyMCEEditor = {
+  getContent: () => string;
+  setContent: (content: string) => void;
+};
+
+// Define TinyMCE event types
+interface TinyMCEInitEvent {
+  type: string;
+  target: unknown;
+}
+
+// Extended EmailTemplateDetailsDto with additional properties
+interface ExtendedEmailTemplateDetailsDto extends EmailTemplateDetailsDto {
+  coverImageAlt?: string;
+  slug?: string;
+}
+
 const TINYMCE_API_KEY = process.env.TINYMCE_API_KEY || undefined;
 
 export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const editorRef = useRef<TinyMCEEditor | null>(null);
   const { setSaving, setBusy } = useModuleWrapperContext();
   const { notificationsService } = useNotificationsService();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const errorModalContext = useErrorDetailsModal();
+  const showErrorModal = errorModalContext?.Show;
   const { client } = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
   const { id } = useParams();
@@ -76,8 +93,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   }, 3000);
 
   const submitFunc = async (
-    values: EmailTemplateDetailsDto,
-    helpers: FormikHelpers<EmailTemplateDetailsDto>
+    values: ExtendedEmailTemplateDetailsDto,
+    helpers: FormikHelpers<ExtendedEmailTemplateDetailsDto>
   ) => {
     let response: HttpResponse<EmailTemplateDetailsDto, void | ProblemDetails>;
     if (id === undefined) {
@@ -89,26 +106,30 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     const localStorageSnapshot = { ...editorLocalStorage };
     localStorageSnapshot.data = localStorageSnapshot.data.filter((data) => data.id !== id);
     setEditorLocalStorage(localStorageSnapshot);
-    helpers.setValues(response.data);
+    helpers.setValues(response.data as ExtendedEmailTemplateDetailsDto);
     helpers.setSubmitting(false);
     handleNavigation(CoreModule.emailTemplates);
   };
 
+  const noopErrorHandler = (errors: string[]) => { 
+    console.log("Error occurred but error modal is not available:", errors);
+  };
+
   const submit = async (
-    values: EmailTemplateDetailsDto,
-    helpers: FormikHelpers<EmailTemplateDetailsDto>
+    values: ExtendedEmailTemplateDetailsDto,
+    helpers: FormikHelpers<ExtendedEmailTemplateDetailsDto>
   ) => {
-    execSubmitWithToast<EmailTemplateDetailsDto>(
+    execSubmitWithToast<ExtendedEmailTemplateDetailsDto>(
       values,
       helpers,
       submitFunc,
       notificationsService,
-      showErrorModal,
+      showErrorModal || noopErrorHandler,
       "email template"
     );
   };
 
-  const formik = useFormik({
+  const formik = useFormik<ExtendedEmailTemplateDetailsDto>({
     validationSchema: toFormikValidationSchema(EmailTemplateEditValidationScheme),
     initialValues: {
       name: "",
@@ -118,7 +139,9 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       language: "",
       bodyTemplate: "",
       emailGroupId: 0,
-    } as EmailTemplateDetailsDto,
+      coverImageAlt: "",
+      slug: "",
+    } as ExtendedEmailTemplateDetailsDto,
     onSubmit: submit,
     validateOnChange: false,
   });
@@ -140,7 +163,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
 
     setBusy(async () => {
       const resp = await client.api.emailTemplatesDetail(Number(id));
-      await formik.setValues(resp.data);
+      await formik.setValues(resp.data as ExtendedEmailTemplateDetailsDto);
     });
   }, [client, id]);
 
@@ -167,14 +190,15 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
             break;
           case EmailTemplateEditRestoreState.Accepted:
             await formik.setValues(
-              localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData
+              localStorageSnapshot.data.filter((data) => 
+                data.id === id)[0].savedData as ExtendedEmailTemplateDetailsDto
             );
             setWasModified(true);
             return;
         }
         if (client && id) {
           const { data } = await client.api.emailTemplatesDetail(Number(id));
-          await formik.setValues(data);
+          await formik.setValues(data as ExtendedEmailTemplateDetailsDto);
         }
       } catch (e) {
         console.log(e);
@@ -201,7 +225,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
           <CardContent>
             <form onSubmit={formik.handleSubmit}>
               <Grid container direction={"row"} spacing={3}>
-                <Grid item xs={6} sm={6}>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <TextField
                     disabled={readonly}
                     label="Name"
@@ -215,7 +239,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     fullWidth
                   />
                 </Grid>
-                <Grid item xs={6} sm={6}>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <TextField
                     disabled={readonly}
                     label="Subject"
@@ -229,7 +253,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     fullWidth
                   />
                 </Grid>
-                <Grid item xs={6} sm={6}>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <TextField
                     disabled={readonly}
                     label="Sender Email"
@@ -243,7 +267,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     fullWidth
                   />
                 </Grid>
-                <Grid item xs={6} sm={6}>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <TextField
                     disabled={readonly}
                     label="Sender Name"
@@ -257,7 +281,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     fullWidth
                   />
                 </Grid>
-                <Grid item xs={6} sm={6}>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <EmailGroupAutocomplete
                     disabled={readonly}
                     label="Group ID"
@@ -268,7 +292,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     onChange={(value) => formik.setFieldValue("emailGroupId", value)}
                   />
                 </Grid>
-                <Grid item xs={6} sm={6}>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <LanguageAutocomplete
                     value={formik.values.language}
                     onChange={(val) => autoCompleteValueUpdate<string | null>("language", val)}
@@ -287,12 +311,41 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     )}
                   />
                 </Grid>
-                <Grid item xs={12} sm={12}>
+                <Grid size={{ xs: 6, sm: 6 }}>
+                  <TextField
+                    disabled={readonly}
+                    label="Cover Image Alt Text"
+                    name="coverImageAlt"
+                    value={formik.values.coverImageAlt || ""}
+                    error={Boolean(formik.touched.coverImageAlt && formik.errors.coverImageAlt)}
+                    helperText={formik.touched.coverImageAlt && formik.errors.coverImageAlt}
+                    placeholder="Enter Cover Image Alt Text"
+                    variant="outlined"
+                    onChange={valueUpdate}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 6 }}>
+                  <TextField
+                    disabled={readonly}
+                    label="Slug"
+                    name="slug"
+                    value={formik.values.slug || ""}
+                    error={Boolean(formik.touched.slug && formik.errors.slug)}
+                    helperText={formik.touched.slug && formik.errors.slug}
+                    placeholder="Enter slug"
+                    variant="outlined"
+                    onChange={valueUpdate}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 12 }}>
                   <Editor
-                    onInit={(evt, editor) => (editorRef.current = editor)}
+                    onInit={(evt: TinyMCEInitEvent, editor: TinyMCEEditor) => 
+                      (editorRef.current = editor)}
                     value={formik.values.bodyTemplate}
                     disabled={readonly}
-                    onEditorChange={(currentValue, editor) =>
+                    onEditorChange={(currentValue: string) =>
                       formik.setFieldValue("bodyTemplate", currentValue)
                     }
                     apiKey={TINYMCE_API_KEY}
@@ -316,8 +369,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                   />
                 </Grid>
                 {!readonly && (
-                  <Grid container item spacing={3} justifyContent="flex-end">
-                    <Grid item xs={2}>
+                  <Grid spacing={3} sx={{ display: "flex", justifyContent: "flex-end" }}>
+                    <Grid size={{ xs: 2 }}>
                       <Button
                         disabled={formik.isSubmitting}
                         variant="outlined"
@@ -329,7 +382,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                         Cancel
                       </Button>
                     </Grid>
-                    <Grid item xs={2}>
+                    <Grid size={{ xs: 2 }}>
                       <Button type="submit" variant="contained" fullWidth size="large">
                         Save
                       </Button>
@@ -349,7 +402,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
             has been deleted can never be brought back."
             entity="email template"
             handleDeleteAsync={(id) => client.api.emailTemplatesDelete(id as number)}
-            itemId={+id!}
+            itemId={+id}
             successNavigationRoute={CoreModule.emailTemplates}
             showEditButton
           ></DataManagementBlock>

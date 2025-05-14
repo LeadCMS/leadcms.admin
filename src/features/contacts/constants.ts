@@ -1,4 +1,4 @@
-import { CoreModule, getCoreModuleRoute, rootRoute } from "lib/router";
+import { CoreModule, getCoreModuleRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { BreadcrumbLink } from "types";
 

@@ -29,3 +29,11 @@ export interface GridDataFilterState {
   pageNumber?: number;
   columnVisibilityModel?: GridColumnVisibilityModel | undefined;
 }
+
+export type GridSizeProps = {
+  xs?: number;
+  sm?: number;
+  md?: number;
+  lg?: number;
+  xl?: number;
+};
