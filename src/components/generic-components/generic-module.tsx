@@ -40,13 +40,13 @@ interface ExtraActions {
     exportItemsFn?: (
       query?: { query?: string },
       params?: RequestParams
-    ) => Promise<HttpResponse<any, void | ProblemDetails>>;
+    ) => Promise<HttpResponse<unknown, void | ProblemDetails>>;
   };
   import?: {
     showButton?: boolean;
     importSchema?: DtoSchema;
     importItemsFn?: (
-      data: any[],
+      data: Record<string, unknown>[],
       params: RequestParams
     ) => Promise<HttpResponse<ImportResult, void | ProblemDetails>>;
   };
@@ -147,8 +147,12 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
               setImportIsOpen(false);
             }}
             onUpload={async (data: Result<string>) => {
-              extraActions?.import?.importItemsFn &&
-                (await extraActions.import.importItemsFn(data.validData as any[], {}));
+              if (extraActions?.import?.importItemsFn) {
+                await extraActions.import.importItemsFn(
+                  data.validData as Record<string, unknown>[], 
+                  {}
+                );
+              }
             }}
             object={extraActions?.import?.importSchema.properties}
             endRoute={modulePath as CoreModule}
@@ -159,8 +163,11 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             exportAsync={async () => {
               const filters =
                 genericDataGridRef.current && genericDataGridRef.current.getExportFilters();
-              const response = await extraActions!.export!.exportItemsFn!(filters || {});
-              return response?.text();
+              if (extraActions?.export?.exportItemsFn) {
+                const response = await extraActions.export.exportItemsFn(filters || {});
+                return response?.text();
+              }
+              return "";
             }}
             closeExport={() => {
               setExportIsOpen(false);
@@ -183,11 +190,11 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
 
     const savingIndicatorElement = (
       <>
-        <Grid container item spacing={3} sm="auto" xs="auto">
-          <Grid item>
+        <Grid container spacing={3} size={{ xs: "auto", sm: "auto" }}>
+          <Grid size={{ xs: 12, sm: "auto" }}>
             <CircularProgress size={14} />
           </Grid>
-          <Grid item>
+          <Grid size={{ xs: 12, sm: "auto" }}>
             <Typography>Saving...</Typography>
           </Grid>
         </Grid>
