@@ -28,8 +28,9 @@ export const UserProvider = memo(function UserProvider({ children }: PropsWithCh
   };
 
   useEffect(() => {
+    if (!authState.account && !authState.localToken) return;
     infoRetrieve();
-  }, [authState.account]);
+  }, [authState.account,authState.localToken]);
   const ctxValue = {
     details: currentUser,
     refresh: infoRetrieve,

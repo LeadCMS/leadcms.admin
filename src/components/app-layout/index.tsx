@@ -15,6 +15,12 @@ export const AppLayout = ({ children, className = "" }: AppLayoutProps) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const isAuthPage = location.pathname.startsWith("/auth");
+
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+  
   // Pass drawer state to Sidebar and update container class
   const handleDrawerToggle = (isOpen: boolean) => {
     setMobileOpen(isOpen);

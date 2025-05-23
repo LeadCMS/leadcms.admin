@@ -1,4 +1,4 @@
-import { memo, PropsWithChildren, useCallback } from "react";
+import { memo, PropsWithChildren, useCallback, useEffect, useState } from "react";
 import {
   PublicClientApplication,
   Configuration,
@@ -17,6 +17,33 @@ const msalConfig: Configuration = {
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
+function RequireAuth({ children }: PropsWithChildren) {
+
+  const { isTokenLoaded ,localToken} = useAuthState();
+  const { accounts, inProgress  } = useMsal();
+  const account = accounts.at(0);
+
+  useEffect(() => {
+    if (isTokenLoaded && inProgress === InteractionStatus.None &&
+      !account && !localToken && !window.location.pathname.startsWith("/auth")) {
+      const from = encodeURIComponent(window.location.pathname);
+      window.location.replace(`/auth/login?from=${from}`);
+    }
+
+    if (isTokenLoaded && inProgress === InteractionStatus.None &&
+      localToken && window.location.pathname.startsWith("/auth")) {
+      window.location.replace("/");    
+    }
+
+  }, [account, inProgress, isTokenLoaded]);
+
+  if (inProgress !== InteractionStatus.None ||!isTokenLoaded ) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
 export const Loading = () => {
   return <div>Authentication in progress...</div>; // TODO: Design better one
 };
@@ -24,25 +51,26 @@ export const Loading = () => {
 export const AuthProvider = memo(function AuthProvider({ children }: PropsWithChildren) {
   return (
     <MsalProvider instance={msalInstance}>
-      <MsalAuthenticationTemplate
-        interactionType={InteractionType.Redirect}
-        authenticationRequest={{
-          scopes: ["User.Read"],
-        }}
-        loadingComponent={Loading}
-      >
+      <RequireAuth>
         {children}
-      </MsalAuthenticationTemplate>
+      </RequireAuth>
     </MsalProvider>
   );
 });
 
 export const useAuthState = () => {
+  const [localToken, setLocalToken] = useState(() => localStorage.getItem("token"));
+  const [isTokenLoaded, setIsTokenLoaded] = useState(false);
+
   const { instance, accounts } = useMsal();
 
   const account = accounts.at(0);
 
   const getToken = useCallback(async () => {
+    if (localToken) {
+      return localToken;
+    }
+
     try {
       const { idToken } = await instance.acquireTokenSilent({
         scopes: ["User.Read"],
@@ -51,21 +79,43 @@ export const useAuthState = () => {
       });
       return idToken;
     } catch {
-      await instance.loginRedirect();
+      return undefined;
     }
-  }, [instance, account]);
+  }, [instance, account, localToken]);
 
   const logout = useCallback(async () => {
     if (instance && account) {
-      await instance.logout();
+      await instance.logoutRedirect({
+        postLogoutRedirectUri: "/auth/login",
+      });
+    } else{
+      localStorage.removeItem("token");
+      setLocalToken(null);
+      window.location.replace("/auth/login");
     }
   }, [instance, account]);
 
   const reLogin = useCallback(async () => {
     if (instance && account) {
-      await instance.loginRedirect();
+      await instance.logoutRedirect({
+        postLogoutRedirectUri: "/auth/login",
+      });
     }
+    else{
+      localStorage.removeItem("token");
+      setLocalToken(null);
+      window.location.replace("/auth/login");
+    }
+
   }, [instance, account]);
 
-  return { account, getToken, logout, reLogin };
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setLocalToken(token);
+    }
+    setIsTokenLoaded(true); 
+  }, []);
+
+  return { account, getToken, logout, reLogin,localToken, setLocalToken ,isTokenLoaded};
 };
