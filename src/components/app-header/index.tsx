@@ -1,4 +1,4 @@
-import { Box, IconButton, Typography } from "@mui/material";
+import { Box, IconButton, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { AppBarStyled, AppBarToolbar, LogoComponent } from "./index.styled";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useSidebar } from "@providers/sidebar-provider";
@@ -6,21 +6,26 @@ import { DropdownMenu } from "./dropdown-menu";
 
 export const AppHeader = () => {
   const { toggle } = useSidebar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   return (
     <AppBarStyled>
       <AppBarToolbar>
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <IconButton 
-            edge="start" 
-            color="inherit" 
-            aria-label="menu" 
-            onClick={toggle}
-            sx={{ mr: 1 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <LogoComponent />
+          {isMobile ? (
+            <IconButton 
+              edge="start" 
+              color="inherit" 
+              aria-label="menu" 
+              onClick={toggle}
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          ) : (
+            <LogoComponent />
+          )}
           <Typography 
             variant="h6" 
             component="div" 
@@ -30,7 +35,7 @@ export const AppHeader = () => {
               display: { xs: "none", sm: "block" } 
             }}
           >
-            LeadCMS Admin
+            LeadCMS.ai
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center" }}>

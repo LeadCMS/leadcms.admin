@@ -1404,6 +1404,21 @@ export interface ActivityLogDetailsDto {
   data?: string;
 }
 
+export interface ChangePasswordDto {
+  /**
+   * Current Password
+   * @minLength 1
+   * @example "string"
+   */
+  currentPassword: string;
+  /**
+   * New Password
+   * @minLength 1
+   * @example "string"
+   */
+  newPassword: string;
+}
+
 export interface CommentCreateBaseDto {
   /**
    * Author Email
@@ -4520,6 +4535,22 @@ export interface FileDetailsDto {
   location?: string;
 }
 
+export interface ForgotPasswordDto {
+  /**
+   * Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  email: string;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string;
+}
+
 export interface ImportError {
   /**
    * Row
@@ -5403,6 +5434,27 @@ export interface PromotionUpdateDto {
   endDate?: string | null;
 }
 
+export interface ResetPasswordDto {
+  /**
+   * User Id
+   * @minLength 1
+   * @example "string"
+   */
+  userId: string;
+  /**
+   * Token
+   * @minLength 1
+   * @example "string"
+   */
+  token: string;
+  /**
+   * New Password
+   * @minLength 1
+   * @example "string"
+   */
+  newPassword: string;
+}
+
 export interface StringStringValuesKeyValuePair {
   key?: string;
   value?: string[];
@@ -5560,6 +5612,26 @@ export interface UserCreateDto {
   displayName: string;
   /** Data */
   data?: Record<string, any>;
+  /**
+   * Password
+   * @example "string"
+   */
+  password?: string | null;
+  /**
+   * Generate Password
+   * @example true
+   */
+  generatePassword?: boolean;
+  /**
+   * Send Password Email
+   * @example true
+   */
+  sendPasswordEmail?: boolean;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string;
 }
 
 export interface UserDetailsDto {
@@ -5632,6 +5704,26 @@ export interface UserUpdateDto {
   avatarUrl?: string | null;
   /** Data */
   data?: Record<string, any>;
+  /**
+   * Password
+   * @example "string"
+   */
+  password?: string | null;
+  /**
+   * Generate Password
+   * @example true
+   */
+  generatePassword?: boolean;
+  /**
+   * Send Password Email
+   * @example true
+   */
+  sendPasswordEmail?: boolean;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string;
 }
 
 export interface VersionDto {
@@ -7584,6 +7676,69 @@ export class Api<
     identityLoginCreate: (data: LoginDto, params: RequestParams = {}) =>
       this.request<void, void>({
         path: `/api/identity/login`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityForgotPasswordCreate
+     * @request POST:/api/identity/forgot-password
+     * @secure
+     */
+    identityForgotPasswordCreate: (
+      data: ForgotPasswordDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void>({
+        path: `/api/identity/forgot-password`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityResetPasswordCreate
+     * @request POST:/api/identity/reset-password
+     * @secure
+     */
+    identityResetPasswordCreate: (
+      data: ResetPasswordDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void>({
+        path: `/api/identity/reset-password`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityChangePasswordCreate
+     * @request POST:/api/identity/change-password
+     * @secure
+     */
+    identityChangePasswordCreate: (
+      data: ChangePasswordDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/identity/change-password`,
         method: "POST",
         body: data,
         secure: true,
