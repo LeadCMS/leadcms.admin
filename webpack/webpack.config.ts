@@ -11,6 +11,7 @@ import {Configuration as WebpackDevServerConfiguration} from "webpack-dev-server
 import dotenv from "dotenv";
 import DotenvPlugin from "dotenv-webpack";
 import {dependencies} from "../package.json";
+import CopyWebpackPlugin from "copy-webpack-plugin";
 
 const {ModuleFederationPlugin} = container;
 
@@ -84,6 +85,15 @@ const configuration: Configuration = {
     new DotenvPlugin(),
     new HtmlWebpackPlugin({
       template: resolve(__dirname, "../public/index.html"),
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: resolve(__dirname, "../public"),
+          to: resolve(__dirname, "../dist"),
+          filter: (resourcePath) => !resourcePath.endsWith("index.html"),
+        },
+      ],
     }),
     new ModuleFederationPlugin({
       shared: {
