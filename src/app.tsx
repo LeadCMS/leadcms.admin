@@ -1,7 +1,6 @@
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "providers/theme-provider";
 import { AppLayout } from "@components/app-layout";
-import { MainContentContainer } from "components/layout";
 import { coreModuleRoute, rootRoute } from "@lib/router";
 import { ModuleLoader } from "@features/module-loader";
 import { RequestProvider } from "@providers/request-provider";

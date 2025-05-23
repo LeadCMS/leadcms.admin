@@ -381,25 +381,25 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
       <Card>
         <CardContent>
           <Grid container spacing={4} marginBottom={4}>
-            <Grid xs={12} sm={12} item>
+            <Grid size={{ xs: 12, sm: 12 }}>
               <Typography variant="h6">Details</Typography>
             </Grid>
             {fieldsSet()
               .filter((field) => !field.hide)
               .map((field) =>
                 editable ? (
-                  <Grid key={field.name} item xs={4} sm={4}>
+                  <Grid key={field.name} size={{ xs: 4, sm: 4 }}>
                     {getEdit(field)}
                   </Grid>
                 ) : (
-                  <Grid key={field.name} item xs={3} sm={3}>
+                  <Grid key={field.name} size={{ xs: 3, sm: 3 }}>
                     {getView(field)}
                   </Grid>
                 )
               )}
           </Grid>
           <Grid container spacing={4} justifyContent="flex-end">
-            <Grid item xs={12} sm={1}>
+            <Grid size={{ xs: 12, sm: 1 }}>
               {editable && (
                 <Button
                   type="submit"
@@ -413,7 +413,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
                 </Button>
               )}
             </Grid>
-            <Grid item xs={12} sm={1}>
+            <Grid size={{ xs: 12, sm: 1 }}>
               {editable && (
                 <Button
                   type="submit"
@@ -432,15 +432,15 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
       </Card>
       {!editable && deleteOptionProps && (
         <Grid container spacing={3}>
-          <Grid item xs={8} sm={8}>
+          <Grid size={{ xs: 8, sm: 8 }}>
             <GenericViewDeleteContainer>
               <DataManagementBlock
-                header={deleteOptionProps!.header}
-                description={deleteOptionProps!.description}
-                entity={deleteOptionProps!.entity}
-                handleDeleteAsync={(id) => deleteOptionProps!.deleteItemFn(id as number)}
+                header={deleteOptionProps.header}
+                description={deleteOptionProps.description}
+                entity={deleteOptionProps.entity}
+                handleDeleteAsync={(id) => deleteOptionProps.deleteItemFn(id as number)}
                 itemId={itemId!}
-                successNavigationRoute={deleteOptionProps!.listRoute}
+                successNavigationRoute={deleteOptionProps.listRoute}
               ></DataManagementBlock>
             </GenericViewDeleteContainer>
           </Grid>

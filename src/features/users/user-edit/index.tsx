@@ -1,291 +1,382 @@
-import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
+/* eslint-disable max-len */
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { HttpResponse, ProblemDetails, UserDetailsDto } from "@lib/network/swagger-client";
-import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRequestContext } from "@providers/request-provider";
-import { FormikHelpers, useFormik } from "formik";
-import { useParams } from "react-router-dom";
-import { toFormikValidationSchema } from "zod-formik-adapter";
-import { UserEditValidationScheme } from "./validation";
-import { useEffect, useState } from "react";
-import { ModuleWrapper } from "@components/module-wrapper";
-import { UserEditBreadcrumbLinks } from "../constants";
-import { StyledAvatar, UserEditContainer } from "./styled";
+import { useNotificationsService } from "@hooks";
+import { buildAbsoluteUrl } from "@lib/network/utils";
 import {
   Card,
   CardContent,
   Box,
-  Tab,
-  Tabs,
-  Grid,
   Typography,
-  Badge,
   Avatar,
-  TextField,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField,
+  MenuItem,
+  IconButton,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Grid,
+  InputAdornment,
 } from "@mui/material";
-import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
-import { TabPanelProps, UserEditProps } from "./types";
-import { buildAbsoluteUrl } from "@lib/network/utils";
-import { useUserInfo } from "@providers/user-provider";
-import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
-import { execSubmitWithToast } from "utils/formik-helper";
-import { CoreModule } from "@lib/router";
-import { DataManagementBlock } from "@components/data-management";
+import { Save, Close, Delete, Visibility, VisibilityOff, CalendarToday, Shield, Key, Person, Email } from "@mui/icons-material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-const tabProps = (index: number) => {
-  return {
-    id: `simple-tab-${index}`,
-    "aria-controls": `simple-tabpanel-${index}`,
-  };
-};
+function formatDate(date?: string | number | Date) {
+  if (!date) return "";
+  const d = new Date(date);
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
 
-const TabPanel = (props: TabPanelProps) => {
-  const { children, value, index, ...other } = props;
+import { UserEditProps } from "./types";
 
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-};
+const roleOptions = [
+  { value: "admin", label: "Admin" },
+  { value: "editor", label: "Editor" },
+  { value: "viewer", label: "Viewer" },
+];
 
 export const UserEdit = ({ readonly }: UserEditProps) => {
-  const { setSaving, setBusy } = useModuleWrapperContext();
-
-  const { notificationsService } = useNotificationsService();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
-  const { client } = useRequestContext();
-  const handleNavigation = useCoreModuleNavigation();
-  const userInfo = useUserInfo();
-
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { client } = useRequestContext();
+  const { notificationsService } = useNotificationsService();
 
-  const [currentPanel, setCurrentPanel] = useState<number>(0);
-
-  const submitFunc = async (values: UserDetailsDto, helpers: FormikHelpers<UserDetailsDto>) => {
-    let response: HttpResponse<UserDetailsDto, void | ProblemDetails>;
-    if (id === undefined) {
-      response = await client.api.usersCreate(values);
-    } else {
-      response = await client.api.usersPartialUpdate(id, values);
-    }
-    helpers.setValues(response.data);
-    if (id === userInfo?.details?.id) {
-      userInfo?.refresh();
-    }
-    helpers.setSubmitting(false);
-    handleNavigation(CoreModule.users);
-  };
-
-  const submit = async (values: UserDetailsDto, helpers: FormikHelpers<UserDetailsDto>) => {
-    execSubmitWithToast<UserDetailsDto>(
-      values,
-      helpers,
-      submitFunc,
-      notificationsService,
-      showErrorModal,
-      "user"
-    );
-  };
-
-  const formik = useFormik({
-    validationSchema: toFormikValidationSchema(UserEditValidationScheme),
-    initialValues: {
-      avatarUrl: "",
-      displayName: "",
-      email: "",
-      userName: "",
-    } as UserDetailsDto,
-    onSubmit: submit,
-    validateOnChange: false,
+  const [user, setUser] = useState<UserDetailsDto | null>(null);
+  const [formData, setFormData] = useState({
+    displayName: "",
+    email: "",
+    role: "viewer",
+    password: "",
+    confirmPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (id === undefined) {
+    if (!id) return;
+    (async () => {
+      const resp = await client.api.usersDetail(id);
+      setUser(resp.data);
+      setFormData({
+        displayName: resp.data.displayName || "",
+        email: resp.data.email || "",
+        role: (resp.data as any).role || "viewer",
+        password: "",
+        confirmPassword: "",
+      });
+    })();
+    // eslint-disable-next-line
+  }, [id]);
+
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      notificationsService.error("Passwords do not match");
       return;
     }
-
-    setBusy(async () => {
-      const resp = await client.api.usersDetail(id);
-      await formik.setValues(resp.data);
-    });
-  }, [client, id]);
-
-  const handleImageUpload = async () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.onchange = async (e) => {
-      if (e === null || e.target === null) {
-        return;
+    try {
+      const payload: any = {
+        ...user,
+        displayName: formData.displayName,
+        email: formData.email,
+        role: formData.role,
+      };
+      if (formData.password) payload.password = formData.password;
+      let response: HttpResponse<UserDetailsDto, void | ProblemDetails>;
+      if (id) {
+        response = await client.api.usersPartialUpdate(id, payload);
+      } else {
+        response = await client.api.usersCreate(payload);
       }
-      const target = e.target as HTMLInputElement;
-      const file = target.files![0];
-      const imageUploadingResponse = await client.api.mediaCreate({
-        Image: file,
-        ScopeUid: "UserAvatarStorage",
-      });
-      if (imageUploadingResponse.error) {
-        notificationsService.error(`Failed to upload image ${imageUploadingResponse.error.detail}`);
-      }
-      input.remove();
-      await formik.setFieldValue("avatarUrl", imageUploadingResponse.data.location);
-    };
-    input.click();
+      notificationsService.success("User saved");
+      navigate("/users");
+    } catch (err: any) {
+      notificationsService.error("Failed to save user");
+    }
   };
 
-  const valueUpdate = (event: React.SyntheticEvent<Element, Event>) => {
-    formik.handleChange(event);
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await client.api.usersDelete(id);
+      notificationsService.success("User deleted");
+      setDeleteDialogOpen(false);
+      navigate("/users");
+    } catch (err: any) {
+      notificationsService.error("Failed to delete user");
+    }
   };
+
+  if (!user) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Typography>Loading...</Typography>
+      </Box>
+    );
+  }
+
   return (
-    <ModuleWrapper
-      breadcrumbs={UserEditBreadcrumbLinks}
-      currentBreadcrumb={formik.values.displayName}
-    >
-      <UserEditContainer>
-        <form onSubmit={formik.handleSubmit}>
-          <Card>
-            <CardContent>
-              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Tabs value={currentPanel} onChange={(_, newValue) => setCurrentPanel(newValue)}>
-                  <Tab label="Overview" {...tabProps(0)} />
-                </Tabs>
+    <Box sx={{ maxWidth: 700, mx: "auto", py: 4 }}>
+      <form onSubmit={handleSubmit}>
+        {/* User Card */}
+        <Card sx={{ mb: 4 }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 4, alignItems: { md: "center" } }}>
+              <Avatar
+                src={user.avatarUrl ? buildAbsoluteUrl(user.avatarUrl) : undefined}
+                alt={user.displayName || user.email || ""}
+                sx={{ width: 80, height: 80, fontSize: 32, bgcolor: "#e5e7eb" }}
+              >
+                {(user.displayName || user.email || "U")[0]}
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h5" fontWeight={700}>
+                  {user.displayName}
+                </Typography>
+                <Typography color="text.secondary">{user.email}</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1, color: "text.secondary", fontSize: 14 }}>
+                  <span>Created: {formatDate(user.createdAt)}</span>
+                  <span>•</span>
+                  <span>Last active: {formatDate(user.lastTimeLoggedIn)}</span>
+                </Box>
               </Box>
-              <TabPanel value={currentPanel} index={0}>
-                <Grid container gap={"2rem"} direction={"column"}>
-                  <Grid size={{ xs: 12 }}>
-                    <Typography>Basic Info</Typography>
-                  </Grid>
-                  <Grid sx={{ display: "flex", flexDirection: "row", gap: "2rem" }}>
-                    <Grid>
-                      <Badge
-                        overlap="circular"
-                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                        sx={{
-                          width: 96,
-                          height: 96,
-                        }}
-                        badgeContent={
-                          !readonly ? (
-                            <StyledAvatar onClick={handleImageUpload}>
-                              <AddAPhotoIcon />
-                            </StyledAvatar>
-                          ) : undefined
-                        }
-                      >
-                        <Avatar
-                          alt={formik.values.displayName || "Avatar image"}
-                          src={formik.values.avatarUrl && buildAbsoluteUrl(formik.values.avatarUrl)}
-                          sx={{
-                            width: 96,
-                            height: 96,
-                          }}
-                        />
-                      </Badge>
-                    </Grid>
-                    <Grid sx={{ display: "flex", flexDirection: "column" }} size={{ xs: 6 }} 
-                          justifyContent={"center"}>
-                      <Grid>
-                        <Typography>Display name: {formik.values.displayName}</Typography>
-                      </Grid>
-                      <Grid>
-                        <Typography>Email: {formik.values.email}</Typography>
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 6 }}>
-                    <TextField
-                      disabled={readonly}
-                      label="Display Name"
-                      name="displayName"
-                      value={formik.values.displayName}
-                      error={formik.touched.displayName && Boolean(formik.errors.displayName)}
-                      helperText={formik.touched.displayName && formik.errors.displayName}
-                      placeholder="Enter display name"
-                      variant="outlined"
-                      onChange={valueUpdate}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 6 }}>
-                    <TextField
-                      disabled={readonly}
-                      label="Username"
-                      name="userName"
-                      value={formik.values.userName}
-                      error={formik.touched.userName && Boolean(formik.errors.userName)}
-                      helperText={formik.touched.userName && formik.errors.userName}
-                      placeholder="Enter username"
-                      variant="outlined"
-                      onChange={valueUpdate}
-                    />
-                  </Grid>
-                  {!id && (
-                    <Grid size={{ xs: 6, sm: 6 }}>
-                      <TextField
-                        disabled={readonly}
-                        label="Email"
-                        name="email"
-                        value={formik.values.email}
-                        error={formik.touched.email && Boolean(formik.errors.email)}
-                        helperText={formik.touched.email && formik.errors.email}
-                        placeholder="Enter Email"
-                        variant="outlined"
-                        onChange={valueUpdate}
-                      />
-                    </Grid>
-                  )}
-                </Grid>
-                {!readonly && (
-                  <Grid
-                    spacing={3}
-                    sx={{
-                      display: "flex",
-                      marginTop: "1rem",
-                    }}
-                  >
-                    <Grid size={{ xs: 1 }}>
-                      <Button
-                        disabled={formik.isSubmitting}
-                        variant="outlined"
-                        color="primary"
-                        onClick={() => handleNavigation(CoreModule.users)}
-                        fullWidth
-                      >
-                        Cancel
-                      </Button>
-                    </Grid>
-                    <Grid size={{ xs: 1 }}>
-                      <Button type="submit" variant="contained" fullWidth>
-                        Save
-                      </Button>
-                    </Grid>
-                  </Grid>
-                )}
-              </TabPanel>
-            </CardContent>
-          </Card>
-          {id && readonly && (
-            <Grid container spacing={3} marginTop={1}>
-              <Grid size={{ xs: 8, sm: 8 }}>
-                <DataManagementBlock
-                  header="Data Management"
-                  description="Please be aware that what
-                        has been deleted can never be brought back."
-                  entity="user"
-                  handleDeleteAsync={(id) => client.api.usersDelete(id as string)}
-                  itemId={id}
-                  successNavigationRoute={CoreModule.users}
-                ></DataManagementBlock>
+              <Box sx={{ display: "flex", gap: 1, alignSelf: { xs: "flex-end", md: "center" } }}>
+                <Button
+                  variant="outlined"
+                  type="button"
+                  onClick={() => navigate(`/users/${user.id}`)}
+                  startIcon={<Visibility />}
+                >
+                  View
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  type="button"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  startIcon={<Delete />}
+                >
+                  Delete
+                </Button>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Accordion for user info, password, activity */}
+        <Accordion defaultExpanded sx={{ mb: 3 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Person fontSize="small" />
+              <Typography fontWeight={600}>User Information</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Grid container spacing={3} sx={{ mb: 2 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Full Name"
+                  value={formData.displayName}
+                  onChange={(e) => handleChange("displayName", e.target.value)}
+                  placeholder="Enter full name"
+                  fullWidth
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  disabled={readonly}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Email Address"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  placeholder="Enter email address"
+                  fullWidth
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  disabled={readonly}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  select
+                  label="User Role"
+                  value={formData.role}
+                  onChange={(e) => handleChange("role", e.target.value)}
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Shield fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  disabled={readonly}
+                >
+                  {roleOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
             </Grid>
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion sx={{ mb: 3 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Key fontSize="small" />
+              <Typography fontWeight={600}>Change Password</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Grid container spacing={3} sx={{ mb: 2 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="New Password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => handleChange("password", e.target.value)}
+                  placeholder="Enter new password"
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Key fontSize="small" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((v) => !v)}
+                          edge="end"
+                          size="small"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  disabled={readonly}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  Leave blank to keep the current password
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Confirm New Password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                  placeholder="Confirm new password"
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Key fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  disabled={readonly}
+                />
+              </Grid>
+            </Grid>
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <CalendarToday fontSize="small" />
+              <Typography fontWeight={600}>Activity Information</Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Grid container spacing={3} sx={{ mb: 2 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography color="text.secondary" variant="body2" sx={{ mb: 0.5 }}>
+                  Created At
+                </Typography>
+                <Typography>{formatDate(user.createdAt)}</Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography color="text.secondary" variant="body2" sx={{ mb: 0.5 }}>
+                  Last Active
+                </Typography>
+                <Typography>{formatDate(user.lastTimeLoggedIn)}</Typography>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <Typography color="text.secondary" variant="body2" sx={{ mb: 0.5 }}>
+                  User ID
+                </Typography>
+                <Typography sx={{ fontFamily: "monospace", fontSize: 14 }}>{user.id}</Typography>
+              </Grid>
+            </Grid>
+          </AccordionDetails>
+        </Accordion>
+
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 4 }}>
+          <Button
+            variant="outlined"
+            type="button"
+            onClick={() => navigate("/users")}
+            startIcon={<Close />}
+          >
+            Cancel
+          </Button>
+          {!readonly && (
+            <Button type="submit" variant="contained" startIcon={<Save />}>
+              Save Changes
+            </Button>
           )}
-        </form>
-      </UserEditContainer>
-    </ModuleWrapper>
+        </Box>
+      </form>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete User</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete {user.displayName}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={() => setDeleteDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="error" onClick={handleDelete}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };

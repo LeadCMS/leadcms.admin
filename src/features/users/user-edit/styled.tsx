@@ -4,11 +4,14 @@ import { Theme as MuiTheme } from "@mui/material/styles";
 
 export const UserEditContainer = styled("div")`
   flex-grow: 1;
+  padding: 2rem 0;
+  max-width: 900px;
+  margin: 0 auto;
 `;
 
 export const StyledAvatar = styled(Avatar)`
   &:hover {
-    background-color: ${({ theme }: { theme: MuiTheme }) => theme.palette.primary.light};
+    background-color: ${({ theme }: { theme: MuiTheme }) => theme.palette.primary.light + "22"};
     cursor: pointer;
   }
 `;

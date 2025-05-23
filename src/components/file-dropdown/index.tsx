@@ -24,8 +24,6 @@ const FileDropdown = ({
   maxFileSize,
   onChange,
   data,
-  error,
-  helperText,
 }: FileDropdownProps) => {
   const { notificationsService } = useNotificationsService();
   const onDrop = (acceptedFiles: File[], rejections: FileRejection[]) => {
@@ -68,7 +66,7 @@ const FileDropdown = ({
                 <div {...getRootProps()}>
                   <input {...getInputProps()} />
                   <p>Drag drop some files here, or click to select files</p>
-                  <Grid item xs={12} style={{ textAlign: "center" }}>
+                  <Grid size={{ xs: 12 }} style={{ textAlign: "center" }}>
                     <Button variant="outlined">Select file</Button>
                   </Grid>
                 </div>
@@ -77,7 +75,7 @@ const FileDropdown = ({
           </Dropzone>
         ) : (
           <Grid container direction="column" justifyContent="center">
-            <Grid item xs={12} style={{ textAlign: "center" }}>
+            <Grid size={{ xs: 12 }} style={{ textAlign: "center" }}>
               <Box
                 component="img"
                 sx={{
@@ -87,7 +85,7 @@ const FileDropdown = ({
                 src={data.url}
               />
             </Grid>
-            <Grid item xs={12} style={{ textAlign: "center" }}>
+            <Grid size={{ xs: 12 }} style={{ textAlign: "center" }}>
               <Button variant="outlined" onClick={onReset}>
                 Reset
               </Button>
