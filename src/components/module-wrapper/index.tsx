@@ -1,9 +1,6 @@
 import {
   ModuleContainer,
-  ModuleHeaderContainer,
-  ModuleHeaderSubtitleContainer,
 } from "@components/module";
-import { BreadCrumbNavigation } from "@components/breadcrumbs";
 import { PropsWithChildren, ReactNode } from "react";
 import {
   ActionsContainer,
@@ -16,12 +13,10 @@ import {
   LoadingIndicatorContainer,
   ModuleContentContainer,
   RightContainer,
-  SavingIndicatorContainer,
   ScrollContainer,
 } from "./index.styled";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { BreadcrumbLink } from "../../types";
-import { Grid } from "@mui/material";
 
 export interface ModuleWrapperProps extends PropsWithChildren {
   key?: string;
@@ -36,37 +31,17 @@ export interface ModuleWrapperProps extends PropsWithChildren {
 }
 
 export const ModuleWrapper = ({
-  breadcrumbs,
-  currentBreadcrumb,
   leftContainerChildren,
   extraActionsContainerChildren,
   addButtonContainerChildren,
-  saveIndicatorElement,
   actionButtons,
   isForm = false,
   children,
 }: ModuleWrapperProps) => {
-  const { isSaving, isBusy } = useModuleWrapperContext();
+  const { isBusy } = useModuleWrapperContext();
 
   return (
     <ModuleContainer>
-      <ModuleHeaderContainer>
-        <Grid container direction={"row"} justifyContent={"space-between"} sx={{ pt: 2 }}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <ModuleHeaderSubtitleContainer>
-              <BreadCrumbNavigation
-                links={breadcrumbs}
-                current={currentBreadcrumb}
-              ></BreadCrumbNavigation>
-            </ModuleHeaderSubtitleContainer>
-          </Grid>
-          {isSaving && saveIndicatorElement && (
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <SavingIndicatorContainer>{saveIndicatorElement}</SavingIndicatorContainer>
-            </Grid>
-          )}
-        </Grid>
-      </ModuleHeaderContainer>
       {(leftContainerChildren || extraActionsContainerChildren || addButtonContainerChildren) && (
         <ActionsContainer>
           {leftContainerChildren && <LeftContainer>{leftContainerChildren}</LeftContainer>}

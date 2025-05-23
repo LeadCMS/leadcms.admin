@@ -1,18 +1,19 @@
 import { List, useMediaQuery, useTheme } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   ListItemIconStyled, 
   ListSubheaderStyled, 
-  MobileDrawerToggle, 
   SidebarLinkText, 
   SidebarLink, 
-  SidebarStyled 
+  SidebarStyled,
+  SidebarTopContainer,
+  SidebarMenuScrollArea
 } from "./index.styled";
-import MenuIcon from "@mui/icons-material/Menu";
-import CloseIcon from "@mui/icons-material/Close";
 import { useRouteParams } from "typesafe-routes";
 import { CoreModule, coreModuleRoute, getCoreModuleRoute } from "lib/router";
 import { useSidebar } from "@providers/sidebar-provider";
+import { LogoComponent } from "@components/app-header/index.styled";
+import Typography from "@mui/material/Typography";
 
 // Import all needed icons
 import {
@@ -20,7 +21,7 @@ import {
   Business,
   Inventory,
   Web,
-  Link,
+  Link as LinkIcon,
   Comment,
   Unsubscribe,
   Person,
@@ -28,6 +29,9 @@ import {
   Email,
   Book,
   Newspaper,
+  Dashboard,
+  MonetizationOn,
+  Image as ImageIcon,
 } from "@mui/icons-material";
 
 interface SidebarProps {
@@ -63,8 +67,20 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
     const navigateTo = (route: string) => () => {
       window.location.href = route;
     };
-    
+
     menuItems = [
+      {
+        header: "MAIN",
+        items: [
+          {
+            id: "dashboard",
+            label: "Dashboard",
+            icon: <Dashboard />,
+            onClick: navigateTo(getCoreModuleRoute(CoreModule.dashboard)),
+            isSelected: moduleName === CoreModule.dashboard
+          }
+        ]
+      },
       {
         header: "CMS",
         items: [
@@ -83,9 +99,16 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
             isSelected: moduleName === CoreModule.comments
           },
           {
+            id: "media",
+            label: "Media",
+            icon: <ImageIcon />,
+            onClick: navigateTo(getCoreModuleRoute(CoreModule.media)),
+            isSelected: moduleName === CoreModule.media
+          },
+          {
             id: "links",
             label: "Links",
-            icon: <Link />,
+            icon: <LinkIcon />,
             onClick: navigateTo(getCoreModuleRoute(CoreModule.links)),
             isSelected: moduleName === CoreModule.links
           }
@@ -94,6 +117,20 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
       {
         header: "CRM",
         items: [
+          {
+            id: "orders",
+            label: "Orders",
+            icon: <Inventory />,
+            onClick: navigateTo(getCoreModuleRoute(CoreModule.orders)),
+            isSelected: moduleName === CoreModule.orders
+          },
+          {
+            id: "deals",
+            label: "Deals",
+            icon: <MonetizationOn />,
+            onClick: navigateTo(getCoreModuleRoute(CoreModule.deals)),
+            isSelected: moduleName === CoreModule.deals
+          },
           {
             id: "contacts",
             label: "Contacts",
@@ -107,27 +144,6 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
             icon: <Business />,
             onClick: navigateTo(getCoreModuleRoute(CoreModule.accounts)),
             isSelected: moduleName === CoreModule.accounts
-          },
-          {
-            id: "orders",
-            label: "Orders",
-            icon: <Inventory />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.orders)),
-            isSelected: moduleName === CoreModule.orders
-          },
-          {
-            id: "domains",
-            label: "Domains",
-            icon: <Web />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.domains)),
-            isSelected: moduleName === CoreModule.domains
-          },
-          {
-            id: "activityLogs",
-            label: "Activity logs",
-            icon: <Book />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.activityLogs)),
-            isSelected: moduleName === CoreModule.activityLogs
           }
         ]
       },
@@ -147,6 +163,13 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
             icon: <Unsubscribe />,
             onClick: navigateTo(getCoreModuleRoute(CoreModule.unsubscribes)),
             isSelected: moduleName === CoreModule.unsubscribes
+          },
+          {
+            id: "domains",
+            label: "Domains",
+            icon: <Web />,
+            onClick: navigateTo(getCoreModuleRoute(CoreModule.domains)),
+            isSelected: moduleName === CoreModule.domains
           }
         ]
       },
@@ -159,6 +182,13 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
             icon: <Person />,
             onClick: navigateTo(getCoreModuleRoute(CoreModule.users)),
             isSelected: moduleName === CoreModule.users
+          },
+          {
+            id: "activityLogs",
+            label: "Activity logs",
+            icon: <Book />,
+            onClick: navigateTo(getCoreModuleRoute(CoreModule.activityLogs)),
+            isSelected: moduleName === CoreModule.activityLogs
           },
           {
             id: "about",
@@ -179,41 +209,55 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
       toggle(); // Use the sidebar context's toggle function
     }
   };
+
+  const navigateToDashboard = useCallback(() => {
+    window.location.href = getCoreModuleRoute(CoreModule.dashboard);
+  }, []);
   
   return (
     <>
-      {/* Only show toggle button on mobile */}
-      {isMobile && (
-        <MobileDrawerToggle onClick={toggleDrawer}>
-          {mobileOpen ? <CloseIcon /> : <MenuIcon />}
-        </MobileDrawerToggle>
-      )}
-      
       <SidebarStyled
         variant={isMobile ? "temporary" : "permanent"}
-        open={isMobile ? mobileOpen : isOpen} // Use isOpen from context
+        open={isMobile ? mobileOpen : isOpen}
         onClose={toggleDrawer}
       >
-        {menuItems && menuItems.map((group) => (
-          <List
-            key={group.header}
-            subheader={<ListSubheaderStyled>{group.header}</ListSubheaderStyled>}
+        <SidebarTopContainer isMobile={isMobile} isOpen={isMobile ? mobileOpen : isOpen}>
+          <div
+            className="sidebar-logo sidebar-link"
+            style={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+            onClick={navigateToDashboard}
+            tabIndex={0}
+            role="button"
+            aria-label="Go to dashboard"
           >
-            {group.items && group.items.map((item) => (
-              <SidebarLink
-                key={item.id}
-                onClick={() => {
-                  item.onClick();
-                  if (isMobile) setMobileOpen(false);
-                }}
-                selected={item.isSelected}
-              >
-                <ListItemIconStyled>{item.icon}</ListItemIconStyled>
-                <SidebarLinkText primary={item.label} />
-              </SidebarLink>
-            ))}
-          </List>
-        ))}
+            <LogoComponent />
+            <Typography className="sidebar-app-name">
+              LeadCMS.ai
+            </Typography>
+          </div>
+        </SidebarTopContainer>
+        <SidebarMenuScrollArea>
+          {menuItems && menuItems.map((group) => (
+            <List
+              key={group.header}
+              subheader={<ListSubheaderStyled>{group.header}</ListSubheaderStyled>}
+            >
+              {group.items && group.items.map((menuItem) => (
+                <SidebarLink
+                  key={menuItem.id}
+                  onClick={() => {
+                    menuItem.onClick();
+                    if (isMobile) setMobileOpen(false);
+                  }}
+                  selected={menuItem.isSelected}
+                >
+                  <ListItemIconStyled>{menuItem.icon}</ListItemIconStyled>
+                  <SidebarLinkText primary={menuItem.label} />
+                </SidebarLink>
+              ))}
+            </List>
+          ))}
+        </SidebarMenuScrollArea>
       </SidebarStyled>
     </>
   );

@@ -1,10 +1,16 @@
-import { Box, IconButton, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { AppBarStyled, AppBarToolbar, LogoComponent } from "./index.styled";
+import { Box, IconButton, useMediaQuery, useTheme } from "@mui/material";
+import { AppBarStyled, AppBarToolbar } from "./index.styled";
+import { DropdownMenu } from "./dropdown-menu";
+import { BreadCrumbNavigation } from "@components/breadcrumbs";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useSidebar } from "@providers/sidebar-provider";
-import { DropdownMenu } from "./dropdown-menu";
 
-export const AppHeader = () => {
+interface AppHeaderProps {
+  breadcrumbs: { linkText: string; toRoute: string }[];
+  currentBreadcrumb: string;
+}
+
+export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) => {
   const { toggle } = useSidebar();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -13,30 +19,25 @@ export const AppHeader = () => {
     <AppBarStyled>
       <AppBarToolbar>
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          {isMobile ? (
-            <IconButton 
-              edge="start" 
-              color="inherit" 
-              aria-label="menu" 
+          {isMobile && (
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="menu"
               onClick={toggle}
-              sx={{ mr: 1 }}
+              sx={{
+                mr: 1,
+                background: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+                border: `1px solid ${theme.palette.divider}`
+              }}
             >
               <MenuIcon />
             </IconButton>
-          ) : (
-            <LogoComponent />
           )}
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              ml: 2, 
-              fontWeight: "500", 
-              display: { xs: "none", sm: "block" } 
-            }}
-          >
-            LeadCMS.ai
-          </Typography>
+        </Box>
+        <Box sx={{ flex: 1, mx: 3, minWidth: 0 }}>
+          <BreadCrumbNavigation links={breadcrumbs} current={currentBreadcrumb} />
         </Box>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <DropdownMenu />

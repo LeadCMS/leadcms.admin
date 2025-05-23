@@ -1,16 +1,22 @@
 import { ReactNode, useState } from "react";
 import { AppHeader } from "@components/app-header";
 import { Sidebar } from "@components/side-bar";
-import { ContentArea, HeaderArea, SidebarArea } from "./index.styled";
-import { AppLayoutWrapper } from "./index.styled";
+import { AppLayoutWrapper, MainColumn, MainContent } from "./index.styled";
 import { useMediaQuery, useTheme } from "@mui/material";
 
 interface AppLayoutProps {
   children: ReactNode;
   className?: string;
+  breadcrumbs?: { linkText: string; toRoute: string }[];
+  currentBreadcrumb?: string;
 }
 
-export const AppLayout = ({ children, className = "" }: AppLayoutProps) => {
+export const AppLayout = ({
+  children,
+  className = "",
+  breadcrumbs = [],
+  currentBreadcrumb = "",
+}: AppLayoutProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -25,15 +31,11 @@ export const AppLayout = ({ children, className = "" }: AppLayoutProps) => {
 
   return (
     <AppLayoutWrapper className={`${className} ${sidebarHiddenClass} ${sidebarClass}`}>
-      <HeaderArea>
-        <AppHeader />
-      </HeaderArea>
-      <SidebarArea>
-        <Sidebar onDrawerStateChange={handleDrawerToggle} />
-      </SidebarArea>
-      <ContentArea>
-        {children}
-      </ContentArea>
+      <Sidebar onDrawerStateChange={handleDrawerToggle} />
+      <MainColumn>
+        <AppHeader breadcrumbs={breadcrumbs} currentBreadcrumb={currentBreadcrumb} />
+        <MainContent>{children}</MainContent>
+      </MainColumn>
     </AppLayoutWrapper>
   );
 };
