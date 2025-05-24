@@ -38,10 +38,10 @@ const StatTile: React.FC<StatTileProps> = ({ label, fetchCount }) => {
   }, [fetchCount]);
 
   return (
-    <Paper style={{ padding: 16, textAlign: "center", minHeight: 100 }}>
+    <Paper style={{ padding: 24, textAlign: "center", minHeight: 140 }}>
       <Typography variant="h6">{label}</Typography>
       {loading ? (
-        <CircularProgress size={28} />
+        <CircularProgress size={32} />
       ) : error ? (
         <Typography color="error" variant="body2">{error}</Typography>
       ) : (
