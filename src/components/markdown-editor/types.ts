@@ -1,6 +1,6 @@
 import { RequestContextType } from "@providers/request-provider";
-import { ContentDetails } from "@features/blog/content-edit/types";
-import { ICommand, ICommandBase } from "@uiw/react-md-editor";
+import { ContentDetails } from "@features/content/content-edit/types";
+import { ICommandBase } from "@uiw/react-md-editor";
 import { ValidateFrontmatterError } from "utils/frontmatter-validator";
 
 type textChangeFunc = (value: string | undefined) => void;

@@ -1,8 +1,9 @@
 "use client";
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { useRouteParams } from "typesafe-routes";
 import { CoreModule, coreModuleRoute, defaultModuleRoute } from "lib/router";
-import { BlogModule } from "features/blog";
+import { ContentModule } from "features/content";
+import { DashboardModule } from "features/dashboard";
 import { ContactsModule } from "features/contacts/contacts-module";
 import { AccountsModule } from "features/accounts/accounts-module";
 import { OrdersModule } from "features/orders/orders-module";
@@ -26,7 +27,7 @@ export const ModuleLoader = () => {
     <ModuleWrapperProvider>
       <ErrorBoundary FallbackComponent={ErrorBoundaryFallbackPage} resetKeys={[moduleName]}>
         <Suspense fallback="Loading...">
-          {moduleName === CoreModule.blog && <BlogModule />}
+          {moduleName === CoreModule.content && <ContentModule />}
           {moduleName === CoreModule.contacts && <ContactsModule />}
           {moduleName === CoreModule.unsubscribes && <UnsubscribesModule />}
           {moduleName === CoreModule.links && <LinksModule />}
@@ -38,6 +39,7 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.about && <AboutModule />}
           {moduleName === CoreModule.emailTemplates && <EmailTemplatesModule />}
           {moduleName === CoreModule.activityLogs && <ActivityLogModule />}
+          {moduleName === CoreModule.dashboard && <DashboardModule />}
           {!moduleName && <Navigate to={defaultModuleRoute} replace />}
         </Suspense>
       </ErrorBoundary>

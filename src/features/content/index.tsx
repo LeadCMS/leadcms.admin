@@ -3,7 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { ContentEdit } from "./content-edit";
 import { ContentView } from "./content-view";
 
-export const BlogModule = () => {
+export const ContentModule = () => {
   return (
     <Routes>
       <Route path={"/"} element={<ContentList />} />

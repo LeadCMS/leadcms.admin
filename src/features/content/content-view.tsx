@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
@@ -19,7 +19,7 @@ import MarkdownViewer from "@components/markdown-viewer";
 import { CommentList } from "./comment/comment-list";
 import graymatter from "gray-matter";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { blogFormBreadcrumbLinks } from "@features/blog/constants";
+import { blogFormBreadcrumbLinks } from "@features/content/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { DataManagementBlock } from "@components/data-management";
 import { CoreModule } from "@lib/router";
@@ -106,7 +106,7 @@ export const ContentView = () => {
           entity="content"
           handleDeleteAsync={(id) => client.api.contentDelete(id as number)}
           itemId={+id!}
-          successNavigationRoute={CoreModule.blog}
+          successNavigationRoute={CoreModule.content}
         ></DataManagementBlock>
       </ContentDeleteContainer>
     </ModuleWrapper>

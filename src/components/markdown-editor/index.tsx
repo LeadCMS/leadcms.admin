@@ -9,7 +9,7 @@ import { validateFrontmatter, ValidateFrontmatterError } from "utils/frontmatter
 import Dropzone, { Accept, FileRejection } from "react-dropzone";
 import "./styles.css";
 import { useNotificationsService } from "@hooks";
-import { ContentEditMaximumImageSize } from "@features/blog/content-edit/validation";
+import { ContentEditMaximumImageSize } from "@features/content/content-edit/validation";
 import { useRequestContext } from "@providers/request-provider";
 
 const ImageUploadingCtx = createContext<ImageUploadingContext | null>(null);

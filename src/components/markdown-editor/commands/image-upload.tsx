@@ -1,8 +1,8 @@
 import ImageIcon from "@mui/icons-material/Image";
 import { Button } from "@mui/material";
 import { ExtendedCommandBase } from "../types";
-import { RequestContextType, useRequestContext } from "@providers/request-provider";
-import { ContentDetails } from "@features/blog/content-edit/types";
+import { useRequestContext } from "@providers/request-provider";
+import { ContentDetails } from "@features/content/content-edit/types";
 import { useNotificationsService } from "@hooks";
 
 export const ImageUpload = (contentDetails: ContentDetails, isInToolbar: boolean) => {

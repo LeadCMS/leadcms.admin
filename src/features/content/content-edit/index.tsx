@@ -45,7 +45,7 @@ import { ValidateFrontmatterError } from "utils/frontmatter-validator";
 import { ImageData } from "@components/file-dropdown";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { blogFormBreadcrumbLinks } from "@features/blog/constants";
+import { blogFormBreadcrumbLinks } from "@features/content/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
@@ -169,7 +169,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     setEditorLocalStorage(localStorageSnapshot);
     setIsSaving(false);
     helpers.setSubmitting(false);
-    handleNavigation(CoreModule.blog);
+    handleNavigation(CoreModule.content);
   };
 
   const submit = async (values: ContentDetails, helpers: FormikHelpers<ContentDetails>) => {
@@ -309,8 +309,8 @@ export const ContentEdit = (props: ContentEditProps) => {
           <Card>
             <CardContent>
               <Grid container spacing={1}>
-                <Grid container item spacing={4} xs={6} sm={6}>
-                  <Grid xs={12} sm={12} item>
+                <Grid container spacing={4} size={{ xs: 6, sm: 6 }}>
+                  <Grid size={{ xs: 12, sm: 12 }}>
                     <Autocomplete
                       freeSolo
                       disabled={props.readonly}
@@ -332,7 +332,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                       )}
                     />
                   </Grid>
-                  <Grid xs={12} sm={12} item>
+                  <Grid size={{ xs: 12, sm: 12 }}>
                     <TextField
                       disabled={props.readonly}
                       label="Title"
@@ -346,7 +346,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                       fullWidth
                     ></TextField>
                   </Grid>
-                  <Grid xs={12} sm={12} item>
+                  <Grid size={{ xs: 12, sm: 12 }}>
                     <TextField
                       disabled={props.readonly}
                       label="Description"
@@ -363,7 +363,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     ></TextField>
                   </Grid>
                 </Grid>
-                <Grid item xs={6} sm={6} pb={{ sm: "0.7rem" }}>
+                <Grid size={{ xs: 6, sm: 6 }} pb={{ sm: "0.7rem" }}>
                   <FileDropdown
                     onChange={onCoverImageChange}
                     acceptMIME="image/*"
@@ -373,7 +373,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                 </Grid>
               </Grid>
               <Grid container spacing={3} sx={{ mt: 2 }}>
-                <Grid xs={12} sm={12} item data-color-mode="light">
+                <Grid size={{ xs: 12, sm: 12 }} data-color-mode="light">
                   <MarkdownEditor
                     onChange={async (value) => {
                       setWasModified(true);
@@ -387,7 +387,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     contentDetails={formik.values}
                   />
                 </Grid>
-                <Grid xs={6} sm={6} item>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <TextField
                     disabled={props.readonly}
                     label="Cover Image Alt Text"
@@ -401,7 +401,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     fullWidth
                   ></TextField>
                 </Grid>
-                <Grid xs={6} sm={6} item>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <TextField
                     disabled={props.readonly}
                     label="Slug"
@@ -415,7 +415,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     fullWidth
                   ></TextField>
                 </Grid>
-                <Grid xs={6} sm={6} item>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <TextField
                     disabled={props.readonly}
                     value={formik.values.author}
@@ -429,7 +429,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     fullWidth
                   />
                 </Grid>
-                <Grid xs={3} sm={3} item>
+                <Grid size={{ xs: 3, sm: 3 }}>
                   <LanguageAutocomplete
                     value={formik.values.language}
                     onChange={(val) => autoCompleteValueUpdate<string | null>("language", val)}
@@ -447,7 +447,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     )}
                   />
                 </Grid>
-                <Grid xs={3} sm={3} item>
+                <Grid size={{ xs: 3, sm: 3 }}>
                   <DatePicker
                     label="Published At"
                     disabled={props.readonly}
@@ -458,7 +458,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     slotProps={{ textField: { fullWidth: true } }}
                   />
                 </Grid>
-                <Grid xs={6} sm={6} item>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <RemoteAutocomplete
                     type={RemoteValues.TAGS}
                     label="Tags"
@@ -474,7 +474,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     limit={3}
                   />
                 </Grid>
-                <Grid xs={6} sm={6} item>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <FormControlLabel
                     label="Allow Comments"
                     control={
@@ -487,7 +487,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     }
                   />
                 </Grid>
-                <Grid xs={6} sm={6} item>
+                <Grid size={{ xs: 6, sm: 6 }}>
                   <RemoteAutocomplete
                     type={RemoteValues.CATEGORIES}
                     label="Category"
@@ -501,14 +501,14 @@ export const ContentEdit = (props: ContentEditProps) => {
                     freeSolo
                   />
                 </Grid>
-                <Grid container item spacing={3}>
-                  <Grid item xs={6}>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 6 }}>
                     {!props.readonly && (
                       <Button
                         disabled={formik.isSubmitting}
                         variant="contained"
                         color="primary"
-                        onClick={() => handleNavigation(CoreModule.blog)}
+                        onClick={() => handleNavigation(CoreModule.content)}
                         fullWidth
                         size="large"
                       >
@@ -516,7 +516,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                       </Button>
                     )}
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     {!props.readonly && (
                       <Button
                         disabled={!(wasModified || coverWasModified)}

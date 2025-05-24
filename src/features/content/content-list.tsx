@@ -15,7 +15,7 @@ import { Add, Upload, Download } from "@mui/icons-material";
 import { useRequestContext } from "@providers/request-provider";
 import { SearchBar } from "@components/search-bar";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { blogBreadcrumbLinks } from "@features/blog/constants";
+import { blogBreadcrumbLinks } from "@features/content/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { totalCountHeaderName } from "@providers/query-provider";

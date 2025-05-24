@@ -88,8 +88,8 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
             id: "blog",
             label: "Content",
             icon: <Newspaper />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.blog)),
-            isSelected: moduleName === CoreModule.blog
+            onClick: navigateTo(getCoreModuleRoute(CoreModule.content)),
+            isSelected: moduleName === CoreModule.content
           },
           {
             id: "comments",

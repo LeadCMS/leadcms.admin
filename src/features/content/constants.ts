@@ -7,5 +7,5 @@ export const blogBreadcrumbLinks: BreadcrumbLink[] = [
 
 export const blogFormBreadcrumbLinks: BreadcrumbLink[] = [
   { linkText: "Dashboard", toRoute: rootRoute },
-  { linkText: "Content", toRoute: getCoreModuleRoute(CoreModule.blog) },
+  { linkText: "Content", toRoute: getCoreModuleRoute(CoreModule.content) },
 ];

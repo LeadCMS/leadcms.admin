@@ -16,7 +16,7 @@ export const App = () => {
   // Define menu categories for breadcrumbs
   const menuCategories: Record<string, { category: string; name: string }> = {
     dashboard: { category: "MAIN", name: "Dashboard" },
-    blog: { category: "CMS", name: "Content" },
+    content: { category: "CMS", name: "Content" },
     comments: { category: "CMS", name: "Comments" },
     links: { category: "CMS", name: "Links" },
     contacts: { category: "CRM", name: "Contacts" },
