@@ -38,6 +38,7 @@ import { useNavigate } from "react-router-dom";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Chip from "@mui/material/Chip";
 import { Theme, useTheme } from "@mui/material/styles";
+import { idToDisplayName } from "./content-types";
 
 export const ContentList = () => {
   const { client } = useRequestContext();
@@ -251,16 +252,16 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
       >
         {item.type && (
           <Chip
-            label={item.type}
+            label={idToDisplayName(item.type)}
             size="small"
             sx={{
               position: "absolute",
-              top: 16, // increased from 12
-              left: 16, // increased from 12
+              top: 16,
+              left: 16,
               zIndex: 2,
               fontWeight: 700,
               fontSize: 12,
-              height: 24, // increased from 22
+              height: 24,
               borderRadius: 1,
               backgroundColor: getTypeColor(item.type, theme),
               color: theme.palette.getContrastText(getTypeColor(item.type, theme)),
@@ -362,9 +363,12 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
 
 // Utility to generate a color from a string (content type)
 function getTypeColor(type: string, theme: Theme): string {
+  // Ensure we're using the kebab-case ID format for consistent color generation
+  const processedType = type.includes(" ") ? type.toLowerCase().replace(/\s+/g, "-") : type;
+  
   let hash = 0;
-  for (let i = 0; i < type.length; i++) {
-    hash = type.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < processedType.length; i++) {
+    hash = processedType.charCodeAt(i) + ((hash << 5) - hash);
   }
   // Avoid red zone: skip hues between 0-20 and 340-360 (red range)
   let hue = Math.abs(hash) % 320 + 20; // 20-339

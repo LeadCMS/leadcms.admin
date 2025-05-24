@@ -11,10 +11,10 @@ const SavingBarBegin = React.forwardRef<HTMLDivElement>((props, ref) => {
   return (
     <div {...props} ref={ref}>
       <Grid container spacing={3} sm="auto" xs="auto" justifyContent={"flex-end"}>
-        <Grid item>
+        <Grid size={{ xs: "auto" }}>
           <CircularProgress size={14} />
         </Grid>
-        <Grid item>
+        <Grid size={{ xs: "auto" }}>
           <Typography>Saving draft locally...</Typography>
         </Grid>
       </Grid>
@@ -26,10 +26,10 @@ const SavingBarEnd = React.forwardRef<HTMLDivElement>((props, ref) => {
   return (
     <div {...props} ref={ref}>
       <Grid container spacing={3} sm="auto" xs="auto">
-        <Grid item>
+        <Grid size={{ xs: "auto" }}>
           <SaveIcon sx={{ fontSize: 14 }} />
         </Grid>
-        <Grid item>
+        <Grid size={{ xs: "auto" }}>
           <Typography>Draft saved locally</Typography>
         </Grid>
       </Grid>
@@ -48,12 +48,12 @@ export const SavingBar = () => {
   return (
     <Box minWidth={200}>
       <Grid container justifyContent={"flex-end"}>
-        <Grid item sx={{ position: "absolute" }}>
+        <Grid size={{ xs: "auto" }} sx={{ position: "absolute" }}>
           <Fade in={state}>
             <SavingBarEnd />
           </Fade>
         </Grid>
-        <Grid item sx={{ position: "absolute" }}>
+        <Grid size={{ xs: "auto" }} sx={{ position: "absolute" }}>
           <Fade in={!state}>
             <SavingBarBegin />
           </Fade>

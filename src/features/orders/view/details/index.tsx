@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { ContactCardHeader } from "@features/contacts/index.styled";
 import { useNotificationsService } from "@hooks";
 import {
   ContactDetailsDto,
@@ -24,7 +23,6 @@ import { useRequestContext } from "@providers/request-provider";
 import { DataView } from "components/data-view";
 import { useRouteParams } from "typesafe-routes";
 import { execDeleteWithToast, getCountryByCode, getFormattedDateTime } from "utils/general-helper";
-import { ModuleWrapper } from "@components/module-wrapper";
 import { GhostLink } from "@components/ghost-link";
 import { ActionButtonContainer } from "@components/data-table/index.styled";
 import EditIcon from "@mui/icons-material/Edit";
@@ -36,7 +34,6 @@ import { toFormikValidationSchema } from "zod-formik-adapter";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { DataManagementBlock, DataDeleteConfirmation } from "@components/data-management";
-import { orderFormBreadcrumbLinks } from "@features/orders/constants";
 
 export const OrderView = () => {
   const context = useRequestContext();
@@ -451,7 +448,7 @@ export const OrderView = () => {
                           </Grid>
                         </Grid>
                         <Grid container spacing={3} justifyContent="flex-end">
-                          <Grid item xs={1}>
+                          <Grid size={{ xs: 1 }}>
                             <Button
                               disabled={formik.isSubmitting}
                               type="submit"
@@ -463,7 +460,7 @@ export const OrderView = () => {
                               Cancel
                             </Button>
                           </Grid>
-                          <Grid item xs={1}>
+                          <Grid size={{ xs: 1 }}>
                             <Button
                               type="submit"
                               disabled={formik.isSubmitting}

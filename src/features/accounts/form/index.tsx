@@ -446,7 +446,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
               </Grid>
             </Grid>
             <Grid container spacing={4} marginTop={2} marginBottom={4} justifyContent="flex-end">
-              <Grid item xs={1}>
+              <Grid size={{ xs: 1 }}>
                 <Button
                   disabled={isLoading || formik.isSubmitting}
                   type="submit"
@@ -458,7 +458,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   Cancel
                 </Button>
               </Grid>
-              <Grid item xs={1}>
+              <Grid size={{ xs: 1 }}>
                 <Button
                   type="submit"
                   disabled={isLoading || formik.isSubmitting}

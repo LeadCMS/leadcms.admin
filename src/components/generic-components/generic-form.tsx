@@ -399,7 +399,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
               )}
           </Grid>
           <Grid container spacing={4} justifyContent="flex-end">
-            <Grid item xs={12} sm={1}>
+            <Grid size={{ xs: 12, sm: 1 }}>
               {editable && (
                 <Button
                   type="submit"
@@ -413,7 +413,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
                 </Button>
               )}
             </Grid>
-            <Grid item xs={12} sm={1}>
+            <Grid size={{ xs: 12, sm: 1 }}>
               {editable && (
                 <Button
                   type="submit"
@@ -432,15 +432,15 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
       </Card>
       {!editable && deleteOptionProps && (
         <Grid container spacing={3}>
-          <Grid item xs={8} sm={8}>
+          <Grid size={{ xs: 8, sm: 8 }}>
             <GenericViewDeleteContainer>
               <DataManagementBlock
-                header={deleteOptionProps!.header}
-                description={deleteOptionProps!.description}
-                entity={deleteOptionProps!.entity}
-                handleDeleteAsync={(id) => deleteOptionProps!.deleteItemFn(id as number)}
+                header={deleteOptionProps.header}
+                description={deleteOptionProps.description}
+                entity={deleteOptionProps.entity}
+                handleDeleteAsync={(id) => deleteOptionProps.deleteItemFn(id as number)}
                 itemId={itemId!}
-                successNavigationRoute={deleteOptionProps!.listRoute}
+                successNavigationRoute={deleteOptionProps.listRoute}
               ></DataManagementBlock>
             </GenericViewDeleteContainer>
           </Grid>

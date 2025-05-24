@@ -1,62 +1,22 @@
-import dayjs from "dayjs";
 import zod from "zod";
 import { TypeDefaultValues } from "./types";
+import { 
+  CONTENT_TYPES, 
+  createContentTypeDefaultValues
+} from "../content-types";
 
-export const ContentEditAvailableTypes = ["Blog Post", "Release Note"] as const;
+// Get content type IDs for validation
+export const ContentEditAvailableTypeIds = CONTENT_TYPES.map(type => type.id);
 
 export const ContentEditMaximumImageSize = 3 * 1000 * 1000; // 3 megabytes
 
-export const ContentEditDefaultValues: TypeDefaultValues[] = [
-  {
-    type: "Blog Post",
-    defaultValues: {
-      id: null,
-      type: "Blog Post",
-      title: "",
-      description: "",
-      body: "",
-      coverImageUrl: "",
-      coverImagePending: { fileName: "", url: "" },
-      coverImageAlt: "",
-      slug: "",
-      author: "",
-      language: "",
-      allowComments: false,
-      tags: [],
-      category: "",
-      createdAt: "",
-      updatedAt: "",
-      publishedAt: dayjs().toISOString(),
-      files: null,
-    },
-  },
-  {
-    type: "Release Note",
-    defaultValues: {
-      id: null,
-      type: "Release Note",
-      title: "",
-      description: "",
-      body: "",
-      coverImageUrl: "",
-      coverImagePending: { fileName: "", url: "" },
-      coverImageAlt: "",
-      slug: "",
-      author: "",
-      language: "",
-      allowComments: false,
-      tags: [],
-      category: "",
-      createdAt: "",
-      updatedAt: "",
-      publishedAt: dayjs().toISOString(),
-      files: null,
-    },
-  },
-];
+// Generate default values for all content types
+export const ContentEditDefaultValues: TypeDefaultValues[] = createContentTypeDefaultValues();
 
 export const ContentEditValidationScheme = zod.object({
-  type: zod.enum(ContentEditAvailableTypes),
+  type: zod.string().refine(val => ContentEditAvailableTypeIds.includes(val), {
+    message: "Invalid content type",
+  }),
   title: zod.string(),
   description: zod.string(),
   body: zod.string(),
