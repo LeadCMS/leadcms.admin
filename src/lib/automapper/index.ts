@@ -1,7 +1,7 @@
 import { createMap, forMember, mapFrom, createMapper } from "@automapper/core";
 import { pojos, PojosMetadataMap } from "@automapper/pojos";
 import { ContentDetailsDto, ContentUpdateDto, ContentCreateDto } from "@lib/network/swagger-client";
-import { ContentDetails } from "@features/blog/content-edit/types";
+import { ContentDetails } from "@features/content/content-edit/types";
 
 export const Automapper = createMapper({
   strategyInitializer: pojos(),

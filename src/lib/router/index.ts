@@ -69,4 +69,4 @@ export const getImportFormRoute = () => importFormRoute({}).$;
 
 export const rootRoute = "/";
 
-export const defaultModuleRoute = "/blog";
+export const defaultModuleRoute = "/content";

@@ -19,7 +19,7 @@ import MarkdownViewer from "@components/markdown-viewer";
 import { CommentList } from "./comment/comment-list";
 import graymatter from "gray-matter";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { blogFormBreadcrumbLinks } from "@features/content/constants";
+import { contentFormBreadcrumbLinks } from "@features/content/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { DataManagementBlock } from "@components/data-management";
 import { CoreModule } from "@lib/router";
@@ -51,7 +51,7 @@ export const ContentView = () => {
 
   return (
     <ModuleWrapper
-      breadcrumbs={blogFormBreadcrumbLinks}
+      breadcrumbs={contentFormBreadcrumbLinks}
       currentBreadcrumb={contentItem?.title || ""}
     >
       <ContentEditContainer>

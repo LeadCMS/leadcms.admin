@@ -31,7 +31,7 @@ import {
   Search as SearchIcon,
 } from "@mui/icons-material";
 import { useRequestContext } from "@providers/request-provider";
-import { blogBreadcrumbLinks } from "@features/content/constants";
+import { contentBreadcrumbLinks } from "@features/content/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { getContentCoverImageUrl } from "@lib/network/utils";
 import { useNavigate } from "react-router-dom";
@@ -131,7 +131,7 @@ export const ContentList = () => {
 
   return (
     <ModuleWrapper
-      breadcrumbs={blogBreadcrumbLinks}
+      breadcrumbs={contentBreadcrumbLinks}
       currentBreadcrumb={"Content"}
       leftContainerChildren={leftControls}
       extraActionsContainerChildren={null}

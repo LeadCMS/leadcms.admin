@@ -45,7 +45,7 @@ import { ValidateFrontmatterError } from "utils/frontmatter-validator";
 import { ImageData } from "@components/file-dropdown";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { blogFormBreadcrumbLinks } from "@features/content/constants";
+import { contentFormBreadcrumbLinks } from "@features/content/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
@@ -291,7 +291,7 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   return (
     <ModuleWrapper
-      breadcrumbs={blogFormBreadcrumbLinks}
+      breadcrumbs={contentFormBreadcrumbLinks}
       currentBreadcrumb={formik.values.title}
       saveIndicatorElement={<SavingBar />}
     >

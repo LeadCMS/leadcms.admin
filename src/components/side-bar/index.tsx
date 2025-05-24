@@ -85,7 +85,7 @@ export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
         header: "CMS",
         items: [
           {
-            id: "blog",
+            id: "content",
             label: "Content",
             icon: <Newspaper />,
             onClick: navigateTo(getCoreModuleRoute(CoreModule.content)),
