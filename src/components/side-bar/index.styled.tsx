@@ -60,14 +60,15 @@ export const SidebarMenuScrollArea = styled("div")`
   flex-direction: column;
 `;
 
-export const SidebarStyled = styled(Drawer)(
-  ({ theme }) => `
-  width: 260px;
+export const SidebarStyled = styled(Drawer)<{ isCollapsed?: boolean }>(
+  ({ theme, isCollapsed }) => `
+  width: ${isCollapsed ? "72px" : "260px"};
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  transition: width 0.3s ease;
   .MuiDrawer-paper {
-    width: 260px;
+    width: ${isCollapsed ? "72px" : "260px"};
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -77,6 +78,8 @@ export const SidebarStyled = styled(Drawer)(
     position: fixed;
     top: 0;
     padding-bottom: 0;
+    transition: width 0.3s ease;
+    overflow-x: hidden;
   }
 `
 );
@@ -97,15 +100,21 @@ export const MobileDrawerToggle = styled(IconButton)`
   }
 `;
 
-export const ListSubheaderStyled = styled(ListSubheader)`
+export const ListSubheaderStyled = styled(ListSubheader)<{ isCollapsed?: boolean }>`
   font-size: ${({ theme }) => theme.typography.subtitle1.fontSize};
+  display: ${({ isCollapsed }) => isCollapsed ? "none" : "block"};
 `;
 
-export const SidebarLink = styled(ListItemButton)`
+export const SidebarLink = styled(ListItemButton)<{ isCollapsed?: boolean }>`
   border-radius: ${({ theme }) => theme.spacing(16)};
   height: ${({ theme }) => theme.spacing(10)};
   margin-top: ${({ theme }) => theme.spacing(1)};
+  margin-left: ${({ theme, isCollapsed }) => isCollapsed ? theme.spacing(1) : "0"};
+  margin-right: ${({ theme, isCollapsed }) => isCollapsed ? theme.spacing(1) : "0"};
   color: ${({ theme: { palette } }) => palette.text.secondary};
+  min-width: ${({ isCollapsed }) => isCollapsed ? "56px" : "auto"};
+  justify-content: ${({ isCollapsed }) => isCollapsed ? "center" : "flex-start"};
+  padding-left: ${({ theme, isCollapsed }) => isCollapsed ? "0" : theme.spacing(2)};
   :hover {
     background-color: ${({ theme: { palette } }) => palette.background.primaryHover};
   }
@@ -116,10 +125,11 @@ export const SidebarLink = styled(ListItemButton)`
   }
 ` as typeof ListItemButton;
 
-export const SidebarLinkText = styled(ListItemText)`
+export const SidebarLinkText = styled(ListItemText)<{ isCollapsed?: boolean }>`
   .MuiTypography-root {
     font-weight: 600;
   }
+  display: ${({ isCollapsed }) => isCollapsed ? "none" : "block"};
 ` as typeof ListItemText;
 
 export const ListItemIconStyled = styled(ListItemIcon)`

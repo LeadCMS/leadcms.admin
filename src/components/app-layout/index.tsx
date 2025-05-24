@@ -7,6 +7,7 @@ import { buildMenuItems } from "../../utils/build-menu-items";
 import { useRouteParams } from "typesafe-routes";
 import { coreModuleRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
+import { SidebarProvider } from "@providers/sidebar-provider";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -46,7 +47,6 @@ export const AppLayout = ({
     async function fetchSwaggerAndBuildMenu() {
       setMenuLoading(true);
       try {
-        // Use the backend swagger endpoint, e.g. /swagger/v1/swagger.json
         const swaggerUrl = `${client.baseUrl?.replace(/\/$/, "")}/swagger/v1/swagger.json`;
         const items = (await buildMenuItems(swaggerUrl, moduleName))
           .filter(Boolean) as SidebarMenuSection[];
@@ -58,7 +58,6 @@ export const AppLayout = ({
     fetchSwaggerAndBuildMenu();
   }, [moduleName, client.baseUrl]);
 
-  // Pass drawer state to Sidebar and update container class
   const handleDrawerToggle = (isOpen: boolean) => {
     setMobileOpen(isOpen);
   };
@@ -67,16 +66,18 @@ export const AppLayout = ({
   const sidebarHiddenClass = isMobile && !mobileOpen ? "sidebar-hidden" : "";
 
   return (
-    <AppLayoutWrapper className={`${className} ${sidebarHiddenClass} ${sidebarClass}`}>
-      <Sidebar 
-        onDrawerStateChange={handleDrawerToggle} 
-        menuItems={menuItems} 
-        isLoading={menuLoading} 
-      />
-      <MainColumn>
-        <AppHeader breadcrumbs={breadcrumbs} currentBreadcrumb={currentBreadcrumb} />
-        <MainContent>{children}</MainContent>
-      </MainColumn>
-    </AppLayoutWrapper>
+    <SidebarProvider>
+      <AppLayoutWrapper className={`${className} ${sidebarHiddenClass} ${sidebarClass}`}>
+        <Sidebar 
+          onDrawerStateChange={handleDrawerToggle} 
+          menuItems={menuItems} 
+          isLoading={menuLoading} 
+        />
+        <MainColumn>
+          <AppHeader breadcrumbs={breadcrumbs} currentBreadcrumb={currentBreadcrumb} />
+          <MainContent>{children}</MainContent>
+        </MainColumn>
+      </AppLayoutWrapper>
+    </SidebarProvider>
   );
 };

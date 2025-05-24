@@ -1,5 +1,9 @@
-import { List, useMediaQuery, useTheme, CircularProgress } from "@mui/material";
-import { useState, useEffect, useCallback } from "react";
+import { 
+  List, useMediaQuery, useTheme, CircularProgress, IconButton, Tooltip 
+} from "@mui/material";
+import { useEffect, useCallback } from "react";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import MenuIcon from "@mui/icons-material/Menu";
 import { 
   ListItemIconStyled, 
   ListSubheaderStyled, 
@@ -36,49 +40,57 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { isOpen, toggle } = useSidebar();
+  const { isOpen, isCollapsed, isMobileOpen, toggleCollapse, toggleMobile } = useSidebar();
   
   // Notify parent component when drawer state changes
   useEffect(() => {
     if (onDrawerStateChange) {
-      onDrawerStateChange(mobileOpen);
+      onDrawerStateChange(isMobileOpen);
     }
-  }, [mobileOpen, onDrawerStateChange]);
-
-  const toggleDrawer = () => {
-    if (isMobile) {
-      setMobileOpen(!mobileOpen);
-    } else {
-      toggle(); // Use the sidebar context's toggle function
-    }
-  };
+  }, [isMobileOpen, onDrawerStateChange]);
 
   const navigateToDashboard = useCallback(() => {
     window.location.href = getCoreModuleRoute(CoreModule.dashboard);
   }, []);
+
+  const effectiveOpen = isMobile ? isMobileOpen : isOpen;
+  const showCollapsed = !isMobile && isCollapsed;
   
   return (
     <>
       <SidebarStyled
         variant={isMobile ? "temporary" : "permanent"}
-        open={isMobile ? mobileOpen : isOpen}
-        onClose={toggleDrawer}
+        open={effectiveOpen}
+        onClose={toggleMobile}
+        isCollapsed={showCollapsed}
       >
-        <SidebarTopContainer isMobile={isMobile} isOpen={isMobile ? mobileOpen : isOpen}>
+        <SidebarTopContainer isMobile={isMobile} isOpen={effectiveOpen}>
           <div
             className="sidebar-logo sidebar-link"
-            style={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+            style={{ display: "flex", alignItems: "center", cursor: "pointer", flex: 1 }}
             onClick={navigateToDashboard}
             tabIndex={0}
             role="button"
             aria-label="Go to dashboard"
           >
             <LogoComponent />
-            <Typography className="sidebar-app-name">
-              LeadCMS.ai
-            </Typography>
+            {!showCollapsed && (
+              <Typography className="sidebar-app-name">
+                LeadCMS.ai
+              </Typography>
+            )}
           </div>
+          {!isMobile && (
+            <Tooltip title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+              <IconButton
+                onClick={toggleCollapse}
+                size="small"
+                sx={{ ml: 1 }}
+              >
+                {isCollapsed ? <MenuIcon /> : <MenuOpenIcon />}
+              </IconButton>
+            </Tooltip>
+          )}
         </SidebarTopContainer>
         <SidebarMenuScrollArea>
           {isLoading ? (
@@ -94,20 +106,30 @@ export const Sidebar = ({
             menuItems.map((group) => (
               <List
                 key={group.header}
-                subheader={<ListSubheaderStyled>{group.header}</ListSubheaderStyled>}
+                subheader={
+                  <ListSubheaderStyled isCollapsed={showCollapsed}>
+                    {group.header}
+                  </ListSubheaderStyled>
+                }
               >
                 {group.items.map((menuItem) => (
-                  <SidebarLink
+                  <Tooltip 
                     key={menuItem.id}
-                    onClick={() => {
-                      menuItem.onClick();
-                      if (isMobile) setMobileOpen(false);
-                    }}
-                    selected={menuItem.isSelected}
+                    title={showCollapsed ? menuItem.label : ""}
+                    placement="right"
                   >
-                    <ListItemIconStyled>{menuItem.icon}</ListItemIconStyled>
-                    <SidebarLinkText primary={menuItem.label} />
-                  </SidebarLink>
+                    <SidebarLink
+                      onClick={() => {
+                        menuItem.onClick();
+                        if (isMobile) toggleMobile();
+                      }}
+                      selected={menuItem.isSelected}
+                      isCollapsed={showCollapsed}
+                    >
+                      <ListItemIconStyled>{menuItem.icon}</ListItemIconStyled>
+                      <SidebarLinkText primary={menuItem.label} isCollapsed={showCollapsed} />
+                    </SidebarLink>
+                  </Tooltip>
                 ))}
               </List>
             ))

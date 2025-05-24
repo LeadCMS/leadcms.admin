@@ -11,7 +11,7 @@ interface AppHeaderProps {
 }
 
 export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) => {
-  const { toggle } = useSidebar();
+  const { toggleMobile } = useSidebar();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -24,9 +24,9 @@ export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) =>
               edge="start"
               color="inherit"
               aria-label="menu"
-              onClick={toggle}
+              onClick={toggleMobile}
               sx={{
-                mr: 1,
+                mr: { xs: 1, sm: 2 },
                 background: theme.palette.background.paper,
                 color: theme.palette.text.primary,
                 border: `1px solid ${theme.palette.divider}`
@@ -36,7 +36,12 @@ export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) =>
             </IconButton>
           )}
         </Box>
-        <Box sx={{ flex: 1, mx: 3, minWidth: 0 }}>
+        <Box sx={{ 
+          flex: 1, 
+          mx: { xs: 1, sm: 3 }, 
+          minWidth: 0,
+          overflow: "hidden"
+        }}>
           <BreadCrumbNavigation links={breadcrumbs} current={currentBreadcrumb} />
         </Box>
         <Box sx={{ display: "flex", alignItems: "center" }}>
