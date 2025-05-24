@@ -1,6 +1,7 @@
 import Dropzone, { Accept, FileRejection } from "react-dropzone";
 import { BoxStyled } from "./index.styled";
-import { Button, Grid, Box } from "@mui/material";
+import { Button, Grid, Box, IconButton } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import { useNotificationsService } from "@hooks";
 
 export interface ImageData {
@@ -53,6 +54,7 @@ const FileDropdown = ({
   const onReset = () => {
     onChange({ fileName: "", url: "" });
   };
+  
   return (
     <>
       <BoxStyled>
@@ -64,8 +66,15 @@ const FileDropdown = ({
             accept={{ key: [acceptMIME] } as Accept}
           >
             {({ getRootProps, getInputProps }) => (
-              <Grid container spacing={0} direction="row" justifyContent="center">
-                <div {...getRootProps()}>
+              <Grid 
+                container 
+                spacing={0} 
+                direction="row" 
+                justifyContent="center"
+                alignItems="center"
+                sx={{ height: "100%", textAlign: "center" }}
+              >
+                <div {...getRootProps()} style={{ width: "100%" }}>
                   <input {...getInputProps()} />
                   <p>Drag drop some files here, or click to select files</p>
                   <Grid size={{ xs: 12 }} style={{ textAlign: "center" }}>
@@ -76,23 +85,46 @@ const FileDropdown = ({
             )}
           </Dropzone>
         ) : (
-          <Grid container direction="column" justifyContent="center">
-            <Grid size={{ xs: 12 }} style={{ textAlign: "center" }}>
-              <Box
-                component="img"
-                sx={{
-                  objectFit: "contain",
-                }}
-                alt="Cover image preview"
-                src={data.url}
-              />
-            </Grid>
-            <Grid size={{ xs: 12 }} style={{ textAlign: "center" }}>
-              <Button variant="outlined" onClick={onReset}>
-                Reset
-              </Button>
-            </Grid>
-          </Grid>
+          <Box
+            sx={{
+              position: "relative",
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            <Box
+              component="img"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: 1
+              }}
+              alt="Cover image preview"
+              src={data.url}
+            />
+            <IconButton
+              onClick={onReset}
+              sx={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                backgroundColor: "rgba(0, 0, 0, 0.6)",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.8)"
+                },
+                width: 32,
+                height: 32
+              }}
+              size="small"
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
         )}
       </BoxStyled>
     </>
