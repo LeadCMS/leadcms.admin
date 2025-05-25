@@ -6,7 +6,6 @@ import {
   ContentCreateDto,
   HttpResponse,
   ProblemDetails,
-  UserDetailsDto,
 } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { ContentEditContainer } from "../index.styled";
@@ -21,7 +20,6 @@ import {
   Tabs,
   Tab,
   Box,
-  Autocomplete,
 } from "@mui/material";
 import { useFormik, FormikHelpers } from "formik";
 import {
@@ -105,19 +103,8 @@ export const ContentEdit = (props: ContentEditProps) => {
     ContentEditRestoreState.Idle
   );
   const [activeTab, setActiveTab] = useState<string>("content");
-  const [users, setUsers] = useState<UserDetailsDto[]>([]);
-  const [usersLoading, setUsersLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-
-  // Fetch users for author combobox
-  useEffect(() => {
-    setUsersLoading(true);
-    client.api.usersList().then((resp) => {
-      setUsers(resp.data || []);
-      setUsersLoading(false);
-    }).catch(() => setUsersLoading(false));
-  }, [client]);
 
   const autoSave = useDebouncedCallback((value) => {
     if (!wasModified && !coverWasModified) {
@@ -247,13 +234,19 @@ export const ContentEdit = (props: ContentEditProps) => {
       return;
     }
     const currentValues = { ...formik.values };
-    // Always update the form state for any type
     const defaults = generateDefaultValues(contentTypeId);
+    
+    // Preserve existing values, only update content type specific fields
     formik.setValues({
-      ...defaults,
-      // Preserve id and publishedAt if present
-      id: currentValues.id,
-      publishedAt: currentValues.publishedAt,
+      ...currentValues,
+      // Always update the content type
+      type: contentTypeId,
+      // Reset body content when changing content type
+      body: defaults.body,
+      // Apply content type specific defaults for these fields only if they don't have values
+      allowComments: currentValues.allowComments !== undefined ? 
+        currentValues.allowComments : defaults.allowComments,
+      // Keep all other existing values (title, description, author, etc.)
     });
     setWasModified(true);
   };
@@ -360,97 +353,96 @@ export const ContentEdit = (props: ContentEditProps) => {
   };
 
   return (
-    <ModuleWrapper
-      breadcrumbs={contentFormBreadcrumbLinks}
-      currentBreadcrumb={formik.values.title}
-      saveIndicatorElement={<SavingBar />}
-      isForm={true}
-      actionButtons={
-        <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 2 }}>
-          <Box sx={{ pl: { sm: 4 } }}>
-            {!isCreateMode && (
-              <>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<DeleteIcon />}
-                  onClick={() => setDeleteDialogOpen(true)}
-                  disabled={formik.isSubmitting}
-                  size="medium"
-                >
-                  Delete
-                </Button>
-                <Dialog
-                  open={deleteDialogOpen}
-                  onClose={() => setDeleteDialogOpen(false)}
-                  aria-labelledby="delete-content-dialog-title"
-                  aria-describedby="delete-content-dialog-description"
-                >
-                  <DialogTitle id="delete-content-dialog-title">Delete Content</DialogTitle>
-                  <DialogContent>
-                    <DialogContentText id="delete-content-dialog-description">
-                      Are you sure you want to delete this content? This action cannot be undone.
-                    </DialogContentText>
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        setDeleteDialogOpen(false);
-                        await handleDelete();
-                      }}
-                      color="error"
-                      variant="contained"
-                      autoFocus
-                      disabled={formik.isSubmitting}
-                    >
-                      Delete
-                    </Button>
-                  </DialogActions>
-                </Dialog>
-              </>
-            )}
+    <form onSubmit={formik.handleSubmit}>
+      <ModuleWrapper
+        breadcrumbs={contentFormBreadcrumbLinks}
+        currentBreadcrumb={formik.values.title}
+        saveIndicatorElement={<SavingBar />}
+        isForm={true}
+        actionButtons={
+          <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 2 }}>
+            <Box sx={{ pl: { sm: 4 } }}>
+              {!isCreateMode && (
+                <>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => setDeleteDialogOpen(true)}
+                    disabled={formik.isSubmitting}
+                    size="medium"
+                  >
+                    Delete
+                  </Button>
+                  <Dialog
+                    open={deleteDialogOpen}
+                    onClose={() => setDeleteDialogOpen(false)}
+                    aria-labelledby="delete-content-dialog-title"
+                    aria-describedby="delete-content-dialog-description"
+                  >
+                    <DialogTitle id="delete-content-dialog-title">Delete Content</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText id="delete-content-dialog-description">
+                        Are you sure you want to delete this content? This action cannot be undone.
+                      </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          setDeleteDialogOpen(false);
+                          await handleDelete();
+                        }}
+                        color="error"
+                        variant="contained"
+                        autoFocus
+                        disabled={formik.isSubmitting}
+                      >
+                        Delete
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+                </>
+              )}
+            </Box>
+            <Box sx={{ display: "flex", gap: 2, pr: { sm: 4 } }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => handleNavigation(CoreModule.content)}
+                disabled={formik.isSubmitting}
+                startIcon={<CancelIcon />}
+                size="medium"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={!(wasModified || coverWasModified) || formik.isSubmitting}
+                startIcon={<SaveIcon />}
+                size="medium"
+              >
+                Save
+              </Button>
+            </Box>
           </Box>
-          <Box sx={{ display: "flex", gap: 2, pr: { sm: 4 } }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => handleNavigation(CoreModule.content)}
-              disabled={formik.isSubmitting}
-              startIcon={<CancelIcon />}
-              size="medium"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={!(wasModified || coverWasModified) || formik.isSubmitting}
-              startIcon={<SaveIcon />}
-              size="medium"
-              onClick={() => formik.handleSubmit()}
-            >
-              Save
-            </Button>
-          </Box>
-        </Box>
-      }
-    >
-      <RestoreDataModal
-        isOpen={restoreDataState === ContentEditRestoreState.Requested}
-        onClose={(value) =>
-          value
-            ? setRestoreDataState(ContentEditRestoreState.Accepted)
-            : setRestoreDataState(ContentEditRestoreState.Rejected)
         }
-      />
-      <ContentEditContainer>
-        {isSaving && <div>Saving...</div>}
-        {shouldShowForm ? (
-          <form onSubmit={formik.handleSubmit}>
+      >
+        <RestoreDataModal
+          isOpen={restoreDataState === ContentEditRestoreState.Requested}
+          onClose={(value) =>
+            value
+              ? setRestoreDataState(ContentEditRestoreState.Accepted)
+              : setRestoreDataState(ContentEditRestoreState.Rejected)
+          }
+        />
+        <ContentEditContainer>
+          {isSaving && <div>Saving...</div>}
+          {shouldShowForm ? (          
             <Card>
               <CardContent>
                 <Grid container spacing={2} alignItems="flex-start">
@@ -580,9 +572,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                           height="400px"
                           defaultLanguage={contentType.format.toLowerCase() as "json" | "yaml"}
                           value={formik.values.body}
-                          onChange={(value) => {
+                          onChange={async (value) => {
                             setWasModified(true);
-                            formik.setFieldValue("body", value || "");
+                            await formik.setFieldValue("body", value || "");
                           }}
                           options={{
                             readOnly: !!props.readonly,
@@ -596,7 +588,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                         <MarkdownEditor
                           onChange={async (value) => {
                             setWasModified(true);
-                            await formik.setFieldValue("body", value);
+                            await formik.setFieldValue("body", value || "");
                           }}
                           onFrontmatterErrorChange={async (value) => {
                             setfrontmatterState(value);
@@ -717,26 +709,17 @@ export const ContentEdit = (props: ContentEditProps) => {
                       </Grid>
                     )}
                     <Grid size={{ xs: 12, sm: 4 }}>
-                      <Autocomplete<UserDetailsDto, false, false, false>
-                        options={users}
-                        loading={usersLoading}
-                        getOptionLabel={(option) => option.displayName || option.email || ""}
-                        value={users.find((u) => u.id === formik.values.author) || null}
-                        onChange={(_, val) =>
-                          autoCompleteValueUpdate("author", val ? val.id : "")
-                        }
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Author"
-                            placeholder="Select Author"
-                            variant="outlined"
-                            error={formik.touched.author && Boolean(formik.errors.author)}
-                            helperText={formik.touched.author && formik.errors.author}
-                            fullWidth
-                          />
-                        )}
-                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                      <TextField
+                        disabled={props.readonly}
+                        label="Author"
+                        name="author"
+                        value={formik.values.author}
+                        error={formik.touched.author && Boolean(formik.errors.author)}
+                        helperText={formik.touched.author && formik.errors.author}
+                        placeholder="Enter author name"
+                        variant="outlined"
+                        onChange={valueUpdate}
+                        fullWidth
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
@@ -752,9 +735,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                 )}
               </CardContent>
             </Card>
-          </form>
-        ) : null}
-      </ContentEditContainer>
-    </ModuleWrapper>
+          ) : null}
+        </ContentEditContainer>
+      </ModuleWrapper>
+    </form>
   );
 };

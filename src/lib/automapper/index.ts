@@ -58,6 +58,7 @@ PojosMetadataMap.create<ContentUpdateDto>("ContentUpdateDto", {
   category: String,
   tags: [String],
   allowComments: Boolean,
+  source: String,
   publishedAt: String,
 });
 PojosMetadataMap.create<ContentCreateDto>("ContentCreateDto", {
@@ -73,6 +74,7 @@ PojosMetadataMap.create<ContentCreateDto>("ContentCreateDto", {
   category: String,
   tags: [String],
   allowComments: Boolean,
+  source: String,
   publishedAt: String,
 });
 
