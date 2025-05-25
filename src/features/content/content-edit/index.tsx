@@ -108,6 +108,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [users, setUsers] = useState<UserDetailsDto[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
   // Fetch users for author combobox
   useEffect(() => {
@@ -536,10 +537,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                   <Box sx={{ flex: 1 }} />
                   <Button
                     variant="text"
-                    component="a"
-                    href={formik.values.slug ? `/content/${formik.values.slug}` : "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={() => setPreviewDialogOpen(true)}
                     endIcon={<OpenInNewIcon fontSize="small" />}
                     sx={{
                       color: "#1976d2",
@@ -554,6 +552,25 @@ export const ContentEdit = (props: ContentEditProps) => {
                   >
                     Preview on Site
                   </Button>
+                  <Dialog
+                    open={previewDialogOpen}
+                    onClose={() => setPreviewDialogOpen(false)}
+                    aria-labelledby="preview-coming-soon-title"
+                    aria-describedby="preview-coming-soon-description"
+                  >
+                    <DialogTitle id="preview-coming-soon-title">Coming Soon</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText id="preview-coming-soon-description">
+                        The preview feature is not yet available but will be supported soon. 
+                        Stay tuned for updates!
+                      </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => setPreviewDialogOpen(false)} color="primary">
+                        OK
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
                 </Box>
                 {activeTab === "content" && (
                   <Grid container spacing={2}>
