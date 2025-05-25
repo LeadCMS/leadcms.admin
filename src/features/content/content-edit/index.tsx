@@ -71,6 +71,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 interface ContentEditProps {
   readonly?: boolean;
@@ -502,11 +503,22 @@ export const ContentEdit = (props: ContentEditProps) => {
                   </Tabs>
                   <Box sx={{ flex: 1 }} />
                   <Button
-                    href="#"
+                    variant="text"
+                    component="a"
+                    href={formik.values.slug ? `/content/${formik.values.slug}` : "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    size="small"
-                    sx={{ ml: 2 }}
+                    endIcon={<OpenInNewIcon fontSize="small" />}
+                    sx={{
+                      color: "#1976d2",
+                      textTransform: "none",
+                      fontSize: 14,
+                      ml: 2,
+                      pl: 0,
+                      pr: 0,
+                      minWidth: 0,
+                      "&:hover": { textDecoration: "underline", background: "none" }
+                    }}
                   >
                     Preview on Site
                   </Button>
