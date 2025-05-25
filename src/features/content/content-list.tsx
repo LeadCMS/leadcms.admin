@@ -27,7 +27,6 @@ import {
   Add,
   MoreHoriz,
   Edit,
-  Visibility,
   Search as SearchIcon,
 } from "@mui/icons-material";
 import { useRequestContext } from "@providers/request-provider";
@@ -211,9 +210,6 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
   const open = Boolean(anchorEl);
   const theme = useTheme();
 
-  const onClickView = () => {
-    navigate(`/content/${item.id}/view`);
-  };
   const onClickEdit = () => {
     navigate(`/content/${item.id}/edit`);
   };
@@ -326,11 +322,6 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
           </Typography>
         </Box>
         <Box display="flex" gap={1.5}>
-          <Tooltip title="View">
-            <IconButton size="small" onClick={onClickView}>
-              <Visibility fontSize="small" />
-            </IconButton>
-          </Tooltip>
           <Tooltip title="Edit">
             <IconButton size="small" onClick={onClickEdit}>
               <Edit fontSize="small" />
@@ -348,7 +339,6 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            <MenuItem onClick={onClickView}>View</MenuItem>
             <MenuItem onClick={onClickEdit}>Edit</MenuItem>
             <MenuItem disabled>Duplicate</MenuItem>
             <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>

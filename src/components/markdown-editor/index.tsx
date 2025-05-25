@@ -45,11 +45,22 @@ const EditorViewFunc = (
 
   useEffect(() => {
     const validationResult = validateFrontmatter(value);
+    // Only show error if frontmatter exists and is invalid
     if (validationResult !== true) {
+      // If the error is only about missing frontmatter, do not show error
+      if (
+        validationResult &&
+        typeof validationResult === "object" &&
+        validationResult.errorMessage === "Frontmatter doesn't exists"
+      ) {
+        onErrorChange(null);
+        return;
+      }
       onErrorChange(validationResult);
       if (validationResult.errorLine === -1) {
         return;
       }
+      // Only get lines if we need to highlight an error line
       const lines = document.querySelectorAll(".code-line");
       if (lines.length === 0) {
         return;
@@ -108,7 +119,7 @@ const MarkdownEditor = ({
     onFrontmatterErrorChange(error);
   };
 
-  const commandFilter = (command: ICommand, isExtra: boolean) => {
+  const commandFilter = (command: ICommand) => {
     if (command.name === "image") {
       return ImageUpload(contentDetails, true);
     }
