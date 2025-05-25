@@ -72,6 +72,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import MonacoEditor from "@monaco-editor/react";
 
 interface ContentEditProps {
   readonly?: boolean;
@@ -244,29 +245,14 @@ export const ContentEdit = (props: ContentEditProps) => {
       return;
     }
     const currentValues = { ...formik.values };
-    const prevType = currentValues.type;
-    const prevContentType = getContentTypeById(prevType);
-
-    // Only reset fields if the format changes
-    if (prevContentType && prevContentType.format !== contentType.format) {
-      // Format changed: reset to defaults for new type
-      const defaults = generateDefaultValues(contentTypeId);
-      formik.setValues({
-        ...defaults,
-        // Preserve id and publishedAt if present
-        id: currentValues.id,
-        publishedAt: currentValues.publishedAt,
-      });
-    } else {
-      // Format did not change: only update type and allowComments
-      formik.setValues({
-        ...currentValues,
-        type: contentTypeId,
-        allowComments: contentType.supportsComments
-          ? contentType.defaultValues.allowComments || false
-          : false,
-      });
-    }
+    // Always update the form state for any type
+    const defaults = generateDefaultValues(contentTypeId);
+    formik.setValues({
+      ...defaults,
+      // Preserve id and publishedAt if present
+      id: currentValues.id,
+      publishedAt: currentValues.publishedAt,
+    });
     setWasModified(true);
   };
 
@@ -350,7 +336,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const handleDelete = async () => {
     if (!id) return;
     try {
-      await client.api.contentDelete(id);
+      await client.api.contentDelete(parseInt(id));
       notificationsService.success("Content deleted successfully");
       handleNavigation(CoreModule.content);
     } catch (error) {
@@ -526,18 +512,37 @@ export const ContentEdit = (props: ContentEditProps) => {
                 {activeTab === "content" && (
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 12, sm: 12 }}>
-                      <MarkdownEditor
-                        onChange={async (value) => {
-                          setWasModified(true);
-                          await formik.setFieldValue("body", value);
-                        }}
-                        onFrontmatterErrorChange={async (value) => {
-                          setfrontmatterState(value);
-                        }}
-                        value={formik.values.body}
-                        isReadOnly={props.readonly}
-                        contentDetails={formik.values}
-                      />
+                      {contentType?.format === "MD" || contentType?.format === "MDX" ? (
+                        <MarkdownEditor
+                          onChange={async (value) => {
+                            setWasModified(true);
+                            await formik.setFieldValue("body", value);
+                          }}
+                          onFrontmatterErrorChange={async (value) => {
+                            setfrontmatterState(value);
+                          }}
+                          value={formik.values.body}
+                          isReadOnly={props.readonly}
+                          contentDetails={formik.values}
+                        />
+                      ) : (contentType?.format === "JSON" || contentType?.format === "YAML") ? (
+                        <MonacoEditor
+                          height="400px"
+                          defaultLanguage={contentType.format.toLowerCase() as "json" | "yaml"}
+                          value={formik.values.body}
+                          onChange={(value) => {
+                            setWasModified(true);
+                            formik.setFieldValue("body", value || "");
+                          }}
+                          options={{
+                            readOnly: !!props.readonly,
+                            minimap: { enabled: false },
+                            lineNumbers: "on",
+                            scrollBeyondLastLine: false,
+                            wordWrap: "on"
+                          }}
+                        />
+                      ) : null}
                     </Grid>
                   </Grid>
                 )}

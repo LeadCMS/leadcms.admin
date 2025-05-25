@@ -84,7 +84,7 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
   },
   {
     id: "landing",
-    displayName: "Landing Page",
+    displayName: "Landing",
     format: "MDX",
     supportsComments: false,
     supportsCoverImage: true,
@@ -94,7 +94,7 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
   },
   {
     id: "pricing",
-    displayName: "Pricing Page",
+    displayName: "Pricing",
     format: "JSON",
     supportsComments: false,
     supportsCoverImage: false,
@@ -182,23 +182,52 @@ export const idToDisplayName = (id: string): string => {
 };
 
 /**
- * Gets a content type definition by its ID
+ * Returns all content types (static + custom from localStorage)
  */
-export const getContentTypeById = (id: string): ContentTypeDefinition | undefined => {
-  return CONTENT_TYPES.find(type => type.id === id);
+export const getAllContentTypes = (): ContentTypeDefinition[] => {
+  let customTypes: ContentTypeDefinition[] = [];
+  try {
+    const stored = localStorage.getItem("leadcms_content_types");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        customTypes = parsed;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+  // Merge static and custom, custom overrides static by id
+  const merged = [...CONTENT_TYPES];
+  customTypes.forEach((ct) => {
+    const idx = merged.findIndex((t) => t.id === ct.id);
+    if (idx >= 0) {
+      merged[idx] = ct;
+    } else {
+      merged.push(ct);
+    }
+  });
+  return merged;
 };
 
 /**
- * Gets a content type definition by its display name
+ * Gets a content type definition by its ID (from merged list)
+ */
+export const getContentTypeById = (id: string): ContentTypeDefinition | undefined => {
+  return getAllContentTypes().find((type) => type.id === id);
+};
+
+/**
+ * Gets a content type definition by its display name (from merged list)
  */
 export const getContentTypeByDisplayName = (displayName: string)
-    : ContentTypeDefinition | undefined => {
+  : ContentTypeDefinition | undefined => {
   const id = displayNameToId(displayName);
   return getContentTypeById(id);
 };
 
 /**
- * Generate default values for a content type
+ * Generate default values for a content type (from merged list)
  */
 export const generateDefaultValues = (contentTypeId: string): ContentDetails => {
   const contentType = getContentTypeById(contentTypeId);
