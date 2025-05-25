@@ -163,7 +163,7 @@ export const ContentList = () => {
                   <Grid
                     size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}
                     key={`content-${item.id}`}
-                    sx={{ mb: 3 }}
+                    sx={{ mb: 3, minWidth: 290, maxWidth: 330 }}
                   >
                     <ItemCard
                       item={item}
