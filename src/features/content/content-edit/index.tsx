@@ -236,13 +236,18 @@ export const ContentEdit = (props: ContentEditProps) => {
     const currentValues = { ...formik.values };
     const defaults = generateDefaultValues(contentTypeId);
     
+    // Get current content type to compare formats
+    const currentContentType = getContentTypeById(currentValues.type);
+    const shouldResetBody = !currentContentType || 
+      currentContentType.format !== contentType.format;
+    
     // Preserve existing values, only update content type specific fields
     formik.setValues({
       ...currentValues,
       // Always update the content type
       type: contentTypeId,
-      // Reset body content when changing content type
-      body: defaults.body,
+      // Reset body content only if format has changed
+      body: shouldResetBody ? defaults.body : currentValues.body,
       // Apply content type specific defaults for these fields only if they don't have values
       allowComments: currentValues.allowComments !== undefined ? 
         currentValues.allowComments : defaults.allowComments,

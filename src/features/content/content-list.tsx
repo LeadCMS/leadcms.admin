@@ -181,7 +181,7 @@ export const ContentList = () => {
           <DialogContent>
             <DialogContentText>
               Are you sure you want to delete
-              {deleteTarget ? " this content?" : " selected content?"}
+              {deleteTarget ? " this content? " : " selected content? "}
               This action cannot be undone.
             </DialogContentText>
           </DialogContent>
