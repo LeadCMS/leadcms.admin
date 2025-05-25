@@ -5,6 +5,9 @@ interface LanguageAutocompleteProps {
   value: string;
   onChange: (value: string | null) => void;
   renderInput: (params: AutocompleteRenderInputParams) => React.ReactNode;
+  renderOption?: (
+    props: React.HTMLAttributes<HTMLLIElement>, 
+    option: { label: string; value: string }) => React.ReactNode;
 }
 const AvailableLanguages = ["ru-RU", "en-US"];
 
@@ -32,7 +35,15 @@ export const LanguageAutocomplete = ({
   value,
   onChange,
   renderInput,
+  renderOption,
 }: LanguageAutocompleteProps) => {
+  const defaultRenderOption = (
+    props: React.HTMLAttributes<HTMLLIElement>, 
+    option: { label: string; value: string }
+  ) => {
+    return <li {...props}>{option.label}</li>;
+  };
+
   return (
     <Autocomplete
       autoSelect
@@ -41,6 +52,7 @@ export const LanguageAutocomplete = ({
       getOptionLabel={(option) => option.label}
       options={muiOptions}
       renderInput={renderInput}
+      renderOption={renderOption || defaultRenderOption}
     />
   );
 };

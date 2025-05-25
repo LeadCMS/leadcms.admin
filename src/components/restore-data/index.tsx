@@ -26,11 +26,14 @@ export const RestoreDataModal = ({ isOpen, onClose }: RestoreDataProps) => {
       open={isOpen}
       onClose={() => onClose(false)}
       TransitionComponent={Transition}
-      keepMounted
+      keepMounted={false}
+      disablePortal={false}
+      aria-labelledby="restore-dialog-title"
+      aria-describedby="restore-dialog-description"
     >
-      <DialogTitle>{"Restore Draft Version"}</DialogTitle>
+      <DialogTitle id="restore-dialog-title">{"Restore Draft Version"}</DialogTitle>
       <DialogContent>
-        <DialogContentText>
+        <DialogContentText id="restore-dialog-description">
           Would you like to restore the locally saved draft version and continue editing?
         </DialogContentText>
         <DialogContentText>&nbsp;</DialogContentText>

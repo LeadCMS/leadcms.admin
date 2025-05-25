@@ -87,9 +87,17 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
 
   return (
     <>
-      <Dialog disableRestoreFocus open={isOpen} onClose={onClose} TransitionComponent={Transition}>
+      <Dialog 
+        disableRestoreFocus 
+        open={isOpen} 
+        onClose={onClose} 
+        TransitionComponent={Transition}
+        keepMounted={false}
+        disablePortal={false}
+        aria-labelledby="create-group-dialog-title"
+      >
         <form onSubmit={formik.handleSubmit}>
-          <DialogTitle>
+          <DialogTitle id="create-group-dialog-title">
             <Typography>Create email group</Typography>
           </DialogTitle>
           <DialogContent>

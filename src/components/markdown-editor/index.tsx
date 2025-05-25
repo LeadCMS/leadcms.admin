@@ -148,7 +148,7 @@ const MarkdownEditor = ({
       onDrop={onDrop}
       maxSize={ContentEditMaximumImageSize}
       maxFiles={1}
-      accept={{ key: ["image/*"] } as Accept}
+      accept={{ "image/*": [] } as Accept}
       noClick
     >
       {({ getRootProps, getInputProps }) => (

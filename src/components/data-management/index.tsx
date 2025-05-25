@@ -57,10 +57,19 @@ export const DataDeleteConfirmation = ({
 
   return (
     <>
-      <Dialog open={openConfirmation} onClose={handleConfirmationClose}>
-        <DialogTitle>{`Deleting ${entity}`}</DialogTitle>
+      <Dialog
+        open={openConfirmation}
+        onClose={handleConfirmationClose}
+        keepMounted={false}
+        disablePortal={false}
+        aria-labelledby="delete-confirmation-title"
+        aria-describedby="delete-confirmation-description"
+      >
+        <DialogTitle id="delete-confirmation-title">{`Deleting ${entity}`}</DialogTitle>
         <DialogContent>
-          <DialogContentText>{`Are you sure you want to delete this ${entity}?`}</DialogContentText>
+          <DialogContentText id="delete-confirmation-description">
+            {`Are you sure you want to delete this ${entity}?`}
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleConfirmationClose} autoFocus variant="outlined">

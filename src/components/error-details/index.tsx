@@ -30,11 +30,19 @@ const Transition = React.forwardRef(function Transition(
 
 export const ErrorDetailsModal = ({ isOpen, onClose, errorDetails }: ErrorDetailsModalProps) => {
   return (
-    <Dialog open={isOpen} onClose={onClose} TransitionComponent={Transition}>
-      <DialogTitle>
+    <Dialog 
+      open={isOpen} 
+      onClose={onClose} 
+      TransitionComponent={Transition}
+      keepMounted={false}
+      disablePortal={false}
+      aria-labelledby="error-dialog-title"
+      aria-describedby="error-dialog-content"
+    >
+      <DialogTitle id="error-dialog-title">
         <Typography>Error Details</Typography>
       </DialogTitle>
-      <DialogContent>{errorDetails}</DialogContent>
+      <DialogContent id="error-dialog-content">{errorDetails}</DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>OK</Button>
       </DialogActions>

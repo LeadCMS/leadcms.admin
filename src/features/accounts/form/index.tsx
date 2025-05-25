@@ -47,8 +47,9 @@ type Continent = {
 export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) => {
   const { notificationsService } = useNotificationsService();
   const context = useRequestContext();
-  const { setSaving, setBusy } = useModuleWrapperContext();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { setBusy } = useModuleWrapperContext();
+  const errorDetails = useErrorDetailsModal();
+  const showErrorModal = errorDetails?.Show ?? (() => { /* no-op */ });
   const handleNavigation = useCoreModuleNavigation();
 
   const [countryList, setCountryList] = useState<Country[]>([]);
@@ -117,7 +118,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
     key: string
   ) => {
     const socialMedia = { ...formik.values.socialMedia };
-    (socialMedia![key] = e.target.value), formik.setFieldValue("socialMedia", socialMedia);
+    (socialMedia[key] = e.target.value), formik.setFieldValue("socialMedia", socialMedia);
   };
 
   const handleSocialMediaAdd = () => {
@@ -138,8 +139,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   };
 
   const submitFunc = async (
-    values: AccountDetailsDto,
-    helpers: FormikHelpers<AccountDetailsDto>
+    values: AccountDetailsDto
   ) => {
     try {
       await handleSave(values);
@@ -164,12 +164,24 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   const AccountEditValidationScheme = zod.object({
     name: zod.string(),
     revenue: zod.number().nullable().optional(),
+    socialMedia: zod.record(zod.string()).optional()
   });
 
   const formik = useFormik({
     validationSchema: toFormikValidationSchema(AccountEditValidationScheme),
     initialValues: {
       name: "",
+      socialMedia: {},
+      revenue: null,
+      siteUrl: "",
+      logoUrl: "",
+      employeesRange: "",
+      cityName: "",
+      state: "",
+      countryCode: "ZZ",
+      continentCode: "ZZ",
+      tags: [],
+      source: "",
     },
     onSubmit: submit,
     validateOnChange: false,
@@ -185,10 +197,10 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
         <CardContainer>
           <CardContent>
             <Grid container spacing={4} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
+              <Grid size={{ xs: 12, sm: 12}}>
                 <Typography variant="h6">About</Typography>
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Name"
@@ -203,7 +215,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 ></TextField>
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Site Url"
@@ -216,7 +228,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 ></TextField>
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Logo Url"
@@ -230,7 +242,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 ></TextField>
               </Grid>
-              <Grid xs={12} sm={2} item>
+              <Grid size={{ xs: 12, sm: 2 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Employees Range"
@@ -243,7 +255,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 ></TextField>
               </Grid>
-              <Grid xs={12} sm={2} item>
+              <Grid size={{ xs: 12, sm: 2 }}>
                 <Tooltip title="Revenue field must contain only numbers">
                   <TextField
                     disabled={isLoading || formik.isSubmitting}
@@ -264,10 +276,10 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             </Grid>
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
+              <Grid size={{ xs: 12, sm: 12 }}>
                 <Typography variant="h6">Location</Typography>
               </Grid>
-              <Grid xs={12} sm={3} item>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="City"
@@ -280,7 +292,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 ></TextField>
               </Grid>
-              <Grid xs={12} sm={3} item>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="State"
@@ -293,7 +305,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 ></TextField>
               </Grid>
-              <Grid xs={12} sm={3} item>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 {!isLoading && (
                   <Autocomplete
                     disabled={isLoading || formik.isSubmitting}
@@ -317,7 +329,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   />
                 )}
               </Grid>
-              <Grid xs={12} sm={3} item>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 {!isLoading && (
                   <Autocomplete
                     disabled={isLoading || formik.isSubmitting}
@@ -346,15 +358,15 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             </Grid>
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
+              <Grid size={{ xs: 12, sm: 12 }}>
                 <Typography variant="h6">Social Media</Typography>
               </Grid>
-              <Grid xs={12} sm={12} item>
+              <Grid size={{ xs: 12, sm: 12 }}>
                 <Grid container spacing={3}>
                   {formik.values.socialMedia &&
                     Object.entries(formik.values.socialMedia || {}).map(([key, value], index) => (
                       <Fragment key={index}>
-                        <Grid xs={12} sm={2} item>
+                        <Grid size={{ xs: 12, sm: 2 }}>
                           <TextField
                             label="Name"
                             value={key}
@@ -364,7 +376,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                             disabled
                           />
                         </Grid>
-                        <Grid xs={12} sm={6} item>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
                             disabled={isLoading || formik.isSubmitting}
                             label="Url"
@@ -374,7 +386,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                             onChange={(event) => handleSocialMediaChange(event, key)}
                           />
                         </Grid>
-                        <Grid xs={12} sm={4} item>
+                        <Grid size={{ xs: 12, sm: 4 }}>
                           <Tooltip title="Remove social media">
                             <IconButton onClick={() => handleSocialMediaRemove(key)}>
                               <RemoveIcon />
@@ -383,7 +395,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                         </Grid>
                       </Fragment>
                     ))}
-                  <Grid xs={12} sm={2} item>
+                  <Grid size={{ xs: 12, sm: 2 }}>
                     <TextField
                       disabled={isLoading || formik.isSubmitting}
                       label="Name"
@@ -393,7 +405,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                       onChange={(event) => setNewSocialMediaKey(event.target.value)}
                     />
                   </Grid>
-                  <Grid xs={12} sm={6} item>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       disabled={isLoading || formik.isSubmitting}
                       label="Url"
@@ -403,7 +415,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                       onChange={(event) => setNewSocialMediaValue(event.target.value)}
                     />
                   </Grid>
-                  <Grid xs={12} sm={4} item>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Tooltip title="Add social media">
                       <IconButton onClick={handleSocialMediaAdd}>
                         <AddIcon />
@@ -415,10 +427,10 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             </Grid>
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
-              <Grid xs={12} sm={12} item>
+              <Grid size={{ xs: 12, sm: 12 }}>
                 <Typography variant="h6">Other</Typography>
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Tags"
@@ -431,7 +443,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 ></TextField>
               </Grid>
-              <Grid xs={12} sm={4} item>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Source"

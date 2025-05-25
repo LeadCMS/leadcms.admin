@@ -60,7 +60,9 @@ export const SidebarMenuScrollArea = styled("div")`
   flex-direction: column;
 `;
 
-export const SidebarStyled = styled(Drawer)<{ isCollapsed?: boolean }>(
+export const SidebarStyled = styled(Drawer, {
+  shouldForwardProp: (prop) => prop !== "isCollapsed",
+})<{ isCollapsed?: boolean }>(
   ({ theme, isCollapsed }) => `
   width: ${isCollapsed ? "72px" : "260px"};
   flex-shrink: 0;
@@ -100,12 +102,16 @@ export const MobileDrawerToggle = styled(IconButton)`
   }
 `;
 
-export const ListSubheaderStyled = styled(ListSubheader)<{ isCollapsed?: boolean }>`
+export const ListSubheaderStyled = styled(ListSubheader, {
+  shouldForwardProp: (prop) => prop !== "isCollapsed",
+})<{ isCollapsed?: boolean }>`
   font-size: ${({ theme }) => theme.typography.subtitle1.fontSize};
   display: ${({ isCollapsed }) => isCollapsed ? "none" : "block"};
 `;
 
-export const SidebarLink = styled(ListItemButton)<{ isCollapsed?: boolean }>`
+export const SidebarLink = styled(ListItemButton, {
+  shouldForwardProp: (prop) => prop !== "isCollapsed",
+})<{ isCollapsed?: boolean }>`
   border-radius: ${({ theme }) => theme.spacing(16)};
   height: ${({ theme }) => theme.spacing(10)};
   margin-top: ${({ theme }) => theme.spacing(1)};
@@ -125,7 +131,9 @@ export const SidebarLink = styled(ListItemButton)<{ isCollapsed?: boolean }>`
   }
 ` as typeof ListItemButton;
 
-export const SidebarLinkText = styled(ListItemText)<{ isCollapsed?: boolean }>`
+export const SidebarLinkText = styled(ListItemText, {
+  shouldForwardProp: (prop) => prop !== "isCollapsed",
+})<{ isCollapsed?: boolean }>`
   .MuiTypography-root {
     font-weight: 600;
   }

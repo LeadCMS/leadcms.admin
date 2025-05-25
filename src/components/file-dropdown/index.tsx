@@ -25,8 +25,6 @@ const FileDropdown = ({
   maxFileSize,
   onChange,
   data,
-  error,
-  helperText,
 }: FileDropdownProps) => {
   const { notificationsService } = useNotificationsService();
   const onDrop = (acceptedFiles: File[], rejections: FileRejection[]) => {
@@ -63,7 +61,7 @@ const FileDropdown = ({
             onDrop={onDrop}
             maxSize={maxFileSize}
             maxFiles={1}
-            accept={{ key: [acceptMIME] } as Accept}
+            accept={{ [acceptMIME]: [] } as Accept}
           >
             {({ getRootProps, getInputProps }) => (
               <Grid 
