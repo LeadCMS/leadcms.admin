@@ -161,7 +161,7 @@ export const ContentList = () => {
               <Grid container spacing={4} id="scrollTarget" ref={scrollTargetRef}>
                 {contentItems.map((item) => (
                   <Grid
-                    size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                    size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}
                     key={`content-${item.id}`}
                     sx={{ mb: 3 }}
                   >
@@ -233,7 +233,7 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: 360,
+        height: 414,
         borderRadius: 3,
         overflow: "hidden",
         boxShadow: 1,
@@ -245,7 +245,7 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
       <Box
         sx={{
           position: "relative",
-          aspectRatio: "16/9",
+          height: 180,
           width: "100%",
           overflow: "hidden",
         }}

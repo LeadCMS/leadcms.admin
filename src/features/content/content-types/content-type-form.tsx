@@ -29,7 +29,6 @@ interface ContentTypeFormProps {
     format: ContentFormat;
     supportsComments: boolean;
     supportsCoverImage: boolean;
-    supportsSEO: boolean;
   }) => void;
 }
 
@@ -38,7 +37,6 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
   const [format, setFormat] = useState<ContentFormat>("MD");
   const [supportsComments, setSupportsComments] = useState(false);
   const [supportsCoverImage, setSupportsCoverImage] = useState(false);
-  const [supportsSEO, setSupportsSEO] = useState(true);
   const [nameError, setNameError] = useState("");
 
   const handleSave = () => {
@@ -52,7 +50,6 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
       format,
       supportsComments,
       supportsCoverImage,
-      supportsSEO,
     });
 
     // Reset form
@@ -69,7 +66,6 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
     setFormat("MD");
     setSupportsComments(false);
     setSupportsCoverImage(false);
-    setSupportsSEO(true);
     setNameError("");
   };
 
@@ -148,15 +144,6 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
                   />
                 }
                 label="Supports Comments"
-              />
-              <FormControlLabel
-                control={
-                  <Switch 
-                    checked={supportsSEO}
-                    onChange={(e) => setSupportsSEO(e.target.checked)}
-                  />
-                }
-                label="Supports SEO"
               />
             </FormGroup>
           </Grid>

@@ -89,7 +89,6 @@ export const ContentTypeDropdown = ({
     format: ContentFormat;
     supportsComments: boolean;
     supportsCoverImage: boolean;
-    supportsSEO: boolean;
   }): void => {
     const id = displayNameToId(newType.displayName);
     
@@ -100,7 +99,6 @@ export const ContentTypeDropdown = ({
       format: newType.format,
       supportsComments: newType.supportsComments,
       supportsCoverImage: newType.supportsCoverImage,
-      supportsSEO: newType.supportsSEO,
       defaultValues: {
         allowComments: newType.supportsComments
       }
@@ -182,8 +180,6 @@ export const ContentTypeDropdown = ({
               ", supports cover image" : ""}
             {contentTypes.find(type => type.id === value)?.supportsComments ? 
               ", supports comments" : ""}
-            {contentTypes.find(type => type.id === value)?.supportsSEO ? 
-              ", supports SEO" : ""}
           </Typography>
         </Box>
       )}

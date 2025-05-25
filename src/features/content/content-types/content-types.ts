@@ -14,8 +14,6 @@ export interface ContentTypeDefinition {
   supportsComments: boolean;
   /** Whether this content type supports cover images */
   supportsCoverImage: boolean;
-  /** Whether this content type supports SEO optimization */
-  supportsSEO: boolean;
   /** Default values for this content type */
   defaultValues: Partial<ContentDetails>;
 }
@@ -30,7 +28,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: true,
     supportsCoverImage: true,
-    supportsSEO: true,
     defaultValues: {
       allowComments: true,
     }
@@ -41,7 +38,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MD",
     supportsComments: true,
     supportsCoverImage: true,
-    supportsSEO: true,
     defaultValues: {
       allowComments: true,
     }
@@ -52,7 +48,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: false,
     supportsCoverImage: true,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -63,7 +58,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: true,
     supportsCoverImage: false,
-    supportsSEO: true,
     defaultValues: {
       allowComments: true,
     }
@@ -74,7 +68,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: false,
     supportsCoverImage: true,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -85,7 +78,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: false,
     supportsCoverImage: false,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -96,7 +88,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: false,
     supportsCoverImage: true,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -107,7 +98,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "JSON",
     supportsComments: false,
     supportsCoverImage: false,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -118,7 +108,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MD",
     supportsComments: false,
     supportsCoverImage: true,
-    supportsSEO: false,
     defaultValues: {
       allowComments: false,
     }
@@ -129,7 +118,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: false,
     supportsCoverImage: true,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -140,7 +128,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: false,
     supportsCoverImage: false,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -151,7 +138,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MD",
     supportsComments: false,
     supportsCoverImage: false,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -162,7 +148,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: false,
     supportsCoverImage: true,
-    supportsSEO: true,
     defaultValues: {
       allowComments: false,
     }
@@ -173,7 +158,6 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
     format: "MDX",
     supportsComments: true,
     supportsCoverImage: false,
-    supportsSEO: true,
     defaultValues: {
       allowComments: true,
     }

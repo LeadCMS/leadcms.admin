@@ -4,6 +4,14 @@ export const ContentListContainer = styled("div")``;
 
 export const ContentEditContainer = styled("div")`
   flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
 `;
 
 export const ContentDeleteContainer = styled("div")`
@@ -11,7 +19,12 @@ export const ContentDeleteContainer = styled("div")`
 `;
 
 export const ContentItemContainer = styled("div")`
-  padding: 0 5%;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 `;
 
 export const TagsContainer = styled("div")`
@@ -66,8 +79,10 @@ export const CommentDateContainer = styled("span")`
 
 export const ContentListWrapper = styled("div")`
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
+  width: 100%;
+  height: 100%;
   background-color: ${({ theme }) => theme.palette.background.default};
 `;
 

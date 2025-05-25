@@ -147,7 +147,7 @@ const MarkdownEditor = ({
             <MDEditor
               aria-disabled={isReadOnly}
               hideToolbar={isReadOnly}
-              height={600}
+              height="100%"
               preview={"live"}
               value={value}
               onChange={onChange}
