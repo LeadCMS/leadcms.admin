@@ -29,5 +29,5 @@ export const ContentEditValidationScheme = zod.object({
   language: zod.string(),
   allowComments: zod.boolean().optional(),
   tags: zod.string().array().optional(),
-  category: zod.string().optional(),
+  category: zod.string(),
 });
