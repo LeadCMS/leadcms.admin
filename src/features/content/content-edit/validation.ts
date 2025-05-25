@@ -17,9 +17,7 @@ export const ContentEditDefaultValues: TypeDefaultValues[] = getAllContentTypes(
 }));
 
 export const ContentEditValidationScheme = zod.object({
-  type: zod.string().refine(val => ContentEditAvailableTypeIds.includes(val), {
-    message: "Invalid content type",
-  }),
+  type: zod.string(),
   title: zod.string(),
   description: zod.string(),
   body: zod.string(),

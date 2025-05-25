@@ -110,22 +110,20 @@ export const execDeleteWithToast = async (
     error: (error) => {
       const errMessage = `Unable to delete ${entity}. An error occurred.`;
       const errDetails: string[] = [];
-      if (error.data.error && error.data.error.title) {
+      if (error.data?.error?.title) {
         errDetails.push(error.data.error.title);
       }
-      if (error.data.message) {
+      if (error.data?.message) {
         errDetails.push(error.data.message);
       }
-      if (error.data.error && error.data.error.errors) {
+      if (error.data?.error?.errors) {
         errDetails.push(...networkErrorToStringArray(error.data.error.errors));
       }
       return {
         title: errMessage,
         onClick:
           errDetails.length > 0
-            ? () => {
-                showErrorModalFunc(errDetails);
-              }
+            ? () => showErrorModalFunc(errDetails)
             : undefined,
       };
     },

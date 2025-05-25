@@ -19,17 +19,14 @@ import {
   IconButton,
 } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
-import { ContentFormat, displayNameToId } from "./content-types";
+import { 
+  ContentFormat, displayNameToId, addCustomContentType, ContentTypeDefinition 
+} from "./content-types";
 
 interface ContentTypeFormProps {
   open: boolean;
   onClose: () => void;
-  onSave: (newContentType: {
-    displayName: string;
-    format: ContentFormat;
-    supportsComments: boolean;
-    supportsCoverImage: boolean;
-  }) => void;
+  onSave: (newContentType: ContentTypeDefinition) => void;
 }
 
 export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps) => {
@@ -45,12 +42,16 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
       return;
     }
 
-    onSave({
-      displayName: displayName.trim(),
+    const id = displayNameToId(displayName.trim());
+    
+    const newContentType = addCustomContentType({
+      id,
       format,
       supportsComments,
       supportsCoverImage,
     });
+
+    onSave(newContentType);
 
     // Reset form
     resetForm();

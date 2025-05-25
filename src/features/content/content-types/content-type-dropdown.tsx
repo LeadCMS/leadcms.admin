@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Autocomplete,
   Grid,
@@ -8,11 +8,11 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import {
-  CONTENT_TYPES,
+  getAllContentTypes,
   ContentTypeDefinition,
-  ContentFormat,
   displayNameToId,
-  idToDisplayName
+  idToDisplayName,
+  getContentTypeById
 } from "./content-types";
 import { ContentTypeForm } from "./content-type-form";
 
@@ -27,95 +27,41 @@ export const ContentTypeDropdown = ({
   onChange,
   onContentTypeChange
 }: ContentTypeDropdownProps) => {
-  const [contentTypes, setContentTypes] = useState<ContentTypeDefinition[]>(CONTENT_TYPES);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   
+  // Get all content types from centralized function
+  const contentTypes = getAllContentTypes();
+  
   // Convert internal value (id) to display name for UI
-  const displayValue = value ? idToDisplayName(value) : "";
-
-  // Store content types in localStorage to persist across sessions
-  useEffect(() => {
-    const storedTypes = localStorage.getItem("leadcms_content_types");
-    if (storedTypes) {
-      try {
-        const parsedTypes = JSON.parse(storedTypes);
-        if (Array.isArray(parsedTypes) && parsedTypes.length > 0) {
-          // Merge stored content types with default ones, giving preference to stored types
-          // for any that have the same ID
-          const mergedTypes = [...CONTENT_TYPES];
-          
-          parsedTypes.forEach(storedType => {
-            const existingIndex = mergedTypes.findIndex(t => t.id === storedType.id);
-            if (existingIndex >= 0) {
-              // Replace existing with stored version
-              mergedTypes[existingIndex] = storedType;
-            } else {
-              // Add Custom Type
-              mergedTypes.push(storedType);
-            }
-          });
-          
-          setContentTypes(mergedTypes);
-        }
-      } catch (e) {
-        console.error("Error parsing stored content types:", e);
-      }
-    }
-  }, []);
-
-  // Save content types to localStorage when they change
-  useEffect(() => {
-    if (contentTypes.length > 0) {
-      localStorage.setItem("leadcms_content_types", JSON.stringify(contentTypes));
-    }
-  }, [contentTypes]);
+  // Handle unknown content types by checking if they exist in our known types
+  const isKnownType = contentTypes.some(type => type.id === value);
+  const displayValue = value ? (
+    isKnownType ? idToDisplayName(value) : `${idToDisplayName(value)} (Unknown)`) : "";
 
   const handleChange = (
     _event: React.SyntheticEvent<Element, Event>, 
     newValue: string | null): void => {
     if (newValue) {
-      const id = displayNameToId(newValue);
+      const id = displayNameToId(newValue.replace(" (Unknown)", ""));
       onChange(id);
       
-      // Find the content type definition and notify parent
-      const contentType = contentTypes.find(type => type.id === id);
+      // Find the content type definition or get default for unknown types
+      const contentType = getContentTypeById(id);
       onContentTypeChange(contentType);
     }
   };
 
-  const handleAddNewType = (newType: {
-    displayName: string;
-    format: ContentFormat;
-    supportsComments: boolean;
-    supportsCoverImage: boolean;
-  }): void => {
-    const id = displayNameToId(newType.displayName);
-    
-    // Create new content type definition
-    const newContentType: ContentTypeDefinition = {
-      id,
-      displayName: newType.displayName,
-      format: newType.format,
-      supportsComments: newType.supportsComments,
-      supportsCoverImage: newType.supportsCoverImage,
-      defaultValues: {
-        allowComments: newType.supportsComments
-      }
-    };
-    
-    // Update state with new content type
-    setContentTypes([...contentTypes, newContentType]);
-    
+  const handleAddNewType = (newContentType: ContentTypeDefinition): void => {
     // Select the newly created content type
-    onChange(id);
+    onChange(newContentType.id);
     onContentTypeChange(newContentType);
     
     setDialogOpen(false);
   };
 
   // Get display names for the dropdown
-  const options = ["Add Custom Type", ...contentTypes.map(type => type.displayName)];
+  const options = ["Add Custom Type", ...contentTypes.map(type => idToDisplayName(type.id))];
 
   return (
     <>
@@ -175,11 +121,12 @@ export const ContentTypeDropdown = ({
       {value && (
         <Box mt={2}>
           <Typography variant="caption" color="text.secondary">
-            {contentTypes.find(type => type.id === value)?.format || ""} format
-            {contentTypes.find(type => type.id === value)?.supportsCoverImage ? 
+            {getContentTypeById(value).format} format
+            {getContentTypeById(value).supportsCoverImage ? 
               ", supports cover image" : ""}
-            {contentTypes.find(type => type.id === value)?.supportsComments ? 
+            {getContentTypeById(value).supportsComments ? 
               ", supports comments" : ""}
+            {!isKnownType ? " (Unknown content type with default settings)" : ""}
           </Typography>
         </Box>
       )}

@@ -5,7 +5,7 @@ export async function buildMenuItems(swaggerUrl: string, selectedModule: string)
   const entities = await fetchSwaggerEntities(swaggerUrl);
   return MENU_CONFIG.map((section) => {
     const filteredItems = section.items.filter((item) => {
-      if (item.entity === null) return true;
+      if (!item.entity) return true;
       return entities.has(item.entity.toLowerCase());
     }).map((item) => ({
       ...item,

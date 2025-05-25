@@ -38,14 +38,19 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import Chip from "@mui/material/Chip";
 import { Theme, useTheme } from "@mui/material/styles";
 import { idToDisplayName } from "./content-types";
+import { useNotificationsService } from "@hooks";
+import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
+import { execDeleteWithToast } from "utils/general-helper";
 
 export const ContentList = () => {
   const { client } = useRequestContext();
+  const { notificationsService } = useNotificationsService();
+  const { Show: showErrorModal } = useErrorDetailsModal()!;
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
   const [searchText, setSearchText] = useState<string>("");
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const scrollTargetRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef(false);
@@ -99,12 +104,39 @@ export const ContentList = () => {
   }, [searchText]);
 
   // Action handlers
-  const handleDelete = (id: number) => {
-    setDeleteTarget(id);
+  const handleDeleteClick = (contentId: number) => {
+    setDeleteTarget(contentId);
     setIsDeleteDialogOpen(true);
   };
-  const handleDeleteConfirm = () => {
-    // TODO: implement delete logic
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+
+    setIsDeleteDialogOpen(false);
+
+    try {
+      await execDeleteWithToast(
+        async () => {
+          await client.api.contentDelete(deleteTarget);
+        },
+        notificationsService,
+        "content",
+        showErrorModal
+      );
+
+      // Remove the deleted item from the list with animation
+      setContentItems((prevItems) =>
+        prevItems.filter((item) => item.id !== deleteTarget)
+      );
+      setContentItemsCount((prevCount) => Math.max(0, prevCount - 1));
+    } catch (error) {
+      console.error("Failed to delete content:", error);
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
     setIsDeleteDialogOpen(false);
     setDeleteTarget(null);
   };
@@ -166,7 +198,7 @@ export const ContentList = () => {
                   >
                     <ItemCard
                       item={item}
-                      onDelete={handleDelete}
+                      onDelete={handleDeleteClick}
                       key={`content-card-${item.id}`}
                     />
                   </Grid>
@@ -176,7 +208,7 @@ export const ContentList = () => {
           </>
         )}
         {/* Delete dialog */}
-        <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)}>
+        <Dialog open={isDeleteDialogOpen} onClose={handleDeleteCancel}>
           <DialogTitle>Delete Content</DialogTitle>
           <DialogContent>
             <DialogContentText>
@@ -186,7 +218,7 @@ export const ContentList = () => {
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsDeleteDialogOpen(false)} color="primary">
+            <Button onClick={handleDeleteCancel} color="primary">
               Cancel
             </Button>
             <Button onClick={handleDeleteConfirm} color="error" variant="contained">
@@ -355,7 +387,7 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
 function getTypeColor(type: string, theme: Theme): string {
   // Ensure we're using the kebab-case ID format for consistent color generation
   const processedType = type.includes(" ") ? type.toLowerCase().replace(/\s+/g, "-") : type;
-  
+
   let hash = 0;
   for (let i = 0; i < processedType.length; i++) {
     hash = processedType.charCodeAt(i) + ((hash << 5) - hash);

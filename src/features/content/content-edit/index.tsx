@@ -20,6 +20,7 @@ import {
   Tabs,
   Tab,
   Box,
+  CircularProgress,
 } from "@mui/material";
 import { useFormik, FormikHelpers } from "formik";
 import {
@@ -428,10 +429,10 @@ export const ContentEdit = (props: ContentEditProps) => {
                 variant="contained"
                 color="primary"
                 disabled={!(wasModified || coverWasModified) || formik.isSubmitting}
-                startIcon={<SaveIcon />}
+                startIcon={isSaving ? <CircularProgress size={16} /> : <SaveIcon />}
                 size="medium"
               >
-                Save
+                {isSaving ? "Saving..." : "Save"}
               </Button>
             </Box>
           </Box>
@@ -446,7 +447,6 @@ export const ContentEdit = (props: ContentEditProps) => {
           }
         />
         <ContentEditContainer>
-          {isSaving && <div>Saving...</div>}
           {shouldShowForm ? (          
             <Card>
               <CardContent>

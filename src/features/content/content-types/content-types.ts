@@ -6,16 +6,12 @@ export type ContentFormat = "MD" | "MDX" | "HTML" | "JSON" | "YAML" | "Plain Tex
 export interface ContentTypeDefinition {
   /** Unique identifier for the content type (kebab-case) */
   id: string;
-  /** Display name for the content type (Title Case) */
-  displayName: string;
   /** Content format */
   format: ContentFormat;
   /** Whether this content type supports comments */
   supportsComments: boolean;
   /** Whether this content type supports cover images */
   supportsCoverImage: boolean;
-  /** Default values for this content type */
-  defaultValues: Partial<ContentDetails>;
 }
 
 /**
@@ -24,143 +20,75 @@ export interface ContentTypeDefinition {
 export const CONTENT_TYPES: ContentTypeDefinition[] = [
   {
     id: "blog-post",
-    displayName: "Blog Post",
     format: "MDX",
     supportsComments: true,
-    supportsCoverImage: true,
-    defaultValues: {
-      allowComments: true,
-    }
+    supportsCoverImage: true
   },
   {
     id: "release-note",
-    displayName: "Release Note",
     format: "MD",
     supportsComments: true,
-    supportsCoverImage: true,
-    defaultValues: {
-      allowComments: true,
-    }
+    supportsCoverImage: true
   },
   {
     id: "case-study",
-    displayName: "Case Study",
     format: "MDX",
     supportsComments: false,
-    supportsCoverImage: true,
-    defaultValues: {
-      allowComments: false,
-    }
+    supportsCoverImage: true
   },
   {
     id: "documentation",
-    displayName: "Documentation",
     format: "MDX",
     supportsComments: true,
-    supportsCoverImage: false,
-    defaultValues: {
-      allowComments: true,
-    }
+    supportsCoverImage: false
   },
   {
     id: "feature",
-    displayName: "Feature",
     format: "MDX",
     supportsComments: false,
-    supportsCoverImage: true,
-    defaultValues: {
-      allowComments: false,
-    }
+    supportsCoverImage: true
   },
   {
     id: "faq",
-    displayName: "FAQ",
     format: "MDX",
     supportsComments: false,
-    supportsCoverImage: false,
-    defaultValues: {
-      allowComments: false,
-    }
+    supportsCoverImage: false
   },
   {
     id: "landing",
-    displayName: "Landing",
     format: "MDX",
     supportsComments: false,
-    supportsCoverImage: true,
-    defaultValues: {
-      allowComments: false,
-    }
+    supportsCoverImage: true
   },
   {
     id: "pricing",
-    displayName: "Pricing",
     format: "JSON",
     supportsComments: false,
-    supportsCoverImage: false,
-    defaultValues: {
-      allowComments: false,
-    }
+    supportsCoverImage: false
   },
   {
     id: "testimonial",
-    displayName: "Testimonial",
     format: "MD",
     supportsComments: false,
-    supportsCoverImage: true,
-    defaultValues: {
-      allowComments: false,
-    }
+    supportsCoverImage: true
   },
   {
     id: "about-us",
-    displayName: "About Us",
     format: "MDX",
     supportsComments: false,
-    supportsCoverImage: true,
-    defaultValues: {
-      allowComments: false,
-    }
+    supportsCoverImage: true
   },
   {
     id: "contact",
-    displayName: "Contact",
     format: "MDX",
     supportsComments: false,
-    supportsCoverImage: false,
-    defaultValues: {
-      allowComments: false,
-    }
+    supportsCoverImage: false
   },
   {
     id: "legal",
-    displayName: "Legal",
     format: "MD",
     supportsComments: false,
-    supportsCoverImage: false,
-    defaultValues: {
-      allowComments: false,
-    }
-  },
-  {
-    id: "integration",
-    displayName: "Integration",
-    format: "MDX",
-    supportsComments: false,
-    supportsCoverImage: true,
-    defaultValues: {
-      allowComments: false,
-    }
-  },
-  {
-    id: "api-reference",
-    displayName: "API Reference",
-    format: "MDX",
-    supportsComments: true,
-    supportsCoverImage: false,
-    defaultValues: {
-      allowComments: true,
-    }
+    supportsCoverImage: false
   }
 ];
 
@@ -168,6 +96,7 @@ export const CONTENT_TYPES: ContentTypeDefinition[] = [
  * Converts a display name to a content type ID (kebab-case)
  */
 export const displayNameToId = (displayName: string): string => {
+  if (!displayName) return "";
   return displayName.toLowerCase().replace(/\s+/g, "-");
 };
 
@@ -182,21 +111,71 @@ export const idToDisplayName = (id: string): string => {
 };
 
 /**
- * Returns all content types (static + custom from localStorage)
+ * Gets custom content types from localStorage
  */
-export const getAllContentTypes = (): ContentTypeDefinition[] => {
-  let customTypes: ContentTypeDefinition[] = [];
+export const getCustomContentTypes = (): ContentTypeDefinition[] => {
   try {
     const stored = localStorage.getItem("leadcms_content_types");
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        customTypes = parsed;
+        return parsed;
       }
     }
   } catch (e) {
-    // ignore
+    console.error("Error parsing custom content types:", e);
   }
+  return [];
+};
+
+/**
+ * Saves custom content types to localStorage
+ */
+export const saveCustomContentTypes = (customTypes: ContentTypeDefinition[]): void => {
+  try {
+    localStorage.setItem("leadcms_content_types", JSON.stringify(customTypes));
+  } catch (e) {
+    console.error("Error saving custom content types:", e);
+  }
+};
+
+/**
+ * Adds a new custom content type
+ */
+export const addCustomContentType = (newType: {
+  id: string;
+  format: ContentFormat;
+  supportsComments: boolean;
+  supportsCoverImage: boolean;
+}): ContentTypeDefinition => {
+  const customTypes = getCustomContentTypes();
+  const contentType: ContentTypeDefinition = {
+    id: newType.id,
+    format: newType.format,
+    supportsComments: newType.supportsComments,
+    supportsCoverImage: newType.supportsCoverImage
+  };
+  
+  // Check if content type already exists
+  const existingIndex = customTypes.findIndex(type => type.id === contentType.id);
+  if (existingIndex >= 0) {
+    // Replace existing
+    customTypes[existingIndex] = contentType;
+  } else {
+    // Add new
+    customTypes.push(contentType);
+  }
+  
+  saveCustomContentTypes(customTypes);
+  return contentType;
+};
+
+/**
+ * Returns all content types (static + custom from localStorage)
+ */
+export const getAllContentTypes = (): ContentTypeDefinition[] => {
+  const customTypes = getCustomContentTypes();
+  
   // Merge static and custom, custom overrides static by id
   const merged = [...CONTENT_TYPES];
   customTypes.forEach((ct) => {
@@ -212,18 +191,22 @@ export const getAllContentTypes = (): ContentTypeDefinition[] => {
 
 /**
  * Gets a content type definition by its ID (from merged list)
+ * If not found, returns a default configuration for unknown types
  */
-export const getContentTypeById = (id: string): ContentTypeDefinition | undefined => {
-  return getAllContentTypes().find((type) => type.id === id);
-};
-
-/**
- * Gets a content type definition by its display name (from merged list)
- */
-export const getContentTypeByDisplayName = (displayName: string)
-  : ContentTypeDefinition | undefined => {
-  const id = displayNameToId(displayName);
-  return getContentTypeById(id);
+export const getContentTypeById = (id: string): ContentTypeDefinition => {
+  const found = getAllContentTypes().find((type) => type.id === id);
+  
+  if (found) {
+    return found;
+  }
+  
+  // Return default configuration for unknown content types
+  return {
+    id: id,
+    format: "MDX",
+    supportsComments: true,
+    supportsCoverImage: true
+  };
 };
 
 /**
@@ -244,7 +227,7 @@ export const generateDefaultValues = (contentTypeId: string): ContentDetails => 
     slug: "",
     author: "",
     language: "",
-    allowComments: false,
+    allowComments: contentType.supportsComments,
     tags: [],
     category: "",
     createdAt: "",
@@ -253,13 +236,6 @@ export const generateDefaultValues = (contentTypeId: string): ContentDetails => 
     files: null,
   };
 
-  if (contentType) {
-    return {
-      ...baseDefaults,
-      ...contentType.defaultValues,
-    };
-  }
-
   return baseDefaults;
 };
 
@@ -267,7 +243,7 @@ export const generateDefaultValues = (contentTypeId: string): ContentDetails => 
  * Get array of content type display names for dropdown
  */
 export const getContentTypeOptions = (): string[] => {
-  return CONTENT_TYPES.map(type => type.displayName);
+  return getAllContentTypes().map(type => idToDisplayName(type.id));
 };
 
 /**
@@ -275,7 +251,7 @@ export const getContentTypeOptions = (): string[] => {
  */
 export const createContentTypeDefaultValues = ()
     : { type: string; defaultValues: ContentDetails }[] => {
-  return CONTENT_TYPES.map(contentType => ({
+  return getAllContentTypes().map(contentType => ({
     type: contentType.id,
     defaultValues: generateDefaultValues(contentType.id),
   }));

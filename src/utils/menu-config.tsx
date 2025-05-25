@@ -143,7 +143,7 @@ export const MENU_CONFIG = [
         id: "about",
         label: "About",
         icon: <Info />, 
-        entity: null, // Always show
+        entity: null,
         route: getCoreModuleRoute(CoreModule.about)
       }
     ]
