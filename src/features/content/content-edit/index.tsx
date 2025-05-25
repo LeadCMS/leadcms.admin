@@ -222,6 +222,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     initialValues: ContentEditDefaultValues[0].defaultValues,
     onSubmit: submit,
     validateOnChange: false,
+    validateOnBlur: true,
   });
 
   const valueUpdate = (event: React.SyntheticEvent<Element, Event>) => {
@@ -331,6 +332,19 @@ export const ContentEdit = (props: ContentEditProps) => {
   const contentType = getContentTypeById(formik.values.type);
   const supportsCover = contentType?.supportsCoverImage;
   const supportsComments = contentType?.supportsComments;
+
+  // Check for validation errors in each tab
+  const hasContentErrors = Boolean(formik.errors.body);
+  const hasCoverErrors = Boolean(formik.errors.coverImageAlt);
+  const hasSettingsErrors = Boolean(
+    formik.errors.slug ||
+    formik.errors.language ||
+    formik.errors.category ||
+    formik.errors.tags ||
+    formik.errors.allowComments ||
+    formik.errors.author ||
+    formik.errors.publishedAt
+  );
 
   // Handler for delete action
   const handleDelete = async () => {
@@ -483,9 +497,41 @@ export const ContentEdit = (props: ContentEditProps) => {
                     onChange={(_, v) => setActiveTab(v)}
                     sx={{ minHeight: 36 }}
                   >
-                    <Tab label="Content" value="content" />
-                    {supportsCover && <Tab label="Cover" value="cover" />}
-                    <Tab label="Settings" value="settings" />
+                    <Tab 
+                      label="Content" 
+                      value="content"
+                      sx={{
+                        color: hasContentErrors ? "error.main" : "inherit",
+                        fontWeight: hasContentErrors ? 600 : 400,
+                        "&.Mui-selected": {
+                          color: hasContentErrors ? "error.main" : "primary.main"
+                        }
+                      }}
+                    />
+                    {supportsCover && (
+                      <Tab 
+                        label="Cover" 
+                        value="cover"
+                        sx={{
+                          color: hasCoverErrors ? "error.main" : "inherit",
+                          fontWeight: hasCoverErrors ? 600 : 400,
+                          "&.Mui-selected": {
+                            color: hasCoverErrors ? "error.main" : "primary.main"
+                          }
+                        }}
+                      />
+                    )}
+                    <Tab 
+                      label="Settings" 
+                      value="settings"
+                      sx={{
+                        color: hasSettingsErrors ? "error.main" : "inherit",
+                        fontWeight: hasSettingsErrors ? 600 : 400,
+                        "&.Mui-selected": {
+                          color: hasSettingsErrors ? "error.main" : "primary.main"
+                        }
+                      }}
+                    />
                   </Tabs>
                   <Box sx={{ flex: 1 }} />
                   <Button
@@ -512,20 +558,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                 {activeTab === "content" && (
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 12, sm: 12 }}>
-                      {contentType?.format === "MD" || contentType?.format === "MDX" ? (
-                        <MarkdownEditor
-                          onChange={async (value) => {
-                            setWasModified(true);
-                            await formik.setFieldValue("body", value);
-                          }}
-                          onFrontmatterErrorChange={async (value) => {
-                            setfrontmatterState(value);
-                          }}
-                          value={formik.values.body}
-                          isReadOnly={props.readonly}
-                          contentDetails={formik.values}
-                        />
-                      ) : (contentType?.format === "JSON" || contentType?.format === "YAML") ? (
+                      {contentType?.format === "JSON" || contentType?.format === "YAML" ? (
                         <MonacoEditor
                           height="400px"
                           defaultLanguage={contentType.format.toLowerCase() as "json" | "yaml"}
@@ -541,8 +574,21 @@ export const ContentEdit = (props: ContentEditProps) => {
                             scrollBeyondLastLine: false,
                             wordWrap: "on"
                           }}
+                        />                        
+                      ) : (
+                        <MarkdownEditor
+                          onChange={async (value) => {
+                            setWasModified(true);
+                            await formik.setFieldValue("body", value);
+                          }}
+                          onFrontmatterErrorChange={async (value) => {
+                            setfrontmatterState(value);
+                          }}
+                          value={formik.values.body}
+                          isReadOnly={props.readonly}
+                          contentDetails={formik.values}
                         />
-                      ) : null}
+                      )}
                     </Grid>
                   </Grid>
                 )}
@@ -573,6 +619,20 @@ export const ContentEdit = (props: ContentEditProps) => {
                 )}
                 {activeTab === "settings" && (
                   <Grid container spacing={2}>
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        disabled={props.readonly}
+                        label="Slug"
+                        name="slug"
+                        value={formik.values.slug}
+                        error={formik.touched.slug && Boolean(formik.errors.slug)}
+                        helperText={formik.touched.slug && formik.errors.slug}
+                        placeholder="Enter slug"
+                        variant="outlined"
+                        onChange={valueUpdate}
+                        fullWidth
+                      />
+                    </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
                       <LanguageAutocomplete
                         value={formik.values.language}
