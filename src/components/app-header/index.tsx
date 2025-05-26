@@ -26,10 +26,16 @@ export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) =>
               aria-label="menu"
               onClick={toggleMobile}
               sx={{
-                mr: { xs: 1, sm: 2 },
-                background: theme.palette.background.paper,
+                mr: 0,
+                ml: 2,
+                background: "none",
+                border: "none",
+                borderRadius: 0,
                 color: theme.palette.text.primary,
-                border: `1px solid ${theme.palette.divider}`
+                padding: 0.5,
+                "&:hover": {
+                  background: "none"
+                }
               }}
             >
               <MenuIcon />
