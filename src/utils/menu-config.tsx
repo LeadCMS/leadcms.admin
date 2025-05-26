@@ -37,28 +37,28 @@ export const MENU_CONFIG = [
         id: "content",
         label: "Content",
         icon: <Newspaper />, 
-        entity: "contentdetailsdto",
+        entity: "content",
         route: getCoreModuleRoute(CoreModule.content)
       },
       {
         id: "comments",
         label: "Comments",
         icon: <Comment />, 
-        entity: "commentdetailsdto",
+        entity: "comment",
         route: getCoreModuleRoute(CoreModule.comments)
       },
       {
         id: "media",
         label: "Media",
         icon: <ImageIcon />, 
-        entity: "mediadetailsdto",
+        entity: "media",
         route: getCoreModuleRoute(CoreModule.media)
       },
       {
         id: "links",
         label: "Links",
         icon: <LinkIcon />, 
-        entity: "linkdetailsdto",
+        entity: "link",
         route: getCoreModuleRoute(CoreModule.links)
       }
     ]
@@ -70,28 +70,28 @@ export const MENU_CONFIG = [
         id: "orders",
         label: "Orders",
         icon: <Inventory />, 
-        entity: "orderdetailsdto",
+        entity: "order",
         route: getCoreModuleRoute(CoreModule.orders)
       },
       {
         id: "deals",
         label: "Deals",
         icon: <MonetizationOn />, 
-        entity: "dealdetailsdto",
+        entity: "deal",
         route: getCoreModuleRoute(CoreModule.deals)
       },
       {
         id: "contacts",
         label: "Contacts",
         icon: <People />, 
-        entity: "contactdetailsdto",
+        entity: "contact",
         route: getCoreModuleRoute(CoreModule.contacts)
       },
       {
         id: "accounts",
         label: "Accounts",
         icon: <Business />, 
-        entity: "accountdetailsdto",
+        entity: "account",
         route: getCoreModuleRoute(CoreModule.accounts)
       }
     ]
@@ -103,21 +103,21 @@ export const MENU_CONFIG = [
         id: "emailTemplates",
         label: "Email templates",
         icon: <Email />, 
-        entity: "emailtemplatedetailsdto",
+        entity: "email-template",
         route: getCoreModuleRoute(CoreModule.emailTemplates)
       },
       {
         id: "unsubscribes",
         label: "Unsubscribes",
         icon: <Unsubscribe />, 
-        entity: "unsubscribedetailsdto",
+        entity: "unsubscribe",
         route: getCoreModuleRoute(CoreModule.unsubscribes)
       },
       {
         id: "domains",
         label: "Domains",
         icon: <Web />, 
-        entity: "domaindetailsdto",
+        entity: "domain",
         route: getCoreModuleRoute(CoreModule.domains)
       }
     ]
@@ -129,14 +129,14 @@ export const MENU_CONFIG = [
         id: "users",
         label: "Users",
         icon: <Person />, 
-        entity: "userdetailsdto",
+        entity: "user",
         route: getCoreModuleRoute(CoreModule.users)
       },
       {
         id: "activityLogs",
         label: "Activity logs",
         icon: <Book />, 
-        entity: "activitylogdetailsdto",
+        entity: "activity-log",
         route: getCoreModuleRoute(CoreModule.activityLogs)
       },
       {

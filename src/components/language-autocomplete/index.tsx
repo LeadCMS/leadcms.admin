@@ -1,5 +1,5 @@
 import Autocomplete, { AutocompleteRenderInputParams } from "@mui/material/Autocomplete";
-import Locale from "locale-codes";
+import { useConfig } from "@providers/config-provider";
 
 interface LanguageAutocompleteProps {
   value: string;
@@ -9,27 +9,6 @@ interface LanguageAutocompleteProps {
     props: React.HTMLAttributes<HTMLLIElement>, 
     option: { label: string; value: string }) => React.ReactNode;
 }
-const AvailableLanguages = ["ru-RU", "en-US"];
-
-const muiOptions = AvailableLanguages.map((value) => {
-  return {
-    label: Locale.getByTag(value).name,
-    value: value,
-  };
-});
-
-const prepValue = (languageCode: string | null | undefined) => {
-  if (languageCode === null || languageCode === undefined || languageCode.length === 0) {
-    return {
-      label: Locale.getByTag("en-US").name,
-      value: "en-US",
-    };
-  }
-  return {
-    label: Locale.getByTag(languageCode).name,
-    value: languageCode,
-  };
-};
 
 export const LanguageAutocomplete = ({
   value,
@@ -37,6 +16,19 @@ export const LanguageAutocomplete = ({
   renderInput,
   renderOption,
 }: LanguageAutocompleteProps) => {
+  const { config } = useConfig();
+  const languages = config?.languages || [];
+  const muiOptions = languages.map((lang) => ({
+    label: lang.name,
+    value: lang.code,
+  }));
+  const prepValue = (languageCode: string | null | undefined) => {
+    if (!languageCode || !muiOptions.length) {
+      return muiOptions[0] || { label: "", value: "" };
+    }
+    return muiOptions.find((opt) => opt.value === languageCode) || muiOptions[0];
+  };
+
   const defaultRenderOption = (
     props: React.HTMLAttributes<HTMLLIElement>, 
     option: { label: string; value: string }

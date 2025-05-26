@@ -1404,6 +1404,12 @@ export interface ActivityLogDetailsDto {
   data?: string;
 }
 
+export interface AuthConfigDto {
+  /** Methods */
+  methods?: string[];
+  msal?: MsalConfigDto;
+}
+
 export interface ChangePasswordDto {
   /**
    * Current Password
@@ -1728,6 +1734,14 @@ export interface CommentUpdateDto {
    * @example "string"
    */
   body: string;
+}
+
+export interface ConfigDto {
+  auth?: AuthConfigDto;
+  /** Entities */
+  entities?: string[];
+  /** Languages */
+  languages?: LanguageDto[];
 }
 
 export interface ContactCreateDto {
@@ -4594,6 +4608,19 @@ export interface ImportResult {
   errors?: ImportError[] | null;
 }
 
+export interface LanguageDto {
+  /**
+   * Code
+   * @example "string"
+   */
+  code?: string;
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+}
+
 export interface LinkCreateDto {
   /**
    * Uid
@@ -4810,6 +4837,24 @@ export interface MediaDetailsDto {
    * @example "string"
    */
   location?: string;
+}
+
+export interface MsalConfigDto {
+  /**
+   * Client Id
+   * @example "string"
+   */
+  clientId?: string;
+  /**
+   * Authority
+   * @example "string"
+   */
+  authority?: string;
+  /**
+   * Redirect Uri
+   * @example "string"
+   */
+  redirectUri?: string;
 }
 
 export interface OrderCreateDto {
@@ -6347,6 +6392,23 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Config
+     * @name ConfigList
+     * @request GET:/api/config
+     * @secure
+     */
+    configList: (params: RequestParams = {}) =>
+      this.request<ConfigDto, any>({
+        path: `/api/config`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 

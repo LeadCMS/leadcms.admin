@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { AppHeader } from "@components/app-header";
 import { Sidebar } from "@components/side-bar";
 import { AppLayoutWrapper, MainColumn, MainContent } from "./index.styled";
@@ -6,8 +6,8 @@ import { useMediaQuery, useTheme } from "@mui/material";
 import { buildMenuItems } from "../../utils/build-menu-items";
 import { useRouteParams } from "typesafe-routes";
 import { coreModuleRoute } from "@lib/router";
-import { useRequestContext } from "@providers/request-provider";
 import { SidebarProvider } from "@providers/sidebar-provider";
+import { useConfig } from "@providers/config-provider";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -38,25 +38,11 @@ export const AppLayout = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [menuItems, setMenuItems] = useState<SidebarMenuSection[]>([]);
-  const [menuLoading, setMenuLoading] = useState(true);
   const { moduleName } = useRouteParams(coreModuleRoute);
-  const { client } = useRequestContext();
+  const { config, loading: configLoading } = useConfig();
 
-  useEffect(() => {
-    async function fetchSwaggerAndBuildMenu() {
-      setMenuLoading(true);
-      try {
-        const swaggerUrl = `${client.baseUrl?.replace(/\/$/, "")}/swagger/v1/swagger.json`;
-        const items = (await buildMenuItems(swaggerUrl, moduleName))
-          .filter(Boolean) as SidebarMenuSection[];
-        setMenuItems(items);
-      } finally {
-        setMenuLoading(false);
-      }
-    }
-    fetchSwaggerAndBuildMenu();
-  }, [moduleName, client.baseUrl]);
+  const menuItems = buildMenuItems(config?.entities, moduleName) as SidebarMenuSection[];
+  const menuLoading = configLoading;
 
   const handleDrawerToggle = (isOpen: boolean) => {
     setMobileOpen(isOpen);

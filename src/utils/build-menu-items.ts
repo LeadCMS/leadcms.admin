@@ -1,12 +1,11 @@
 import { MENU_CONFIG } from "./menu-config";
-import { fetchSwaggerEntities } from "./swagger-entities";
 
-export async function buildMenuItems(swaggerUrl: string, selectedModule: string) {
-  const entities = await fetchSwaggerEntities(swaggerUrl);
+export function buildMenuItems(availableEntities: string[] | undefined, selectedModule: string) {
+  const entitySet = new Set((availableEntities || []).map((e) => e.toLowerCase()));
   return MENU_CONFIG.map((section) => {
     const filteredItems = section.items.filter((item) => {
       if (!item.entity) return true;
-      return entities.has(item.entity.toLowerCase());
+      return entitySet.has(item.entity.toLowerCase());
     }).map((item) => ({
       ...item,
       onClick: () => (window.location.href = item.route),

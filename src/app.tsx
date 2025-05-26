@@ -10,6 +10,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { UserProvider } from "@providers/user-provider";
 import { ErrorDetailsModalProvider } from "@providers/error-details-modal-provider";
+import { ConfigProvider } from "@providers/config-provider";
 import "react-toastify/dist/ReactToastify.css";
 
 export const App = () => {
@@ -86,37 +87,39 @@ export const App = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <ThemeProvider>
-        <AuthProvider>
-          <RequestProvider>
-            <ToastContainer />
-            <UserProvider>
-              <ErrorDetailsModalProvider>
-                <BrowserRouter
-                  future={{
-                    v7_startTransition: true,
-                    v7_relativeSplatPath: true
-                  }}
-                >
-                  <Routes>
-                    <Route
-                      path={rootRoute}
-                      element={
-                        <AppLayoutWithAutoBreadcrumbs>
-                          <Outlet />
-                        </AppLayoutWithAutoBreadcrumbs>
-                      }
-                    >
-                      <Route path={rootRoute} element={<ModuleLoader />} />
-                      <Route path={`${coreModuleRoute.template}/*`} element={<ModuleLoader />} />
-                    </Route>
-                  </Routes>
-                </BrowserRouter>
-              </ErrorDetailsModalProvider>
-            </UserProvider>
-          </RequestProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <ConfigProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <RequestProvider>
+              <ToastContainer />
+              <UserProvider>
+                <ErrorDetailsModalProvider>
+                  <BrowserRouter
+                    future={{
+                      v7_startTransition: true,
+                      v7_relativeSplatPath: true
+                    }}
+                  >
+                    <Routes>
+                      <Route
+                        path={rootRoute}
+                        element={
+                          <AppLayoutWithAutoBreadcrumbs>
+                            <Outlet />
+                          </AppLayoutWithAutoBreadcrumbs>
+                        }
+                      >
+                        <Route path={rootRoute} element={<ModuleLoader />} />
+                        <Route path={`${coreModuleRoute.template}/*`} element={<ModuleLoader />} />
+                      </Route>
+                    </Routes>
+                  </BrowserRouter>
+                </ErrorDetailsModalProvider>
+              </UserProvider>
+            </RequestProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </ConfigProvider>
     </LocalizationProvider>
   );
 };
