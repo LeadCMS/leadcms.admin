@@ -37,6 +37,7 @@ export const ModuleContentContainer = styled("div")`
 export const ScrollContainer = styled("div")`
   overflow-y: auto;
   flex: 1;
+  padding-bottom: 40px;
 `;
 
 export const FormContainer = styled("div")`
@@ -56,7 +57,6 @@ export const FixedActionBar = styled("div")`
   padding: ${({ theme }) => theme.spacing(3)};
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   z-index: 10;
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.values.md}px) {
     left: 0;
     justify-content: center;
