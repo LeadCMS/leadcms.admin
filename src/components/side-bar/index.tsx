@@ -17,18 +17,23 @@ import { getCoreModuleRoute, CoreModule } from "lib/router";
 import { useSidebar } from "@providers/sidebar-provider";
 import { LogoComponent } from "@components/app-header/index.styled";
 import Typography from "@mui/material/Typography";
+import { useNavigate } from "react-router-dom";
+
+interface SidebarMenuItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  onClick: (navigate: (to: string) => void) => void;
+  isSelected: boolean;
+}
+
+interface SidebarMenuSection {
+  header: string;
+  items: SidebarMenuItem[];
+}
 
 interface SidebarProps {
-  menuItems?: {
-    header: string;
-    items: {
-      id: string;
-      label: string;
-      icon: React.ReactNode;
-      onClick: () => void;
-      isSelected: boolean;
-    }[];
-  }[];
+  menuItems?: SidebarMenuSection[];
   onDrawerStateChange?: (isOpen: boolean) => void;
   isLoading?: boolean;
 }
@@ -41,6 +46,7 @@ export const Sidebar = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { isOpen, isCollapsed, isMobileOpen, toggleCollapse, toggleMobile } = useSidebar();
+  const navigate = useNavigate();
   
   // Notify parent component when drawer state changes
   useEffect(() => {
@@ -50,8 +56,8 @@ export const Sidebar = ({
   }, [isMobileOpen, onDrawerStateChange]);
 
   const navigateToDashboard = useCallback(() => {
-    window.location.href = getCoreModuleRoute(CoreModule.dashboard);
-  }, []);
+    navigate(getCoreModuleRoute(CoreModule.dashboard));
+  }, [navigate]);
 
   const effectiveOpen = isMobile ? isMobileOpen : isOpen;
   const showCollapsed = !isMobile && isCollapsed;
@@ -118,17 +124,28 @@ export const Sidebar = ({
                     title={showCollapsed ? menuItem.label : ""}
                     placement="right"
                   >
-                    <SidebarLink
-                      onClick={() => {
-                        menuItem.onClick();
-                        if (isMobile) toggleMobile();
-                      }}
-                      selected={menuItem.isSelected}
-                      isCollapsed={showCollapsed}
-                    >
-                      <ListItemIconStyled>{menuItem.icon}</ListItemIconStyled>
-                      <SidebarLinkText primary={menuItem.label} isCollapsed={showCollapsed} />
-                    </SidebarLink>
+                    <span>
+                      <SidebarLink
+                        sx={{ 
+                          ...(showCollapsed && { 
+                            justifyContent: "center",
+                            padding: (theme) => theme.spacing(1, 0)
+                          })
+                        }}                        
+                        onClick={(e: React.MouseEvent) => {
+                          e.preventDefault();
+                          if (typeof menuItem.onClick === "function") {
+                            menuItem.onClick(navigate);
+                          }
+                          if (isMobile) toggleMobile();
+                        }}
+                        selected={menuItem.isSelected}
+                        isCollapsed={showCollapsed}
+                      >
+                        <ListItemIconStyled>{menuItem.icon}</ListItemIconStyled>
+                        <SidebarLinkText primary={menuItem.label} isCollapsed={showCollapsed} />
+                      </SidebarLink>
+                    </span>
                   </Tooltip>
                 ))}
               </List>

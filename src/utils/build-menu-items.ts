@@ -8,7 +8,7 @@ export function buildMenuItems(availableEntities: string[] | undefined, selected
       return entitySet.has(item.entity.toLowerCase());
     }).map((item) => ({
       ...item,
-      onClick: () => (window.location.href = item.route),
+      onClick: (navigate: (to: string) => void) => navigate(item.route),
       isSelected: selectedModule === item.id
     }));
     if (filteredItems.length === 0) return null;

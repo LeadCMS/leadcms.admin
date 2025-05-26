@@ -41,6 +41,7 @@ import { idToDisplayName } from "./content-types";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { execDeleteWithToast } from "utils/general-helper";
+import { GhostLink } from "@components/ghost-link";
 
 export const ContentList = () => {
   const { client } = useRequestContext();
@@ -168,7 +169,13 @@ export const ContentList = () => {
       leftContainerChildren={leftControls}
       extraActionsContainerChildren={null}
       addButtonContainerChildren={
-        <Button variant="contained" href="/content/new" startIcon={<Add />} sx={{ height: 40 }}>
+        <Button
+          variant="contained"
+          to="/content/new"
+          component={GhostLink}
+          startIcon={<Add />}
+          sx={{ height: 40 }}
+        >
           {"Add Content"}
         </Button>
       }
