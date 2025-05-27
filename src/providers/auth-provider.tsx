@@ -1,11 +1,11 @@
-import { memo, PropsWithChildren, useCallback, useEffect, useState } from "react";
+import { memo, PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
 import {
   PublicClientApplication,
   Configuration,
   InteractionStatus,
-  InteractionType,
 } from "@azure/msal-browser";
-import { MsalProvider, useMsal, MsalAuthenticationTemplate } from "@azure/msal-react";
+import { MsalProvider, useMsal} from "@azure/msal-react";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
 const msalConfig: Configuration = {
   auth: {
@@ -23,29 +23,44 @@ function RequireAuth({ children }: PropsWithChildren) {
   const { accounts, inProgress  } = useMsal();
   const account = accounts.at(0);
 
-  useEffect(() => {
-    if (isTokenLoaded && inProgress === InteractionStatus.None &&
-      !account && !localToken && !window.location.pathname.startsWith("/auth")) {
-      const from = encodeURIComponent(window.location.pathname);
-      window.location.replace(`/auth/login?from=${from}`);
-    }
+  if (!isTokenLoaded || inProgress !== InteractionStatus.None) {
+    return <Loading />;
+  }
 
-    if (isTokenLoaded && inProgress === InteractionStatus.None &&
-      localToken && window.location.pathname.startsWith("/auth")) {
-      window.location.replace("/");    
-    }
-
-  }, [account, inProgress, isTokenLoaded]);
-
-  if (inProgress !== InteractionStatus.None ||!isTokenLoaded ) {
+  if (!account && !localToken && !window.location.pathname.startsWith("/auth")) {
+    const from = encodeURIComponent(window.location.pathname);
+    window.location.replace("/auth/login");
     return null;
+  }
+
+  if ((localToken || account) && window.location.pathname.startsWith("/auth")) {
+    window.location.replace("/");
+    return null; 
   }
 
   return <>{children}</>;
 }
 
-export const Loading = () => {
-  return <div>Authentication in progress...</div>; // TODO: Design better one
+  export const Loading = () => {
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "background.default",
+        color: "text.primary",
+        gap: 2,
+      }}
+    >
+      <CircularProgress color="primary" />
+      <Typography variant="h6" fontWeight={500}>
+        Authenticating, please wait...
+      </Typography>
+    </Box>
+  );
 };
 
 export const AuthProvider = memo(function AuthProvider({ children }: PropsWithChildren) {

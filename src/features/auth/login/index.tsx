@@ -1,36 +1,52 @@
 import { useMsal } from "@azure/msal-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {Button, Typography, TextField, IconButton, InputAdornment} from "@mui/material";
+import { useState, useEffect } from "react";
+import { Button, Typography,TextField, IconButton, InputAdornment, Box, CircularProgress } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { LoginDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
-import { useNotificationsService } from "@hooks";
 import { LoginContainer, StyledForm, Logo, MicrosoftButton, OrText, } from "./index.styled";
 import { useAuthState } from "@providers/auth-provider";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { useConfig } from "@providers/config-provider";
+
+const LoadingConfig = () => {
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "background.default",
+        color: "text.primary",
+        gap: 2,
+      }}
+    >
+      <CircularProgress color="primary" />
+      <Typography variant="h6" fontWeight={500}>
+        Loading configuration, please wait...
+      </Typography>
+    </Box>
+  );
+};
 
 const schema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),
   password: yup.string().required("Password is required"),
 });
 
-export const Login = () => {
 
+export const Login = () => {
   const { setLocalToken } = useAuthState();
   const { client } = useRequestContext();
-  const { notificationsService } = useNotificationsService();
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const { config, loading } = useConfig();
   const { instance } = useMsal();
-  const [loading, setLoading] = useState(false);
-
-  const handleMicrosoftLogin = () => {
-    instance.loginRedirect({
-      scopes: ["User.Read"],
-    });
-  };
+  const [loginLoading, setLoading] = useState(false);
 
   const {
     register,
@@ -40,23 +56,49 @@ export const Login = () => {
     resolver: yupResolver(schema),
   });
 
+  useEffect(() => {
+  if (loginError) {
+    const timer = setTimeout(() => {
+      setLoginError(null);
+    }, 5000); 
+
+    return () => clearTimeout(timer); 
+  }
+  }, [loginError]);
+
+   const handleMicrosoftLogin = () => {
+    instance.loginRedirect({
+      scopes: ["User.Read"],
+    });
+  };
+
+  if (loading || !config) {
+  return <LoadingConfig />;
+  }
+
+  const authMethods = config.auth?.methods ?? [];
+  const showLocal = authMethods.includes("Local");
+  const showAzureAD = authMethods.includes("AzureAD");
+
   const onSubmit = async (form: LoginDto) => {
     setLoading(true);
     try {
       const response = await client.api.identityLoginCreate(form);
       
       if (!response || !response.ok) {
-        notificationsService.error("Login failed");
+        setLoginError("Login failed. Please try again.");
+
         return;
       }
+
       const responseJson = await response.json();
       localStorage.setItem("token", responseJson.token);
       setLocalToken(responseJson.token);
-      const from = new URLSearchParams(window.location.search).get("from") ?? "/";
-      window.location.replace(from);
-      notificationsService.success("Login successful");
+      window.location.replace("/");
+
     } catch (err: any) {
-      notificationsService.error("Login failed");
+      setLoginError("Login failed. Please try again.");
+
     } finally {
       setLoading(false);
     }
@@ -68,7 +110,10 @@ export const Login = () => {
       <StyledForm onSubmit={handleSubmit(onSubmit)} noValidate>
         <Logo src="/images/logo.svg" alt="LeadCMS Logo" />
         <Typography variant="h5" align="center">Login to LeadCMS</Typography>
-        <TextField
+
+        {showLocal && (
+          <>
+          <TextField
           label="Email"
           fullWidth
           type="email"
@@ -84,23 +129,28 @@ export const Login = () => {
           {...register("password")}
           error={!!errors.password}
           helperText={errors.password?.message}
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(prev => !prev)} edge="end">
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setShowPassword(prev => !prev)} edge="end">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
           }}
         />
-
-        <Button type="submit" variant="contained" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
+        {loginError && (
+        <Typography variant="body2" color="error" align="center" sx={{ mt: 1 }}>
+          {loginError}
+        </Typography>
+        )}
+        <Button type="submit" variant="contained" disabled={loginLoading}>
+          {loginLoading ? "Logging in..." : "Login"}
         </Button>
-        <OrText>Or</OrText>
+        </>
+        )}
+        {showLocal && showAzureAD && <OrText>Or</OrText>}
+        {showAzureAD && (
         <MicrosoftButton onClick={handleMicrosoftLogin} fullWidth startIcon={
           <img
             src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg"
@@ -111,6 +161,7 @@ export const Login = () => {
         }>
           Continue with Microsoft
         </MicrosoftButton>
+        )}
       </StyledForm>
     </LoginContainer>
   );
