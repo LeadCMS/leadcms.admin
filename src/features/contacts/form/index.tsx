@@ -28,7 +28,8 @@ import { execSubmitWithToast } from "utils/formik-helper";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { DateField } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
-import { languages, prefixOptions, timezones } from "utils/constants";
+import { useConfig } from "@providers/config-provider";
+import { prefixOptions, timezones } from "utils/constants";
 
 // Icons
 import PersonIcon from "@mui/icons-material/Person";
@@ -72,6 +73,8 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
   const showErrorModal = useErrorDetailsModal()?.Show;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { config } = useConfig();
+  const languages = config?.languages || [];
 
   const noopErrorHandler = (errors: string[]) => { 
     console.log("Error occurred but error modal is not available:", errors);

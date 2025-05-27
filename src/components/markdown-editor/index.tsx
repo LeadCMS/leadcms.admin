@@ -9,7 +9,7 @@ import { validateFrontmatter, ValidateFrontmatterError } from "utils/frontmatter
 import Dropzone, { Accept, FileRejection } from "react-dropzone";
 import "./styles.css";
 import { useNotificationsService } from "@hooks";
-import { ContentEditMaximumImageSize } from "@features/blog/content-edit/validation";
+import { ContentEditMaximumImageSize } from "@features/content/content-edit/validation";
 import { useRequestContext } from "@providers/request-provider";
 
 const ImageUploadingCtx = createContext<ImageUploadingContext | null>(null);
@@ -45,11 +45,22 @@ const EditorViewFunc = (
 
   useEffect(() => {
     const validationResult = validateFrontmatter(value);
+    // Only show error if frontmatter exists and is invalid
     if (validationResult !== true) {
+      // If the error is only about missing frontmatter, do not show error
+      if (
+        validationResult &&
+        typeof validationResult === "object" &&
+        validationResult.errorMessage === "Frontmatter doesn't exists"
+      ) {
+        onErrorChange(null);
+        return;
+      }
       onErrorChange(validationResult);
       if (validationResult.errorLine === -1) {
         return;
       }
+      // Only get lines if we need to highlight an error line
       const lines = document.querySelectorAll(".code-line");
       if (lines.length === 0) {
         return;
@@ -108,7 +119,7 @@ const MarkdownEditor = ({
     onFrontmatterErrorChange(error);
   };
 
-  const commandFilter = (command: ICommand, isExtra: boolean) => {
+  const commandFilter = (command: ICommand) => {
     if (command.name === "image") {
       return ImageUpload(contentDetails, true);
     }
@@ -137,7 +148,7 @@ const MarkdownEditor = ({
       onDrop={onDrop}
       maxSize={ContentEditMaximumImageSize}
       maxFiles={1}
-      accept={{ key: ["image/*"] } as Accept}
+      accept={{ "image/*": [] } as Accept}
       noClick
     >
       {({ getRootProps, getInputProps }) => (
@@ -147,7 +158,7 @@ const MarkdownEditor = ({
             <MDEditor
               aria-disabled={isReadOnly}
               hideToolbar={isReadOnly}
-              height={600}
+              height="100%"
               preview={"live"}
               value={value}
               onChange={onChange}

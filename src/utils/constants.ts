@@ -9,11 +9,6 @@ export const countryListStorageKey = "countryList";
 
 export const continentListStorageKey = "continentList";
 
-export const languages = [
-  { value: "EN", label: "English" },
-  { value: "RUS", label: "Russian" },
-];
-
 export const prefixOptions = ["Mr.", "Mrs.", "Ms."];
 
 export const timezones = [

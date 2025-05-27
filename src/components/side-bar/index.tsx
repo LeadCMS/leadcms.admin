@@ -1,219 +1,157 @@
-import { List, useMediaQuery, useTheme } from "@mui/material";
-import { useState, useEffect } from "react";
+import { 
+  List, useMediaQuery, useTheme, CircularProgress, IconButton, Tooltip 
+} from "@mui/material";
+import { useEffect, useCallback } from "react";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import MenuIcon from "@mui/icons-material/Menu";
 import { 
   ListItemIconStyled, 
   ListSubheaderStyled, 
-  MobileDrawerToggle, 
   SidebarLinkText, 
   SidebarLink, 
-  SidebarStyled 
+  SidebarStyled,
+  SidebarTopContainer,
+  SidebarMenuScrollArea
 } from "./index.styled";
-import MenuIcon from "@mui/icons-material/Menu";
-import CloseIcon from "@mui/icons-material/Close";
-import { useRouteParams } from "typesafe-routes";
-import { CoreModule, coreModuleRoute, getCoreModuleRoute } from "lib/router";
+import { getCoreModuleRoute, CoreModule } from "lib/router";
 import { useSidebar } from "@providers/sidebar-provider";
+import { LogoComponent } from "@components/app-header/index.styled";
+import Typography from "@mui/material/Typography";
+import { useNavigate } from "react-router-dom";
 
-// Import all needed icons
-import {
-  People,
-  Business,
-  Inventory,
-  Web,
-  Link,
-  Comment,
-  Unsubscribe,
-  Person,
-  Info,
-  Email,
-  Book,
-  Newspaper,
-} from "@mui/icons-material";
-
-interface SidebarProps {
-  menuItems?: {
-    header: string;
-    items: {
-      id: string;
-      label: string;
-      icon: React.ReactNode;
-      onClick: () => void;
-      isSelected: boolean;
-    }[];
-  }[];
-  onDrawerStateChange?: (isOpen: boolean) => void;
+interface SidebarMenuItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  onClick: (navigate: (to: string) => void) => void;
+  isSelected: boolean;
 }
 
-export const Sidebar = ({ menuItems, onDrawerStateChange }: SidebarProps) => {
+interface SidebarMenuSection {
+  header: string;
+  items: SidebarMenuItem[];
+}
+
+interface SidebarProps {
+  menuItems?: SidebarMenuSection[];
+  onDrawerStateChange?: (isOpen: boolean) => void;
+  isLoading?: boolean;
+}
+
+export const Sidebar = ({ 
+  menuItems = [], 
+  onDrawerStateChange, 
+  isLoading = false 
+}: SidebarProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { moduleName } = useRouteParams(coreModuleRoute);
-  const { isOpen, toggle } = useSidebar();
+  const { isOpen, isCollapsed, isMobileOpen, toggleCollapse, toggleMobile } = useSidebar();
+  const navigate = useNavigate();
   
   // Notify parent component when drawer state changes
   useEffect(() => {
     if (onDrawerStateChange) {
-      onDrawerStateChange(mobileOpen);
+      onDrawerStateChange(isMobileOpen);
     }
-  }, [mobileOpen, onDrawerStateChange]);
+  }, [isMobileOpen, onDrawerStateChange]);
 
-  // Define default menu items if none provided
-  if (!menuItems || menuItems.length === 0) {
-    const navigateTo = (route: string) => () => {
-      window.location.href = route;
-    };
-    
-    menuItems = [
-      {
-        header: "CMS",
-        items: [
-          {
-            id: "blog",
-            label: "Content",
-            icon: <Newspaper />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.blog)),
-            isSelected: moduleName === CoreModule.blog
-          },
-          {
-            id: "comments",
-            label: "Comments",
-            icon: <Comment />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.comments)),
-            isSelected: moduleName === CoreModule.comments
-          },
-          {
-            id: "links",
-            label: "Links",
-            icon: <Link />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.links)),
-            isSelected: moduleName === CoreModule.links
-          }
-        ]
-      },
-      {
-        header: "CRM",
-        items: [
-          {
-            id: "contacts",
-            label: "Contacts",
-            icon: <People />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.contacts)),
-            isSelected: moduleName === CoreModule.contacts
-          },
-          {
-            id: "accounts",
-            label: "Accounts",
-            icon: <Business />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.accounts)),
-            isSelected: moduleName === CoreModule.accounts
-          },
-          {
-            id: "orders",
-            label: "Orders",
-            icon: <Inventory />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.orders)),
-            isSelected: moduleName === CoreModule.orders
-          },
-          {
-            id: "domains",
-            label: "Domains",
-            icon: <Web />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.domains)),
-            isSelected: moduleName === CoreModule.domains
-          },
-          {
-            id: "activityLogs",
-            label: "Activity logs",
-            icon: <Book />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.activityLogs)),
-            isSelected: moduleName === CoreModule.activityLogs
-          }
-        ]
-      },
-      {
-        header: "MARKETING",
-        items: [
-          {
-            id: "emailTemplates",
-            label: "Email templates",
-            icon: <Email />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.emailTemplates)),
-            isSelected: moduleName === CoreModule.emailTemplates
-          },
-          {
-            id: "unsubscribes",
-            label: "Unsubscribes",
-            icon: <Unsubscribe />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.unsubscribes)),
-            isSelected: moduleName === CoreModule.unsubscribes
-          }
-        ]
-      },
-      {
-        header: "GENERAL",
-        items: [
-          {
-            id: "users",
-            label: "Users",
-            icon: <Person />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.users)),
-            isSelected: moduleName === CoreModule.users
-          },
-          {
-            id: "about",
-            label: "About",
-            icon: <Info />,
-            onClick: navigateTo(getCoreModuleRoute(CoreModule.about)),
-            isSelected: moduleName === CoreModule.about
-          }
-        ]
-      }
-    ];
-  }
+  const navigateToDashboard = useCallback(() => {
+    navigate(getCoreModuleRoute(CoreModule.dashboard));
+  }, [navigate]);
 
-  const toggleDrawer = () => {
-    if (isMobile) {
-      setMobileOpen(!mobileOpen);
-    } else {
-      toggle(); // Use the sidebar context's toggle function
-    }
-  };
+  const effectiveOpen = isMobile ? isMobileOpen : isOpen;
+  const showCollapsed = !isMobile && isCollapsed;
   
   return (
     <>
-      {/* Only show toggle button on mobile */}
-      {isMobile && (
-        <MobileDrawerToggle onClick={toggleDrawer}>
-          {mobileOpen ? <CloseIcon /> : <MenuIcon />}
-        </MobileDrawerToggle>
-      )}
-      
       <SidebarStyled
         variant={isMobile ? "temporary" : "permanent"}
-        open={isMobile ? mobileOpen : isOpen} // Use isOpen from context
-        onClose={toggleDrawer}
+        open={effectiveOpen}
+        onClose={toggleMobile}
+        isCollapsed={showCollapsed}
       >
-        {menuItems && menuItems.map((group) => (
-          <List
-            key={group.header}
-            subheader={<ListSubheaderStyled>{group.header}</ListSubheaderStyled>}
+        <SidebarTopContainer isMobile={isMobile} isOpen={effectiveOpen}>
+          <div
+            className="sidebar-logo sidebar-link"
+            style={{ display: "flex", alignItems: "center", cursor: "pointer", flex: 1 }}
+            onClick={navigateToDashboard}
+            tabIndex={0}
+            role="button"
+            aria-label="Go to dashboard"
           >
-            {group.items && group.items.map((item) => (
-              <SidebarLink
-                key={item.id}
-                onClick={() => {
-                  item.onClick();
-                  if (isMobile) setMobileOpen(false);
-                }}
-                selected={item.isSelected}
+            <LogoComponent />
+            {!showCollapsed && (
+              <Typography className="sidebar-app-name">
+                LeadCMS.ai
+              </Typography>
+            )}
+          </div>
+          {!isMobile && (
+            <Tooltip title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+              <IconButton
+                onClick={toggleCollapse}
+                size="small"
+                sx={{ ml: 1 }}
               >
-                <ListItemIconStyled>{item.icon}</ListItemIconStyled>
-                <SidebarLinkText primary={item.label} />
-              </SidebarLink>
-            ))}
-          </List>
-        ))}
+                {isCollapsed ? <MenuIcon /> : <MenuOpenIcon />}
+              </IconButton>
+            </Tooltip>
+          )}
+        </SidebarTopContainer>
+        <SidebarMenuScrollArea>
+          {isLoading ? (
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "center", 
+              alignItems: "center", 
+              height: "100%" 
+            }}>
+              <CircularProgress />
+            </div>
+          ) : (
+            menuItems.map((group) => (
+              <List
+                key={group.header}
+                subheader={
+                  <ListSubheaderStyled isCollapsed={showCollapsed}>
+                    {group.header}
+                  </ListSubheaderStyled>
+                }
+              >
+                {group.items.map((menuItem) => (
+                  <Tooltip 
+                    key={menuItem.id}
+                    title={showCollapsed ? menuItem.label : ""}
+                    placement="right"
+                  >
+                    <span>
+                      <SidebarLink
+                        sx={{ 
+                          ...(showCollapsed && { 
+                            justifyContent: "center",
+                            padding: (theme) => theme.spacing(1, 0)
+                          })
+                        }}                        
+                        onClick={(e: React.MouseEvent) => {
+                          e.preventDefault();
+                          if (typeof menuItem.onClick === "function") {
+                            menuItem.onClick(navigate);
+                          }
+                          if (isMobile) toggleMobile();
+                        }}
+                        selected={menuItem.isSelected}
+                        isCollapsed={showCollapsed}
+                      >
+                        <ListItemIconStyled>{menuItem.icon}</ListItemIconStyled>
+                        <SidebarLinkText primary={menuItem.label} isCollapsed={showCollapsed} />
+                      </SidebarLink>
+                    </span>
+                  </Tooltip>
+                ))}
+              </List>
+            ))
+          )}
+        </SidebarMenuScrollArea>
       </SidebarStyled>
     </>
   );

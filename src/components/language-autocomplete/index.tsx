@@ -1,38 +1,41 @@
 import Autocomplete, { AutocompleteRenderInputParams } from "@mui/material/Autocomplete";
-import Locale from "locale-codes";
+import { useConfig } from "@providers/config-provider";
 
 interface LanguageAutocompleteProps {
   value: string;
   onChange: (value: string | null) => void;
   renderInput: (params: AutocompleteRenderInputParams) => React.ReactNode;
+  renderOption?: (
+    props: React.HTMLAttributes<HTMLLIElement>, 
+    option: { label: string; value: string }) => React.ReactNode;
 }
-const AvailableLanguages = ["ru-RU", "en-US"];
-
-const muiOptions = AvailableLanguages.map((value) => {
-  return {
-    label: Locale.getByTag(value).name,
-    value: value,
-  };
-});
-
-const prepValue = (languageCode: string | null | undefined) => {
-  if (languageCode === null || languageCode === undefined || languageCode.length === 0) {
-    return {
-      label: Locale.getByTag("en-US").name,
-      value: "en-US",
-    };
-  }
-  return {
-    label: Locale.getByTag(languageCode).name,
-    value: languageCode,
-  };
-};
 
 export const LanguageAutocomplete = ({
   value,
   onChange,
   renderInput,
+  renderOption,
 }: LanguageAutocompleteProps) => {
+  const { config } = useConfig();
+  const languages = config?.languages || [];
+  const muiOptions = languages.map((lang) => ({
+    label: lang.name,
+    value: lang.code,
+  }));
+  const prepValue = (languageCode: string | null | undefined) => {
+    if (!languageCode || !muiOptions.length) {
+      return muiOptions[0] || { label: "", value: "" };
+    }
+    return muiOptions.find((opt) => opt.value === languageCode) || muiOptions[0];
+  };
+
+  const defaultRenderOption = (
+    props: React.HTMLAttributes<HTMLLIElement>, 
+    option: { label: string; value: string }
+  ) => {
+    return <li {...props}>{option.label}</li>;
+  };
+
   return (
     <Autocomplete
       autoSelect
@@ -41,6 +44,7 @@ export const LanguageAutocomplete = ({
       getOptionLabel={(option) => option.label}
       options={muiOptions}
       renderInput={renderInput}
+      renderOption={renderOption || defaultRenderOption}
     />
   );
 };

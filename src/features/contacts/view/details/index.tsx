@@ -8,20 +8,23 @@ import { getCountryList, getFormattedDateOnly } from "utils/general-helper";
 import { useNotificationsService } from "@hooks";
 import { DataView, DataViewNoLabel } from "components/data-view";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { languages, timezones } from "utils/constants";
+import { timezones } from "utils/constants";
 import { getWhereFilterQuery } from "@providers/query-provider";
-import { DataGrid, GridCellParams, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ActionButtonContainer, ContactHref } from "@features/contacts/index.styled";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useNavigate } from "react-router-dom";
 import { DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { DataManagementBlock } from "@components/data-management";
+import { useConfig } from "@providers/config-provider";
 
 export const ContactView = () => {
   const { notificationsService } = useNotificationsService();
   const context = useRequestContext();
   const { setBusy } = useModuleWrapperContext();
   const navigate = useNavigate();
+  const { config } = useConfig();
+  const languages = config?.languages || [];
 
   const { client } = context;
   const { id } = useRouteParams(viewFormRoute);
@@ -51,7 +54,11 @@ export const ContactView = () => {
       label: "Birthday",
       value: (contact.birthday && getFormattedDateOnly(contact.birthday)) || "",
     },
-    { label: "Language", value: languages.find((c) => c.value === contact.language)?.label || "" },
+    {
+      label: "Language",
+      value:
+        languages.find((c) => c.code === contact.language)?.name || "",
+    },
   ];
   const contactData = contact && [
     { label: "Email", value: contact.email || "" },

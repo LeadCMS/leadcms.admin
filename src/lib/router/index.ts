@@ -1,18 +1,21 @@
 import { Parser, route, intParser } from "typesafe-routes";
 
 export const enum CoreModule {
+  dashboard = "dashboard",
   contacts = "contacts",
   links = "links",
   comments = "comments",
-  blog = "blog",
+  content = "content",
+  media = "media",
   accounts = "accounts",
   orders = "orders",
+  deals = "deals",
   domains = "domains",
   unsubscribes = "unsubscribes",
   users = "users",
   about = "about",
   emailTemplates = "email-templates",
-  activityLogs = "activity-logs",
+  activityLogs = "activity-logs",  
   auth = "auth",
 }
 
@@ -67,4 +70,4 @@ export const getImportFormRoute = () => importFormRoute({}).$;
 
 export const rootRoute = "/";
 
-export const defaultModuleRoute = "/blog";
+export const defaultModuleRoute = "/content";

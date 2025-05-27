@@ -42,7 +42,6 @@ export const DropdownMenu = () => {
   return (
     <React.Fragment>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-        <Typography sx={{ minWidth: 100 }}>{displayName}</Typography>
         <Tooltip title="Account settings">
           <IconButton
             onClick={handleClick}

@@ -1,37 +1,54 @@
-import { Box, IconButton, Typography } from "@mui/material";
-import { AppBarStyled, AppBarToolbar, LogoComponent } from "./index.styled";
+import { Box, IconButton, useMediaQuery, useTheme } from "@mui/material";
+import { AppBarStyled, AppBarToolbar } from "./index.styled";
+import { DropdownMenu } from "./dropdown-menu";
+import { BreadCrumbNavigation } from "@components/breadcrumbs";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useSidebar } from "@providers/sidebar-provider";
-import { DropdownMenu } from "./dropdown-menu";
 
-export const AppHeader = () => {
-  const { toggle } = useSidebar();
+interface AppHeaderProps {
+  breadcrumbs: { linkText: string; toRoute: string }[];
+  currentBreadcrumb: string;
+}
+
+export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) => {
+  const { toggleMobile } = useSidebar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   return (
     <AppBarStyled>
       <AppBarToolbar>
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <IconButton 
-            edge="start" 
-            color="inherit" 
-            aria-label="menu" 
-            onClick={toggle}
-            sx={{ mr: 1 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <LogoComponent />
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              ml: 2, 
-              fontWeight: "500", 
-              display: { xs: "none", sm: "block" } 
-            }}
-          >
-            LeadCMS Admin
-          </Typography>
+          {isMobile && (
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              onClick={toggleMobile}
+              sx={{
+                mr: 0,
+                ml: 2,
+                background: "none",
+                border: "none",
+                borderRadius: 0,
+                color: theme.palette.text.primary,
+                padding: 0.5,
+                "&:hover": {
+                  background: "none"
+                }
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+        </Box>
+        <Box sx={{ 
+          flex: 1, 
+          mx: { xs: 1, sm: 3 }, 
+          minWidth: 0,
+          overflow: "hidden"
+        }}>
+          <BreadCrumbNavigation links={breadcrumbs} current={currentBreadcrumb} />
         </Box>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <DropdownMenu />

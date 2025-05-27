@@ -7,7 +7,7 @@ export const useCoreModuleNavigation = () => {
   const handleNavigation = (endRoute: string) => {
     const toRoute = getCoreModuleRoute(endRoute as CoreModule);
     if (location.pathname === toRoute) {
-      window.location.reload();
+      navigate(toRoute, { replace: true });
     } else {
       navigate(toRoute);
     }

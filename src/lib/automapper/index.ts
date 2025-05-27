@@ -1,7 +1,7 @@
 import { createMap, forMember, mapFrom, createMapper } from "@automapper/core";
 import { pojos, PojosMetadataMap } from "@automapper/pojos";
 import { ContentDetailsDto, ContentUpdateDto, ContentCreateDto } from "@lib/network/swagger-client";
-import { ContentDetails } from "@features/blog/content-edit/types";
+import { ContentDetails } from "@features/content/content-edit/types";
 
 export const Automapper = createMapper({
   strategyInitializer: pojos(),
@@ -58,6 +58,7 @@ PojosMetadataMap.create<ContentUpdateDto>("ContentUpdateDto", {
   category: String,
   tags: [String],
   allowComments: Boolean,
+  source: String,
   publishedAt: String,
 });
 PojosMetadataMap.create<ContentCreateDto>("ContentCreateDto", {
@@ -73,6 +74,7 @@ PojosMetadataMap.create<ContentCreateDto>("ContentCreateDto", {
   category: String,
   tags: [String],
   allowComments: Boolean,
+  source: String,
   publishedAt: String,
 });
 

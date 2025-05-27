@@ -17,14 +17,14 @@ export const AboutModule = () => {
   return (
     <ModuleWrapper breadcrumbs={[]} currentBreadcrumb={"About"}>
       <Grid container gap={5}>
-        <Grid item>
+        <Grid size={{ xs: "auto" }}>
           <Card sx={{ minWidth: 275 }}>
             <CardContent>
               <Typography>Frontend Version: {process.env.VERSION}</Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item>
+        <Grid size={{ xs: "auto" }}>
           <Card sx={{ minWidth: 275 }}>
             <CardContent>
               <Typography>

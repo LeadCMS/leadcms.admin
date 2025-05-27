@@ -28,7 +28,7 @@ import { DataListSettings } from "types";
 
 export const Contacts = () => {
   const { client } = useRequestContext();
-  const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
+  const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
     contactGridSettingsStorageKey,
     undefined
   );
@@ -91,7 +91,7 @@ export const Contacts = () => {
       flex: 4,
       type: "string",
       renderCell: ({ row }) => (
-        <ContactNameListItem>
+        <ContactNameListItem sx={{ paddingY: 0 }}>
           <ListItemAvatar>
             <Avatar src={row.avatarUrl}></Avatar>
           </ListItemAvatar>
@@ -239,7 +239,9 @@ export const Contacts = () => {
         initialGridState={{
           columns: { columnVisibilityModel: { lastName: false, email: false } },
           sorting: {
-            sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
+            sortModel: [
+              { field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection },
+            ],
           },
         }}
       ></DataList>

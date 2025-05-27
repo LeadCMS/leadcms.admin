@@ -5,6 +5,7 @@ export const ModuleContainer = styled("div")`
   flex-flow: column;
   height: 100%;
   gap: ${({ theme }) => theme.spacing(6)};
+  padding: ${({ theme }) => theme.spacing(5)};
 `;
 
 export const ModuleHeaderContainer = styled("div")`

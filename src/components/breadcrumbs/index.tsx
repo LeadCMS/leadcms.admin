@@ -12,14 +12,15 @@ interface BreadCrumbProps {
   current: string;
 }
 
-export const BreadCrumbNavigation = ({ links, current }: BreadCrumbProps) => {
+export const BreadCrumbNavigation = ({ links = [], current }: BreadCrumbProps) => {
   return (
     <Breadcrumbs separator={<NavigateNext fontSize="small" />}>
-      {links.map((link, index) => (
-        <Link key={index} to={link.toRoute} component={GhostLink} underline="hover">
-          {link.linkText}
-        </Link>
-      ))}
+      {Array.isArray(links) &&
+        links.map((link, index) => (
+          <Link key={index} to={link.toRoute} component={GhostLink} underline="hover">
+            {link.linkText}
+          </Link>
+        ))}
       <Typography variant="body1">{current}</Typography>
     </Breadcrumbs>
   );

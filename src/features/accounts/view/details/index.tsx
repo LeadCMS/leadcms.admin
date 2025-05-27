@@ -83,19 +83,19 @@ export const AccountView = () => {
   return (
     <>
       <Grid container spacing={3} marginTop={4} paddingRight={4}>
-        <Grid xs={12} sm={3} item>
+        <Grid size={{ xs: 12, sm: 3 }}>
           <DataView header="About" rows={accountAboutData} />
         </Grid>
-        <Grid xs={12} sm={3} item>
+        <Grid size={{ xs: 12, sm: 3 }}>
           <DataView header="Location" rows={accountLocationData} />
         </Grid>
-        <Grid xs={12} sm={3} item>
+        <Grid size={{ xs: 12, sm: 3 }}>
           <DataViewNoLabel header="Social media" rows={accountSocialMediaData} />
         </Grid>
-        <Grid xs={12} sm={3} item>
+        <Grid size={{ xs: 12, sm: 3 }}>
           <DataView header="Other" rows={accountOtherData} />
         </Grid>
-        <Grid xs={12} sm={6} item>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <DataManagementBlock
             header="Data Management"
             description="Please be aware that what
