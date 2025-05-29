@@ -103,7 +103,7 @@ export const MENU_CONFIG = [
         id: "emailTemplates",
         label: "Email templates",
         icon: <Email />, 
-        entity: "email-template",
+        entity: "emailtemplate",
         route: getCoreModuleRoute(CoreModule.emailTemplates)
       },
       {
