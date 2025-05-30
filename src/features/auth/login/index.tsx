@@ -7,8 +7,8 @@ import { useRequestContext } from "@providers/request-provider";
 import { LoginContainer, StyledForm, Logo, MicrosoftButton, OrText, } from "./index.styled";
 import { useAuthState } from "@providers/auth-provider";
 import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useConfig } from "@providers/config-provider";
 
 const LoadingConfig = () => {
@@ -33,11 +33,10 @@ const LoadingConfig = () => {
   );
 };
 
-const schema = yup.object({
-  email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().required("Password is required"),
+const schema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(1, "Password is required"), 
 });
-
 
 export const Login = () => {
   const { setLocalToken } = useAuthState();
@@ -48,12 +47,14 @@ export const Login = () => {
   const { instance } = useMsal();
   const [loginLoading, setLoading] = useState(false);
 
+  type LoginDto = z.infer<typeof schema>;
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginDto>({
-    resolver: yupResolver(schema),
+    resolver: zodResolver(schema),
   });
 
   useEffect(() => {
@@ -87,7 +88,6 @@ export const Login = () => {
       
       if (!response || !response.ok) {
         setLoginError("Login failed. Please try again.");
-
         return;
       }
 
@@ -153,7 +153,7 @@ export const Login = () => {
         {showAzureAD && (
         <MicrosoftButton onClick={handleMicrosoftLogin} fullWidth startIcon={
           <img
-            src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg"
+            src="/images/Microsoft_logo.svg"
             alt="Microsoft Logo"
             width="20"
             height="20"

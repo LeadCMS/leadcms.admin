@@ -105,7 +105,6 @@
     "use-debounce": "^9.0.3",
     "use-local-storage": "^2.3.6",
     "yaml": "^2.2.1",
-    "yup": "^1.6.1",
     "zod": "^3.21.4",
     "zod-formik-adapter": "^1.2.0"
   }

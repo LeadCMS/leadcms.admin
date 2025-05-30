@@ -6,16 +6,7 @@ import {
 } from "@azure/msal-browser";
 import { MsalProvider, useMsal} from "@azure/msal-react";
 import { Box, CircularProgress, Typography } from "@mui/material";
-
-const msalConfig: Configuration = {
-  auth: {
-    clientId: process.env.MSAL_CLIENT_ID ?? "",
-    redirectUri: location.origin,
-    authority: process.env.MSAL_AUTHORITY,
-  },
-};
-
-const msalInstance = new PublicClientApplication(msalConfig);
+import { useConfig } from "@providers/config-provider";
 
 function RequireAuth({ children }: PropsWithChildren) {
 
@@ -24,7 +15,7 @@ function RequireAuth({ children }: PropsWithChildren) {
   const account = accounts.at(0);
 
   if (!isTokenLoaded || inProgress !== InteractionStatus.None) {
-    return <Loading />;
+      return <Loading message="Authenticating, please wait..." />;
   }
 
   if (!account && !localToken && !window.location.pathname.startsWith("/auth")) {
@@ -41,7 +32,7 @@ function RequireAuth({ children }: PropsWithChildren) {
   return <>{children}</>;
 }
 
-  export const Loading = () => {
+  export const Loading = ({ message = "Authenticating, please wait..." }: { message?: string }) => {
   return (
     <Box
       sx={{
@@ -57,13 +48,30 @@ function RequireAuth({ children }: PropsWithChildren) {
     >
       <CircularProgress color="primary" />
       <Typography variant="h6" fontWeight={500}>
-        Authenticating, please wait...
+        {message}
       </Typography>
     </Box>
   );
 };
 
 export const AuthProvider = memo(function AuthProvider({ children }: PropsWithChildren) {
+  
+  const { config, loading } = useConfig();
+
+  if (loading || !config?.auth?.msal) {
+  return <Loading message="Loading configuration, please wait..." />;
+  }
+
+  const msalConfig: Configuration = {
+    auth: {
+      clientId: config.auth.msal.clientId?? "",
+      redirectUri: location.origin,
+      authority: config.auth.msal.authority,
+    },
+  };
+
+  const msalInstance = new PublicClientApplication(msalConfig);
+
   return (
     <MsalProvider instance={msalInstance}>
       <RequireAuth>

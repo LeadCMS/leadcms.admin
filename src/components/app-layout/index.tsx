@@ -44,13 +44,6 @@ export const AppLayout = ({
   const menuItems = buildMenuItems(config?.entities, moduleName) as SidebarMenuSection[];
   const menuLoading = configLoading;
 
-
-  const isAuthPage = location.pathname.startsWith("/auth");
-
-  if (isAuthPage) {
-    return <>{children}</>;
-  }
-  
   // Pass drawer state to Sidebar and update container class
 
   const handleDrawerToggle = (isOpen: boolean) => {

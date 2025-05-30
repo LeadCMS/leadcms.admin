@@ -14,7 +14,6 @@ import { CommentsModule } from "@features/comments";
 import { UnsubscribesModule } from "@features/unsubscribes";
 import { UserModule } from "@features/users";
 import { AboutModule } from "@features/about";
-import { AuthModule } from "features/auth/auth-module";
 import { Navigate } from "react-router-dom";
 import { EmailTemplatesModule } from "@features/email-templates";
 import { ActivityLogModule } from "@features/activity-log";
@@ -41,7 +40,6 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.emailTemplates && <EmailTemplatesModule />}
           {moduleName === CoreModule.activityLogs && <ActivityLogModule />}
           {moduleName === CoreModule.dashboard && <DashboardModule />}
-          {moduleName === CoreModule.auth && <AuthModule />}
           {!moduleName && <Navigate to={defaultModuleRoute} replace />}
         </Suspense>
       </ErrorBoundary>
