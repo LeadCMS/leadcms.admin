@@ -57,7 +57,7 @@ import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
 import { SavingBar } from "@components/saving-bar";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
-import { LanguageAutocomplete } from "@components/language-autocomplete";
+import { LanguageSelect } from "@components/language-select";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -648,21 +648,14 @@ export const ContentEdit = (props: ContentEditProps) => {
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
-                      <LanguageAutocomplete
+                      <LanguageSelect
                         value={formik.values.language}
                         onChange={(val) => autoCompleteValueUpdate("language", val)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Language"
-                            placeholder="Select language"
-                            variant="outlined"
-                            name="language"
-                            error={formik.touched.language && Boolean(formik.errors.language)}
-                            helperText={formik.touched.language && formik.errors.language}
-                            fullWidth
-                          />
-                        )}
+                        label="Language"
+                        error={formik.touched.language && Boolean(formik.errors.language)}
+                        helperText={formik.touched.language && formik.errors.language}
+                        name="language"
+                        disabled={props.readonly}
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>

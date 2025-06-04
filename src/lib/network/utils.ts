@@ -1,11 +1,16 @@
 export const buildAbsoluteUrl = (localUrl: string | null | undefined) => {
-  if (localUrl === null || localUrl === undefined || localUrl.length === 0) {
+  if (!localUrl || localUrl.length === 0) {
     return "";
   }
-  if (!process.env.CORE_API) {
-    throw new Error("CORE_API environment variable is not defined");
+  const coreApi = process.env.CORE_API;
+  const base =
+    coreApi && coreApi.trim().length > 0
+      ? coreApi
+      : typeof window !== "undefined" ? window.location.origin : "";
+  if (!base) {
+    throw new Error("Unable to determine base URL for absolute URL construction");
   }
-  return new URL(localUrl, process.env.CORE_API).href;
+  return new URL(localUrl, base).href;
 };
 
 export const getContentCoverImageUrl = (coverImageUrl?: string | null) => {
