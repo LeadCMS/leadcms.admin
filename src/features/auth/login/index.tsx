@@ -1,0 +1,168 @@
+import { useMsal } from "@azure/msal-react";
+import { useState, useEffect } from "react";
+import { Button, Typography,TextField, IconButton, InputAdornment, Box, CircularProgress } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { LoginDto } from "@lib/network/swagger-client";
+import { useRequestContext } from "@providers/request-provider";
+import { LoginContainer, StyledForm, Logo, MicrosoftButton, OrText, } from "./index.styled";
+import { useAuthState } from "@providers/auth-provider";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useConfig } from "@providers/config-provider";
+
+const LoadingConfig = () => {
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "background.default",
+        color: "text.primary",
+        gap: 2,
+      }}
+    >
+      <CircularProgress color="primary" />
+      <Typography variant="h6" fontWeight={500}>
+        Loading configuration, please wait...
+      </Typography>
+    </Box>
+  );
+};
+
+const schema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(1, "Password is required"), 
+});
+
+export const Login = () => {
+  const { setLocalToken } = useAuthState();
+  const { client } = useRequestContext();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const { config, loading } = useConfig();
+  const { instance } = useMsal();
+  const [loginLoading, setLoading] = useState(false);
+
+  type LoginDto = z.infer<typeof schema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginDto>({
+    resolver: zodResolver(schema),
+  });
+
+  useEffect(() => {
+  if (loginError) {
+    const timer = setTimeout(() => {
+      setLoginError(null);
+    }, 5000); 
+
+    return () => clearTimeout(timer); 
+  }
+  }, [loginError]);
+
+   const handleMicrosoftLogin = () => {
+    instance.loginRedirect({
+      scopes: ["User.Read"],
+    });
+  };
+
+  if (loading || !config) {
+  return <LoadingConfig />;
+  }
+
+  const authMethods = config.auth?.methods ?? [];
+  const showLocal = authMethods.includes("Local");
+  const showAzureAD = authMethods.includes("AzureAD");
+
+  const onSubmit = async (form: LoginDto) => {
+    setLoading(true);
+    try {
+      const response = await client.api.identityLoginCreate(form);
+      
+      if (!response || !response.ok) {
+        setLoginError("Login failed. Please try again.");
+        return;
+      }
+
+      const responseJson = await response.json();
+      localStorage.setItem("token", responseJson.token);
+      setLocalToken(responseJson.token);
+      window.location.replace("/");
+
+    } catch (err: any) {
+      setLoginError("Login failed. Please try again.");
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  return (
+    <LoginContainer>
+      <StyledForm onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Logo src="/images/logo.svg" alt="LeadCMS Logo" />
+        <Typography variant="h5" align="center">Login to LeadCMS</Typography>
+
+        {showLocal && (
+          <>
+          <TextField
+          label="Email"
+          fullWidth
+          type="email"
+          {...register("email")}
+          error={!!errors.email}
+          helperText={errors.email?.message}
+        />
+
+        <TextField
+          label="Password"
+          fullWidth
+          type={showPassword ? "text" : "password"}
+          {...register("password")}
+          error={!!errors.password}
+          helperText={errors.password?.message}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setShowPassword(prev => !prev)} edge="end">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        {loginError && (
+        <Typography variant="body2" color="error" align="center" sx={{ mt: 1 }}>
+          {loginError}
+        </Typography>
+        )}
+        <Button type="submit" variant="contained" disabled={loginLoading}>
+          {loginLoading ? "Logging in..." : "Login"}
+        </Button>
+        </>
+        )}
+        {showLocal && showAzureAD && <OrText>Or</OrText>}
+        {showAzureAD && (
+        <MicrosoftButton onClick={handleMicrosoftLogin} fullWidth startIcon={
+          <img
+            src="/images/Microsoft_logo.svg"
+            alt="Microsoft Logo"
+            width="20"
+            height="20"
+          />
+        }>
+          Continue with Microsoft
+        </MicrosoftButton>
+        )}
+      </StyledForm>
+    </LoginContainer>
+  );
+};

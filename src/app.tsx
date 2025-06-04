@@ -12,6 +12,7 @@ import { UserProvider } from "@providers/user-provider";
 import { ErrorDetailsModalProvider } from "@providers/error-details-modal-provider";
 import { ConfigProvider } from "@providers/config-provider";
 import "react-toastify/dist/ReactToastify.css";
+import { Auth } from "./features/auth/auth";
 
 export const App = () => {
   // Define menu categories for breadcrumbs
@@ -101,16 +102,17 @@ export const App = () => {
                     }}
                   >
                     <Routes>
-                      <Route
-                        path={rootRoute}
-                        element={
-                          <AppLayoutWithAutoBreadcrumbs>
-                            <Outlet />
-                          </AppLayoutWithAutoBreadcrumbs>
-                        }
-                      >
-                        <Route path={rootRoute} element={<ModuleLoader />} />
-                        <Route path={`${coreModuleRoute.template}/*`} element={<ModuleLoader />} />
+                      <Route path="/auth/*" element={<Auth />} />
+                        <Route
+                          path={rootRoute}
+                          element={
+                            <AppLayoutWithAutoBreadcrumbs>
+                              <Outlet />
+                            </AppLayoutWithAutoBreadcrumbs>
+                          }
+                        >
+                          <Route path={rootRoute} element={<ModuleLoader />} />
+                          <Route path={`${coreModuleRoute.template}/*`} element={<ModuleLoader />} />
                       </Route>
                     </Routes>
                   </BrowserRouter>

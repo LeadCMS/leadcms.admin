@@ -44,6 +44,8 @@ export const AppLayout = ({
   const menuItems = buildMenuItems(config?.entities, moduleName) as SidebarMenuSection[];
   const menuLoading = configLoading;
 
+  // Pass drawer state to Sidebar and update container class
+
   const handleDrawerToggle = (isOpen: boolean) => {
     setMobileOpen(isOpen);
   };
