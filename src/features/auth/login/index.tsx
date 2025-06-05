@@ -79,7 +79,7 @@ export const Login = () => {
 
   const authMethods = config.auth?.methods ?? [];
   const showLocal = authMethods.includes("Local");
-  const showAzureAD = authMethods.includes("AzureAD");
+  const showAzureAD = authMethods.includes("AzureAD") && config.auth?.msal;
 
   const onSubmit = async (form: LoginDto) => {
     setLoading(true);

@@ -32,8 +32,8 @@ function RequireAuth({ children }: PropsWithChildren) {
   return <>{children}</>;
 }
 
-  export const Loading = ({ message = "Authenticating, please wait..." }: { message?: string }) => {
-  return (
+  export const Loading = ({ message = "Authenticating, please wait...", showProgress= true }: { message?: string, showProgress?: boolean }) => {
+    return (
     <Box
       sx={{
         minHeight: "100vh",
@@ -46,7 +46,7 @@ function RequireAuth({ children }: PropsWithChildren) {
         gap: 2,
       }}
     >
-      <CircularProgress color="primary" />
+      {showProgress && <CircularProgress color="primary" />}
       <Typography variant="h6" fontWeight={500}>
         {message}
       </Typography>
@@ -58,17 +58,32 @@ export const AuthProvider = memo(function AuthProvider({ children }: PropsWithCh
   
   const { config, loading } = useConfig();
 
-  if (loading || !config?.auth?.msal) {
+  if (loading) {
   return <Loading message="Loading configuration, please wait..." />;
   }
 
-  const msalConfig: Configuration = {
+  if (!config?.auth || !Array.isArray(config.auth.methods) || config.auth.methods.length === 0) {
+    return <Loading message="No authentication methods are configured."showProgress={false}/> ;
+  }
+
+  const hasLocal = config.auth.methods.includes("Local");
+  const hasAzure = config.auth.methods.includes("AzureAD");
+  const msalConfigObj = config.auth.msal;
+
+  if (!hasLocal && hasAzure ) {
+    if (!msalConfigObj) {
+     return <Loading message="Azure authentication is configured, but MSAL settings are missing." showProgress={false}/> ;}
+  }
+
+  if (hasAzure && msalConfigObj ) {
+
+    const msalConfig: Configuration = {
     auth: {
-      clientId: config.auth.msal.clientId?? "",
+      clientId: msalConfigObj.clientId?? "",
       redirectUri: location.origin,
-      authority: config.auth.msal.authority,
-    },
-  };
+      authority: msalConfigObj.authority,
+      },
+    };
 
   const msalInstance = new PublicClientApplication(msalConfig);
 
@@ -78,7 +93,16 @@ export const AuthProvider = memo(function AuthProvider({ children }: PropsWithCh
         {children}
       </RequireAuth>
     </MsalProvider>
-  );
+    );
+  }
+  else{
+    return (
+      <RequireAuth>
+        {children}
+      </RequireAuth>
+    
+    );
+  }
 });
 
 export const useAuthState = () => {
