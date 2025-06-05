@@ -6,6 +6,7 @@ import {
   ContentCreateDto,
   HttpResponse,
   ProblemDetails,
+  ContentTypeDetailsDto,
 } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { ContentEditContainer } from "../index.styled";
@@ -31,13 +32,13 @@ import {
 } from "./types";
 import {
   ContentEditValidationScheme,
-  ContentEditDefaultValues,
   ContentEditMaximumImageSize,
 } from "./validation";
 import {
   ContentTypeDropdown,
-  getContentTypeById,
-  generateDefaultValues
+  getContentTypeByUid,
+  generateDefaultValues,
+  fetchAllContentTypes
 } from "../content-types";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { Automapper } from "@lib/automapper";
@@ -106,6 +107,11 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [activeTab, setActiveTab] = useState<string>("content");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
+  const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
+
+  const supportsCover = contentType?.supportsCoverImage;
+  const supportsComments = contentType?.supportsComments;
 
   const autoSave = useDebouncedCallback((value) => {
     if (!wasModified && !coverWasModified) {
@@ -206,9 +212,28 @@ export const ContentEdit = (props: ContentEditProps) => {
     );
   };
 
-  const formik = useFormik({
+  const formik = useFormik<ContentDetails>({
     validationSchema: toFormikValidationSchema(ContentEditValidationScheme),
-    initialValues: ContentEditDefaultValues[0].defaultValues,
+    initialValues: {
+      title: "",
+      description: "",
+      body: "",
+      slug: "",
+      type: "",
+      author: "",
+      language: "",
+      category: "",
+      tags: [],
+      allowComments: false,
+      coverImagePending: { url: "", fileName: "" },
+      coverImageAlt: "",
+      publishedAt: null,
+      id: null,
+      coverImageUrl: "",
+      createdAt: null,
+      updatedAt: null,
+      files: []
+    },
     onSubmit: submit,
     validateOnChange: false,
     validateOnBlur: true,
@@ -229,8 +254,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   }
 
   // Helper function to set default values for a content type
-  const setContentTypeDefaults = (contentTypeId: string) => {
-    const contentType = getContentTypeById(contentTypeId);
+  const setContentTypeDefaults = async (contentTypeId: string) => {
+    const contentType = await getContentTypeByUid(client, contentTypeId);
     if (!contentType) {
       return;
     }
@@ -238,8 +263,9 @@ export const ContentEdit = (props: ContentEditProps) => {
     const defaults = generateDefaultValues(contentTypeId);
     
     // Get current content type to compare formats
-    const currentContentType = getContentTypeById(currentValues.type);
-    const shouldResetBody = !currentContentType || 
+    const currentContentType = await getContentTypeByUid(
+      client, currentValues.type);
+    const shouldResetBody = !currentContentType ||
       currentContentType.format !== contentType.format;
     
     // Preserve existing values, only update content type specific fields
@@ -328,10 +354,41 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   const isCreateMode = !id;
   const shouldShowForm = isCreateMode || !isInitialLoading;
+  
+  // Set default content type for new content when contentTypes are loaded
+  useEffect(() => {
+    if (
+      isCreateMode &&
+      contentTypes.length > 0 &&
+      !formik.values.type
+    ) {
+      // Sort alphabetically by uid for consistency with dropdown
+      const sorted = [...contentTypes].sort((a, b) => a.uid.localeCompare(b.uid));
+      formik.setFieldValue("type", sorted[0].uid, false);
+    }
+  }, [isCreateMode, contentTypes, formik.values.type]);
 
-  const contentType = getContentTypeById(formik.values.type);
-  const supportsCover = contentType?.supportsCoverImage;
-  const supportsComments = contentType?.supportsComments;
+  // Fetch all content types once on mount or when reloading
+  const reloadContentTypes = async () => {
+    if (client) {
+      const types = await fetchAllContentTypes(client);
+      setContentTypes(Array.isArray(types) ? types : []);
+    }
+  };
+
+  useEffect(() => {
+    reloadContentTypes();
+  }, [client]);
+
+  // Set contentType when formik.values.type changes
+  useEffect(() => {
+    if (formik.values.type && contentTypes.length > 0) {
+      const found = contentTypes.find(t => t.uid === formik.values.type);
+      setContentType(found || null);
+    } else {
+      setContentType(null);
+    }
+  }, [formik.values.type, contentTypes]);
 
   // Check for validation errors in each tab
   const hasContentErrors = Boolean(formik.errors.body);
@@ -465,12 +522,16 @@ export const ContentEdit = (props: ContentEditProps) => {
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <ContentTypeDropdown
                       value={formik.values.type}
+                      options={[...contentTypes].sort((a, b) => a.uid.localeCompare(b.uid))}
                       onChange={(val: string) => {
-                        setContentTypeDefaults(val);
+                        if (val !== formik.values.type) {
+                          setContentTypeDefaults(val);
+                        }
                       }}
-                      onContentTypeChange={(ct) => {
-                        if (ct) setContentTypeDefaults(ct.id);
-                      }}
+                      onAddNewType={reloadContentTypes}
+                      error={formik.touched.type && Boolean(formik.errors.type)}
+                      helperText={formik.touched.type && formik.errors.type}
+                      onBlur={() => formik.setFieldTouched("type", true)}
                     />
                   </Grid>
                 </Grid>

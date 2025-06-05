@@ -21,11 +21,6 @@ export interface ContentDetails {
   files: File[] | null;
 }
 
-export interface TypeDefaultValues {
-  type: string;
-  defaultValues: ContentDetails;
-}
-
 export interface ContentEditorAutoSave {
   id: string;
   savedData: ContentDetails;

@@ -17,44 +17,49 @@ import {
   Typography,
   Tooltip,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { 
-  ContentFormat, displayNameToId, addCustomContentType, ContentTypeDefinition 
+  ContentFormat, displayNameToId, addContentType 
 } from "./content-types";
+import { useRequestContext } from "@providers/request-provider";
+import { ContentTypeDetailsDto } from "@lib/network/swagger-client";
 
 interface ContentTypeFormProps {
   open: boolean;
   onClose: () => void;
-  onSave: (newContentType: ContentTypeDefinition) => void;
+  onSave: (newContentType: ContentTypeDetailsDto) => void;
 }
 
 export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps) => {
+  const { client } = useRequestContext();
   const [displayName, setDisplayName] = useState("");
   const [format, setFormat] = useState<ContentFormat>("MD");
   const [supportsComments, setSupportsComments] = useState(false);
   const [supportsCoverImage, setSupportsCoverImage] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!displayName.trim()) {
       setNameError("Content type name is required");
       return;
     }
-
-    const id = displayNameToId(displayName.trim());
-    
-    const newContentType = addCustomContentType({
-      id,
-      format,
-      supportsComments,
-      supportsCoverImage,
-    });
-
-    onSave(newContentType);
-
-    // Reset form
-    resetForm();
+    setSaving(true);
+    try {
+      const id = displayNameToId(displayName.trim());
+      const newContentType = await addContentType(client, {
+        id,
+        format,
+        supportsComments,
+        supportsCoverImage,
+      });
+      onSave(newContentType); // Pass newContentType up for selection
+      resetForm();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleClose = () => {
@@ -151,8 +156,9 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
+        <Button onClick={handleClose} disabled={saving}>Cancel</Button>
+        <Button onClick={handleSave} variant="contained" color="primary" disabled={saving}>
+          {saving ? <CircularProgress size={20} sx={{ color: "white", mr: 1 }} /> : null}
           Create
         </Button>
       </DialogActions>
