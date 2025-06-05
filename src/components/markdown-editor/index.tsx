@@ -172,6 +172,7 @@ const MarkdownEditor = ({
                 },
                 textarea: () => EditorViewFunc(value, onChange, onErrorChange),
               }}
+              data-color-mode="light"
             />
           </ImageUploadingCtx.Provider>
         </div>
