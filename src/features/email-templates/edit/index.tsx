@@ -23,7 +23,7 @@ import {
 import { useDebouncedCallback } from "use-debounce";
 import { RestoreDataModal } from "@components/restore-data";
 import { SavingBar } from "@components/saving-bar";
-import { LanguageAutocomplete } from "@components/language-autocomplete";
+import { LanguageSelect } from "@components/language-select";
 import { EmailGroupAutocomplete } from "@components/email-group-autocomplete";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { DataManagementBlock } from "@components/data-management";
@@ -293,22 +293,14 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                   />
                 </Grid>
                 <Grid size={{ xs: 6, sm: 6 }}>
-                  <LanguageAutocomplete
+                  <LanguageSelect
                     value={formik.values.language}
-                    onChange={(val) => autoCompleteValueUpdate<string | null>("language", val)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        disabled={readonly}
-                        label="Language"
-                        placeholder="Select language"
-                        variant="outlined"
-                        name="language"
-                        error={formik.touched.language && Boolean(formik.errors.language)}
-                        helperText={formik.touched.language && formik.errors.language}
-                        fullWidth
-                      />
-                    )}
+                    onChange={(val) => autoCompleteValueUpdate("language", val)}
+                    label="Language"
+                    error={formik.touched.language && Boolean(formik.errors.language)}
+                    helperText={formik.touched.language && formik.errors.language}
+                    name="language"
+                    disabled={readonly}
                   />
                 </Grid>
                 <Grid size={{ xs: 6, sm: 6 }}>
