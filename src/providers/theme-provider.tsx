@@ -11,6 +11,17 @@ export const themeOptions: ThemeOptions = {
       fontWeight: 600,
       lineHeight: "42px",
     },
+    subtitle1: {
+    fontSize: "16px",
+    fontWeight: 500,
+    lineHeight: "20px",
+    },
+    subtitle2: {
+      fontSize: "12px",
+      fontWeight: 600,
+      lineHeight: "20px",
+      color: "rgb(107, 114, 128)",
+    },
   },
   palette: {
     primary: {

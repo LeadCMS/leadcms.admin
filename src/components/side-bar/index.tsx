@@ -98,7 +98,7 @@ export const Sidebar = ({
             </Tooltip>
           )}
         </SidebarTopContainer>
-        <SidebarMenuScrollArea>
+        <SidebarMenuScrollArea sx={{ pt: 3 }}>
           {isLoading ? (
             <div style={{ 
               display: "flex", 
@@ -117,6 +117,7 @@ export const Sidebar = ({
                     {group.header}
                   </ListSubheaderStyled>
                 }
+                sx={{ mb: 2 }}
               >
                 {group.items.map((menuItem) => (
                   <Tooltip 
