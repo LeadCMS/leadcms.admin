@@ -105,18 +105,24 @@ export const MobileDrawerToggle = styled(IconButton)`
 export const ListSubheaderStyled = styled(ListSubheader, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
 })<{ isCollapsed?: boolean }>`
-  font-size: ${({ theme }) => theme.typography.subtitle1.fontSize};
+  font-size: ${({ theme }) => theme.typography.subtitle2.fontSize};
+  color: ${({ theme }) => theme.typography.subtitle2.color}; 
+  font-weight: ${({ theme }) => theme.typography.subtitle2.fontWeight};
   display: ${({ isCollapsed }) => isCollapsed ? "none" : "block"};
+  padding-left: 20px;
+  padding-right: 0px;
+  min-height: 0;
+  line-height: 2;
 `;
 
 export const SidebarLink = styled(ListItemButton, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
 })<{ isCollapsed?: boolean }>`
-  border-radius: ${({ theme }) => theme.spacing(16)};
+  border-radius: ${({ theme }) => theme.spacing(2)};
   height: ${({ theme }) => theme.spacing(10)};
   margin-top: ${({ theme }) => theme.spacing(1)};
   margin-left: ${({ theme, isCollapsed }) => isCollapsed ? theme.spacing(1) : "0"};
-  margin-right: ${({ theme, isCollapsed }) => isCollapsed ? theme.spacing(1) : "0"};
+  margin-right: ${({ theme, isCollapsed }) => isCollapsed ? theme.spacing(1) : "10px"};
   color: ${({ theme: { palette } }) => palette.text.secondary};
   min-width: ${({ isCollapsed }) => isCollapsed ? "56px" : "auto"};
   justify-content: ${({ isCollapsed }) => isCollapsed ? "center" : "flex-start"};
@@ -135,11 +141,17 @@ export const SidebarLinkText = styled(ListItemText, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
 })<{ isCollapsed?: boolean }>`
   .MuiTypography-root {
-    font-weight: 600;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    margin-left: ${({ theme }) => theme.spacing(1)};
   }
+
   display: ${({ isCollapsed }) => isCollapsed ? "none" : "block"};
 ` as typeof ListItemText;
 
 export const ListItemIconStyled = styled(ListItemIcon)`
-  min-width: ${({ theme }) => theme.spacing(10)};
+  min-width: ${({ theme }) => theme.spacing(8)};
+  color: inherit; 
+  margin-left: ${({ theme }) => theme.spacing(3)};
 ` as typeof ListItemIcon;

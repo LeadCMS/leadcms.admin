@@ -11,6 +11,7 @@ import {
   DialogTitle,
   Grid,
   Typography,
+  Box,
 } from "@mui/material";
 import { CardHeaderStyled, DeleteButtonContainer } from "./index.styled";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -31,6 +32,7 @@ type DataDeleteProps = {
   successNavigationRoute: string;
   handleDeleteAsync: (id: number | string) => Promise<HttpResponse<void, void | ProblemDetails>>;
   showEditButton?: boolean;
+  showOnlyButtons?: boolean;
 };
 
 type DataDeleteConfProps = {
@@ -92,6 +94,7 @@ export const DataManagementBlock = ({
   successNavigationRoute,
   handleDeleteAsync,
   showEditButton = true,
+  showOnlyButtons = false,
 }: DataDeleteProps) => {
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal()!;
@@ -132,7 +135,35 @@ export const DataManagementBlock = ({
 
   return (
     <>
-      <Card>
+    {showOnlyButtons ? (
+       <Box sx={{ display: "flex", width: "100%", }}>
+     <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+      <Button
+        disabled={isDeleting}
+        startIcon={<DeleteIcon />}
+        color="error"
+        onClick={handleDelete}
+        variant="contained"  
+        size="large" 
+      >
+        Delete 
+      </Button>
+    </Box>
+      {showEditButton && (
+      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          startIcon={<EditIcon />}
+          variant="outlined" 
+          size="large" 
+          onClick={editRecord}
+        >
+          Edit
+        </Button>
+      </Box>       
+        )}
+      </Box>
+    ):(
+    <Card>
         <CardContent>
           <Grid>
             <Typography gutterBottom variant="h6" component="div">
@@ -170,6 +201,7 @@ export const DataManagementBlock = ({
           )}
         </CardActions>
       </Card>
+          )}        
       <DataDeleteConfirmation
         entity={entity}
         openConfirmation={openConfirmation}

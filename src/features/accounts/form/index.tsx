@@ -13,6 +13,8 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Box,
+  Card
 } from "@mui/material";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRequestContext } from "@providers/request-provider";
@@ -26,7 +28,10 @@ import { execSubmitWithToast } from "utils/formik-helper";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { CardContainer } from "../index.styled";
+import InfoIcon from '@mui/icons-material/Info';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ShareIcon from '@mui/icons-material/Share';
+import LinkIcon from '@mui/icons-material/Link';
 
 interface AccountFormProps {
   account: AccountDetailsDto;
@@ -187,18 +192,63 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
     validateOnChange: false,
   });
 
+  const actionButtons = (
+    <Box sx={{ display: "flex", width: "100%", gap: 2}}>
+     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+      <Button
+        disabled={isLoading || formik.isSubmitting}
+        type="submit"
+        variant="outlined"
+        color="primary"
+        onClick={handleCancel}
+        size="large"
+      >
+        Cancel
+      </Button>
+     </Box>
+     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
+      <Button
+        type="submit"
+        disabled={isLoading || formik.isSubmitting}
+        variant="contained"
+        color="primary"
+        size="large"
+      >
+        {isEdit ? "Save" : "Add"}
+      </Button>
+      </Box>
+    </Box>
+  );
+
+  const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
+    <Box sx={{ 
+      display: "flex", 
+      alignItems: "center", 
+      mb: 3, 
+      mt: 4,
+      pb: 1,
+      borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
+    }}>
+      <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
+      <Typography variant="subtitle1" fontWeight="500" color="primary.main">
+        {title}
+      </Typography>
+    </Box>
+  );
+
   return (
     <ModuleWrapper
       breadcrumbs={accountFormBreadcrumbLinks}
       currentBreadcrumb={header}
       saveIndicatorElement={<SavingBar />}
+      actionButtons={actionButtons}
     >
       <form onSubmit={formik.handleSubmit}>
-        <CardContainer>
+        <Card>
           <CardContent>
             <Grid container spacing={4} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12}}>
-                <Typography variant="h6">About</Typography>
+                <SectionHeader icon={<InfoIcon />} title="About" />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
@@ -277,7 +327,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <Typography variant="h6">Location</Typography>
+                <SectionHeader icon={<LocationOnIcon />} title="Location" />
               </Grid>
               <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
@@ -359,7 +409,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <Typography variant="h6">Social Media</Typography>
+                <SectionHeader icon={<ShareIcon />} title="Social Media" />
               </Grid>
               <Grid size={{ xs: 12, sm: 12 }}>
                 <Grid container spacing={3}>
@@ -428,7 +478,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <Typography variant="h6">Other</Typography>
+                <SectionHeader icon={<LinkIcon />} title="Other" />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
@@ -457,33 +507,8 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                 ></TextField>
               </Grid>
             </Grid>
-            <Grid container spacing={4} marginTop={2} marginBottom={4} justifyContent="flex-end">
-              <Grid size={{ xs: 1 }}>
-                <Button
-                  disabled={isLoading || formik.isSubmitting}
-                  type="submit"
-                  variant="outlined"
-                  color="primary"
-                  onClick={handleCancel}
-                  fullWidth
-                >
-                  Cancel
-                </Button>
-              </Grid>
-              <Grid size={{ xs: 1 }}>
-                <Button
-                  type="submit"
-                  disabled={isLoading || formik.isSubmitting}
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                >
-                  {isEdit ? "Save" : "Add"}
-                </Button>
-              </Grid>
-            </Grid>
           </CardContent>
-        </CardContainer>
+        </Card>
       </form>
     </ModuleWrapper>
   );
