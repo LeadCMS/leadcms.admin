@@ -5,6 +5,7 @@ import { ThemeOptions } from "@mui/material/styles";
 export const themeOptions: ThemeOptions = {
   spacing: 4,
   typography: {
+    fontFamily: `'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif`,
     h3: {
       fontSize: "36px",
       fontWeight: 600,
