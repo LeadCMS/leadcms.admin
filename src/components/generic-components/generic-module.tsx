@@ -20,7 +20,7 @@ import {
 import { ModuleWrapper } from "@components/module-wrapper";
 import { dataListBreadcrumbLinks } from "../../utils/constants";
 import { GenericForm, GenericFormProps } from "@components/generic-components/generic-form";
-import { Button, CircularProgress, Grid, Typography } from "@mui/material";
+import { Button, CircularProgress, Grid, Typography, Box } from "@mui/material";
 import { SearchBar } from "@components/search-bar";
 import { GhostLink } from "@components/ghost-link";
 import { Download, Upload } from "@mui/icons-material";
@@ -77,6 +77,10 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
   const [exportIsOpen, setExportIsOpen] = useState(false);
   const [importIsOpen, setImportIsOpen] = useState(false);
   const genericDataGridRef = useRef<GenericDataGridRef>(null);
+  const [triggerSave, setTriggerSave] = useState(false);
+  const [triggerCancel, setTriggerCancel] = useState(false);
+  const handleSaveClick = () => setTriggerSave(true);
+  const handleCancelClick = () => setTriggerCancel(true);
 
   const getGenericTable = (key: string, tableProps: GenericDataGridProps<TView>) => {
     const genericDataGrid = GenericDataGrid<TView>(
@@ -186,8 +190,15 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
     currentBreadcrumb: string,
     formProps: GenericFormProps<TView, TCreate, TUpdate>
   ) => {
-    const genericForm = GenericForm<TView, TCreate, TUpdate>(formProps);
-
+    const genericForm = (
+      <GenericForm<TView, TCreate, TUpdate>
+        {...formProps}
+        triggerSave={triggerSave}
+        triggerCancel={triggerCancel}
+        onSaveHandled={() => setTriggerSave(false)}
+        onCancelHandled={() => setTriggerCancel(false)}
+      />
+    );
     const savingIndicatorElement = (
       <>
         <Grid container spacing={3} size={{ xs: "auto", sm: "auto" }}>
@@ -201,12 +212,38 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
       </>
     );
 
+    const actionButtons = formProps.editable ? (
+    <Box sx={{ display: "flex", width: "100%", gap: 2}}>
+     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+        <Button
+          type="button"
+          variant="outlined"
+          onClick={handleCancelClick}
+          size="large"
+        >
+          Cancel
+        </Button>
+     </Box>
+       <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
+        <Button
+          type="button"
+          variant="contained"
+          onClick={handleSaveClick}
+          size="large"
+        >
+          Save
+        </Button>
+      </Box>
+    </Box>
+  ) : null;
+
     return (
       <ModuleWrapper
         key={key}
         saveIndicatorElement={savingIndicatorElement}
         breadcrumbs={getBreadcrumbLinks(moduleName, modulePath)}
         currentBreadcrumb={currentBreadcrumb}
+        actionButtons={actionButtons}
       >
         {genericForm}
       </ModuleWrapper>

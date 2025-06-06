@@ -8,7 +8,7 @@ import {
 } from "@components/generic-components/common";
 import { useEffect, useState } from "react";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { Button, Card, CardContent, Grid, Tab, Tabs, Typography } from "@mui/material";
+import { Card, CardContent, Grid, Tab, Tabs, Typography, Box } from "@mui/material";
 import {
   NumberEdit,
   TextEdit,
@@ -27,6 +27,7 @@ import { TextView } from "./view-components/text-view";
 import { BoolView } from "./view-components/bool-view";
 import { DateTimeView } from "./view-components/datetime-view";
 import { ArrayView } from "./view-components/array-view";
+import { getSectionIcon } from "@components/icon-map";
 
 export interface DtoField {
   editable: boolean;
@@ -53,6 +54,13 @@ export interface DeleteOptionProps {
   deleteItemFn: (id: number) => Promise<HttpResponse<void, void | ProblemDetails>>;
 }
 
+export interface FieldSection {
+  id: string;
+  title?: string;
+  description?: string;
+  fields: string[];
+}
+
 export interface GenericFormProps<TView extends BasicTypeForGeneric, TCreate, TUpdate> {
   editable: boolean;
   getItemFn: (
@@ -77,6 +85,11 @@ export interface GenericFormProps<TView extends BasicTypeForGeneric, TCreate, TU
   onSaved?: (item: TView) => void;
 
   customDictionaries?: CustomFieldSourceDictionaries;
+  triggerSave?: boolean;
+  triggerCancel?: boolean;
+  onSaveHandled?: () => void;
+  onCancelHandled?: () => void;
+  fieldSections?: { sections: FieldSection[]; };
 }
 
 export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>({
@@ -92,11 +105,30 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
   getItemId,
   onSaved,
   customDictionaries,
+  triggerSave,
+  triggerCancel,
+  onSaveHandled,
+  onCancelHandled,
+  fieldSections
 }: GenericFormProps<TView, TCreate, TUpdate>) {
   const { setBusy, isBusy, setSaving, isSaving } = useModuleWrapperContext();
   const handleCoreNavigation = useCoreModuleNavigation();
   const [validationResult, setValidationResult] = useState<ValidationResult>();
   const itemId = getItemId();
+
+  useEffect(() => {
+  if (triggerSave) {
+    save();
+    onSaveHandled?.();
+  }
+}, [triggerSave]);
+
+useEffect(() => {
+  if (triggerCancel) {
+    cancel();
+    onCancelHandled?.();
+  }
+}, [triggerCancel]);
 
   const updateFields: DtoField[] = Object.keys(updateSchema.properties).map((key) => {
     return {
@@ -368,6 +400,16 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
     }
   };
 
+ function getModuleNameFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  const path = window.location.pathname;
+  const moduleRaw = path.split("/")[1] || "";
+  return moduleRaw.charAt(0).toUpperCase() + moduleRaw.slice(1).toLowerCase();
+}
+
+const moduleName = getModuleNameFromUrl();
+const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
+
   return (
     <>
       {!editable && (
@@ -378,56 +420,85 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
           <StyledDivider></StyledDivider>
         </>
       )}
+    <Card>
+      <CardContent>
+      {fieldSections?.sections ? (
+        fieldSections.sections.map((section) => {
+          const sectionFields = fieldsSet().filter(
+            (f) => section.fields.includes(f.name) && !f.hide
+          );
+
+          if (sectionFields.length === 0) return null;
+          
+          const SectionIcon = section.title ? getSectionIcon(section.title) : null;
+
+          return (
+           <Box sx={{ p: { xs: 2.5, sm: 1 } }}>
+          
+            {section.title && (
+              <Box sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                mb: 3, 
+                mt: 4,
+                pb: 1,
+                borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
+              }}>
+              {SectionIcon && 
+                    <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}><SectionIcon/></Box>
+              }
+              <Typography variant="subtitle1" fontWeight="500" color="primary.main" >
+                {section.title}
+              </Typography>
+              </Box>
+            )}
+            <Box
+              display="grid"
+              gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }}
+              gap={4}
+              width="100%"           
+              maxWidth="100%"
+            >
+            {sectionFields.map((field) => (
+            <Grid key={field.name} marginBottom={0}>
+              {editable ? getEdit(field) : getView(field)}
+            </Grid>
+              ))}
+            </Box>
+          </Box>
+          );
+        })
+      ) : (
+        <Grid container spacing={4} marginBottom={4}>
+          <Grid container size={{ xs: 12, sm: 12 }}>
+          {SectionIcon && (
+                <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
+                  <SectionIcon />
+                </Box>
+              )}
+          <Typography variant="subtitle1" fontWeight="500" color="primary.main" >
+            {`Add ${moduleName} Details`}
+          </Typography>          
+          </Grid>
+          {fieldsSet()
+            .filter((field) => !field.hide)
+            .map((field) =>
+              editable ? (
+                <Grid key={field.name} size={{ xs: 4, sm: 4 }}>
+                  {getEdit(field)}
+                </Grid>
+              ) : (
+                <Grid key={field.name} size={{ xs: 3, sm: 3 }}>
+                  {getView(field)}
+                </Grid>
+              )
+            )}
+        </Grid>
+      )}
+      </CardContent>
+      </Card>
       <Card>
-        <CardContent>
-          <Grid container spacing={4} marginBottom={4}>
-            <Grid size={{ xs: 12, sm: 12 }}>
-              <Typography variant="h6">Details</Typography>
-            </Grid>
-            {fieldsSet()
-              .filter((field) => !field.hide)
-              .map((field) =>
-                editable ? (
-                  <Grid key={field.name} size={{ xs: 4, sm: 4 }}>
-                    {getEdit(field)}
-                  </Grid>
-                ) : (
-                  <Grid key={field.name} size={{ xs: 3, sm: 3 }}>
-                    {getView(field)}
-                  </Grid>
-                )
-              )}
-          </Grid>
-          <Grid container spacing={4} justifyContent="flex-end">
-            <Grid size={{ xs: 12, sm: 1 }}>
-              {editable && (
-                <Button
-                  type="submit"
-                  disabled={isBusy || isSaving}
-                  variant="outlined"
-                  fullWidth
-                  onClick={cancel}
-                  size="small"
-                >
-                  Cancel
-                </Button>
-              )}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 1 }}>
-              {editable && (
-                <Button
-                  type="submit"
-                  disabled={isBusy || isSaving}
-                  variant="contained"
-                  fullWidth
-                  onClick={save}
-                  size="small"
-                >
-                  Save
-                </Button>
-              )}
-            </Grid>
-          </Grid>
+    <CardContent>
         </CardContent>
       </Card>
       {!editable && deleteOptionProps && (

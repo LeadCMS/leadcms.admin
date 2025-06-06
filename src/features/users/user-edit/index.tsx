@@ -151,10 +151,54 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
   const valueUpdate = (event: React.SyntheticEvent<Element, Event>) => {
     formik.handleChange(event);
   };
+
+  const actionButtons=(
+    <>
+     <Box sx={{ display: "flex", width: "100%", gap: 2}}>
+      {!readonly && (
+        <Box sx={{ display: "flex", width: "100%", gap: 2}}>
+        <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+        <Button
+          disabled={formik.isSubmitting}
+          variant="outlined"
+          color="primary"
+          onClick={() => handleNavigation(CoreModule.users)}
+          size="large"
+        >
+          Cancel
+        </Button>
+        </Box>
+        <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
+        <Button 
+          type="submit" 
+          variant="contained" 
+          size="large"
+        >
+          Save
+        </Button>
+        </Box>
+        </Box>
+       )}
+        {id && readonly && (
+          <DataManagementBlock
+            header="Data Management"
+            description="Please be aware that what has been deleted can never be reverted."
+            entity="user"
+            handleDeleteAsync={(id) => client.api.usersDelete(id as string)}
+            itemId={id}
+            successNavigationRoute={CoreModule.users}
+            showOnlyButtons={true}
+          ></DataManagementBlock>
+      )}
+      </Box>
+    </>
+  )
+
   return (
     <ModuleWrapper
       breadcrumbs={UserEditBreadcrumbLinks}
       currentBreadcrumb={formik.values.displayName || "User Edit"}
+      actionButtons={actionButtons}
     >
       <UserEditContainer>
         <form onSubmit={formik.handleSubmit}>
@@ -284,48 +328,8 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                   </Grid>
                 )}
               </Grid>
-              {!readonly && (
-                <Grid
-                  spacing={3}
-                  sx={{
-                    display: "flex",
-                    marginTop: "1rem",
-                  }}
-                >
-                  <Grid size={{ xs: 1 }}>
-                    <Button
-                      disabled={formik.isSubmitting}
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => handleNavigation(CoreModule.users)}
-                      fullWidth
-                    >
-                      Cancel
-                    </Button>
-                  </Grid>
-                  <Grid size={{ xs: 1 }}>
-                    <Button type="submit" variant="contained" fullWidth>
-                      Save
-                    </Button>
-                  </Grid>
-                </Grid>
-              )}
             </CardContent>
           </Card>
-          {id && readonly && (
-            <Grid container spacing={3} marginTop={1}>
-              <Grid size={{ xs: 12, sm: 8 }}>
-                <DataManagementBlock
-                  header="Data Management"
-                  description="Please be aware that what has been deleted can never be reverted."
-                  entity="user"
-                  handleDeleteAsync={(id) => client.api.usersDelete(id as string)}
-                  itemId={id}
-                  successNavigationRoute={CoreModule.users}
-                ></DataManagementBlock>
-              </Grid>
-            </Grid>
-          )}
         </form>
       </UserEditContainer>
     </ModuleWrapper>

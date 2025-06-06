@@ -13,6 +13,8 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Box,
+  Card,
 } from "@mui/material";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRequestContext } from "@providers/request-provider";
@@ -23,7 +25,9 @@ import zod from "zod";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
-import { CardContainer } from "../index.styled";
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
+import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
+import LinkIcon from '@mui/icons-material/Link';
 
 interface OrderFormProps {
   order: OrderDetailsDto | undefined;
@@ -156,54 +160,99 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     validateOnChange: false,
   });
 
+  const actionButtons = (
+    <Box sx={{ display: "flex", width: "100%", gap: 2}}>
+     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+      <Button
+        disabled={formik.isSubmitting}
+        type="submit"
+        variant="outlined"
+        color="primary"
+        onClick={handleCancel}
+        size="large"
+      >
+        Cancel
+      </Button>
+     </Box>
+      <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
+        <Button
+          type="submit"
+          disabled={formik.isSubmitting}
+          variant="contained"
+          color="primary"
+          size="large"
+        >
+          Save
+        </Button>
+      </Box>
+    </Box>
+    );
+
+    const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
+    <Box sx={{ 
+      display: "flex", 
+      alignItems: "center", 
+      mb: 3, 
+      mt: 4,
+      pb: 1,
+      borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
+    }}>
+      <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
+      <Typography variant="subtitle1" fontWeight="500" color="primary.main">
+        {title}
+      </Typography>
+    </Box>
+  );
+
   return (
     <ModuleWrapper
       breadcrumbs={orderFormBreadcrumbLinks}
       currentBreadcrumb={header}
       saveIndicatorElement={<SavingBar />}
+      actionButtons={actionButtons}
     >
       {order && (
         <form onSubmit={formik.handleSubmit}>
-          <CardContainer>
-            <CardContent>
-              <Grid container spacing={3} marginBottom={4}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Autocomplete
-                    disabled={formik.isSubmitting}
-                    disablePortal
-                    open={open}
-                    onOpen={() => {
-                      setOpen(true);
-                    }}
-                    onClose={() => {
-                      setOpen(false);
-                    }}
-                    options={contactList}
-                    getOptionLabel={(option) => getOptionLabel(option)}
-                    value={formik.values.contact}
-                    onChange={(event, value) => 
-                      value && handleContactChange(value)}
-                    onInputChange={(event, value) => {
-                      loadContacts(event, value);
-                    }}
-                    loading={loading}
-                    filterOptions={(x) => x}
-                    fullWidth
-                    size="small"
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Contact"
-                        error={formik.touched.contactId && Boolean(formik.errors.contactId)}
-                        helperText={formik.touched.contactId && formik.errors.contactId}
-                      />
-                    )}
-                  />
-                </Grid>
+          <Card>
+           <CardContent>
+            <Grid container spacing={4} marginBottom={4}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Autocomplete
+                  disabled={formik.isSubmitting}
+                  disablePortal
+                  open={open}
+                  onOpen={() => {
+                    setOpen(true);
+                  }}
+                  onClose={() => {
+                    setOpen(false);
+                  }}
+                  options={contactList}
+                  getOptionLabel={(option) => getOptionLabel(option)}
+                  value={formik.values.contact}
+                  onChange={(event, value) => 
+                    value && handleContactChange(value)}
+                  onInputChange={(event, value) => {
+                    loadContacts(event, value);
+                  }}
+                  loading={loading}
+                  filterOptions={(x) => x}
+                  fullWidth
+                  size="small"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Contact"
+                      error={formik.touched.contactId && Boolean(formik.errors.contactId)}
+                      helperText={formik.touched.contactId && formik.errors.contactId}
+                    />
+                  )}
+                />
               </Grid>
+            </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                  <Typography variant="h6">Order</Typography>
+                <SectionHeader icon={<ReceiptLongIcon />} title="Orders" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
@@ -249,7 +298,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                  <Typography variant="h6">Currency</Typography>
+                <SectionHeader icon={<CurrencyExchangeIcon />} title="Currency" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <Tooltip title="Exchange Rate field must contain only numbers">
@@ -287,7 +336,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                  <Typography variant="h6">Other</Typography>
+                <SectionHeader icon={< LinkIcon/>} title="Other" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
@@ -303,33 +352,8 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                   ></TextField>
                 </Grid>
               </Grid>
-              <Grid container spacing={4} marginTop={2} marginBottom={4} justifyContent="flex-end">
-                <Grid size={{ xs: 1 }}>
-                  <Button
-                    disabled={formik.isSubmitting}
-                    type="submit"
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleCancel}
-                    fullWidth
-                  >
-                    Cancel
-                  </Button>
-                </Grid>
-                <Grid size={{ xs: 1 }}>
-                  <Button
-                    type="submit"
-                    disabled={formik.isSubmitting}
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                  >
-                    Save
-                  </Button>
-                </Grid>
-              </Grid>
             </CardContent>
-          </CardContainer>
+          </Card>
         </form>
       )}
     </ModuleWrapper>
