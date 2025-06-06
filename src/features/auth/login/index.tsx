@@ -1,10 +1,18 @@
 import { useMsal } from "@azure/msal-react";
 import { useState, useEffect } from "react";
-import { Button, Typography,TextField, IconButton, InputAdornment, Box, CircularProgress } from "@mui/material";
+import {
+  Button,
+  Typography,
+  TextField,
+  IconButton,
+  InputAdornment,
+  Box,
+  CircularProgress,
+} from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { LoginDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
-import { LoginContainer, StyledForm, Logo, MicrosoftButton, OrText, } from "./index.styled";
+import { LoginContainer, StyledForm, Logo, MicrosoftButton, OrText, LogoRow } from "./index.styled";
 import { useAuthState } from "@providers/auth-provider";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -35,7 +43,7 @@ const LoadingConfig = () => {
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
-  password: z.string().min(1, "Password is required"), 
+  password: z.string().min(1, "Password is required"),
 });
 
 export const Login = () => {
@@ -47,8 +55,6 @@ export const Login = () => {
   const { instance } = useMsal();
   const [loginLoading, setLoading] = useState(false);
 
-  type LoginDto = z.infer<typeof schema>;
-
   const {
     register,
     handleSubmit,
@@ -58,23 +64,23 @@ export const Login = () => {
   });
 
   useEffect(() => {
-  if (loginError) {
-    const timer = setTimeout(() => {
-      setLoginError(null);
-    }, 5000); 
+    if (loginError) {
+      const timer = setTimeout(() => {
+        setLoginError(null);
+      }, 5000);
 
-    return () => clearTimeout(timer); 
-  }
+      return () => clearTimeout(timer);
+    }
   }, [loginError]);
 
-   const handleMicrosoftLogin = () => {
+  const handleMicrosoftLogin = () => {
     instance.loginRedirect({
       scopes: ["User.Read"],
     });
   };
 
   if (loading || !config) {
-  return <LoadingConfig />;
+    return <LoadingConfig />;
   }
 
   const authMethods = config.auth?.methods ?? [];
@@ -85,7 +91,7 @@ export const Login = () => {
     setLoading(true);
     try {
       const response = await client.api.identityLoginCreate(form);
-      
+
       if (!response || !response.ok) {
         setLoginError("Login failed. Please try again.");
         return;
@@ -95,72 +101,70 @@ export const Login = () => {
       localStorage.setItem("token", responseJson.token);
       setLocalToken(responseJson.token);
       window.location.replace("/");
-
     } catch (err: any) {
       setLoginError("Login failed. Please try again.");
-
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
     <LoginContainer>
       <StyledForm onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Logo src="/images/logo.svg" alt="LeadCMS Logo" />
-        <Typography variant="h5" align="center">Login to LeadCMS</Typography>
-
+        <LogoRow>
+          <Logo src="/images/logo.svg" alt="LeadCMS Logo" />
+          <Typography variant="h5" align="center" sx={{ m: 0 }}>
+            Login to LeadCMS
+          </Typography>
+        </LogoRow>
         {showLocal && (
           <>
-          <TextField
-          label="Email"
-          fullWidth
-          type="email"
-          {...register("email")}
-          error={!!errors.email}
-          helperText={errors.email?.message}
-        />
-
-        <TextField
-          label="Password"
-          fullWidth
-          type={showPassword ? "text" : "password"}
-          {...register("password")}
-          error={!!errors.password}
-          helperText={errors.password?.message}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShowPassword(prev => !prev)} edge="end">
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-        {loginError && (
-        <Typography variant="body2" color="error" align="center" sx={{ mt: 1 }}>
-          {loginError}
-        </Typography>
-        )}
-        <Button type="submit" variant="contained" disabled={loginLoading}>
-          {loginLoading ? "Logging in..." : "Login"}
-        </Button>
-        </>
+            <TextField
+              label="Email"
+              fullWidth
+              type="email"
+              {...register("email")}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+            />
+            <TextField
+              label="Password"
+              fullWidth
+              type={showPassword ? "text" : "password"}
+              {...register("password")}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {loginError && (
+              <Typography variant="body2" color="error" align="center" sx={{ mt: 1 }}>
+                {loginError}
+              </Typography>
+            )}
+            <Button type="submit" variant="contained" disabled={loginLoading} fullWidth>
+              {loginLoading ? "Logging in..." : "Login"}
+            </Button>
+          </>
         )}
         {showLocal && showAzureAD && <OrText>Or</OrText>}
         {showAzureAD && (
-        <MicrosoftButton onClick={handleMicrosoftLogin} fullWidth startIcon={
-          <img
-            src="/images/Microsoft_logo.svg"
-            alt="Microsoft Logo"
-            width="20"
-            height="20"
-          />
-        }>
-          Continue with Microsoft
-        </MicrosoftButton>
+          <MicrosoftButton
+            onClick={handleMicrosoftLogin}
+            fullWidth
+            startIcon={
+              <img src="/images/Microsoft_logo.svg" alt="Microsoft Logo" width="20" height="20" />
+            }
+          >
+            Continue with Microsoft
+          </MicrosoftButton>
         )}
       </StyledForm>
     </LoginContainer>

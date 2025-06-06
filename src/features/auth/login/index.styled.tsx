@@ -12,7 +12,8 @@ export const LoginContainer = styled(Box)`
 export const StyledForm = styled("form")`
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  align-items: center;
+  gap: 2rem;
   width: 400px;
   padding: 2rem;
   border-radius: 8px;
@@ -21,8 +22,18 @@ export const StyledForm = styled("form")`
 `;
 
 export const Logo = styled("img")`
-  width: 120px;
-  margin: 0 auto;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  display: block;
+`;
+
+export const LogoRow = styled(Box)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
 `;
 
 export const OrText = styled(Typography)`

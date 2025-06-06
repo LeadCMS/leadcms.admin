@@ -3645,6 +3645,175 @@ export interface ContentImportDto {
   publishedAt?: string | null;
 }
 
+export interface ContentTypeCreateDto {
+  /**
+   * Uid
+   * @minLength 1
+   * @example "string"
+   */
+  uid: string;
+  /**
+   * Format
+   * @example "MD"
+   */
+  format: "MD" | "MDX" | "HTML" | "JSON" | "YAML" | "PlainText";
+  /**
+   * Supports Comments
+   * @example true
+   */
+  supportsComments?: boolean;
+  /**
+   * Supports Cover Image
+   * @example true
+   */
+  supportsCoverImage?: boolean;
+}
+
+export interface ContentTypeDetailsDto {
+  /**
+   * Uid
+   * @minLength 1
+   * @example "string"
+   */
+  uid: string;
+  /**
+   * Format
+   * @example "MD"
+   */
+  format: "MD" | "MDX" | "HTML" | "JSON" | "YAML" | "PlainText";
+  /**
+   * Supports Comments
+   * @example true
+   */
+  supportsComments?: boolean;
+  /**
+   * Supports Cover Image
+   * @example true
+   */
+  supportsCoverImage?: boolean;
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface ContentTypeImportDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number | null;
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string | null;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+  /**
+   * Created By Ip
+   * @example "string"
+   */
+  createdByIp?: string | null;
+  /**
+   * Created By Id
+   * @example "string"
+   */
+  createdById?: string | null;
+  /**
+   * Created By User Agent
+   * @example "string"
+   */
+  createdByUserAgent?: string | null;
+  /**
+   * Updated By Ip
+   * @example "string"
+   */
+  updatedByIp?: string | null;
+  /**
+   * Updated By Id
+   * @example "string"
+   */
+  updatedById?: string | null;
+  /**
+   * Updated By User Agent
+   * @example "string"
+   */
+  updatedByUserAgent?: string | null;
+  /**
+   * Uid
+   * @example "string"
+   */
+  uid?: string | null;
+  /**
+   * Format
+   * @example "MD"
+   */
+  format?: "MD" | "MDX" | "HTML" | "JSON" | "YAML" | "PlainText" | null;
+  /**
+   * Supports Comments
+   * @example true
+   */
+  supportsComments?: boolean | null;
+  /**
+   * Supports Cover Image
+   * @example true
+   */
+  supportsCoverImage?: boolean | null;
+}
+
+export interface ContentTypeUpdateDto {
+  /**
+   * Uid
+   * @example "string"
+   */
+  uid?: string | null;
+  /**
+   * Format
+   * @example "MD"
+   */
+  format?: "MD" | "MDX" | "HTML" | "JSON" | "YAML" | "PlainText" | null;
+  /**
+   * Supports Comments
+   * @example true
+   */
+  supportsComments?: boolean | null;
+  /**
+   * Supports Cover Image
+   * @example true
+   */
+  supportsCoverImage?: boolean | null;
+}
+
 export interface ContentUpdateDto {
   /**
    * Title
@@ -4907,6 +5076,11 @@ export interface OrderCreateDto {
    * @example "string"
    */
   source?: string | null;
+  /**
+   * Status
+   * @example "Pending"
+   */
+  status?: "Pending" | "Paid" | "Cancelled" | "Refunded" | "Failed";
 }
 
 export interface OrderDetailsDto {
@@ -4991,6 +5165,29 @@ export interface OrderDetailsDto {
    * @example 1
    */
   total?: number;
+  /**
+   * Currency Total
+   * @format double
+   * @example 1
+   */
+  currencyTotal?: number;
+  /**
+   * Commission
+   * @format double
+   * @example 1
+   */
+  commission?: number;
+  /**
+   * Refund
+   * @format double
+   * @example 1
+   */
+  refund?: number;
+  /**
+   * Status
+   * @example "Pending"
+   */
+  status?: "Pending" | "Paid" | "Cancelled" | "Refunded" | "Failed";
   /** Order Items */
   orderItems?: OrderItemDetailsDto[] | null;
   contact?: ContactDetailsDto;
@@ -5367,6 +5564,11 @@ export interface OrderUpdateDto {
    * @example "string"
    */
   data?: string | null;
+  /**
+   * Status
+   * @example "Pending"
+   */
+  status?: "Pending" | "Paid" | "Cancelled" | "Refunded" | "Failed" | null;
 }
 
 export interface ProblemDetails {
@@ -6042,7 +6244,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.38.0
+ * @version 1.2.40.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -6804,6 +7006,151 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/content/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesImportCreate
+     * @request POST:/api/content-types/import
+     * @secure
+     */
+    contentTypesImportCreate: (
+      data: ContentTypeImportDto[],
+      params: RequestParams = {},
+    ) =>
+      this.request<ImportResult, void | ProblemDetails>({
+        path: `/api/content-types/import`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesDetail
+     * @request GET:/api/content-types/{id}
+     * @secure
+     */
+    contentTypesDetail: (id: number, params: RequestParams = {}) =>
+      this.request<ContentTypeDetailsDto, void | ProblemDetails>({
+        path: `/api/content-types/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesPartialUpdate
+     * @request PATCH:/api/content-types/{id}
+     * @secure
+     */
+    contentTypesPartialUpdate: (
+      id: number,
+      data: ContentTypeUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentTypeDetailsDto, void | ProblemDetails>({
+        path: `/api/content-types/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesDelete
+     * @request DELETE:/api/content-types/{id}
+     * @secure
+     */
+    contentTypesDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/content-types/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesCreate
+     * @request POST:/api/content-types
+     * @secure
+     */
+    contentTypesCreate: (
+      data: ContentTypeCreateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentTypeDetailsDto, void | ProblemDetails>({
+        path: `/api/content-types`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesList
+     * @request GET:/api/content-types
+     * @secure
+     */
+    contentTypesList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentTypeDetailsDto[], void | ProblemDetails>({
+        path: `/api/content-types`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesExportList
+     * @request GET:/api/content-types/export
+     * @secure
+     */
+    contentTypesExportList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, void | ProblemDetails>({
+        path: `/api/content-types/export`,
         method: "GET",
         query: query,
         secure: true,

@@ -1,20 +1,23 @@
 import zod from "zod";
-import { TypeDefaultValues } from "./types";
-import { 
-  getAllContentTypes, 
-  generateDefaultValues 
-} from "../content-types";
+import { ContentTypeDetailsDto, ContentTypeCreateDto } from "../../../lib/network/swagger-client";
 
-// Get content type IDs for validation (merged static + custom)
-export const ContentEditAvailableTypeIds = getAllContentTypes().map(type => type.id);
+// Define ContentApi interface locally (not from swagger-client)
+export interface ContentApi {
+  api: {
+    contentTypesList: () => Promise<{ data: ContentTypeDetailsDto[] }>;
+    contentTypesCreate: (payload: ContentTypeCreateDto) => Promise<{ data: ContentTypeDetailsDto }>;
+  };
+}
+
+// Async: Get content type IDs for validation (from API)
+export const getContentEditAvailableTypeIds = async (
+  client: ContentApi
+): Promise<string[]> => {
+  const types = await client.api.contentTypesList();
+  return types.data.map((type: ContentTypeDetailsDto) => type.uid);
+};
 
 export const ContentEditMaximumImageSize = 3 * 1000 * 1000; // 3 megabytes
-
-// Generate default values for all content types (merged static + custom)
-export const ContentEditDefaultValues: TypeDefaultValues[] = getAllContentTypes().map(type => ({
-  type: type.id,
-  defaultValues: generateDefaultValues(type.id),
-}));
 
 export const ContentEditValidationScheme = zod.object({
   type: zod.string(),
