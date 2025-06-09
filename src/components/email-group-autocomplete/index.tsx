@@ -1,10 +1,16 @@
-import { Autocomplete, TextField, CircularProgress, Paper, Button } from "@mui/material";
-import { EmailGroupAutoCompleteProps, EmailGroupOption } from "./types";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import {
+  TextField,
+  MenuItem,
+  CircularProgress,
+  Grid
+} from "@mui/material";
+import { Plus } from "lucide-react";
+import { CreateNewEmailGroup } from "./create-new";
 import { useRequestContext } from "@providers/request-provider";
 import { ProblemDetails } from "@lib/network/swagger-client";
 import { useNotificationsService } from "@hooks";
-import { CreateNewEmailGroup } from "./create-new";
+import { EmailGroupAutoCompleteProps, EmailGroupOption } from "./types";
 
 export function EmailGroupAutocomplete({
   label,
@@ -17,114 +23,82 @@ export function EmailGroupAutocomplete({
 }: EmailGroupAutoCompleteProps) {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isGroupCreatorOpen, setGroupCreatorOpen] = useState<boolean>(false);
   const [options, setOptions] = useState<EmailGroupOption[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [valueState, setValue] = useState<EmailGroupOption>({
-    id: -1,
-    label: "Loading",
-  });
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
   const requestData = async () => {
+    setIsLoading(true);
     let data: EmailGroupOption[] = [];
     try {
       const response = await client.api.emailGroupsList();
-      data = response.data.map((value) => {
-        return {
-          id: value.id as number,
-          label: value.name,
-        };
-      });
+      data = response.data.map((value) => ({
+        id: value.id as number,
+        label: value.name,
+      }));
     } catch (e) {
       const error = e as ProblemDetails;
       notificationsService.error(`Failed to get options: ${error.detail}`);
     } finally {
       setOptions(data);
       setIsLoading(false);
-      setIsLoaded(true);
     }
   };
-
-  useEffect(() => {
-    if (isLoaded) {
-      const matchedOption = options.filter((v) => v.id === value)[0];
-      setValue({
-        id: value,
-        label: (matchedOption && matchedOption.label) || "Not selected",
-      });
-    } else {
-      requestData();
-    }
-  }, [isLoaded]);
-
-  useEffect(() => {
-    setValue({
-      id: value,
-      label: isLoaded
-        ? options.filter((v) => v.id === value)[0]?.label || "Not selected"
-        : "Loading...",
-    });
-  }, [value]);
 
   useEffect(() => {
     requestData();
   }, []);
 
+  const handleAddNewGroup = (newGroup: EmailGroupOption) => {
+    setDialogOpen(false);
+    requestData();
+    onChange(newGroup.id);
+  };
+
   return (
     <>
-      <CreateNewEmailGroup
-        isOpen={isGroupCreatorOpen}
-        onClose={() => setGroupCreatorOpen(false)}
-        onChange={(value) => {
-          setValue(value);
-          setIsLoaded(false);
-        }}
-      />
-      <Autocomplete
-        open={isOpen}
-        onOpen={() => {
-          setIsOpen(true);
-        }}
-        onClose={() => {
-          setIsOpen(false);
-        }}
-        autoSelect
-        options={options}
-        getOptionLabel={(option) => option.label}
-        loading={isLoading}
-        value={valueState}
-        onChange={(_, value) => onChange((value && value.id) || -1)}
-        PaperComponent={({ children }) => {
-          return (
-            <>
-              <Paper>
-                <Button onMouseDown={() => setGroupCreatorOpen(true)}>Create new group</Button>
-                {children}
-              </Paper>
-            </>
-          );
-        }}
-        renderInput={(params) => (
+      <Grid container spacing={2} alignItems="center">
+        <Grid size={{ xs: 12, sm: 12 }} >
           <TextField
-            {...params}
-            disabled={disabled}
-            label={label}
-            placeholder={placeholder}
-            error={error}
+            select
+            label={label || "Group ID"}
+            value={value === undefined || value === null ? "" : value}
+            onChange={e => {
+              if (e.target.value === "__add__") {
+                setDialogOpen(true);
+              } else {
+                onChange(Number(e.target.value));
+              }
+            }}
+            error={!!error}
             helperText={helperText}
+            placeholder={placeholder}
+            fullWidth
+            disabled={disabled}
             InputProps={{
-              ...params.InputProps,
               endAdornment: (
-                <React.Fragment>
+                <>
                   {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                  {params.InputProps.endAdornment}
-                </React.Fragment>
+                </>
               ),
             }}
-          />
-        )}
+          >
+            {options.map(opt => (
+              <MenuItem key={opt.id} value={opt.id}>
+                {opt.label}
+              </MenuItem>
+            ))}
+            <MenuItem value="__add__">
+              <Plus size={20} style={{ marginRight: 8 }} /> Create new group
+            </MenuItem>
+          </TextField>
+        </Grid>
+      </Grid>
+     
+      <CreateNewEmailGroup
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onChange={handleAddNewGroup}
       />
     </>
   );

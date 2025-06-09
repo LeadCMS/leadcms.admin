@@ -111,6 +111,7 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
               variant="outlined"
               onChange={valueUpdate}
               fullWidth
+              sx={{mt:2}}
             />
           </DialogContent>
           <DialogActions>
