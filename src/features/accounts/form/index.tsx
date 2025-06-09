@@ -207,6 +207,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
         color="primary"
         size="large"
         startIcon={ isEdit? <Save size={22} /> : <Plus size={22}/>}
+        onClick={formik.submitForm}
       >
         {isEdit ? "Save" : "Add"}
       </Button>

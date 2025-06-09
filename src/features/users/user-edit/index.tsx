@@ -172,6 +172,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
           variant="contained" 
           size="large"
           startIcon={<Save size={22} />}
+          onClick={formik.submitForm}
         >
           Save
         </Button>

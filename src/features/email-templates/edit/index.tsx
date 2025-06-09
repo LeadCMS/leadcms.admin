@@ -237,6 +237,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
               variant="contained"  
               size="large" 
               startIcon={<Save />}
+              onClick={formik.submitForm}
             >
               Save
             </Button>

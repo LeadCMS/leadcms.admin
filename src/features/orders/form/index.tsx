@@ -179,6 +179,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
           color="primary"
           size="large"
           startIcon={<Save size={22} />}
+          onClick={formik.submitForm}
         >
           Save
         </Button>
