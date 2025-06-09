@@ -188,8 +188,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   });
 
   const actionButtons = (
-    <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
       <Button
         disabled={isLoading || formik.isSubmitting}
         type="submit"
@@ -201,8 +200,6 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
       >
         Cancel
       </Button>
-     </Box>
-     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
       <Button
         type="submit"
         disabled={isLoading || formik.isSubmitting}
@@ -213,7 +210,6 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
       >
         {isEdit ? "Save" : "Add"}
       </Button>
-      </Box>
     </Box>
   );
 

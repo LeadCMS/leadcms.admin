@@ -159,8 +159,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
   });
 
   const actionButtons = (
-    <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent:"flex-end"}}>
       <Button
         disabled={formik.isSubmitting}
         type="submit"
@@ -173,8 +172,6 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
       >
         Cancel
       </Button>
-     </Box>
-      <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
         <Button
           type="submit"
           disabled={formik.isSubmitting}
@@ -185,7 +182,6 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
         >
           Save
         </Button>
-      </Box>
     </Box>
     );
 

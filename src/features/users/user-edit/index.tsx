@@ -156,8 +156,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
     <>
      <Box sx={{ display: "flex", width: "100%", gap: 2}}>
       {!readonly && (
-        <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-        <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+        <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent:"flex-end"}}>
         <Button
           disabled={formik.isSubmitting}
           variant="outlined"
@@ -168,8 +167,6 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
         >
           Cancel
         </Button>
-        </Box>
-        <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
         <Button 
           type="submit" 
           variant="contained" 
@@ -178,7 +175,6 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
         >
           Save
         </Button>
-        </Box>
         </Box>
        )}
         {id && readonly && (

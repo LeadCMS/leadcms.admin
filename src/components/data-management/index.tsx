@@ -142,7 +142,7 @@ export const DataManagementBlock = ({
         startIcon={<Trash2 />}
         color="error"
         onClick={handleDelete}
-        variant="contained"  
+        variant="outlined"  
         size="large" 
       >
         Delete 

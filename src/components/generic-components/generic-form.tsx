@@ -20,8 +20,7 @@ import {
 } from "@components/generic-components/edit-components";
 import { validate } from "@components/generic-components/edit-components/validator";
 import { ArrayEdit } from "./edit-components/array-edit";
-import { DataManagementBlock } from "@components/data-management";
-import { GenericViewDeleteContainer, StyledDivider } from "./index.styled";
+import { StyledDivider } from "./index.styled";
 import { useCoreModuleNavigation } from "@hooks";
 import { TextView } from "./view-components/text-view";
 import { BoolView } from "./view-components/bool-view";
@@ -501,22 +500,6 @@ const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
     <CardContent>
         </CardContent>
       </Card>
-      {!editable && deleteOptionProps && (
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 8, sm: 8 }}>
-            <GenericViewDeleteContainer>
-              <DataManagementBlock
-                header={deleteOptionProps.header}
-                description={deleteOptionProps.description}
-                entity={deleteOptionProps.entity}
-                handleDeleteAsync={(id) => deleteOptionProps.deleteItemFn(id as number)}
-                itemId={itemId!}
-                successNavigationRoute={deleteOptionProps.listRoute}
-              ></DataManagementBlock>
-            </GenericViewDeleteContainer>
-          </Grid>
-        </Grid>
-      )}
     </>
   );
 }

@@ -60,8 +60,7 @@ const handleSaveClick = () => setTriggerSave(true);
 const handleCancelClick = () => setTriggerCancel(true);  
 
   const actionButtons = formProps.editable ? (
-    <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
         <Button
           type="button"
           variant="outlined"
@@ -71,8 +70,6 @@ const handleCancelClick = () => setTriggerCancel(true);
         >
           Cancel
         </Button>
-     </Box>
-       <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
         <Button
           type="button"
           variant="contained"
@@ -82,7 +79,6 @@ const handleCancelClick = () => setTriggerCancel(true);
         >
           Save
         </Button>
-      </Box>
     </Box>
   ) : null;
 

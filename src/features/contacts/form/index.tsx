@@ -266,8 +266,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       saveIndicatorElement={<SavingBar />}
       isForm={true}
       actionButtons={
-       <Box sx={{ display: "flex", width: "100%", }}>
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+       <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end' }}>
           <Button
             disabled={isLoading || formik.isSubmitting}
             variant="outlined"
@@ -278,8 +277,6 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
           >
             Cancel
           </Button>
-          </Box>
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             type="submit"
             disabled={isLoading || formik.isSubmitting}
@@ -291,7 +288,6 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
           >
             {isEdit ? "Save" : "Add"}
           </Button>
-         </Box>
         </Box>
       }
     >
