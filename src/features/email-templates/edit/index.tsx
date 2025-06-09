@@ -28,8 +28,7 @@ import { EmailGroupAutocomplete } from "@components/email-group-autocomplete";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { DataManagementBlock } from "@components/data-management";
 import { CoreModule } from "@lib/router";
-import SaveIcon from "@mui/icons-material/Save";
-import CancelIcon from "@mui/icons-material/Cancel";
+import { Save, XCircle } from "lucide-react";
 
 // Define the TinyMCE Editor type
 type TinyMCEEditor = {
@@ -222,27 +221,26 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       <>
       <Box sx={{ display: "flex", width: "100%", gap: 2}}>
         {!readonly && (
-          <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-          <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+          <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
             <Button
               disabled={formik.isSubmitting}
               variant="outlined"
               color="primary"
               onClick={() => handleNavigation(CoreModule.emailTemplates)}
-              
-              startIcon={<CancelIcon />}
+              startIcon={<XCircle />}
               size="large"
             >
               Cancel
             </Button>
-          </Box>
-          <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
             <Button 
-            type="submit" variant="contained"  size="large" startIcon={<SaveIcon />}
-              >
+              type="submit" 
+              variant="contained"  
+              size="large" 
+              startIcon={<Save />}
+              onClick={formik.submitForm}
+            >
               Save
             </Button>
-          </Box>
           </Box>
         )}
         {id && readonly && (

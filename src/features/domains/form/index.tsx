@@ -5,6 +5,7 @@ import { DomainCreateDto, DomainDetailsDto, DomainUpdateDto } from "@lib/network
 import { domainFormBreadcrumbLinks } from "../constants";
 import { useState } from "react";
 import { Button,Box } from "@mui/material";
+import { XCircle, Save } from "lucide-react";
 
 const fieldSections = {
   sections: [
@@ -31,7 +32,7 @@ const fieldSections = {
     {
       id: "dnsRecords",
       title: "DNS Records",
-      fields: ["                                                                               "],
+      fields: [""],
     },
   ],
 };
@@ -59,27 +60,25 @@ const handleSaveClick = () => setTriggerSave(true);
 const handleCancelClick = () => setTriggerCancel(true);  
 
   const actionButtons = formProps.editable ? (
-    <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
         <Button
           type="button"
           variant="outlined"
           onClick={handleCancelClick}
           size="large"
+          startIcon={<XCircle size={22} />}
         >
           Cancel
         </Button>
-     </Box>
-       <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
         <Button
           type="button"
           variant="contained"
           onClick={handleSaveClick}
           size="large"
+          startIcon={<Save size={22} />}
         >
           Save
         </Button>
-      </Box>
     </Box>
   ) : null;
 

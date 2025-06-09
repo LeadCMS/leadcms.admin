@@ -12,7 +12,7 @@ import { timezones } from "utils/constants";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ActionButtonContainer, ContactHref } from "@features/contacts/index.styled";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { DataManagementBlock } from "@components/data-management";
@@ -192,7 +192,7 @@ export const ContactView = () => {
       return (
         <ActionButtonContainer>
           <IconButton onClick={() => handleForwardClick(row)}>
-            <ArrowForwardIcon fontSize="small" />
+            <ArrowRight size={20} />
           </IconButton>
         </ActionButtonContainer>
       );

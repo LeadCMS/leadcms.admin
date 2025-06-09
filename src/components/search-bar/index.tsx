@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { TextField, Box, InputAdornment, IconButton } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-
+import { Search } from "lucide-react";
 interface SearchBoxProps {
   setSearchTermOnChange: (searchTerm: string) => void;
   searchBoxLabel: string;
@@ -35,7 +34,7 @@ export const SearchBar = ({
           endAdornment: (
             <InputAdornment position="end">
               <IconButton>
-                <SearchIcon />
+                <Search size={18}/>
               </IconButton>
             </InputAdornment>
           ),

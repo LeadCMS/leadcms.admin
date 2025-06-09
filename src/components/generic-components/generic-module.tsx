@@ -23,7 +23,6 @@ import { GenericForm, GenericFormProps } from "@components/generic-components/ge
 import { Button, CircularProgress, Grid, Typography, Box } from "@mui/material";
 import { SearchBar } from "@components/search-bar";
 import { GhostLink } from "@components/ghost-link";
-import { Download, Upload } from "@mui/icons-material";
 import {
   HttpResponse,
   ImportResult,
@@ -33,6 +32,8 @@ import {
 import { CsvExport } from "@components/export";
 import { CsvImport } from "@components/spreadsheet-import";
 import { Result } from "react-spreadsheet-import/types/types";
+import { Download, Upload, XCircle, Save, Plus } from "lucide-react";
+import { DataManagementBlock } from "@components/data-management";
 
 interface ExtraActions {
   export?: {
@@ -100,7 +101,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
     );
 
     const addButton = (
-      <Button to={getAddFormRoute()} component={GhostLink} variant="contained">
+      <Button to={getAddFormRoute()} component={GhostLink} variant="contained" startIcon={<Plus size={22}/>}>
         {addButtonContent || "Add"}
       </Button>
     );
@@ -114,7 +115,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             onClick={() => {
               setImportIsOpen(true);
             }}
-            startIcon={<Upload />}
+            startIcon={<Upload size={22}/>}
           >
             Import
           </Button>
@@ -126,7 +127,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             onClick={() => {
               setExportIsOpen(true);
             }}
-            startIcon={<Download />}
+            startIcon={<Download size={22}/>}
           >
             Export
           </Button>
@@ -213,29 +214,37 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
     );
 
     const actionButtons = formProps.editable ? (
-    <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-     <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
         <Button
           type="button"
           variant="outlined"
           onClick={handleCancelClick}
           size="large"
+          startIcon={<XCircle size={22} />}
         >
           Cancel
         </Button>
-     </Box>
-       <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
         <Button
           type="button"
           variant="contained"
           onClick={handleSaveClick}
           size="large"
+          startIcon={<Save size={22} />}
         >
           Save
         </Button>
-      </Box>
-    </Box>
-  ) : null;
+    </Box>  
+      ) : formProps.deleteOptionProps ? (
+        <DataManagementBlock
+          header={formProps.deleteOptionProps.header}
+          description={formProps.deleteOptionProps.description}
+          entity={formProps.deleteOptionProps.entity}
+          handleDeleteAsync={(id) => formProps.deleteOptionProps!.deleteItemFn(Number(id))}
+          itemId={formProps.getItemId?.() ?? ""}
+          successNavigationRoute={formProps.deleteOptionProps.listRoute}
+          showOnlyButtons={true}
+        />
+      ) : null;
 
     return (
       <ModuleWrapper

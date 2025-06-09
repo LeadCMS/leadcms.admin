@@ -22,7 +22,7 @@ import {
   TextField,
   Button,
 } from "@mui/material";
-import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
+import { Camera, XCircle, Save } from "lucide-react";
 import { UserEditProps } from "./types";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { useUserInfo } from "@providers/user-provider";
@@ -156,27 +156,26 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
     <>
      <Box sx={{ display: "flex", width: "100%", gap: 2}}>
       {!readonly && (
-        <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-        <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-start'}}>
+        <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent:"flex-end"}}>
         <Button
           disabled={formik.isSubmitting}
           variant="outlined"
           color="primary"
           onClick={() => handleNavigation(CoreModule.users)}
           size="large"
+          startIcon={<XCircle size={22} />}
         >
           Cancel
         </Button>
-        </Box>
-        <Box sx={{ display: "flex", flex: 1, justifyContent: 'flex-end'}}>
         <Button 
           type="submit" 
           variant="contained" 
           size="large"
+          startIcon={<Save size={22} />}
+          onClick={formik.submitForm}
         >
           Save
         </Button>
-        </Box>
         </Box>
        )}
         {id && readonly && (
@@ -217,7 +216,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                       badgeContent={
                         !readonly ? (
                           <StyledAvatar onClick={handleImageUpload}>
-                            <AddAPhotoIcon />
+                            <Camera />
                           </StyledAvatar>
                         ) : undefined
                       }

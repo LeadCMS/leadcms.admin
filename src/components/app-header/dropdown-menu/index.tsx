@@ -10,7 +10,7 @@ import {
   Divider,
   ListItemIcon,
 } from "@mui/material";
-import Logout from "@mui/icons-material/Logout";
+import { LogOut } from "lucide-react";
 import { useUserInfo } from "@providers/user-provider";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { useAuthState } from "@providers/auth-provider";
@@ -76,7 +76,7 @@ export const DropdownMenu = () => {
         <Divider />
         <MenuItem onClick={logout} disabled={userInfo === null}>
           <ListItemIcon>
-            <Logout fontSize="small" />
+            <LogOut size={20}/>
           </ListItemIcon>
           Logout
         </MenuItem>

@@ -13,7 +13,7 @@ import { SearchBar } from "@components/search-bar";
 import { UserDetailsDto } from "@lib/network/swagger-client";
 import useLocalStorage from "use-local-storage";
 import { DataListSettings } from "types";
-import { Add, Download, Upload } from "@mui/icons-material";
+import { Plus, Download, Upload } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Avatar, Button, ListItemAvatar } from "@mui/material";
 import { getAddFormRoute } from "@lib/router";
@@ -102,7 +102,7 @@ export const UserList = () => {
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Add />}>
+    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus />}>
       Add user
     </Button>
   );

@@ -2,8 +2,7 @@ import {
   List, useMediaQuery, useTheme, CircularProgress, IconButton, Tooltip 
 } from "@mui/material";
 import { useEffect, useCallback } from "react";
-import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import MenuIcon from "@mui/icons-material/Menu";
+import { PanelLeftOpen, Menu } from "lucide-react";  
 import { 
   ListItemIconStyled, 
   ListSubheaderStyled, 
@@ -93,7 +92,7 @@ export const Sidebar = ({
                 size="small"
                 sx={{ ml: 1 }}
               >
-                {isCollapsed ? <MenuIcon /> : <MenuOpenIcon />}
+                {isCollapsed ? <Menu /> : <PanelLeftOpen />}
               </IconButton>
             </Tooltip>
           )}

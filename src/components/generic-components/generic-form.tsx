@@ -20,8 +20,7 @@ import {
 } from "@components/generic-components/edit-components";
 import { validate } from "@components/generic-components/edit-components/validator";
 import { ArrayEdit } from "./edit-components/array-edit";
-import { DataManagementBlock } from "@components/data-management";
-import { GenericViewDeleteContainer, StyledDivider } from "./index.styled";
+import { StyledDivider } from "./index.styled";
 import { useCoreModuleNavigation } from "@hooks";
 import { TextView } from "./view-components/text-view";
 import { BoolView } from "./view-components/bool-view";
@@ -445,7 +444,7 @@ const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
                 borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
               }}>
               {SectionIcon && 
-                    <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}><SectionIcon/></Box>
+                    <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}><SectionIcon size={22}/></Box>
               }
               <Typography variant="subtitle1" fontWeight="500" color="primary.main" >
                 {section.title}
@@ -473,7 +472,7 @@ const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
           <Grid container size={{ xs: 12, sm: 12 }}>
           {SectionIcon && (
                 <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
-                  <SectionIcon />
+                  <SectionIcon size={22}/>
                 </Box>
               )}
           <Typography variant="subtitle1" fontWeight="500" color="primary.main" >
@@ -501,22 +500,6 @@ const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
     <CardContent>
         </CardContent>
       </Card>
-      {!editable && deleteOptionProps && (
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 8, sm: 8 }}>
-            <GenericViewDeleteContainer>
-              <DataManagementBlock
-                header={deleteOptionProps.header}
-                description={deleteOptionProps.description}
-                entity={deleteOptionProps.entity}
-                handleDeleteAsync={(id) => deleteOptionProps.deleteItemFn(id as number)}
-                itemId={itemId!}
-                successNavigationRoute={deleteOptionProps.listRoute}
-              ></DataManagementBlock>
-            </GenericViewDeleteContainer>
-          </Grid>
-        </Grid>
-      )}
     </>
   );
 }

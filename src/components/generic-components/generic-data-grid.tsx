@@ -20,8 +20,7 @@ import {
 } from "@components/generic-components/common";
 import { ActionButtonContainer } from "@components/data-table/index.styled";
 import { IconButton } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { Edit, ArrowRight } from "lucide-react";
 import dayjs from "dayjs";
 import useLocalStorage from "use-local-storage";
 
@@ -79,12 +78,12 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         <ActionButtonContainer>
           {editNavigate && (
             <IconButton onClick={() => editNavigate(row)}>
-              <EditIcon fontSize="small" />
+              <Edit size={23}/>
             </IconButton>
           )}
           {detailsNavigate && (
             <IconButton onClick={() => detailsNavigate(row)}>
-              <ArrowForwardIcon fontSize="small" />
+              <ArrowRight size={23}/>
             </IconButton>
           )}
         </ActionButtonContainer>

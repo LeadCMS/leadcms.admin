@@ -17,7 +17,7 @@ import { dataListBreadcrumbLinks } from "utils/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { Fragment, useRef, useState } from "react";
-import { Add, Download, Upload } from "@mui/icons-material";
+import { Plus, Download, Upload } from "lucide-react";      
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
 import { getModelByName } from "lib/network/swagger-models";
@@ -188,7 +188,7 @@ export const Contacts = () => {
 
   const extraActions = [
     <Fragment key={"import-action"}>
-      <Button key={"import-btn"} startIcon={<Upload />} onClick={handleImportOpen}>
+      <Button key={"import-btn"} startIcon={<Upload size={22}/>} onClick={handleImportOpen}>
         Import
       </Button>
       {importFieldsObject && (
@@ -202,7 +202,7 @@ export const Contacts = () => {
       )}
     </Fragment>,
     <Fragment key={"export-action"}>
-      <Button key={"export-btn"} startIcon={<Download />} onClick={handleExportOpen}>
+      <Button key={"export-btn"} startIcon={<Download size={22}/>} onClick={handleExportOpen}>
         Export
       </Button>
       {openExport && (
@@ -216,7 +216,7 @@ export const Contacts = () => {
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Add />}>
+    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus size={22}/>}>
       Add contact
     </Button>
   );

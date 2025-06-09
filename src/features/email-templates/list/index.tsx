@@ -5,7 +5,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { EmailTemplateDetailsDto } from "@lib/network/swagger-client";
 import { getAddFormRoute } from "@lib/router";
-import { Add, Download } from "@mui/icons-material";
+import { Plus, Download } from "lucide-react";
 import Button from "@mui/material/Button";
 import { GridColDef } from "@mui/x-data-grid";
 import { useRequestContext } from "@providers/request-provider";
@@ -133,7 +133,7 @@ export const EmailTemplatesList = () => {
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Add />}>
+    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus />}>
       Add template
     </Button>
   );

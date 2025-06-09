@@ -2,7 +2,7 @@
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import SaveIcon from "@mui/icons-material/Save";
+import { Save } from "lucide-react"; 
 import { Box, Fade } from "@mui/material";
 import { useEffect, useState } from "react";
 import React from "react";
@@ -27,7 +27,7 @@ const SavingBarEnd = React.forwardRef<HTMLDivElement>((props, ref) => {
     <div {...props} ref={ref}>
       <Grid container spacing={3} sm="auto" xs="auto">
         <Grid size={{ xs: "auto" }}>
-          <SaveIcon sx={{ fontSize: 14 }} />
+          <Save />
         </Grid>
         <Grid size={{ xs: "auto" }}>
           <Typography>Draft saved locally</Typography>
