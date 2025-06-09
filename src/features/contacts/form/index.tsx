@@ -32,18 +32,7 @@ import { useConfig } from "@providers/config-provider";
 import { prefixOptions, timezones } from "utils/constants";
 
 // Icons
-import PersonIcon from "@mui/icons-material/Person";
-import ContactsIcon from "@mui/icons-material/Contacts";
-import HomeIcon from "@mui/icons-material/Home";
-import WorkIcon from "@mui/icons-material/Work";
-import ShareIcon from "@mui/icons-material/Share";
-import LinkIcon from "@mui/icons-material/Link";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import SaveIcon from "@mui/icons-material/Save";
-import CancelIcon from "@mui/icons-material/Cancel";
+import { User, XCircle, Contact, Home, Briefcase, Facebook, Instagram, Twitter, Linkedin, Share2, Link, Save } from "lucide-react";
 
 interface ContactFormProps {
   contact: ContactDetailsDto;
@@ -231,11 +220,11 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
 
   const getSocialMediaIcon = (platform: string) => {
     switch (platform) {
-      case "facebook": return <FacebookIcon color="primary" />;
-      case "instagram": return <InstagramIcon sx={{ color: "#E1306C" }} />;
-      case "twitter": return <TwitterIcon sx={{ color: "#1DA1F2" }} />;
-      case "linkedin": return <LinkedInIcon sx={{ color: "#0077B5" }} />;
-      default: return <LinkIcon />;
+      case "facebook": return <Facebook color="#1877F3" />;
+      case "instagram": return <Instagram color="#E1306C"  />;
+      case "twitter": return <Twitter color= "#1DA1F2" />;
+      case "linkedin": return <Linkedin color= "#0077B5" />;
+      default: return <Link />;
     }
   };
 
@@ -284,7 +273,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
             variant="outlined"
             color="primary"
             onClick={handleCancel}
-            startIcon={<CancelIcon />}
+            startIcon={<XCircle />}
             size="medium"
           >
             Cancel
@@ -296,7 +285,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
             disabled={isLoading || formik.isSubmitting}
             variant="contained"
             color="primary"
-            startIcon={<SaveIcon />}
+            startIcon={<Save />}
             size="medium"
             onClick={() => formik.handleSubmit()}
           >
@@ -344,7 +333,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
           </Box>
           
           <Box sx={{ p: { xs: 2.5, sm: 3 } }}>
-            <SectionHeader icon={<PersonIcon />} title="Personal Information" />
+            <SectionHeader icon={<User />} title="Personal Information" />
             <Grid container spacing={3} marginBottom={5}>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <Autocomplete
@@ -426,7 +415,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
               </Grid>
             </Grid>
 
-            <SectionHeader icon={<ContactsIcon />} title="Contact Information" />
+            <SectionHeader icon={<Contact />} title="Contact Information" />
             <Grid container spacing={3} marginBottom={5}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
@@ -459,7 +448,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
               </Grid>
             </Grid>
 
-            <SectionHeader icon={<WorkIcon />} title="Job Information" />
+            <SectionHeader icon={<Briefcase />} title="Job Information" />
             <Grid container spacing={3} marginBottom={5}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
@@ -502,7 +491,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
               </Grid>
             </Grid>
 
-            <SectionHeader icon={<HomeIcon />} title="Address" />
+            <SectionHeader icon={<Home />} title="Address" />
             <Grid container spacing={3} marginBottom={5}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
@@ -632,7 +621,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
               </Grid>
             </Grid>
 
-            <SectionHeader icon={<ShareIcon />} title="Social Media" />
+            <SectionHeader icon={<Share2/>} title="Social Media" />
             <Grid container spacing={3} marginBottom={5}>
               {["facebook", "instagram", "twitter", "linkedin"].map((platform) => (
                 <Grid size={{ xs: 12, sm: 6 }} marginBottom={1} key={platform}>

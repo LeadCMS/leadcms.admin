@@ -1,7 +1,7 @@
 import Dropzone, { Accept, FileRejection } from "react-dropzone";
 import { BoxStyled } from "./index.styled";
 import { Button, Grid, Box, IconButton } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import { X } from "lucide-react";
 import { useNotificationsService } from "@hooks";
 
 export interface ImageData {
@@ -120,7 +120,7 @@ const FileDropdown = ({
               }}
               size="small"
             >
-              <CloseIcon fontSize="small" />
+              <X />
             </IconButton>
           </Box>
         )}

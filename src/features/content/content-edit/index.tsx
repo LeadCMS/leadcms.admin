@@ -63,15 +63,12 @@ import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
-import DeleteIcon from "@mui/icons-material/Delete";
-import SaveIcon from "@mui/icons-material/Save";
-import CancelIcon from "@mui/icons-material/Cancel";
+import { Trash2, XCircle, Save, ExternalLink } from "lucide-react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import MonacoEditor from "@monaco-editor/react";
 
 interface ContentEditProps {
@@ -430,7 +427,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                   <Button
                     variant="outlined"
                     color="error"
-                    startIcon={<DeleteIcon />}
+                    startIcon={<Trash2 />}
                     onClick={() => setDeleteDialogOpen(true)}
                     disabled={formik.isSubmitting}
                     size="medium"
@@ -476,7 +473,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                 color="primary"
                 onClick={() => handleNavigation(CoreModule.content)}
                 disabled={formik.isSubmitting}
-                startIcon={<CancelIcon />}
+                startIcon={<XCircle />}
                 size="medium"
               >
                 Cancel
@@ -486,7 +483,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                 variant="contained"
                 color="primary"
                 disabled={!(wasModified || coverWasModified) || formik.isSubmitting}
-                startIcon={isSaving ? <CircularProgress size={16} /> : <SaveIcon />}
+                startIcon={isSaving ? <CircularProgress size={16} /> : <Save />}
                 size="medium"
               >
                 {isSaving ? "Saving..." : "Save"}
@@ -596,7 +593,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                   <Button
                     variant="text"
                     onClick={() => setPreviewDialogOpen(true)}
-                    endIcon={<OpenInNewIcon fontSize="small" />}
+                    endIcon={<ExternalLink size={20} />}
                     sx={{
                       color: "#1976d2",
                       textTransform: "none",

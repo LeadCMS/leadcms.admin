@@ -19,7 +19,7 @@ import {
   IconButton,
   CircularProgress,
 } from "@mui/material";
-import InfoIcon from "@mui/icons-material/Info";
+import { Info } from "lucide-react";
 import { 
   ContentFormat, displayNameToId, addContentType 
 } from "./content-types";
@@ -128,7 +128,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
               Features
               <Tooltip title="Define which features this content type will support">
                 <IconButton size="small" sx={{ ml: 0.5, p: 0 }}>
-                  <InfoIcon fontSize="small" />
+                  <Info size={20} />
                 </IconButton>
               </Tooltip>
             </Typography>

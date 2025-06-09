@@ -6,7 +6,7 @@ import {
   Box,
   MenuItem
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
+import { Plus } from "lucide-react";
 import { idToDisplayName } from "./content-types";
 import { ContentTypeForm } from "./content-type-form";
 import { ContentTypeDetailsDto } from "@lib/network/swagger-client";
@@ -68,7 +68,7 @@ export const ContentTypeDropdown = ({
               </MenuItem>
             ))}
             <MenuItem value="__add__" onClick={() => setDialogOpen(true)}>
-              <AddIcon fontSize="small" sx={{ mr: 1 }} />Add Custom Type
+              <Plus size={20} />Add Custom Type
             </MenuItem>
           </TextField>
         </Grid>

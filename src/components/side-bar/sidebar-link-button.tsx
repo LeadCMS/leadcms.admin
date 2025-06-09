@@ -1,9 +1,9 @@
-import { SvgIconComponent } from "@mui/icons-material";
+import { LucideProps } from "lucide-react";
 import { GhostLink } from "components/ghost-link";
 import { ListItemIconStyled, SidebarLink, SidebarLinkText } from "./index.styled";
 
 type SidebarLinkButtonProps = {
-  Icon?: SvgIconComponent;
+  Icon?: React.ComponentType<LucideProps>;
   title: string;
   selected?: boolean;
   to: string;

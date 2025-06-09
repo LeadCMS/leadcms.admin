@@ -22,7 +22,7 @@ import {
   TextField,
   Button,
 } from "@mui/material";
-import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
+import { Camera, XCircle, Save } from "lucide-react";
 import { UserEditProps } from "./types";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { useUserInfo } from "@providers/user-provider";
@@ -164,6 +164,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
           color="primary"
           onClick={() => handleNavigation(CoreModule.users)}
           size="large"
+          startIcon={<XCircle size={22} />}
         >
           Cancel
         </Button>
@@ -173,6 +174,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
           type="submit" 
           variant="contained" 
           size="large"
+          startIcon={<Save size={22} />}
         >
           Save
         </Button>
@@ -217,7 +219,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                       badgeContent={
                         !readonly ? (
                           <StyledAvatar onClick={handleImageUpload}>
-                            <AddAPhotoIcon />
+                            <Camera />
                           </StyledAvatar>
                         ) : undefined
                       }

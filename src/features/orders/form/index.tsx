@@ -25,9 +25,7 @@ import zod from "zod";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
-import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
-import LinkIcon from '@mui/icons-material/Link';
+import { Receipt, CircleDollarSign, Link, XCircle, Save } from "lucide-react";
 
 interface OrderFormProps {
   order: OrderDetailsDto | undefined;
@@ -170,6 +168,8 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
         color="primary"
         onClick={handleCancel}
         size="large"
+        startIcon={<XCircle size={22} />}
+
       >
         Cancel
       </Button>
@@ -181,6 +181,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
           variant="contained"
           color="primary"
           size="large"
+          startIcon={<Save size={22} />}
         >
           Save
         </Button>
@@ -252,7 +253,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
             </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<ReceiptLongIcon />} title="Orders" />
+                <SectionHeader icon={<Receipt size={22}/>} title="Orders" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
@@ -298,7 +299,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<CurrencyExchangeIcon />} title="Currency" />
+                <SectionHeader icon={<CircleDollarSign size={22} />} title="Currency" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <Tooltip title="Exchange Rate field must contain only numbers">
@@ -336,7 +337,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={< LinkIcon/>} title="Other" />
+                <SectionHeader icon={< Link size={22}/>} title="Other" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField

@@ -7,8 +7,7 @@ import {
 } from "@mui/x-data-grid";
 import { ActionButtonContainer, DataTableContainer } from "./index.styled";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
-import EditIcon from "@mui/icons-material/Edit";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { Edit, ArrowRight} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getEditFormRoute, getViewFormRoute } from "lib/router";
 import { IconButton } from "@mui/material";
@@ -64,10 +63,10 @@ export const DataTableGrid = ({
       return (
         <ActionButtonContainer>
           <IconButton disabled={disableEditRoute} onClick={() => handleEditClick(row)}>
-            <EditIcon fontSize="small" />
+            <Edit size={20}/>
           </IconButton>
           <IconButton disabled={disableViewRoute} onClick={() => handleForwardClick(row)}>
-            <ArrowForwardIcon fontSize="small" />
+            <ArrowRight size={20}/>
           </IconButton>
         </ActionButtonContainer>
       );

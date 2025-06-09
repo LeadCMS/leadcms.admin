@@ -1,21 +1,23 @@
 import { CoreModule, getCoreModuleRoute } from "../lib/router";
 import {
-  Dashboard,
+  LayoutDashboard,
+  FileText,
   Newspaper,
-  Comment,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Inventory,
-  MonetizationOn,
-  People,
-  Business,
-  Email,
-  Unsubscribe,
-  Web,
-  Person,
-  Book,
-  Info
-} from "@mui/icons-material";
+  MessageSquare,
+  Image,
+  Link,
+  Boxes,
+  ShoppingCart,
+  DollarSign,
+  Users,
+  Building2,
+  Mail,
+  BellOff,
+  Globe,
+  User,
+  BookOpen,
+  HelpCircle
+} from "lucide-react";
 
 export const MENU_CONFIG = [
   {
@@ -24,8 +26,8 @@ export const MENU_CONFIG = [
       {
         id: "dashboard",
         label: "Dashboard",
-        icon: <Dashboard />, 
-        entity: null, // Always show
+        icon: <LayoutDashboard />,
+        entity: null,
         route: getCoreModuleRoute(CoreModule.dashboard)
       }
     ]
@@ -36,28 +38,28 @@ export const MENU_CONFIG = [
       {
         id: "content",
         label: "Content",
-        icon: <Newspaper />, 
+        icon: <FileText />,
         entity: "content",
         route: getCoreModuleRoute(CoreModule.content)
       },
       {
         id: "comments",
         label: "Comments",
-        icon: <Comment />, 
+        icon: <MessageSquare />,
         entity: "comment",
         route: getCoreModuleRoute(CoreModule.comments)
       },
       {
         id: "media",
         label: "Media",
-        icon: <ImageIcon />, 
+        icon: <Image />,
         entity: "media",
         route: getCoreModuleRoute(CoreModule.media)
       },
       {
         id: "links",
         label: "Links",
-        icon: <LinkIcon />, 
+        icon: <Link />,
         entity: "link",
         route: getCoreModuleRoute(CoreModule.links)
       }
@@ -69,28 +71,28 @@ export const MENU_CONFIG = [
       {
         id: "orders",
         label: "Orders",
-        icon: <Inventory />, 
+        icon: <ShoppingCart />,
         entity: "order",
         route: getCoreModuleRoute(CoreModule.orders)
       },
       {
         id: "deals",
         label: "Deals",
-        icon: <MonetizationOn />, 
+        icon: <DollarSign />,
         entity: "deal",
         route: getCoreModuleRoute(CoreModule.deals)
       },
       {
         id: "contacts",
         label: "Contacts",
-        icon: <People />, 
+        icon: <Users />,
         entity: "contact",
         route: getCoreModuleRoute(CoreModule.contacts)
       },
       {
         id: "accounts",
         label: "Accounts",
-        icon: <Business />, 
+        icon: <Building2 />,
         entity: "account",
         route: getCoreModuleRoute(CoreModule.accounts)
       }
@@ -102,21 +104,21 @@ export const MENU_CONFIG = [
       {
         id: "emailTemplates",
         label: "Email templates",
-        icon: <Email />, 
+        icon: <Mail />,
         entity: "emailtemplate",
         route: getCoreModuleRoute(CoreModule.emailTemplates)
       },
       {
         id: "unsubscribes",
         label: "Unsubscribes",
-        icon: <Unsubscribe />, 
+        icon: <BellOff />,
         entity: "unsubscribe",
         route: getCoreModuleRoute(CoreModule.unsubscribes)
       },
       {
         id: "domains",
         label: "Domains",
-        icon: <Web />, 
+        icon: <Globe />,
         entity: "domain",
         route: getCoreModuleRoute(CoreModule.domains)
       }
@@ -128,21 +130,21 @@ export const MENU_CONFIG = [
       {
         id: "users",
         label: "Users",
-        icon: <Person />, 
+        icon: <User />,
         entity: "user",
         route: getCoreModuleRoute(CoreModule.users)
       },
       {
         id: "activityLogs",
         label: "Activity logs",
-        icon: <Book />, 
+        icon: <BookOpen />,
         entity: "activity-log",
         route: getCoreModuleRoute(CoreModule.activityLogs)
       },
       {
         id: "about",
         label: "About",
-        icon: <Info />, 
+        icon: <HelpCircle />,
         entity: null,
         route: getCoreModuleRoute(CoreModule.about)
       }

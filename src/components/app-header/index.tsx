@@ -2,7 +2,7 @@ import { Box, IconButton, useMediaQuery, useTheme } from "@mui/material";
 import { AppBarStyled, AppBarToolbar } from "./index.styled";
 import { DropdownMenu } from "./dropdown-menu";
 import { BreadCrumbNavigation } from "@components/breadcrumbs";
-import MenuIcon from "@mui/icons-material/Menu";
+import { Menu } from "lucide-react";
 import { useSidebar } from "@providers/sidebar-provider";
 
 interface AppHeaderProps {
@@ -38,7 +38,7 @@ export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) =>
                 }
               }}
             >
-              <MenuIcon />
+              <Menu />
             </IconButton>
           )}
         </Box>

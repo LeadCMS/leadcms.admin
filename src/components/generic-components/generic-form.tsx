@@ -445,7 +445,7 @@ const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
                 borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
               }}>
               {SectionIcon && 
-                    <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}><SectionIcon/></Box>
+                    <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}><SectionIcon size={22}/></Box>
               }
               <Typography variant="subtitle1" fontWeight="500" color="primary.main" >
                 {section.title}
@@ -473,7 +473,7 @@ const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
           <Grid container size={{ xs: 12, sm: 12 }}>
           {SectionIcon && (
                 <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
-                  <SectionIcon />
+                  <SectionIcon size={22}/>
                 </Box>
               )}
           <Typography variant="subtitle1" fontWeight="500" color="primary.main" >

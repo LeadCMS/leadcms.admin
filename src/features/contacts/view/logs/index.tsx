@@ -6,7 +6,7 @@ import { Card, CardContent, Grid, IconButton, Typography } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { useRequestContext } from "@providers/request-provider";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getViewFormRoute, viewFormRoute } from "@lib/router";
 import { useEffect, useState } from "react";
@@ -99,7 +99,7 @@ export const ContactLogs = () => {
       return (
         <ActionButtonContainer>
           <IconButton disabled onClick={() => handleForwardClick(row)}>
-            <ArrowForwardIcon fontSize="small" />
+            <ArrowRight fontSize="small" />
           </IconButton>
         </ActionButtonContainer>
       );

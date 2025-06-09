@@ -5,6 +5,7 @@ import { DomainCreateDto, DomainDetailsDto, DomainUpdateDto } from "@lib/network
 import { domainFormBreadcrumbLinks } from "../constants";
 import { useState } from "react";
 import { Button,Box } from "@mui/material";
+import { XCircle, Save } from "lucide-react";
 
 const fieldSections = {
   sections: [
@@ -31,7 +32,7 @@ const fieldSections = {
     {
       id: "dnsRecords",
       title: "DNS Records",
-      fields: ["                                                                               "],
+      fields: [""],
     },
   ],
 };
@@ -66,6 +67,7 @@ const handleCancelClick = () => setTriggerCancel(true);
           variant="outlined"
           onClick={handleCancelClick}
           size="large"
+          startIcon={<XCircle size={22} />}
         >
           Cancel
         </Button>
@@ -76,6 +78,7 @@ const handleCancelClick = () => setTriggerCancel(true);
           variant="contained"
           onClick={handleSaveClick}
           size="large"
+          startIcon={<Save size={22} />}
         >
           Save
         </Button>

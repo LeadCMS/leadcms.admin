@@ -1,4 +1,4 @@
-import { NavigateNext } from "@mui/icons-material";
+import { ChevronRight } from "lucide-react";
 import { Breadcrumbs, Link, Typography } from "@mui/material";
 import { GhostLink } from "components/ghost-link";
 
@@ -14,7 +14,7 @@ interface BreadCrumbProps {
 
 export const BreadCrumbNavigation = ({ links = [], current }: BreadCrumbProps) => {
   return (
-    <Breadcrumbs separator={<NavigateNext fontSize="small" />}>
+    <Breadcrumbs separator={<ChevronRight size={20}/>}>
       {Array.isArray(links) &&
         links.map((link, index) => (
           <Link key={index} to={link.toRoute} component={GhostLink} underline="hover">

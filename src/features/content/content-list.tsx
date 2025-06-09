@@ -23,12 +23,7 @@ import {
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
 import { useEffect, useState, useRef } from "react";
-import {
-  Add,
-  MoreHoriz,
-  Edit,
-  Search as SearchIcon,
-} from "@mui/icons-material";
+import { Plus, Search, MoreHorizontal, Edit} from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { contentBreadcrumbLinks } from "@features/content/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
@@ -153,7 +148,7 @@ export const ContentList = () => {
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
+              <Search size={20} />
             </InputAdornment>
           ),
         }}
@@ -173,7 +168,7 @@ export const ContentList = () => {
           variant="contained"
           to="/content/new"
           component={GhostLink}
-          startIcon={<Add />}
+          startIcon={<Plus />}
           sx={{ height: 40 }}
         >
           {"Add Content"}
@@ -368,7 +363,7 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
           </Tooltip>
           <Tooltip title="More">
             <IconButton size="small" onClick={handleMenuOpen}>
-              <MoreHoriz fontSize="small" />
+              <MoreHorizontal size={20} />
             </IconButton>
           </Tooltip>
           <Menu

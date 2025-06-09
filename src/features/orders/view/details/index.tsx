@@ -25,8 +25,7 @@ import { useRouteParams } from "typesafe-routes";
 import { execDeleteWithToast, getCountryByCode, getFormattedDateTime } from "utils/general-helper";
 import { GhostLink } from "@components/ghost-link";
 import { ActionButtonContainer } from "@components/data-table/index.styled";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { Edit, XCircle } from "lucide-react";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useFormik, FormikHelpers } from "formik";
 import zod from "zod";
@@ -208,10 +207,10 @@ export const OrderView = () => {
       return (
         <ActionButtonContainer>
           <IconButton onClick={() => handleEditClick(params)}>
-            <EditIcon fontSize="small" />
+            <Edit size={22} />
           </IconButton>
           <IconButton disabled={isEdit} onClick={() => handleDelete(params)}>
-            <DeleteIcon fontSize="small" />
+            <XCircle size={22} />
           </IconButton>
         </ActionButtonContainer>
       );

@@ -9,7 +9,7 @@ import {
   Box,
   CircularProgress,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Eye, EyeOff } from "lucide-react";
 import { LoginDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { LoginContainer, StyledForm, Logo, MicrosoftButton, OrText, LogoRow } from "./index.styled";
@@ -138,7 +138,7 @@ export const Login = () => {
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                      {showPassword ? <EyeOff /> : <Eye />}
                     </IconButton>
                   </InputAdornment>
                 ),

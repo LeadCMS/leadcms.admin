@@ -17,7 +17,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { SearchBar } from "@components/search-bar";
 import { Fragment, useRef, useState } from "react";
-import { Add, Download, Upload } from "@mui/icons-material";
+import { Plus, Download, Upload} from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import { CsvExport } from "@components/export";
 import useLocalStorage from "use-local-storage";
@@ -165,7 +165,7 @@ export const Accounts = () => {
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Add />}>
+    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus />}>
       Add account
     </Button>
   );

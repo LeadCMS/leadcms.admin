@@ -1,25 +1,21 @@
-import PersonIcon from "@mui/icons-material/Person";
-import CommentIcon from "@mui/icons-material/Comment";
-import InfoIcon from "@mui/icons-material/Info";
-import DataObjectIcon from "@mui/icons-material/DataObject";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { User, HelpCircle, MessageCircle, Info, Code2 } from "lucide-react";
 
 export const iconKeywordMap = [
   {
     keywords: ["author details", "author", "user", "creator", "writer"],
-    icon: PersonIcon,
+    icon: User,
   },
   {
     keywords: ["comment body", "comment", "body", "text", "message"],
-    icon: CommentIcon,
+    icon: MessageCircle,
   },
   {
     keywords: ["context", "background", "about", "reference"],
-    icon: InfoIcon,
+    icon: Info,
   },
   {
     keywords: ["meta", "metadata", "details", "info"],
-    icon: DataObjectIcon,
+    icon: Code2,
   },
 ];
-export const defaultIcon = HelpOutlineIcon;
+export const defaultIcon = HelpCircle;

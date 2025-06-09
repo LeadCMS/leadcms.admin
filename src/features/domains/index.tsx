@@ -21,7 +21,7 @@ import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { SearchBar } from "@components/search-bar";
 import { Button } from "@mui/material";
-import { Add, Download, Upload } from "@mui/icons-material";
+import { Plus, Download, Upload } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import { CsvExport } from "@components/export";
 import { GhostLink } from "@components/ghost-link";
@@ -186,7 +186,7 @@ export const Domains = () => {
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Add />}>
+    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus />}>
       Add domain
     </Button>
   );

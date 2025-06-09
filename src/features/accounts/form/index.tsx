@@ -26,12 +26,7 @@ import zod from "zod";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
-import InfoIcon from '@mui/icons-material/Info';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import ShareIcon from '@mui/icons-material/Share';
-import LinkIcon from '@mui/icons-material/Link';
+import { XCircle, Save, Plus, Minus, Info, MapPin, Share2, Link } from "lucide-react";
 
 interface AccountFormProps {
   account: AccountDetailsDto;
@@ -202,6 +197,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
         color="primary"
         onClick={handleCancel}
         size="large"
+        startIcon={<XCircle size={22} />}
       >
         Cancel
       </Button>
@@ -213,6 +209,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
         variant="contained"
         color="primary"
         size="large"
+        startIcon={ isEdit? <Save size={22} /> : <Plus size={22}/>}
       >
         {isEdit ? "Save" : "Add"}
       </Button>
@@ -248,7 +245,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
           <CardContent>
             <Grid container spacing={4} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12}}>
-                <SectionHeader icon={<InfoIcon />} title="About" />
+                <SectionHeader icon={<Info size={22} />} title="About" />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
@@ -327,7 +324,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<LocationOnIcon />} title="Location" />
+                <SectionHeader icon={<MapPin size={22}/>} title="Location" />
               </Grid>
               <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
@@ -409,7 +406,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<ShareIcon />} title="Social Media" />
+                <SectionHeader icon={<Share2 size={22}/>} title="Social Media" />
               </Grid>
               <Grid size={{ xs: 12, sm: 12 }}>
                 <Grid container spacing={3}>
@@ -439,7 +436,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                         <Grid size={{ xs: 12, sm: 4 }}>
                           <Tooltip title="Remove social media">
                             <IconButton onClick={() => handleSocialMediaRemove(key)}>
-                              <RemoveIcon />
+                              <Minus size={22}/>
                             </IconButton>
                           </Tooltip>
                         </Grid>
@@ -468,7 +465,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Tooltip title="Add social media">
                       <IconButton onClick={handleSocialMediaAdd}>
-                        <AddIcon />
+                        <Plus size={22}/>
                       </IconButton>
                     </Tooltip>
                   </Grid>
@@ -478,7 +475,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<LinkIcon />} title="Other" />
+                <SectionHeader icon={<Link size={22}/>} title="Other" />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField

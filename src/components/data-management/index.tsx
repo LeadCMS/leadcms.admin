@@ -14,8 +14,7 @@ import {
   Box,
 } from "@mui/material";
 import { CardHeaderStyled, DeleteButtonContainer } from "./index.styled";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import { Trash2, Edit } from "lucide-react";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { HttpResponse, ProblemDetails } from "@lib/network/swagger-client";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
@@ -140,7 +139,7 @@ export const DataManagementBlock = ({
      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
       <Button
         disabled={isDeleting}
-        startIcon={<DeleteIcon />}
+        startIcon={<Trash2 />}
         color="error"
         onClick={handleDelete}
         variant="contained"  
@@ -152,7 +151,7 @@ export const DataManagementBlock = ({
       {showEditButton && (
       <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
         <Button
-          startIcon={<EditIcon />}
+          startIcon={<Edit />}
           variant="outlined" 
           size="large" 
           onClick={editRecord}
@@ -178,7 +177,7 @@ export const DataManagementBlock = ({
           <DeleteButtonContainer>
             <Button
               disabled={isDeleting}
-              startIcon={<DeleteIcon />}
+              startIcon={<Trash2 />}
               variant="contained"
               color="error"
               onClick={handleDelete}
@@ -190,7 +189,7 @@ export const DataManagementBlock = ({
           {showEditButton && (
             <DeleteButtonContainer>
               <Button
-                startIcon={<EditIcon />}
+                startIcon={<Edit />}
                 size="small"
                 variant="contained"
                 onClick={editRecord}

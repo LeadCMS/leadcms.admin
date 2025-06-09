@@ -1,6 +1,6 @@
 import MDEditor, { EditorContext, ICommand, commands } from "@uiw/react-md-editor";
 import { ImageUpload } from "./commands";
-import AppsIcon from "@mui/icons-material/Apps";
+import { AppWindow } from "lucide-react";
 import { ImageUploadingContext, MarkdownEditorProps, onFrontmatterErrorChangeFunc } from "./types";
 import { useEffect, useState, useContext, createContext } from "react";
 import { MarkdownViewerFunc } from "@components/markdown-viewer";
@@ -109,7 +109,7 @@ const MarkdownEditor = ({
       name: "LeadCMS components",
       groupName: "leadcms-components",
       buttonProps: { "aria-label": "Insert leadcms custom components" },
-      icon: <AppsIcon sx={{ fontSize: 15 }} />,
+      icon: <AppWindow size={14}/>,
     }),
   ]);
   const onErrorChange = (error: ValidateFrontmatterError | null) => {
