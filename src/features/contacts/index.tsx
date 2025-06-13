@@ -216,7 +216,8 @@ export const Contacts = () => {
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus size={22}/>}>
+    <Button variant="contained" 
+      to={getAddFormRoute()} component={GhostLink} startIcon={<Plus size={22}/>}>
       Add contact
     </Button>
   );

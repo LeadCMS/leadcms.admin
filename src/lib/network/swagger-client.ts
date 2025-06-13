@@ -5006,6 +5006,51 @@ export interface MediaDetailsDto {
    * @example "string"
    */
   location?: string;
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Scope Uid
+   * @example "string"
+   */
+  scopeUid?: string;
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+  /**
+   * Size
+   * @format int64
+   */
+  size?: number;
+  /**
+   * Extension
+   * @example "string"
+   */
+  extension?: string;
+  /**
+   * Mime Type
+   * @example "string"
+   */
+  mimeType?: string;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
 }
 
 export interface MsalConfigDto {
@@ -6244,7 +6289,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.40.0
+ * @version 1.2.44.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -6435,6 +6480,29 @@ export class Api<
     /**
      * No description
      *
+     * @tags Accounts
+     * @name AccountsSyncList
+     * @request GET:/api/accounts/sync
+     * @secure
+     */
+    accountsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/accounts/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags ActivityLog
      * @name ActivityLogList
      * @request GET:/api/activity-log
@@ -6591,6 +6659,29 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/comments/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
+     * @name CommentsSyncList
+     * @request GET:/api/comments/sync
+     * @secure
+     */
+    commentsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/comments/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -6799,6 +6890,29 @@ export class Api<
     /**
      * No description
      *
+     * @tags Contacts
+     * @name ContactsSyncList
+     * @request GET:/api/contacts/sync
+     * @secure
+     */
+    contactsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/contacts/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Content
      * @name ContentList
      * @request GET:/api/content
@@ -6972,6 +7086,29 @@ export class Api<
      * No description
      *
      * @tags Content
+     * @name ContentSyncList
+     * @request GET:/api/content/sync
+     * @secure
+     */
+    contentSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/content/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
      * @name ContentImportCreate
      * @request POST:/api/content/import
      * @secure
@@ -7016,16 +7153,39 @@ export class Api<
      * No description
      *
      * @tags ContentTypes
-     * @name ContentTypesImportCreate
-     * @request POST:/api/content-types/import
+     * @name ContentTypesList
+     * @request GET:/api/content-types
      * @secure
      */
-    contentTypesImportCreate: (
-      data: ContentTypeImportDto[],
+    contentTypesList: (
+      query?: {
+        query?: string;
+      },
       params: RequestParams = {},
     ) =>
-      this.request<ImportResult, void | ProblemDetails>({
-        path: `/api/content-types/import`,
+      this.request<ContentTypeDetailsDto[], void | ProblemDetails>({
+        path: `/api/content-types`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesCreate
+     * @request POST:/api/content-types
+     * @secure
+     */
+    contentTypesCreate: (
+      data: ContentTypeCreateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentTypeDetailsDto, void | ProblemDetails>({
+        path: `/api/content-types`,
         method: "POST",
         body: data,
         secure: true,
@@ -7094,43 +7254,20 @@ export class Api<
      * No description
      *
      * @tags ContentTypes
-     * @name ContentTypesCreate
-     * @request POST:/api/content-types
+     * @name ContentTypesImportCreate
+     * @request POST:/api/content-types/import
      * @secure
      */
-    contentTypesCreate: (
-      data: ContentTypeCreateDto,
+    contentTypesImportCreate: (
+      data: ContentTypeImportDto[],
       params: RequestParams = {},
     ) =>
-      this.request<ContentTypeDetailsDto, void | ProblemDetails>({
-        path: `/api/content-types`,
+      this.request<ImportResult, void | ProblemDetails>({
+        path: `/api/content-types/import`,
         method: "POST",
         body: data,
         secure: true,
         type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags ContentTypes
-     * @name ContentTypesList
-     * @request GET:/api/content-types
-     * @secure
-     */
-    contentTypesList: (
-      query?: {
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<ContentTypeDetailsDto[], void | ProblemDetails>({
-        path: `/api/content-types`,
-        method: "GET",
-        query: query,
-        secure: true,
         format: "json",
         ...params,
       }),
@@ -7151,6 +7288,29 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/content-types/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesSyncList
+     * @request GET:/api/content-types/sync
+     * @secure
+     */
+    contentTypesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/content-types/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -7317,6 +7477,29 @@ export class Api<
     /**
      * No description
      *
+     * @tags DealPipelines
+     * @name DealPipelinesSyncList
+     * @request GET:/api/deal-pipelines/sync
+     * @secure
+     */
+    dealPipelinesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/deal-pipelines/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags DealPipelineStages
      * @name DealPipelineStagesCreate
      * @request POST:/api/deal-pipeline-stages
@@ -7440,6 +7623,29 @@ export class Api<
     /**
      * No description
      *
+     * @tags DealPipelineStages
+     * @name DealPipelineStagesSyncList
+     * @request GET:/api/deal-pipeline-stages/sync
+     * @secure
+     */
+    dealPipelineStagesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/deal-pipeline-stages/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Deals
      * @name DealsCreate
      * @request POST:/api/deals
@@ -7551,6 +7757,29 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/deals/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deals
+     * @name DealsSyncList
+     * @request GET:/api/deals/sync
+     * @secure
+     */
+    dealsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/deals/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -7727,6 +7956,29 @@ export class Api<
     /**
      * No description
      *
+     * @tags Domains
+     * @name DomainsSyncList
+     * @request GET:/api/domains/sync
+     * @secure
+     */
+    domainsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/domains/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Email
      * @name EmailVerifyDetail
      * @request GET:/api/email/verify/{email}
@@ -7866,6 +8118,29 @@ export class Api<
     /**
      * No description
      *
+     * @tags EmailGroups
+     * @name EmailGroupsSyncList
+     * @request GET:/api/email-groups/sync
+     * @secure
+     */
+    emailGroupsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/email-groups/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags EmailTemplates
      * @name EmailTemplatesDetail
      * @request GET:/api/email-templates/{id}
@@ -7980,6 +8255,29 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/email-templates/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesSyncList
+     * @request GET:/api/email-templates/sync
+     * @secure
+     */
+    emailTemplatesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/email-templates/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -8297,6 +8595,29 @@ export class Api<
     /**
      * No description
      *
+     * @tags Links
+     * @name LinksSyncList
+     * @request GET:/api/links/sync
+     * @secure
+     */
+    linksSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/links/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Locks
      * @name LocksDetail
      * @request GET:/api/locks/{key}
@@ -8401,6 +8722,29 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.FormData,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaList
+     * @request GET:/api/media
+     * @secure
+     */
+    mediaList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaDetailsDto[], ProblemDetails>({
+        path: `/api/media`,
+        method: "GET",
+        query: query,
+        secure: true,
         format: "json",
         ...params,
       }),
@@ -8573,6 +8917,29 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/order-items/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags OrderItems
+     * @name OrderItemsSyncList
+     * @request GET:/api/order-items/sync
+     * @secure
+     */
+    orderItemsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/order-items/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -8761,6 +9128,29 @@ export class Api<
     /**
      * No description
      *
+     * @tags Orders
+     * @name OrdersSyncList
+     * @request GET:/api/orders/sync
+     * @secure
+     */
+    ordersSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/orders/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Promotion
      * @name PromotionDetail
      * @request GET:/api/promotion/{id}
@@ -8872,6 +9262,29 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/promotion/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Promotion
+     * @name PromotionSyncList
+     * @request GET:/api/promotion/sync
+     * @secure
+     */
+    promotionSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/promotion/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -9114,6 +9527,29 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/unsubscribes/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Unsubscribes
+     * @name UnsubscribesSyncList
+     * @request GET:/api/unsubscribes/sync
+     * @secure
+     */
+    unsubscribesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/unsubscribes/sync`,
         method: "GET",
         query: query,
         secure: true,

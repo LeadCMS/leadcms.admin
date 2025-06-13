@@ -19,6 +19,7 @@ import { EmailTemplatesModule } from "@features/email-templates";
 import { ActivityLogModule } from "@features/activity-log";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorBoundaryFallbackPage } from "@components/error-boundary-fallback-page";
+import { MediaModule } from "@features/media/lazy";
 
 export const ModuleLoader = () => {
   const { moduleName } = useRouteParams(coreModuleRoute);
@@ -40,6 +41,7 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.emailTemplates && <EmailTemplatesModule />}
           {moduleName === CoreModule.activityLogs && <ActivityLogModule />}
           {moduleName === CoreModule.dashboard && <DashboardModule />}
+          {moduleName === CoreModule.media && <MediaModule />}
           {!moduleName && <Navigate to={defaultModuleRoute} replace />}
         </Suspense>
       </ErrorBoundary>
