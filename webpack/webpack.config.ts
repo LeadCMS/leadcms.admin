@@ -74,11 +74,6 @@ const configuration: Configuration = {
   },
   devServer: {
     historyApiFallback: true,
-    // proxy: {
-    //   "/api/**": process.env.CORE_API,
-    //   changeOrigin: true,
-    //   secure: false,
-    // },
   },
   plugins: [
     new CleanWebpackPlugin(),

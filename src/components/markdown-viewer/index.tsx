@@ -16,9 +16,13 @@ import "./styles.css";
 // re-renders AST tree for each change which requires about 60 msecs which causes
 // HUGE performance drop when typing something
 
-const ImageUriTransformer = (src: string, alt: string, title: string | null) => {
+const ImageUriTransformer = (src: string) => {
   if (src.startsWith("/api")) {
-    return new URL(src, process.env.CORE_API).href;
+    const coreApi = process.env.CORE_API;
+    if (coreApi && coreApi.trim().length > 0) {
+      return new URL(src, coreApi).href;
+    }
+    return src;
   }
   return src;
 };

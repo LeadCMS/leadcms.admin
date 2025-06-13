@@ -55,7 +55,7 @@ export const ContentList = () => {
   const fetchData = async () => {
     setIsLoading(true);
     const filter: Record<string, unknown> = {
-      "filter[order]": "createdAt desc",
+      "filter[order]": "updatedAt desc",
       "filter[skip]": contentItems.length,
       "filter[limit]": 20,
     };

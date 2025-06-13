@@ -12,7 +12,7 @@ import { toFormikValidationSchema } from "zod-formik-adapter";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { emailTemplateFormBreadcrumbLinks } from "../constants";
 import { EmailTemplateEditContainer } from "./index.styled";
-import { Button, Card, CardContent, Grid, TextField , Tabs, Tab, Box} from "@mui/material";
+import { Button, Card, CardContent, Grid, TextField, Tabs, Tab, Box } from "@mui/material";
 import useLocalStorage from "use-local-storage";
 import {
   EmailTemplateEditData,
@@ -61,7 +61,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const { id } = useParams();
   const [tabIndex, setTabIndex] = useState(0);
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-  setTabIndex(newValue);
+    setTabIndex(newValue);
   };
 
   const [editorLocalStorage, setEditorLocalStorage] = useLocalStorage<EmailTemplateEditData>(
@@ -117,7 +117,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     handleNavigation(CoreModule.emailTemplates);
   };
 
-  const noopErrorHandler = (errors: string[]) => { 
+  const noopErrorHandler = (errors: string[]) => {
     console.log("Error occurred but error modal is not available:", errors);
   };
 
@@ -196,8 +196,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
             break;
           case EmailTemplateEditRestoreState.Accepted:
             await formik.setValues(
-              localStorageSnapshot.data.filter((data) => 
-                data.id === id)[0].savedData as ExtendedEmailTemplateDetailsDto
+              localStorageSnapshot.data.filter((data) => data.id === id)[0]
+                .savedData as ExtendedEmailTemplateDetailsDto
             );
             setWasModified(true);
             return;
@@ -217,47 +217,47 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       breadcrumbs={emailTemplateFormBreadcrumbLinks}
       currentBreadcrumb={formik.values.name}
       saveIndicatorElement={<SavingBar />}
-       actionButtons={
-      <>
-      <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-        {!readonly && (
-          <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
-            <Button
-              disabled={formik.isSubmitting}
-              variant="outlined"
-              color="primary"
-              onClick={() => handleNavigation(CoreModule.emailTemplates)}
-              startIcon={<XCircle />}
-              size="large"
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              variant="contained"  
-              size="large" 
-              startIcon={<Save />}
-              onClick={formik.submitForm}
-            >
-              Save
-            </Button>
-          </Box>
-        )}
-        {id && readonly && (
-          <DataManagementBlock
-            header="Data Management"
-            description="Please be aware that what
+      actionButtons={
+        <>
+          <Box sx={{ display: "flex", width: "100%", gap: 2 }}>
+            {!readonly && (
+              <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
+                <Button
+                  disabled={formik.isSubmitting}
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => handleNavigation(CoreModule.emailTemplates)}
+                  startIcon={<XCircle />}
+                  size="large"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  startIcon={<Save />}
+                  onClick={formik.submitForm}
+                >
+                  Save
+                </Button>
+              </Box>
+            )}
+            {id && readonly && (
+              <DataManagementBlock
+                header="Data Management"
+                description="Please be aware that what
             has been deleted can never be brought back."
-            entity="email template"
-            handleDeleteAsync={(id) => client.api.emailTemplatesDelete(id as number)}
-            itemId={+id}
-            successNavigationRoute={CoreModule.emailTemplates}
-            showEditButton
-            showOnlyButtons={true}
-          ></DataManagementBlock>
-        )}
-      </Box>  
-      </>   
+                entity="email template"
+                handleDeleteAsync={(id) => client.api.emailTemplatesDelete(id as number)}
+                itemId={+id}
+                successNavigationRoute={CoreModule.emailTemplates}
+                showEditButton
+                showOnlyButtons={true}
+              ></DataManagementBlock>
+            )}
+          </Box>
+        </>
       }
     >
       <RestoreDataModal
@@ -328,73 +328,76 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     onChange={valueUpdate}
                     fullWidth
                   />
-                </Grid>          
                 </Grid>
-                 <Box sx={{ display: "flex", alignItems: "center", mt: 2, mb: 1 }}>
-                 <Tabs value={tabIndex} onChange={handleTabChange} sx={{ mb: 3 }}> {/* ✅ Changed */}
+              </Grid>
+              <Box sx={{ display: "flex", alignItems: "center", mt: 2, mb: 1 }}>
+                <Tabs value={tabIndex} onChange={handleTabChange} sx={{ mb: 3 }}>
+                  {" "}
+                  {/* ✅ Changed */}
                   <Tab label="Editor" />
                   <Tab label="Settings" />
-                  </Tabs>
-                </Box>
-                {tabIndex === 0 && ( 
+                </Tabs>
+              </Box>
+              {tabIndex === 0 && (
                 <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 12 }}>
-                  <Editor
-                    onInit={(evt: TinyMCEInitEvent, editor: TinyMCEEditor) => 
-                      (editorRef.current = editor)}
-                    value={formik.values.bodyTemplate}
-                    disabled={readonly}
-                    onEditorChange={(currentValue: string) =>
-                      formik.setFieldValue("bodyTemplate", currentValue)
-                    }
-                    apiKey={TINYMCE_API_KEY}
-                    init={{
-                      height: 500,
-                      menubar: "file edit view insert format tools table help",
-                      plugins: `print preview paste importcss searchreplace autolink
+                  <Grid size={{ xs: 12, sm: 12 }}>
+                    <Editor
+                      onInit={(evt: TinyMCEInitEvent, editor: TinyMCEEditor) =>
+                        (editorRef.current = editor)
+                      }
+                      value={formik.values.bodyTemplate}
+                      disabled={readonly}
+                      onEditorChange={(currentValue: string) =>
+                        formik.setFieldValue("bodyTemplate", currentValue)
+                      }
+                      apiKey={TINYMCE_API_KEY}
+                      init={{
+                        height: 500,
+                        menubar: "file edit view insert format tools table help",
+                        plugins: `print preview paste importcss searchreplace autolink
                         autosave save directionality code visualblocks visualchars fullscreen
                         image link media template codesample table charmap hr pagebreak
                         nonbreaking anchor toc insertdatetime advlist lists wordcount
                         imagetools textpattern noneditable help charmap quickbars emoticons`,
-                      toolbar: `undo redo | bold italic underline strikethrough | fontselect
+                        toolbar: `undo redo | bold italic underline strikethrough | fontselect
                         fontsizeselect formatselect | alignleft aligncenter alignright
                         alignjustify | outdent indent |  numlist bullist | forecolor
                         backcolor removeformat | pagebreak | charmap emoticons | 
                         fullscreen  preview save print | insertfile image media template
                         link anchor codesample | ltr rtl`,
-                      content_style: `body { font-family:Helvetica,Arial,sans-serif;
+                        content_style: `body { font-family:Helvetica,Arial,sans-serif;
                                              font-size:14px }`,
-                    }}
-                  />
+                      }}
+                    />
+                  </Grid>
                 </Grid>
+              )}
+              {tabIndex === 1 && (
+                <Grid size={{ xs: 12, sm: 12 }} spacing={5} container direction={"row"}>
+                  <Grid size={{ xs: 6, sm: 6 }}>
+                    <EmailGroupAutocomplete
+                      disabled={readonly}
+                      label="Group ID"
+                      value={formik.values.emailGroupId}
+                      error={formik.touched.emailGroupId && Boolean(formik.errors.emailGroupId)}
+                      helperText={formik.touched.emailGroupId && formik.errors.emailGroupId}
+                      placeholder="Enter group id"
+                      onChange={(value) => formik.setFieldValue("emailGroupId", value)}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 6, sm: 6 }}>
+                    <LanguageSelect
+                      value={formik.values.language}
+                      onChange={(val) => autoCompleteValueUpdate("language", val)}
+                      label="Language"
+                      error={formik.touched.language && Boolean(formik.errors.language)}
+                      helperText={formik.touched.language && formik.errors.language}
+                      name="language"
+                      disabled={readonly}
+                    />
+                  </Grid>
                 </Grid>
-                )}
-                {tabIndex === 1 && (
-                 <Grid size={{ xs: 12, sm: 12 }} spacing={5} container direction={"row"} >
-                 <Grid size={{ xs: 6, sm: 6 }}>
-                  <EmailGroupAutocomplete
-                    disabled={readonly}
-                    label="Group ID"
-                    value={formik.values.emailGroupId}
-                    error={formik.touched.emailGroupId && Boolean(formik.errors.emailGroupId)}
-                    helperText={formik.touched.emailGroupId && formik.errors.emailGroupId}
-                    placeholder="Enter group id"
-                    onChange={(value) => formik.setFieldValue("emailGroupId", value)}
-                  />
-                </Grid>
-                <Grid size={{ xs: 6, sm: 6 }}>
-                  <LanguageSelect
-                    value={formik.values.language}
-                    onChange={(val) => autoCompleteValueUpdate("language", val)}
-                    label="Language"
-                    error={formik.touched.language && Boolean(formik.errors.language)}
-                    helperText={formik.touched.language && formik.errors.language}
-                    name="language"
-                    disabled={readonly}
-                  />
-                </Grid>
-                </Grid>
-                )}
+              )}
             </form>
           </CardContent>
         </Card>
