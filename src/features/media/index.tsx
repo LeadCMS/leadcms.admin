@@ -5,10 +5,6 @@ import {
   Grid,
   TextField,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Paper,
   Typography,
   CircularProgress,
@@ -29,10 +25,10 @@ import MenuItem from "@mui/material/MenuItem";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteIcon from "@mui/icons-material/Delete";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { useNavigate, useLocation } from "react-router-dom";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { MediaPreview } from "./media-preview";
+import { MediaUploadDialog } from "./media-upload-dialog";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 
@@ -344,20 +340,30 @@ const MediaManagement = () => {
       setUploadFiles(Array.from(e.target.files));
     }
   };
+  // Utility to convert any folder name to kebab-case (ScopeUid format)
+  function toScopeUid(name: string): string {
+    return name
+      .replace(/([a-z])([A-Z])/g, "$1-$2") // camelCase to camel-Case
+      .replace(/[_\s]+/g, "-") // underscores and spaces to dash
+      .replace(/([A-Z]+)/g, (m) => "-" + m.toLowerCase()) // handle consecutive capitals
+      .replace(/-+/g, "-") // collapse multiple dashes
+      .replace(/^-+|-+$/g, "") // trim leading/trailing dashes
+      .toLowerCase();
+  }
   const handleUploadFiles = async () => {
     setUploading(true);
     setUploadError(null);
     setUploadFolderError(null);
     let scopeUid = currentScopeUid;
     if (currentScopeUid && uploadFolderName) {
-      scopeUid = currentScopeUid + "/" + uploadFolderName;
+      scopeUid = currentScopeUid + "/" + toScopeUid(uploadFolderName);
     } else if (!currentScopeUid) {
       if (!uploadFolderName.trim()) {
         setUploadFolderError("Folder name is required when uploading to root");
         setUploading(false);
         return;
       }
-      scopeUid = uploadFolderName.trim();
+      scopeUid = toScopeUid(uploadFolderName.trim());
     }
     let allSuccess = true;
     for (const file of uploadFiles) {
@@ -664,115 +670,21 @@ const MediaManagement = () => {
         hasPrev={getCurrentImageIndex() > 0}
       />
       {/* Dialogs (New Folder, Upload, etc.) */}
-      <Dialog open={dialog === "upload"} onClose={() => setDialog(null)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          Upload Files to /
-          {currentScopeUid ? (
-            <>
-              {currentScopeUid}{" "}
-              <input
-                type="text"
-                placeholder="(optional subfolder)"
-                value={uploadFolderName}
-                onChange={(e) => setUploadFolderName(e.target.value)}
-                style={{
-                  marginLeft: 8,
-                  padding: 2,
-                  fontSize: 16,
-                  border: "1px solid #ccc",
-                  borderRadius: 4,
-                  width: 160,
-                }}
-              />
-            </>
-          ) : (
-            <input
-              type="text"
-              placeholder="folder name (required)"
-              value={uploadFolderName}
-              onChange={(e) => setUploadFolderName(e.target.value)}
-              style={{
-                marginLeft: 4,
-                padding: 2,
-                fontSize: 16,
-                border: "1px solid #ccc",
-                borderRadius: 4,
-                width: 180,
-              }}
-            />
-          )}
-        </DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{
-              border: "2px dashed #bdbdbd",
-              borderRadius: 2,
-              p: 4,
-              textAlign: "center",
-              bgcolor: "#fafafa",
-              cursor: "pointer",
-              mb: 2,
-            }}
-            onDrop={handleDropFiles}
-            onDragOver={(e) => e.preventDefault()}
-            onClick={() => document.getElementById("file-upload-input")?.click()}
-          >
-            <CloudUploadIcon sx={{ fontSize: 48, color: "#bdbdbd", mb: 1 }} />
-            <Typography variant="body1" sx={{ mb: 1 }}>
-              Drag and drop files here or click to browse
-            </Typography>
-            <input
-              id="file-upload-input"
-              type="file"
-              multiple
-              hidden
-              onChange={handleFileInputChange}
-            />
-            {uploadFiles.length > 0 && (
-              <Box mt={2}>
-                {uploadFiles.map((file) => (
-                  <Box key={file.name} display="flex" alignItems="center" mb={1}>
-                    <Typography sx={{ flex: 1 }}>{file.name}</Typography>
-                    {uploading ? (
-                      <Box width={80} ml={2}>
-                        <CircularProgress size={20} />
-                      </Box>
-                    ) : null}
-                  </Box>
-                ))}
-              </Box>
-            )}
-            {uploadError && (
-              <Typography color="error" sx={{ mt: 2 }}>
-                {uploadError}
-              </Typography>
-            )}
-          </Box>
-          {currentScopeUid === "" && (
-            <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
-              Note: Uploading to root folder. Subfolder name is required.
-            </Typography>
-          )}
-          {uploadFolderError && (
-            <Typography color="error" sx={{ mt: 1 }}>
-              {uploadFolderError}
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialog(null)} disabled={uploading}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={uploading ? <CircularProgress size={18} /> : <CloudUploadIcon />}
-            onClick={handleUploadFiles}
-            disabled={uploadFiles.length === 0 || uploading}
-          >
-            {uploading ? "Uploading..." : "Upload"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <MediaUploadDialog
+        open={dialog === "upload"}
+        onClose={() => setDialog(null)}
+        currentScopeUid={currentScopeUid}
+        uploadFolderName={uploadFolderName}
+        setUploadFolderName={setUploadFolderName}
+        uploadFiles={uploadFiles}
+        uploading={uploading}
+        uploadError={uploadError}
+        uploadFolderError={uploadFolderError}
+        handleDropFiles={handleDropFiles}
+        handleFileInputChange={handleFileInputChange}
+        handleUploadFiles={handleUploadFiles}
+        setUploadFiles={setUploadFiles}
+      />
     </Box>
   );
 };
