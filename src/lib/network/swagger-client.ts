@@ -6289,7 +6289,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.44.0
+ * @version 1.2.45.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8737,6 +8737,9 @@ export class Api<
     mediaList: (
       query?: {
         query?: string;
+        scopeUid?: string;
+        /** @default false */
+        includeFolders?: boolean;
       },
       params: RequestParams = {},
     ) =>

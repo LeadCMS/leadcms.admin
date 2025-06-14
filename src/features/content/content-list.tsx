@@ -25,7 +25,6 @@ import { ContentListContainer } from "./index.styled";
 import { useEffect, useState, useRef } from "react";
 import { Plus, Search, MoreHorizontal, Edit} from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
-import { contentBreadcrumbLinks } from "@features/content/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { getContentCoverImageUrl } from "@lib/network/utils";
 import { useNavigate } from "react-router-dom";
@@ -159,7 +158,7 @@ export const ContentList = () => {
 
   return (
     <ModuleWrapper
-      breadcrumbs={contentBreadcrumbLinks}
+      breadcrumbs={[]}
       currentBreadcrumb={"Content"}
       leftContainerChildren={leftControls}
       extraActionsContainerChildren={null}
