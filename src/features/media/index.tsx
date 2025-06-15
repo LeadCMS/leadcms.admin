@@ -32,6 +32,7 @@ import { MediaUploadDialog } from "./media-upload-dialog";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { wrapApiClient } from "@lib/network/wrapApiClient";
+import type { FileUploadStatus } from "./media-upload-dialog";
 
 // Helper for file size formatting
 function formatFileSize(size: number | undefined) {
@@ -346,11 +347,17 @@ const MediaManagement = () => {
   // Upload logic
   const handleDropFiles = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setUploadFiles(Array.from(e.dataTransfer.files));
+    const newFiles = Array.from(e.dataTransfer.files).filter(
+      (file) => !uploadFiles.some((existing) => existing.name === file.name)
+    );
+    setUploadFiles((prev) => [...prev, ...newFiles]);
   };
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setUploadFiles(Array.from(e.target.files));
+      const newFiles = Array.from(e.target.files).filter(
+        (file) => !uploadFiles.some((existing) => existing.name === file.name)
+      );
+      setUploadFiles((prev) => [...prev, ...newFiles]);
     }
   };
   // Utility to convert any folder name to kebab-case (ScopeUid format)
@@ -363,7 +370,12 @@ const MediaManagement = () => {
       .replace(/^-+|-+$/g, "") // trim leading/trailing dashes
       .toLowerCase();
   }
-  const handleUploadFiles = async () => {
+
+  const [fileStatuses, setFileStatuses] = useState<FileUploadStatus[]>([]);
+  const handleUploadFiles = async (
+    files: File[],
+    setFileStatusesCb: (statuses: FileUploadStatus[]) => void
+  ): Promise<void> => {
     setUploading(true);
     setUploadError(null);
     setUploadFolderError(null);
@@ -378,30 +390,52 @@ const MediaManagement = () => {
       }
       scopeUid = toScopeUid(uploadFolderName.trim());
     }
-    let allSuccess = true;
-    for (const file of uploadFiles) {
-      try {
-        await api.mediaCreate({
-          Image: file,
-          ScopeUid: scopeUid,
-        });
-      } catch (err) {
-        console.error("[MediaManagement] Upload error object:", err);
-        allSuccess = false;
-        const apiError = err as { message?: string };
-        setUploadError(
-          apiError && apiError.message
-            ? `Failed to upload ${file.name}: ${apiError.message}`
-            : `Failed to upload ${file.name}: Unknown error`
-        );
-        break;
+    
+    // Initialize statuses: preserve existing success statuses, set others to uploading
+    const statuses: FileUploadStatus[] = files.map((file) => {
+      const existingStatus = fileStatuses.find((s) => s.file.name === file.name);
+      if (existingStatus && existingStatus.status === "success") {
+        return existingStatus; // Keep existing success status
       }
-    }
+      return { file, status: "uploading" };
+    });
+    setFileStatuses(statuses);
+    setFileStatusesCb(statuses);
+    
+    // Only upload files that are not already successfully uploaded
+    const filesToUpload = files.filter((file) => {
+      const existingStatus = fileStatuses.find((s) => s.file.name === file.name);
+      return !existingStatus || existingStatus.status !== "success";
+    });
+    
+    await Promise.all(
+      filesToUpload.map(async (file) => {
+        const idx = files.findIndex((f) => f.name === file.name);
+        try {
+          await api.mediaCreate({ Image: file, ScopeUid: scopeUid });
+          statuses[idx] = { file, status: "success" };
+        } catch (err) {
+          const apiError = err as { message?: string };
+          statuses[idx] = {
+            file,
+            status: "error",
+            error:
+              apiError && apiError.message
+                ? `Failed: ${apiError.message}`
+                : "Unknown error"
+          };
+        }
+        setFileStatuses([...statuses]);
+        setFileStatusesCb([...statuses]);
+      })
+    );
     setUploading(false);
-    if (allSuccess) {
+    
+    // Check if all files are successfully uploaded and close dialog immediately
+    if (statuses.every((s) => s.status === "success")) {
       setUploadFiles([]);
-      setDialog(null);
       setUploadFolderName("");
+      setDialog(null); // Close dialog immediately
       setLoading(true);
       try {
         const response = await api.mediaList({ scopeUid: currentScopeUid, includeFolders: true });
@@ -423,6 +457,13 @@ const MediaManagement = () => {
       }
     }
   };
+
+  // Reset fileStatuses when dialog is closed to prevent auto-close on next open
+  useEffect(() => {
+    if (dialog !== "upload") {
+      setFileStatuses([]);
+    }
+  }, [dialog]);
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: "100%" }}>
@@ -708,8 +749,19 @@ const MediaManagement = () => {
         uploadFolderError={uploadFolderError}
         handleDropFiles={handleDropFiles}
         handleFileInputChange={handleFileInputChange}
-        handleUploadFiles={handleUploadFiles}
-        setUploadFiles={setUploadFiles}
+        handleUploadFiles={(files, setFileStatusesCb) => {
+          handleUploadFiles(files, (statuses) => {
+            setFileStatuses(statuses);
+            setFileStatusesCb(statuses);
+          });
+        }}
+        setUploadError={setUploadError}
+        setUploadFolderError={setUploadFolderError}
+        fileStatuses={fileStatuses}
+        onRemoveFile={(fileName) => {
+          setUploadFiles((prev) => prev.filter((f) => f.name !== fileName));
+          setFileStatuses((prev) => prev.filter((f) => f.file.name !== fileName));
+        }}
       />
     </Box>
   );
