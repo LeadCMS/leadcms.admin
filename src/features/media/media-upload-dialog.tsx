@@ -10,6 +10,7 @@ import {
   CircularProgress
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { ApiErrorDisplay } from "@components/api-error-display";
 
 interface MediaUploadDialogProps {
   open: boolean;
@@ -120,9 +121,7 @@ export const MediaUploadDialog = ({
           </Box>
         )}
         {uploadError && (
-          <Typography color="error" sx={{ mt: 2 }}>
-            {uploadError}
-          </Typography>
+          <ApiErrorDisplay error={uploadError} fileName={uploadFiles[0]?.name} />
         )}
       </Box>
       {currentScopeUid === "" && (

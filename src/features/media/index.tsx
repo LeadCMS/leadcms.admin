@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Button,
@@ -31,6 +31,7 @@ import { MediaPreview } from "./media-preview";
 import { MediaUploadDialog } from "./media-upload-dialog";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
+import { wrapApiClient } from "@lib/network/wrapApiClient";
 
 // Helper for file size formatting
 function formatFileSize(size: number | undefined) {
@@ -80,6 +81,8 @@ const MediaManagement = () => {
   const { client } = useRequestContext();
   const navigate = useNavigate();
   const location = useLocation();
+  // Wrap the API client for error handling
+  const api = useMemo(() => wrapApiClient(client.api), [client.api]);
   const params = new URLSearchParams(location.search);
   const initialFolder = params.get("folder") || "";
   const initialBreadcrumbs = initialFolder
@@ -106,6 +109,8 @@ const MediaManagement = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadFolderName, setUploadFolderName] = useState("");
   const [uploadFolderError, setUploadFolderError] = useState<string | null>(null);
+  // Add fetchError state
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Add preview dialog state
   const [previewFile, setPreviewFile] = useState<MediaItem | null>(null);
@@ -182,45 +187,58 @@ const MediaManagement = () => {
   // Fetch folders/files for current scope
   useEffect(() => {
     if (search) return;
-    setLoading(true);
-    client.api
-      .mediaList({ scopeUid: currentScopeUid, includeFolders: true })
-      .then((response) => {
-        // Filter out items with undefined ids and cast to MediaItem[]
-        const validItems = (response.data || [])
-          .filter((item) => item.id !== undefined)
-          .map((item) => ({ ...item, id: item.id as number } as MediaItem));
+    const fetchMedia = async () => {
+      setLoading(true);
+      try {
+        const response = await api.mediaList({ scopeUid: currentScopeUid, includeFolders: true });
+        const validItems = ((response.data || []) as MediaItem[])
+          .filter((item: MediaItem) => item.id !== undefined)
+          .map((item: MediaItem) => ({ ...item, id: item.id as number }));
         setItems(validItems);
+        setFetchError(null);
+      } catch (error) {
+        const apiError = error as { status?: number; message?: string };
+        if (apiError.status === 0) {
+          setFetchError(apiError.message || "Network error");
+        } else {
+          setItems([]);
+          setFetchError(apiError.message || "Failed to load media");
+        }
+      } finally {
         setLoading(false);
-      })
-      .catch(() => {
-        setItems([]);
-        setLoading(false);
-      });
-  }, [client, currentScopeUid, search]);
+      }
+    };
+    fetchMedia();
+  }, [api, currentScopeUid, search]);
 
   // Search
   useEffect(() => {
     if (!search) return;
-    setIsSearching(true);
-    setLoading(true);
-    client.api
-      .mediaList({ query: search })
-      .then((response) => {
-        // Filter out items with undefined ids and cast to MediaItem[]
-        const validItems = (response.data || [])
-          .filter((item) => item.id !== undefined)
-          .map((item) => ({ ...item, id: item.id as number } as MediaItem));
+    const searchMedia = async () => {
+      setIsSearching(true);
+      setLoading(true);
+      try {
+        const response = await api.mediaList({ query: search });
+        const validItems = ((response.data || []) as MediaItem[])
+          .filter((item: MediaItem) => item.id !== undefined)
+          .map((item: MediaItem) => ({ ...item, id: item.id as number }));
         setItems(validItems);
+        setFetchError(null);
+      } catch (error) {
+        const apiError = error as { status?: number; message?: string };
+        if (apiError.status === 0) {
+          setFetchError(apiError.message || "Network error");
+        } else {
+          setItems([]);
+          setFetchError(apiError.message || "Failed to search media");
+        }
+      } finally {
         setLoading(false);
         setIsSearching(false);
-      })
-      .catch(() => {
-        setItems([]);
-        setLoading(false);
-        setIsSearching(false);
-      });
-  }, [client, search]);
+      }
+    };
+    searchMedia();
+  }, [api, search]);
 
   // Navigation for folders
   const handleFolderClick = (item: MediaItem) => {
@@ -270,43 +288,38 @@ const MediaManagement = () => {
   const showErrorModal = errorDetailsModal?.Show || 
     ((errDetails: string[]) => console.error(errDetails));
   
-  const refreshMediaList = () => {
+  const refreshMediaList = async () => {
     setLoading(true);
-    client.api
-      .mediaList({ scopeUid: currentScopeUid, includeFolders: true })
-      .then((response) => {
-        // Filter out items with undefined ids and cast to MediaItem[]
-        const validItems = (response.data || [])
-          .filter((item) => item.id !== undefined)
-          .map((item) => ({ ...item, id: item.id as number } as MediaItem));
-        setItems(validItems);
-        setLoading(false);
-      })
-      .catch(() => {
+    try {
+      const response = await api.mediaList({ scopeUid: currentScopeUid, includeFolders: true });
+      const validItems = ((response.data || []) as MediaItem[])
+        .filter((item: MediaItem) => item.id !== undefined)
+        .map((item: MediaItem) => ({ ...item, id: item.id as number }));
+      setItems(validItems);
+      setFetchError(null);
+    } catch (error) {
+      const apiError = error as { status?: number; message?: string };
+      if (apiError.status === 0) {
+        setFetchError(apiError.message || "Network error");
+      } else {
         setItems([]);
-        setLoading(false);
-      });
+        setFetchError(apiError.message || "Failed to refresh media");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (item: MediaItem) => {
     handleMenuClose();
-    
     const deletePromise = async () => {
       // Calculate pathToFile as required by the API
       const pathToFile = `${item.scopeUid}/${item.name}`;
-      const result = await client.api.mediaDelete(pathToFile);
-      if (!result || (typeof result === "object" && (
-        ("status" in result && result.status && result.status >= 400) ||
-        ("ok" in result && result.ok === false)
-      ))) {
-        throw new Error("Media delete failed or file not found (404)");
-      }
-
+      const result = await api.mediaDelete(pathToFile);
       // Only refresh the list after successful deletion and toast completion
-      refreshMediaList();      
+      refreshMediaList();
       return result;
     };
-
     try {
       // Use notificationsService.promise to handle toasts
       await notificationsService.promise(deletePromise(), {
@@ -368,14 +381,19 @@ const MediaManagement = () => {
     let allSuccess = true;
     for (const file of uploadFiles) {
       try {
-        await client.api.mediaCreate({
+        await api.mediaCreate({
           Image: file,
           ScopeUid: scopeUid,
         });
-      } catch (err: unknown) {
+      } catch (err) {
+        console.error("[MediaManagement] Upload error object:", err);
         allSuccess = false;
-        const errorMessage = err instanceof Error ? err.message : "Unknown error";
-        setUploadError(`Failed to upload ${file.name}: ${errorMessage}`);
+        const apiError = err as { message?: string };
+        setUploadError(
+          apiError && apiError.message
+            ? `Failed to upload ${file.name}: ${apiError.message}`
+            : `Failed to upload ${file.name}: Unknown error`
+        );
         break;
       }
     }
@@ -385,20 +403,24 @@ const MediaManagement = () => {
       setDialog(null);
       setUploadFolderName("");
       setLoading(true);
-      client.api
-        .mediaList({ scopeUid: currentScopeUid, includeFolders: true })
-        .then((response) => {
-          // Filter out items with undefined ids and cast to MediaItem[]
-          const validItems = (response.data || [])
-            .filter((item) => item.id !== undefined)
-            .map((item) => ({ ...item, id: item.id as number } as MediaItem));
-          setItems(validItems);
-          setLoading(false);
-        })
-        .catch(() => {
+      try {
+        const response = await api.mediaList({ scopeUid: currentScopeUid, includeFolders: true });
+        const validItems = ((response.data || []) as MediaItem[])
+          .filter((item: MediaItem) => item.id !== undefined)
+          .map((item: MediaItem) => ({ ...item, id: item.id as number }));
+        setItems(validItems);
+        setFetchError(null);
+      } catch (error) {
+        const apiError = error as { status?: number; message?: string };
+        if (apiError.status === 0) {
+          setFetchError(apiError.message || "Network error");
+        } else {
           setItems([]);
-          setLoading(false);
-        });
+          setFetchError(apiError.message || "Failed to refresh media");
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -443,7 +465,11 @@ const MediaManagement = () => {
         ))}
       </Breadcrumbs>
       {/* Tile (card/grid) mode */}
-      {loading ? (
+      {fetchError ? (
+        <Box textAlign="center" py={6}>
+          <Typography color="error">{fetchError}</Typography>
+        </Box>
+      ) : loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
           <CircularProgress />
         </Box>
