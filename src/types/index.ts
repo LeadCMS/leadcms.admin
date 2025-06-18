@@ -1,4 +1,4 @@
-import { GridColumnVisibilityModel } from "@mui/x-data-grid";
+import { GridColumnVisibilityModel,GridFilterModel } from "@mui/x-data-grid";
 
 export interface BreadcrumbLink {
   linkText: string;
@@ -11,23 +11,49 @@ export type DataListSettings = {
   skipLimit: number;
   sortColumn: string;
   sortOrder: string;
-  whereField: string;
-  whereFieldValue: string;
+  whereField?: string;
+  whereFieldValue?: string;
   whereOperator?: string;
   pageNumber: number;
   columnVisibilityModel: GridColumnVisibilityModel | undefined;
+  filterModel?: GridFilterModel; 
+   whereFilters?: Array<{
+    whereField: string;
+    whereOperator: string;
+    whereFieldValue: string;
+  }>;
+  columnOrder?: string[];
+};
+
+export type GridDataFilterSettings = {
+  searchTerm: string;
+  filterLimit: number;
+  skipLimit: number;
+  sortColumn: string;
+  sortOrder: string;
+  whereFilters?: Array<{
+    whereField: string;
+    whereOperator: string;
+    whereFieldValue: string;
+  }>;
+  pageNumber: number;
+  columnVisibilityModel: GridColumnVisibilityModel | undefined;
+  filterModel?: GridFilterModel; 
 };
 
 export interface GridDataFilterState {
   filterLimit?: number;
   sortColumn?: string;
   sortOrder?: string;
-  whereField?: string;
-  whereFieldValue?: string;
-  whereOperator?: string;
+  whereFilters?: Array<{
+    whereField: string;
+    whereOperator: string;
+    whereFieldValue: string;
+  }>;
   skipLimit?: number;
   pageNumber?: number;
   columnVisibilityModel?: GridColumnVisibilityModel | undefined;
+  columnOrder?: string[];
 }
 
 export type GridSizeProps = {
