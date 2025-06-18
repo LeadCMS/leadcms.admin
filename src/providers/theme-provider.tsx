@@ -30,7 +30,7 @@ export const themeOptions: ThemeOptions = {
       dark: "#2854B2",
     },
     secondary: {
-      main: "#0B111A",
+      main:"#18181B",
       light: "#343A42",
       dark: "#060A10",
     },
@@ -64,9 +64,9 @@ export const themeOptions: ThemeOptions = {
       contrastText: "rgba(0, 0, 0, 0.87)",
     },
     background: {
-      default: "#FBFCFF",
-      primary: "rgba(56, 120, 255, 0.08)",
-      primaryHover: "rgba(56, 120, 255, 0.04)",
+      default: "#f9fafb",
+      primary: "#ffffff",
+      primaryHover: "#F4F4F5",
     },
   },
 };
