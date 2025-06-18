@@ -1,4 +1,4 @@
-import { Avatar, Button, ListItemAvatar } from "@mui/material";
+import { Avatar, Button, IconButton, ListItemAvatar } from "@mui/material";
 import { ContactDetailsDto, ContactImportDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { ContactHref, ContactNameListItem, ContactNameListItemText } from "./index.styled";
@@ -17,7 +17,7 @@ import { dataListBreadcrumbLinks } from "utils/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { Fragment, useRef, useState } from "react";
-import { Plus, Download, Upload } from "lucide-react";
+import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";      
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
 import { getModelByName } from "lib/network/swagger-models";
@@ -37,6 +37,9 @@ export const Contacts = () => {
   const [openImport, setOpenImport] = useState(false);
   const [openExport, setOpenExport] = useState(false);
   const [importFieldsObject, setImportFieldsObject] = useState<any>();
+  const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+
   const dataExportQuery = useRef("");
 
   const getContactList = async (mainQuery: string, exportQuery?: string) => {
@@ -78,17 +81,17 @@ export const Contacts = () => {
     await client.api.contactsImportCreate(importDtoCollection);
   };
 
-  const columns: GridColDef<ContactDetailsDto>[] = [
+  const [columns, setColumns] =  useState<GridColDef<ContactDetailsDto>[] >([
     {
       field: "prefix",
       headerName: "Prefix",
-      flex: 1,
+      minWidth:80,
       type: "string",
     },
     {
       field: "firstName",
       headerName: "Name",
-      flex: 4,
+      minWidth: 250,
       type: "string",
       renderCell: ({ row }) => (
         <ContactNameListItem sx={{ paddingY: 0 }}>
@@ -105,19 +108,19 @@ export const Contacts = () => {
     {
       field: "middleName",
       headerName: "Middle Name",
-      flex: 2,
+      minWidth: 120,
       type: "string",
     },
     {
       field: "lastName",
       headerName: "Last Name",
-      flex: 2,
+      minWidth: 120,
       type: "string",
     },
     {
       field: "birthday",
       headerName: "Birthday",
-      flex: 2,
+      minWidth: 120,
       type: "date",
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
@@ -125,47 +128,47 @@ export const Contacts = () => {
     {
       field: "jobTitle",
       headerName: "Job Title",
-      flex: 2,
+      minWidth: 100,
       type: "string",
     },
     {
       field: "companyName",
       headerName: "Company Name",
-      flex: 2,
+      minWidth: 100,
       type: "string",
     },
     {
       field: "department",
       headerName: "Department",
-      flex: 2,
+      minWidth: 100,
       type: "string",
     },
     {
       field: "email",
       headerName: "Email",
-      flex: 3,
+      minWidth: 150,
       type: "string",
     },
     {
       field: "address1",
       headerName: "Address 1",
-      flex: 4,
+      minWidth: 150,
     },
     {
       field: "address2",
       headerName: "Address 2",
-      flex: 4,
+      minWidth: 150,
     },
     {
       field: "phone",
       headerName: "Phone",
-      flex: 3,
+      minWidth: 100,
       type: "string",
     },
     {
       field: "createdAt",
       headerName: "Created At",
-      flex: 2,
+      minWidth: 100,
       type: "date",
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
@@ -173,22 +176,63 @@ export const Contacts = () => {
     {
       field: "language",
       headerName: "Language",
-      flex: 1,
+      minWidth: 100,
       type: "string",
     },
-  ];
+  ]);
 
-  const searchBar = (
-    <SearchBar
+  const extraActions = [
+    <Fragment>
+      <SearchBar
       setSearchTermOnChange={setSearchTerm}
       searchBoxLabel={searchLabel}
       initialValue={gridSettings?.searchTerm ?? ""}
-    ></SearchBar>
-  );
-
-  const extraActions = [
+      ></SearchBar>
+    </Fragment>,
+    <Fragment>
+      <IconButton
+        onClick={() => setFilterPanelOpen(true)}
+        color="secondary"
+        sx={{
+          backgroundColor:theme=> theme.palette.background.primary,
+          border: "1px solid", 
+          borderColor: "#E4E4E7",
+          borderRadius: theme=>theme.spacing(1)
+        }}
+      >
+        <Filter size={18} />
+      </IconButton>
+    </Fragment>,
+    <Fragment>
+     <Button
+      variant="outlined"
+      startIcon={<Settings2 size={18} />}
+      onClick={() => setColumnsPanelOpen((open) => !open)}
+      color="secondary"
+      sx={theme => ({
+        backgroundColor: theme.palette.background.primary,
+        borderColor: "#E4E4E7",
+        "&:hover": {
+          backgroundColor: theme.palette.background.primaryHover,
+      },
+      })}
+      >
+      Columns
+     </Button>
+    </Fragment>,
     <Fragment key={"import-action"}>
-      <Button key={"import-btn"} startIcon={<Upload size={22} />} onClick={handleImportOpen}>
+      <Button key={"import-btn"} 
+        startIcon={<Upload size={18}/>} 
+        onClick={handleImportOpen} 
+        color="secondary" 
+        variant="outlined" 
+        sx={theme => ({
+          backgroundColor: theme.palette.background.primary,
+          borderColor: "#E4E4E7",
+          "&:hover": {
+            backgroundColor: theme.palette.background.primaryHover,
+          },
+        })}>
         Import
       </Button>
       {importFieldsObject && (
@@ -202,7 +246,19 @@ export const Contacts = () => {
       )}
     </Fragment>,
     <Fragment key={"export-action"}>
-      <Button key={"export-btn"} startIcon={<Download size={22} />} onClick={handleExportOpen}>
+      <Button key={"export-btn"} 
+        startIcon={<Download size={18}/>} 
+        onClick={handleExportOpen} 
+        color="secondary" 
+        variant="outlined" 
+        sx={theme => ({
+        backgroundColor: theme.palette.background.primary,
+        borderColor: "#E4E4E7",
+        "&:hover": {
+          backgroundColor: theme.palette.background.primaryHover,
+        },
+        })}
+      >
         Export
       </Button>
       {openExport && (
@@ -212,15 +268,15 @@ export const Contacts = () => {
           fileName={"contacts"}
         ></CsvExport>
       )}
-    </Fragment>,
+    </Fragment>,   
   ];
 
   const addButton = (
-    <Button
-      variant="contained"
-      to={getAddFormRoute()}
-      component={GhostLink}
-      startIcon={<Plus size={22} />}
+    <Button variant="contained" 
+      to={getAddFormRoute()} 
+      component={GhostLink} 
+      startIcon={<Plus size={18}/>} 
+      color="secondary" 
     >
       Add contact
     </Button>
@@ -230,12 +286,12 @@ export const Contacts = () => {
     <ModuleWrapper
       breadcrumbs={dataListBreadcrumbLinks}
       currentBreadcrumb={contactListPageBreadcrumb}
-      leftContainerChildren={searchBar}
       extraActionsContainerChildren={extraActions}
       addButtonContainerChildren={addButton}
     >
       <DataList
         columns={columns}
+        setColumns={setColumns}
         gridSettingsStorageKey={contactGridSettingsStorageKey}
         defaultFilterOrderColumn={defaultFilterOrderColumn}
         defaultFilterOrderDirection={defaultFilterOrderDirection}
@@ -247,6 +303,10 @@ export const Contacts = () => {
             sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
           },
         }}
+        filterPanelOpen={filterPanelOpen}
+        setFilterPanelOpen={setFilterPanelOpen}
+        columnsPanelOpen={columnsPanelOpen}
+        setColumnsPanelOpen={setColumnsPanelOpen}
       ></DataList>
     </ModuleWrapper>
   );
