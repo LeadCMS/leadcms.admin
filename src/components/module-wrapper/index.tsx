@@ -4,6 +4,8 @@ import {
 import { PropsWithChildren, ReactNode } from "react";
 import {
   ActionsContainer,
+  ModuleNameContainer,
+  ActionsRight,
   AddButtonContainer,
   CenteredCircularProgress,
   ExtraActionsContainer,
@@ -17,6 +19,7 @@ import {
 } from "./index.styled";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { BreadcrumbLink } from "../../types";
+import { getModuleNameFromUrl } from "utils/general-helper";
 
 export interface ModuleWrapperProps extends PropsWithChildren {
   key?: string;
@@ -39,11 +42,14 @@ export const ModuleWrapper = ({
   children,
 }: ModuleWrapperProps) => {
   const { isBusy } = useModuleWrapperContext();
+  const moduleName = getModuleNameFromUrl();
 
   return (
     <ModuleContainer>
       {(leftContainerChildren || extraActionsContainerChildren || addButtonContainerChildren) && (
         <ActionsContainer>
+        <ModuleNameContainer>{moduleName}</ModuleNameContainer>
+          <ActionsRight>
           {leftContainerChildren && <LeftContainer>{leftContainerChildren}</LeftContainer>}
           {(extraActionsContainerChildren || addButtonContainerChildren) && (
             <RightContainer>
@@ -55,6 +61,7 @@ export const ModuleWrapper = ({
               )}
             </RightContainer>
           )}
+         </ActionsRight>
         </ActionsContainer>
       )}
       <ModuleContentContainer>

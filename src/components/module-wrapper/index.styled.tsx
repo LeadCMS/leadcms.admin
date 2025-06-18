@@ -6,6 +6,18 @@ export const ActionsContainer = styled("div")`
   align-items: center;
 `;
 
+export const ModuleNameContainer = styled("div")`
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin-right: 16px;
+`;
+
+export const ActionsRight = styled("div")`
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+`;
+
 export const LeftContainer = styled("div")`
   display: flex;
   align-items: center;
@@ -23,7 +35,7 @@ export const ExtraActionsContainer = styled("div")`
 `;
 
 export const AddButtonContainer = styled("div")`
-  margin-left: ${({ theme }) => theme.spacing(10)};
+  margin-left: ${({ theme }) => theme.spacing(5)};
 `;
 
 export const ModuleContentContainer = styled("div")`
