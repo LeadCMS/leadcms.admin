@@ -2,7 +2,6 @@ import {
   DataGrid,
   GridColDef,
   GridColumnVisibilityModel,
-  GridFilterModel,
   GridSortModel,
 } from "@mui/x-data-grid";
 import type { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
@@ -30,6 +29,8 @@ type DataTableProps = {
   showActionsColumn: boolean;
   disableEditRoute: boolean;
   disableViewRoute: boolean;
+  columnVisibilityModel?: GridColumnVisibilityModel;
+  onColumnVisibilityModelChange?: (model: GridColumnVisibilityModel) => void;
 };
 
 export const DataTableGrid = ({
@@ -48,6 +49,8 @@ export const DataTableGrid = ({
   showActionsColumn,
   disableEditRoute,
   disableViewRoute,
+  columnVisibilityModel,
+  onColumnVisibilityModelChange,
 }: DataTableProps) => {
   const empty: readonly GridValidRowModel[] = [];
 
@@ -117,34 +120,6 @@ export const DataTableGrid = ({
     }
   };
 
-  const handleFilterChange = (filterModel: GridFilterModel) => {
-    if (!setFilterState) {
-      return;
-    }
-
-    if (filterModel.items.length === 0) {
-      setFilterState({
-        whereField: undefined,
-        whereFieldValue: undefined,
-        whereOperator: undefined,
-      });
-      return;
-    }
-
-    const filterModelItem = filterModel.items[0];
-    const column = filterModelItem.field;
-    const columnValue = filterModelItem.value;
-    const operator = filterModelItem.operator;
-
-    if (column) {
-      setFilterState({
-        whereFieldValue: columnValue,
-        whereField: column,
-        whereOperator: operator,
-      });
-    }
-  };
-
   const handleColumnVisibilityModelChange = (newModel: GridColumnVisibilityModel) => {
     if (setFilterState) {
       setFilterState({
@@ -154,10 +129,10 @@ export const DataTableGrid = ({
   };
 
   const gridFinalizedColumns = showActionsColumn ? columns.concat(actionsColumn) : columns;
-
   return (
     <DataTableContainer>
       <DataGrid
+        key={JSON.stringify([(data ?? []).map(row => (row as any).id)])}
         columns={gridFinalizedColumns}
         rows={data ?? empty}
         loading={!data}
@@ -176,9 +151,8 @@ export const DataTableGrid = ({
         onPaginationModelChange={handlePaginationModelChange}
         sortingMode={dataViewMode}
         onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}
-        filterMode={dataViewMode}
-        onFilterModelChange={(newFilterModel) => handleFilterChange(newFilterModel)}
-        onColumnVisibilityModelChange={(newModel) => handleColumnVisibilityModelChange(newModel)}
+        columnVisibilityModel={columnVisibilityModel} 
+        onColumnVisibilityModelChange={onColumnVisibilityModelChange ?? handleColumnVisibilityModelChange}   
         initialState={initialState}
       />
     </DataTableContainer>
