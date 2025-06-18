@@ -68,6 +68,15 @@ export const themeOptions: ThemeOptions = {
       primary: "#ffffff",
       primaryHover: "#F4F4F5",
     },
+    },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: "none",
+        },
+      },
+    },
   },
 };
 
