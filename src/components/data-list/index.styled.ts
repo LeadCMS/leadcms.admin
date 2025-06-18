@@ -67,11 +67,9 @@ export const DataListContainer = styled("div")`
   }
 
   .MuiDataGrid-columnHeaders {
-    width: 100% !important;
   }
 
   .MuiDataGrid-columnHeadersInner {
-    width: 100% !important;
   }
 
   .MuiDataGrid-footerContainer {
