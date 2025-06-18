@@ -126,3 +126,14 @@ export const execDeleteWithToast = async (
     },
   });
 };
+
+export function getModuleNameFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  const path = window.location.pathname;
+  const moduleRaw = path.split("/")[1] || "";
+  return moduleRaw
+    .split("-")
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
