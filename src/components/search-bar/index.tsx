@@ -31,16 +31,31 @@ export const SearchBar = ({
         size="small"
         defaultValue={initialValue}
         InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton>
-                <Search size={18} />
+          startAdornment: (
+            <InputAdornment position="start" sx={{p:0}}>
+              <IconButton sx={{p:0}}>
+                <Search size={18}/>
               </IconButton>
             </InputAdornment>
           ),
         }}
-        label={searchBoxLabel}
+        placeholder={searchBoxLabel}
         onChange={handleChange}
+        sx={theme => ({
+          backgroundColor: theme.palette.background.primary,
+          "& .MuiInputBase-input": {
+            fontSize: "0.9rem",
+            padding:2,
+              "&::placeholder": {
+                fontSize: "0.9rem",
+                opacity: 0.6,       
+              },
+          },
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#E4E4E7",
+          },
+          mr:2        
+        })}
       ></TextField>
     </Box>
   );
