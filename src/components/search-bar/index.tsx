@@ -42,6 +42,7 @@ export const SearchBar = ({
         placeholder={searchBoxLabel}
         onChange={handleChange}
         sx={theme => ({
+          minWidth: 400,
           backgroundColor: theme.palette.background.primary,
           "& .MuiInputBase-input": {
             fontSize: "0.9rem",
