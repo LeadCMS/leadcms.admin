@@ -102,7 +102,14 @@ export const Login = () => {
       setLocalToken(responseJson.token);
       window.location.replace("/");
     } catch (err: any) {
+      try {
+      const errorJson = await err.json();
+      setLoginError(errorJson?.title || "Login failed. Please try again.");
+      return;
+      } catch {
       setLoginError("Login failed. Please try again.");
+      return;
+      } 
     } finally {
       setLoading(false);
     }
