@@ -181,14 +181,15 @@ export const Contacts = () => {
     },
   ]);
 
-  const extraActions = [
-    <Fragment>
-      <SearchBar
+  const searchBar = (
+     <SearchBar
       setSearchTermOnChange={setSearchTerm}
       searchBoxLabel={searchLabel}
       initialValue={gridSettings?.searchTerm ?? ""}
       ></SearchBar>
-    </Fragment>,
+  );
+
+  const extraActions = [
     <Fragment>
       <IconButton
         onClick={() => setFilterPanelOpen(true)}
@@ -287,6 +288,7 @@ export const Contacts = () => {
       breadcrumbs={dataListBreadcrumbLinks}
       currentBreadcrumb={contactListPageBreadcrumb}
       extraActionsContainerChildren={extraActions}
+      leftContainerChildren={searchBar}
       addButtonContainerChildren={addButton}
     >
       <DataList
