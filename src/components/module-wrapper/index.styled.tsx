@@ -6,18 +6,6 @@ export const ActionsContainer = styled("div")`
   align-items: center;
 `;
 
-export const ModuleNameContainer = styled("div")`
-  font-weight: 600;
-  font-size: 1.5rem;
-  margin-right: 16px;
-`;
-
-export const ActionsRight = styled("div")`
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-`;
-
 export const LeftContainer = styled("div")`
   display: flex;
   align-items: center;
