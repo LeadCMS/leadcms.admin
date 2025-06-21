@@ -23,7 +23,7 @@ import {
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
 import { useEffect, useState, useRef } from "react";
-import { Plus, Search, MoreHorizontal, Edit} from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Copy, Trash2 } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { getContentCoverImageUrl } from "@lib/network/utils";
@@ -40,7 +40,9 @@ import { GhostLink } from "@components/ghost-link";
 export const ContentList = () => {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const errorDetailsModal = useErrorDetailsModal();
+  const showErrorModal = errorDetailsModal?.Show || 
+    ((data: unknown) => console.error("Error modal not available:", data));
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
   const [searchText, setSearchText] = useState<string>("");
@@ -256,6 +258,11 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
     onDelete(item.id as number);
     setAnchorEl(null);
   };
+  
+  const handleDuplicate = () => {
+    navigate(`/content/${item.id}/duplicate`);
+    setAnchorEl(null);
+  };
 
   return (
     <Card
@@ -372,9 +379,16 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            <MenuItem onClick={onClickEdit}>Edit</MenuItem>
-            <MenuItem disabled>Duplicate</MenuItem>
+            <MenuItem onClick={onClickEdit}>
+              <Edit size={16} style={{ marginRight: 8 }} />
+              Edit
+            </MenuItem>
+            <MenuItem onClick={handleDuplicate}>
+              <Copy size={16} style={{ marginRight: 8 }} />
+              Duplicate
+            </MenuItem>
             <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
+              <Trash2 size={16} style={{ marginRight: 8 }} />
               Delete
             </MenuItem>
           </Menu>

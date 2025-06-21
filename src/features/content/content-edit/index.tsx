@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ContentDetailsDto,
   ContentUpdateDto,
@@ -62,7 +62,7 @@ import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
-import { Trash2, XCircle, Save, ExternalLink } from "lucide-react";
+import { Trash2, XCircle, Save, ExternalLink, Copy } from "lucide-react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -83,6 +83,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const { notificationsService } = useNotificationsService();
   const networkContext = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
+  const navigate = useNavigate();
   const [editorLocalStorage, setEditorLocalStorage] = useLocalStorage<ContentEditData>(
     "leadcms_editor_autosave",
     { data: [] },
@@ -91,11 +92,12 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
   );
   const { client } = networkContext;
-  const { id } = useParams();
+  const { id, sourceId } = useParams();
+  const isDuplicateMode = !!sourceId;
   const [wasModified, setWasModified] = useState<boolean>(false);
   const [coverWasModified, setCoverWasModified] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!!id);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!!id || !!sourceId);
   const [frontmatterState, setfrontmatterState] = useState<ValidateFrontmatterError | null>(null);
   const [restoreDataState, setRestoreDataState] = useState<ContentEditRestoreState>(
     ContentEditRestoreState.Idle
@@ -335,6 +337,28 @@ export const ContentEdit = (props: ContentEditProps) => {
             url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
             fileName: "",
           });
+        } else if (client && sourceId) {
+          // Load content for duplication
+          const { data } = await client.api.contentDetail(Number(sourceId));
+          const duplicatedContent = Automapper.map<ContentDetailsDto, ContentDetails>(
+            data,
+            "ContentDetailsDto",
+            "ContentDetails"
+          );
+          
+          // Apply duplication transformations
+          duplicatedContent.id = null; // Reset ID for new content
+          duplicatedContent.title = duplicatedContent.title + " - Copy";
+          duplicatedContent.slug = duplicatedContent.slug + "-copy";
+          duplicatedContent.createdAt = null;
+          duplicatedContent.updatedAt = null;
+          
+          await formik.setValues(duplicatedContent);
+          await formik.setFieldValue("coverImagePending", {
+            url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+            fileName: "",
+          });
+          setWasModified(true); // Mark as modified since it's duplicated content
         }
         setIsInitialLoading(false);
       } catch (e) {
@@ -342,14 +366,14 @@ export const ContentEdit = (props: ContentEditProps) => {
         setIsInitialLoading(false);
       }
     });
-  }, [client, id, restoreDataState]);
+  }, [client, id, sourceId, restoreDataState]);
 
   useEffect(() => {
     autoSave(formik.values);
   }, [formik.values]);
 
-  const isCreateMode = !id;
-  const shouldShowForm = isCreateMode || !isInitialLoading;
+  const isCreateMode = !id && !isDuplicateMode;
+  const shouldShowForm = (isCreateMode || isDuplicateMode) || !isInitialLoading;
   
   // Set default content type for new content when contentTypes are loaded
   useEffect(() => {
@@ -411,6 +435,12 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
   };
 
+  // Handler for duplicate action
+  const handleDuplicate = () => {
+    if (!id) return;
+    navigate(`/content/${id}/duplicate`);
+  };
+
   return (
     <form onSubmit={formik.handleSubmit}>
       <ModuleWrapper
@@ -421,7 +451,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         actionButtons={
           <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 2 }}>
             <Box sx={{ pl: { sm: 4 } }}>
-              {!isCreateMode && (
+              {!isCreateMode && !isDuplicateMode && (
                 <>
                   <Button
                     variant="outlined"
@@ -430,41 +460,54 @@ export const ContentEdit = (props: ContentEditProps) => {
                     onClick={() => setDeleteDialogOpen(true)}
                     disabled={formik.isSubmitting}
                     size="medium"
+                    sx={{ mr: 2 }}
                   >
                     Delete
                   </Button>
-                  <Dialog
-                    open={deleteDialogOpen}
-                    onClose={() => setDeleteDialogOpen(false)}
-                    aria-labelledby="delete-content-dialog-title"
-                    aria-describedby="delete-content-dialog-description"
-                  >
-                    <DialogTitle id="delete-content-dialog-title">Delete Content</DialogTitle>
-                    <DialogContent>
-                      <DialogContentText id="delete-content-dialog-description">
-                        Are you sure you want to delete this content? This action cannot be undone.
-                      </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          setDeleteDialogOpen(false);
-                          await handleDelete();
-                        }}
-                        color="error"
-                        variant="contained"
-                        autoFocus
-                        disabled={formik.isSubmitting}
-                      >
-                        Delete
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
                 </>
               )}
+              {!isCreateMode && !isDuplicateMode && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<Copy />}
+                  onClick={handleDuplicate}
+                  disabled={formik.isSubmitting}
+                  size="medium"
+                >
+                  Duplicate
+                </Button>
+              )}
+              <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                aria-labelledby="delete-content-dialog-title"
+                aria-describedby="delete-content-dialog-description"
+              >
+                <DialogTitle id="delete-content-dialog-title">Delete Content</DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="delete-content-dialog-description">
+                    Are you sure you want to delete this content? This action cannot be undone.
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      setDeleteDialogOpen(false);
+                      await handleDelete();
+                    }}
+                    color="error"
+                    variant="contained"
+                    autoFocus
+                    disabled={formik.isSubmitting}
+                  >
+                    Delete
+                  </Button>
+                </DialogActions>
+              </Dialog>
             </Box>
             <Box sx={{ display: "flex", gap: 2, pr: { sm: 4 } }}>
               <Button
