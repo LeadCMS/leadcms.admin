@@ -4,6 +4,7 @@ import { AppWindow } from "lucide-react";
 import { ImageUploadingContext, MarkdownEditorProps, onFrontmatterErrorChangeFunc } from "./types";
 import { useEffect, useState, useContext, createContext } from "react";
 import { MarkdownViewerFunc } from "@components/markdown-viewer";
+import { MarkdownLiveViewerFunc } from "@components/markdown-live-viewer";
 import CodeEditor from "@uiw/react-textarea-code-editor";
 import { validateFrontmatter, ValidateFrontmatterError } from "utils/frontmatter-validator";
 import Dropzone, { Accept, FileRejection } from "react-dropzone";
@@ -16,7 +17,7 @@ const ImageUploadingCtx = createContext<ImageUploadingContext | null>(null);
 
 const EditorViewFunc = (
   value: string,
-  onChange: any,
+  onChange: (value: string) => void,
   onErrorChange: onFrontmatterErrorChangeFunc
 ) => {
   const { notificationsService } = useNotificationsService();
@@ -97,6 +98,8 @@ const MarkdownEditor = ({
   isReadOnly,
   contentDetails,
   onFrontmatterErrorChange,
+  livePreview,
+  livePreviewTemplate,
 }: MarkdownEditorProps) => {
   const { notificationsService } = useNotificationsService();
   const [currentError, setCurrentError] = useState<string>("");
@@ -143,6 +146,34 @@ const MarkdownEditor = ({
   };
 
   const strippedValue = value.replace(/(---.*?---)/s, "");
+  // Inject inline CSS to reset padding for editor and preview
+  useEffect(() => {
+    const styleId = "leadcms-md-editor-reset-padding";
+    if (livePreview) {
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.innerHTML = `
+          .w-md-editor-preview {
+            padding: 0 !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    } else {
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    }
+    return () => {
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    };
+  }, [livePreview]);
+
   return (
     <Dropzone
       onDrop={onDrop}
@@ -168,6 +199,10 @@ const MarkdownEditor = ({
               highlightEnable
               components={{
                 preview: () => {
+                  if (livePreview && livePreviewTemplate) {
+                    console.log("[MarkdownEditor] livePreview params:", contentDetails);
+                    return MarkdownLiveViewerFunc({ ...contentDetails }, livePreviewTemplate);
+                  }
                   return MarkdownViewerFunc(`${currentError}${strippedValue}`);
                 },
                 textarea: () => EditorViewFunc(value, onChange, onErrorChange),

@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ContentDetailsDto,
-  ContentUpdateDto,
-  ContentCreateDto,
   HttpResponse,
   ProblemDetails,
   ContentTypeDetailsDto,
 } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
+import { useConfig } from "@providers/config-provider";
 import { ContentEditContainer } from "../index.styled";
 import {
   Button,
@@ -22,6 +21,7 @@ import {
   Tab,
   Box,
   CircularProgress,
+  Switch,
 } from "@mui/material";
 import { useFormik, FormikHelpers } from "formik";
 import {
@@ -41,7 +41,6 @@ import {
   fetchAllContentTypes
 } from "../content-types";
 import { toFormikValidationSchema } from "zod-formik-adapter";
-import { Automapper } from "@lib/automapper";
 import MarkdownEditor from "@components/markdown-editor";
 import FileDropdown from "@components/file-dropdown";
 import { buildAbsoluteUrl } from "@lib/network/utils";
@@ -57,6 +56,7 @@ import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
 import { SavingBar } from "@components/saving-bar";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
+import { useUserInfo } from "@providers/user-provider";
 import { LanguageSelect } from "@components/language-select";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
@@ -69,6 +69,15 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import MonacoEditor from "@monaco-editor/react";
+import { openSitePreview } from "utils/preview-helper";
+
+// Extended config interface to handle settings not in the swagger definition
+interface ExtendedConfig {
+  settings?: {
+    LivePreviewUrlTemplate?: string;
+    PreviewUrlTemplate?: string;
+  };
+}
 
 interface ContentEditProps {
   readonly?: boolean;
@@ -82,8 +91,10 @@ export const ContentEdit = (props: ContentEditProps) => {
     ((data) => console.error("Error modal not available:", data));
   const { notificationsService } = useNotificationsService();
   const networkContext = useRequestContext();
+  const userInfo = useUserInfo();
   const handleNavigation = useCoreModuleNavigation();
   const navigate = useNavigate();
+  const { config } = useConfig();
   const [editorLocalStorage, setEditorLocalStorage] = useLocalStorage<ContentEditData>(
     "leadcms_editor_autosave",
     { data: [] },
@@ -104,12 +115,17 @@ export const ContentEdit = (props: ContentEditProps) => {
   );
   const [activeTab, setActiveTab] = useState<string>("content");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [useLivePreview, setUseLivePreview] = useState(false);
   const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
   const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
 
   const supportsCover = contentType?.supportsCoverImage;
   const supportsComments = contentType?.supportsComments;
+  
+  // Check if preview features are available from backend config
+  const configSettings = (config as ExtendedConfig)?.settings;
+  const hasLivePreview = !!configSettings?.LivePreviewUrlTemplate;
+  const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
 
   const autoSave = useDebouncedCallback((value) => {
     if (!wasModified && !coverWasModified) {
@@ -157,37 +173,30 @@ export const ContentEdit = (props: ContentEditProps) => {
       coverUrl = imageUploadingResponse.data.location as string;
     }
     if (values?.id) {
-      const content = Automapper.map<ContentDetails, ContentUpdateDto>(
-        values,
-        "ContentDetails",
-        "ContentUpdateDto"
-      );
       response = await client.api.contentPartialUpdate(Number(values.id), {
-        ...content,
+        ...values,
         coverImageUrl: coverUrl,
       });
     } else {
-      const content = Automapper.map<ContentDetails, ContentCreateDto>(
-        values,
-        "ContentDetails",
-        "ContentCreateDto"
-      );
       response = await client.api.contentCreate({
-        ...content,
+        ...values,
         coverImageUrl: coverUrl,
       });
     }
-    helpers.setValues(
-      Automapper.map<ContentDetailsDto, ContentDetails>(
-        response.data,
-        "ContentDetailsDto",
-        "ContentDetails"
-      )
-    );
-    await helpers.setFieldValue("coverImagePending", {
-      url: response.data.coverImageUrl ? buildAbsoluteUrl(response.data.coverImageUrl) : "",
-      fileName: "",
-    });
+    // Patch ContentDetails fields that are not present in ContentDetailsDto
+    const patched: ContentDetails = {
+      ...response.data,
+      id: response.data.id ? response.data.id.toString() : null,
+      coverImagePending: {
+        url: response.data.coverImageUrl
+          ? buildAbsoluteUrl(response.data.coverImageUrl)
+          : "",
+        fileName: "",
+      },
+      files: [],
+    } as ContentDetails;
+    helpers.setValues(patched);
+    await helpers.setFieldValue("coverImagePending", patched.coverImagePending);
 
     setWasModified(false);
     setCoverWasModified(false);
@@ -298,66 +307,69 @@ export const ContentEdit = (props: ContentEditProps) => {
       try {
         const localStorageSnapshot = { ...editorLocalStorage };
         switch (restoreDataState) {
-          case ContentEditRestoreState.Idle:
+          case ContentEditRestoreState.Idle: {
             if (localStorageSnapshot.data.filter((data) => data.id === id).length > 0) {
               setRestoreDataState(ContentEditRestoreState.Requested);
               return;
             }
             break;
-          case ContentEditRestoreState.Requested:
+          }
+          case ContentEditRestoreState.Requested: {
             return;
-          case ContentEditRestoreState.Rejected:
+          }
+          case ContentEditRestoreState.Rejected: {
             localStorageSnapshot.data = localStorageSnapshot.data.filter((data) => data.id !== id);
             setEditorLocalStorage(localStorageSnapshot);
             break;
-          case ContentEditRestoreState.Accepted:
-            await formik.setValues(
-              localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData
-            );
-            if (
-              localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData
-                .coverImagePending.fileName.length > 0
-            ) {
+          }
+          case ContentEditRestoreState.Accepted: {
+            const saved = localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData;
+            await formik.setValues(saved);
+            if (saved.coverImagePending.fileName.length > 0) {
               setCoverWasModified(true);
             }
             setWasModified(true);
             setIsInitialLoading(false);
             return;
+          }
         }
         if (client && id) {
           const { data } = await client.api.contentDetail(Number(id));
-          await formik.setValues(
-            Automapper.map<ContentDetailsDto, ContentDetails>(
-              data,
-              "ContentDetailsDto",
-              "ContentDetails"
-            )
+          const patched: ContentDetails = {
+            ...data,
+            id: data.id ? data.id.toString() : null,
+            coverImagePending: {
+              url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+              fileName: "",
+            },
+            files: [],
+          } as ContentDetails;
+          await formik.setValues(patched);
+          await formik.setFieldValue(
+            "coverImagePending",
+            patched.coverImagePending
           );
-          await formik.setFieldValue("coverImagePending", {
-            url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
-            fileName: "",
-          });
         } else if (client && sourceId) {
           // Load content for duplication
           const { data } = await client.api.contentDetail(Number(sourceId));
-          const duplicatedContent = Automapper.map<ContentDetailsDto, ContentDetails>(
-            data,
-            "ContentDetailsDto",
-            "ContentDetails"
-          );
-          
-          // Apply duplication transformations
-          duplicatedContent.id = null; // Reset ID for new content
-          duplicatedContent.title = duplicatedContent.title + " - Copy";
-          duplicatedContent.slug = duplicatedContent.slug + "-copy";
-          duplicatedContent.createdAt = null;
-          duplicatedContent.updatedAt = null;
-          
+          const duplicatedContent: ContentDetails = {
+            ...data,
+            id: null,
+            title: data.title + " - Copy",
+            slug: data.slug + "-copy",
+            createdAt: null,
+            updatedAt: null,
+            coverImagePending: {
+              url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+              fileName: "",
+            },
+            files: [],
+          } as ContentDetails;
           await formik.setValues(duplicatedContent);
-          await formik.setFieldValue("coverImagePending", {
-            url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
-            fileName: "",
-          });
+          await formik.setFieldValue(
+            "coverImagePending",
+            duplicatedContent.coverImagePending
+          );
           setWasModified(true); // Mark as modified since it's duplicated content
         }
         setIsInitialLoading(false);
@@ -439,6 +451,19 @@ export const ContentEdit = (props: ContentEditProps) => {
   const handleDuplicate = () => {
     if (!id) return;
     navigate(`/content/${id}/duplicate`);
+  };
+
+  // Handler for site preview
+  const handleSitePreview = () => {
+    const success = openSitePreview(
+      formik.values as unknown as Record<string, unknown>,
+      configSettings?.PreviewUrlTemplate || "",
+    );
+    if (!success) {
+      notificationsService.error(
+        "Cannot open site preview. Please ensure all required fields are filled."
+      );
+    }
   };
 
   return (
@@ -632,42 +657,43 @@ export const ContentEdit = (props: ContentEditProps) => {
                     />
                   </Tabs>
                   <Box sx={{ flex: 1 }} />
-                  <Button
-                    variant="text"
-                    onClick={() => setPreviewDialogOpen(true)}
-                    endIcon={<ExternalLink size={20} />}
-                    sx={{
-                      color: "#1976d2",
-                      textTransform: "none",
-                      fontSize: 14,
-                      ml: 2,
-                      pl: 0,
-                      pr: 0,
-                      minWidth: 0,
-                      "&:hover": { textDecoration: "underline", background: "none" }
-                    }}
-                  >
-                    Preview on Site
-                  </Button>
-                  <Dialog
-                    open={previewDialogOpen}
-                    onClose={() => setPreviewDialogOpen(false)}
-                    aria-labelledby="preview-coming-soon-title"
-                    aria-describedby="preview-coming-soon-description"
-                  >
-                    <DialogTitle id="preview-coming-soon-title">Coming Soon</DialogTitle>
-                    <DialogContent>
-                      <DialogContentText id="preview-coming-soon-description">
-                        The preview feature is not yet available but will be supported soon. 
-                        Stay tuned for updates!
-                      </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button onClick={() => setPreviewDialogOpen(false)} color="primary">
-                        OK
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
+                  {hasLivePreview && 
+                   (contentType?.format === "MDX" || contentType?.format === "MD") && (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={useLivePreview}
+                          onChange={(e) => setUseLivePreview(e.target.checked)}
+                          disabled={
+                            !formik.values.language ||
+                            !formik.values.slug ||
+                            !userInfo?.details?.id
+                          }
+                          size="small"
+                        />
+                      }
+                      label="Live Preview"
+                      sx={{ mr: 5 }}
+                    />
+                  )}
+                  {hasSitePreview && (
+                    <Button
+                      variant="text"
+                      onClick={handleSitePreview}
+                      endIcon={<ExternalLink size={20} />}
+                      sx={{
+                        color: "#1976d2",
+                        textTransform: "none",
+                        fontSize: 14,
+                        pl: 0,
+                        pr: 0,
+                        minWidth: 0,
+                        "&:hover": { textDecoration: "underline", background: "none" }
+                      }}
+                    >
+                      Preview on Site
+                    </Button>
+                  )}
                 </Box>
                 {activeTab === "content" && (
                   <Grid container spacing={2}>
@@ -701,6 +727,8 @@ export const ContentEdit = (props: ContentEditProps) => {
                           value={formik.values.body}
                           isReadOnly={props.readonly}
                           contentDetails={formik.values}
+                          livePreview={useLivePreview}
+                          livePreviewTemplate={configSettings?.LivePreviewUrlTemplate}
                         />
                       )}
                     </Grid>

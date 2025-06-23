@@ -23,6 +23,8 @@ export interface MarkdownEditorProps {
   isReadOnly: boolean | undefined;
   contentDetails: ContentDetails;
   onFrontmatterErrorChange: onFrontmatterErrorChangeFunc;
+  livePreview?: boolean;
+  livePreviewTemplate?: string;
 }
 
 export interface ImageUploadingContext {
