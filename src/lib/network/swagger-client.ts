@@ -4734,6 +4734,113 @@ export interface ForgotPasswordDto {
   language?: string;
 }
 
+export interface ImapAccountCreateDto {
+  /**
+   * Host
+   * @minLength 1
+   * @example "string"
+   */
+  host: string;
+  /**
+   * User Name
+   * @minLength 1
+   * @example "string"
+   */
+  userName: string;
+  /**
+   * Port
+   * @format int32
+   * @example 1
+   */
+  port: number;
+  /**
+   * Use Ssl
+   * @example true
+   */
+  useSsl: boolean;
+  /**
+   * Password
+   * @minLength 1
+   * @example "string"
+   */
+  password: string;
+}
+
+export interface ImapAccountDetailsDto {
+  /**
+   * Host
+   * @minLength 1
+   * @example "string"
+   */
+  host: string;
+  /**
+   * User Name
+   * @minLength 1
+   * @example "string"
+   */
+  userName: string;
+  /**
+   * Port
+   * @format int32
+   * @example 1
+   */
+  port: number;
+  /**
+   * Use Ssl
+   * @example true
+   */
+  useSsl: boolean;
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface ImapAccountUpdateDto {
+  /**
+   * Host
+   * @example "string"
+   */
+  host?: string | null;
+  /**
+   * User Name
+   * @example "string"
+   */
+  userName?: string | null;
+  /**
+   * Password
+   * @example "string"
+   */
+  password?: string | null;
+  /**
+   * Port
+   * @format int32
+   * @example 1
+   */
+  port?: number | null;
+  /**
+   * Use Ssl
+   * @example true
+   */
+  useSsl?: boolean | null;
+}
+
 export interface ImportError {
   /**
    * Row
@@ -6289,7 +6396,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.45.0
+ * @version 1.2.48.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -6503,19 +6610,19 @@ export class Api<
     /**
      * No description
      *
-     * @tags ActivityLog
-     * @name ActivityLogList
-     * @request GET:/api/activity-log
+     * @tags ActivityLogs
+     * @name ActivityLogsList
+     * @request GET:/api/activity-logs
      * @secure
      */
-    activityLogList: (
+    activityLogsList: (
       query?: {
         query?: string;
       },
       params: RequestParams = {},
     ) =>
       this.request<ActivityLogDetailsDto[], void | ProblemDetails>({
-        path: `/api/activity-log`,
+        path: `/api/activity-logs`,
         method: "GET",
         query: query,
         secure: true,
@@ -7102,6 +7209,28 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentDraftPartialUpdate
+     * @request PATCH:/api/content/{id}/draft
+     * @secure
+     */
+    contentDraftPartialUpdate: (
+      id: number,
+      data: ContentUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/content/${id}/draft`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -9154,14 +9283,14 @@ export class Api<
     /**
      * No description
      *
-     * @tags Promotion
-     * @name PromotionDetail
-     * @request GET:/api/promotion/{id}
+     * @tags Promotions
+     * @name PromotionsDetail
+     * @request GET:/api/promotions/{id}
      * @secure
      */
-    promotionDetail: (id: number, params: RequestParams = {}) =>
+    promotionsDetail: (id: number, params: RequestParams = {}) =>
       this.request<PromotionDetailsDto, void | ProblemDetails>({
-        path: `/api/promotion/${id}`,
+        path: `/api/promotions/${id}`,
         method: "GET",
         secure: true,
         format: "json",
@@ -9171,18 +9300,18 @@ export class Api<
     /**
      * No description
      *
-     * @tags Promotion
-     * @name PromotionPartialUpdate
-     * @request PATCH:/api/promotion/{id}
+     * @tags Promotions
+     * @name PromotionsPartialUpdate
+     * @request PATCH:/api/promotions/{id}
      * @secure
      */
-    promotionPartialUpdate: (
+    promotionsPartialUpdate: (
       id: number,
       data: PromotionUpdateDto,
       params: RequestParams = {},
     ) =>
       this.request<PromotionDetailsDto, void | ProblemDetails>({
-        path: `/api/promotion/${id}`,
+        path: `/api/promotions/${id}`,
         method: "PATCH",
         body: data,
         secure: true,
@@ -9194,14 +9323,14 @@ export class Api<
     /**
      * No description
      *
-     * @tags Promotion
-     * @name PromotionDelete
-     * @request DELETE:/api/promotion/{id}
+     * @tags Promotions
+     * @name PromotionsDelete
+     * @request DELETE:/api/promotions/{id}
      * @secure
      */
-    promotionDelete: (id: number, params: RequestParams = {}) =>
+    promotionsDelete: (id: number, params: RequestParams = {}) =>
       this.request<void, void | ProblemDetails>({
-        path: `/api/promotion/${id}`,
+        path: `/api/promotions/${id}`,
         method: "DELETE",
         secure: true,
         ...params,
@@ -9210,14 +9339,14 @@ export class Api<
     /**
      * No description
      *
-     * @tags Promotion
-     * @name PromotionCreate
-     * @request POST:/api/promotion
+     * @tags Promotions
+     * @name PromotionsCreate
+     * @request POST:/api/promotions
      * @secure
      */
-    promotionCreate: (data: PromotionCreateDto, params: RequestParams = {}) =>
+    promotionsCreate: (data: PromotionCreateDto, params: RequestParams = {}) =>
       this.request<PromotionDetailsDto, void | ProblemDetails>({
-        path: `/api/promotion`,
+        path: `/api/promotions`,
         method: "POST",
         body: data,
         secure: true,
@@ -9229,19 +9358,19 @@ export class Api<
     /**
      * No description
      *
-     * @tags Promotion
-     * @name PromotionList
-     * @request GET:/api/promotion
+     * @tags Promotions
+     * @name PromotionsList
+     * @request GET:/api/promotions
      * @secure
      */
-    promotionList: (
+    promotionsList: (
       query?: {
         query?: string;
       },
       params: RequestParams = {},
     ) =>
       this.request<PromotionDetailsDto[], void | ProblemDetails>({
-        path: `/api/promotion`,
+        path: `/api/promotions`,
         method: "GET",
         query: query,
         secure: true,
@@ -9252,19 +9381,19 @@ export class Api<
     /**
      * No description
      *
-     * @tags Promotion
-     * @name PromotionExportList
-     * @request GET:/api/promotion/export
+     * @tags Promotions
+     * @name PromotionsExportList
+     * @request GET:/api/promotions/export
      * @secure
      */
-    promotionExportList: (
+    promotionsExportList: (
       query?: {
         query?: string;
       },
       params: RequestParams = {},
     ) =>
       this.request<any, void | ProblemDetails>({
-        path: `/api/promotion/export`,
+        path: `/api/promotions/export`,
         method: "GET",
         query: query,
         secure: true,
@@ -9274,12 +9403,12 @@ export class Api<
     /**
      * No description
      *
-     * @tags Promotion
-     * @name PromotionSyncList
-     * @request GET:/api/promotion/sync
+     * @tags Promotions
+     * @name PromotionsSyncList
+     * @request GET:/api/promotions/sync
      * @secure
      */
-    promotionSyncList: (
+    promotionsSyncList: (
       query?: {
         syncToken?: string;
         query?: string;
@@ -9287,9 +9416,85 @@ export class Api<
       params: RequestParams = {},
     ) =>
       this.request<void, void | ProblemDetails>({
-        path: `/api/promotion/sync`,
+        path: `/api/promotions/sync`,
         method: "GET",
         query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sse
+     * @name SseSupportedEntitiesList
+     * @request GET:/api/sse/supported-entities
+     * @secure
+     */
+    sseSupportedEntitiesList: (params: RequestParams = {}) =>
+      this.request<string[], void>({
+        path: `/api/sse/supported-entities`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sse
+     * @name SseConnectionInfoList
+     * @request GET:/api/sse/connection-info
+     * @secure
+     */
+    sseConnectionInfoList: (params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/sse/connection-info`,
+        method: "GET",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sse
+     * @name SseStreamList
+     * @request GET:/api/sse/stream
+     * @secure
+     */
+    sseStreamList: (
+      query?: {
+        /** @default "*" */
+        entities?: string;
+        /** @default false */
+        includeContent?: boolean;
+        /** @default false */
+        includeLiveDrafts?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void>({
+        path: `/api/sse/stream`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sse
+     * @name SseStatsList
+     * @request GET:/api/sse/stats
+     * @secure
+     */
+    sseStatsList: (params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/sse/stats`,
+        method: "GET",
         secure: true,
         ...params,
       }),
