@@ -156,6 +156,7 @@ const MarkdownEditor = ({
         style.innerHTML = `
           .w-md-editor-preview {
             padding: 0 !important;
+            border-left: 1px solid #999999 !important;
           }
         `;
         document.head.appendChild(style);
