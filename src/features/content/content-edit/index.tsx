@@ -22,6 +22,7 @@ import {
   Box,
   CircularProgress,
   Switch,
+  Typography,
 } from "@mui/material";
 import { useFormik, FormikHelpers } from "formik";
 import {
@@ -54,7 +55,6 @@ import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
-import { SavingBar } from "@components/saving-bar";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useUserInfo } from "@providers/user-provider";
 import { LanguageSelect } from "@components/language-select";
@@ -108,6 +108,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [wasModified, setWasModified] = useState<boolean>(false);
   const [coverWasModified, setCoverWasModified] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isDraftSaving, setIsDraftSaving] = useState<boolean>(false);
+  const [showSaveIndicator, setShowSaveIndicator] = useState<boolean>(false);
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!!id || !!sourceId);
   const [frontmatterState, setfrontmatterState] = useState<ValidateFrontmatterError | null>(null);
   const [restoreDataState, setRestoreDataState] = useState<ContentEditRestoreState>(
@@ -126,6 +128,37 @@ export const ContentEdit = (props: ContentEditProps) => {
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasLivePreview = !!configSettings?.LivePreviewUrlTemplate;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
+
+  // API-based draft save (for live preview)
+  const saveDraft = useDebouncedCallback(async (values: ContentDetails) => {
+    // Only save draft if:
+    // 1. Live preview is enabled
+    // 2. Backend supports live preview 
+    // 3. We have an existing content ID (not create mode)
+    // 4. Content was actually modified
+    if (!useLivePreview || !hasLivePreview || !id || (!wasModified && !coverWasModified)) {
+      return;
+    }
+
+    try {
+      setIsDraftSaving(true);
+      setShowSaveIndicator(true);
+      await client.api.contentDraftPartialUpdate(Number(id), {
+        ...values,
+      });
+      
+      // Show "saved" state for 2 seconds
+      setTimeout(() => {
+        setShowSaveIndicator(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to save draft:", error);
+      // Don't show error to user for draft saves to avoid interrupting their workflow
+      setShowSaveIndicator(false);
+    } finally {
+      setIsDraftSaving(false);
+    }
+  }, 1000); // 2 second debounce for draft saves
 
   const autoSave = useDebouncedCallback((value) => {
     if (!wasModified && !coverWasModified) {
@@ -382,6 +415,7 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   useEffect(() => {
     autoSave(formik.values);
+    saveDraft(formik.values);
   }, [formik.values]);
 
   const isCreateMode = !id && !isDuplicateMode;
@@ -471,7 +505,45 @@ export const ContentEdit = (props: ContentEditProps) => {
       <ModuleWrapper
         breadcrumbs={[]}
         currentBreadcrumb={formik.values.title}
-        saveIndicatorElement={<SavingBar />}
+        saveIndicatorElement={
+          showSaveIndicator ? (
+            <Box minWidth={200}>
+              <Grid container justifyContent={"flex-end"}>
+                <Grid size={{ xs: "auto" }}>
+                  {isDraftSaving ? (
+                    <Grid container spacing={1} alignItems="center">
+                      <Grid size={{ xs: "auto" }}>
+                        <CircularProgress size={14} />
+                      </Grid>
+                      <Grid size={{ xs: "auto" }}>
+                        <Typography variant="body2">
+                          {useLivePreview && hasLivePreview 
+                            ? "Saving draft..." 
+                            : "Saving locally..."
+                          }
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  ) : (
+                    <Grid container spacing={1} alignItems="center">
+                      <Grid size={{ xs: "auto" }}>
+                        <Save size={14} />
+                      </Grid>
+                      <Grid size={{ xs: "auto" }}>
+                        <Typography variant="body2">
+                          {useLivePreview && hasLivePreview 
+                            ? "Draft saved" 
+                            : "Saved locally"
+                          }
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  )}
+                </Grid>
+              </Grid>
+            </Box>
+          ) : undefined
+        }
         isForm={true}
         actionButtons={
           <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 2 }}>
@@ -661,18 +733,17 @@ export const ContentEdit = (props: ContentEditProps) => {
                    (contentType?.format === "MDX" || contentType?.format === "MD") && (
                     <FormControlLabel
                       control={
-                        <Switch
-                          checked={useLivePreview}
-                          onChange={(e) => setUseLivePreview(e.target.checked)}
-                          disabled={
-                            !formik.values.language ||
-                            !formik.values.slug ||
-                            !userInfo?.details?.id
-                          }
-                          size="small"
-                        />
+                        isDraftSaving ? (
+                          <CircularProgress size={20} sx={{ mr: 1 }} />
+                        ) : (
+                          <Switch
+                            checked={useLivePreview}
+                            onChange={(e) => setUseLivePreview(e.target.checked)}
+                            size="small"
+                          />
+                        )
                       }
-                      label="Live Preview"
+                      label={isDraftSaving ? "Saving Draft..." : "Live Preview"}
                       sx={{ mr: 5 }}
                     />
                   )}
