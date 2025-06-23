@@ -8,7 +8,7 @@ const generatePreviewUrl = (template: string, params: Record<string, unknown>): 
   Object.keys(params).forEach((key) => {
     url = url.replace(
       new RegExp(`{${key}}`, "g"),
-      encodeURIComponent(params[key] !== undefined ? String(params[key]) : "")
+      params[key] !== undefined ? String(params[key]) : ""
     );
   });
   return url;

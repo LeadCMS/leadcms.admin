@@ -23,8 +23,9 @@ import {
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
 import { useEffect, useState, useRef } from "react";
-import { Plus, Search, MoreHorizontal, Edit, Copy, Trash2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Copy, Trash2, ExternalLink } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
+import { useConfig } from "@providers/config-provider";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { getContentCoverImageUrl } from "@lib/network/utils";
 import { useNavigate } from "react-router-dom";
@@ -36,9 +37,19 @@ import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { execDeleteWithToast } from "utils/general-helper";
 import { GhostLink } from "@components/ghost-link";
+import { openSitePreview } from "utils/preview-helper";
+
+// Extended config interface to handle settings not in the swagger definition
+interface ExtendedConfig {
+  settings?: {
+    LivePreviewUrlTemplate?: string;
+    PreviewUrlTemplate?: string;
+  };
+}
 
 export const ContentList = () => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const errorDetailsModal = useErrorDetailsModal();
   const showErrorModal = errorDetailsModal?.Show || 
@@ -51,6 +62,10 @@ export const ContentList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollTargetRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef(false);
+
+  // Check if preview features are available from backend config
+  const configSettings = (config as ExtendedConfig)?.settings;
+  const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
 
   // Fetch data logic for InfiniteScroll
   const fetchData = async () => {
@@ -202,6 +217,8 @@ export const ContentList = () => {
                     <ItemCard
                       item={item}
                       onDelete={handleDeleteClick}
+                      hasSitePreview={hasSitePreview}
+                      previewUrlTemplate={configSettings?.PreviewUrlTemplate}
                       key={`content-card-${item.id}`}
                     />
                   </Grid>
@@ -237,13 +254,16 @@ export const ContentList = () => {
 interface ItemProps {
   item: ContentDetailsDto;
   onDelete: (id: number) => void;
+  hasSitePreview?: boolean;
+  previewUrlTemplate?: string;
 }
 
-const ItemCard = ({ item, onDelete }: ItemProps) => {
+const ItemCard = ({ item, onDelete, hasSitePreview, previewUrlTemplate }: ItemProps) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const theme = useTheme();
+  const { notificationsService } = useNotificationsService();
 
   const onClickEdit = () => {
     navigate(`/content/${item.id}/edit`);
@@ -261,6 +281,21 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
   
   const handleDuplicate = () => {
     navigate(`/content/${item.id}/duplicate`);
+    setAnchorEl(null);
+  };
+
+  const handlePreview = () => {
+    if (hasSitePreview && previewUrlTemplate) {
+      const success = openSitePreview(
+        item as unknown as Record<string, unknown>,
+        previewUrlTemplate
+      );
+      if (!success) {
+        notificationsService.error(
+          "Cannot open site preview. Please ensure all required fields are filled."
+        );
+      }
+    }
     setAnchorEl(null);
   };
 
@@ -379,6 +414,12 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
+            {hasSitePreview && (
+              <MenuItem onClick={handlePreview}>
+                <ExternalLink size={16} style={{ marginRight: 8 }} />
+                Preview on Site
+              </MenuItem>
+            )}
             <MenuItem onClick={onClickEdit}>
               <Edit size={16} style={{ marginRight: 8 }} />
               Edit

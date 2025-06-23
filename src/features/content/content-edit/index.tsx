@@ -115,7 +115,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   );
   const [activeTab, setActiveTab] = useState<string>("content");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [useLivePreview, setUseLivePreview] = useState(false);
+  const [useLivePreview, setUseLivePreview] = useState(true);
   const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
   const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
 

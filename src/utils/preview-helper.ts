@@ -6,7 +6,7 @@ export const generateSitePreviewUrl = (
   Object.keys(params).forEach((key) => {
     url = url.replace(
       new RegExp(`{${key}}`, "g"),
-      encodeURIComponent(params[key] !== undefined ? String(params[key]) : "")
+      params[key] !== undefined ? String(params[key]) : ""
     );
   });
   return url;

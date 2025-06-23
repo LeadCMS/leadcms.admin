@@ -149,7 +149,7 @@ const MarkdownEditor = ({
   // Inject inline CSS to reset padding for editor and preview
   useEffect(() => {
     const styleId = "leadcms-md-editor-reset-padding";
-    if (livePreview) {
+    if (livePreview && livePreviewTemplate) {
       if (!document.getElementById(styleId)) {
         const style = document.createElement("style");
         style.id = styleId;
