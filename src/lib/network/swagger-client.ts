@@ -1742,6 +1742,11 @@ export interface ConfigDto {
   entities?: string[];
   /** Languages */
   languages?: LanguageDto[];
+  /**
+   * Settings
+   * @example {"key1":"value1","key2":"value2"}
+   */
+  settings?: Record<string, string>;
 }
 
 export interface ContactCreateDto {
@@ -5854,6 +5859,107 @@ export interface ResetPasswordDto {
   newPassword: string;
 }
 
+export interface SettingCreateDto {
+  /**
+   * Key
+   * @minLength 1
+   * @maxLength 255
+   * @example "string"
+   */
+  key: string;
+  /**
+   * Value
+   * @minLength 1
+   * @example "string"
+   */
+  value: string;
+  /**
+   * User Id
+   * @example "string"
+   */
+  userId?: string | null;
+}
+
+export interface SettingDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Key
+   * @example "string"
+   */
+  key?: string;
+  /**
+   * Value
+   * @example "string"
+   */
+  value?: string;
+  /**
+   * User Id
+   * @example "string"
+   */
+  userId?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+  /**
+   * Created By Id
+   * @example "string"
+   */
+  createdById?: string | null;
+  /**
+   * Updated By Id
+   * @example "string"
+   */
+  updatedById?: string | null;
+  /**
+   * Is User Level
+   * @example true
+   */
+  isUserLevel?: boolean;
+}
+
+export interface SettingUpdateDto {
+  /**
+   * Value
+   * @minLength 1
+   * @example "string"
+   */
+  value: string;
+}
+
+export interface SettingValueDto {
+  /**
+   * Key
+   * @example "string"
+   */
+  key?: string;
+  /**
+   * Value
+   * @example "string"
+   */
+  value?: string;
+  /**
+   * Is User Level
+   * @example true
+   */
+  isUserLevel?: boolean;
+}
+
 export interface StringStringValuesKeyValuePair {
   key?: string;
   value?: string[];
@@ -6396,7 +6502,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.48.0
+ * @version 1.2.49.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -9417,6 +9523,314 @@ export class Api<
     ) =>
       this.request<void, void | ProblemDetails>({
         path: `/api/promotions/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsSystemList
+     * @request GET:/api/settings/system
+     * @secure
+     */
+    settingsSystemList: (params: RequestParams = {}) =>
+      this.request<SettingDetailsDto[], void | ProblemDetails>({
+        path: `/api/settings/system`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsSystemDetail
+     * @request GET:/api/settings/system/{key}
+     * @secure
+     */
+    settingsSystemDetail: (key: string, params: RequestParams = {}) =>
+      this.request<SettingDetailsDto, void | ProblemDetails>({
+        path: `/api/settings/system/${key}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsSystemUpdate
+     * @request PUT:/api/settings/system/{key}
+     * @secure
+     */
+    settingsSystemUpdate: (
+      key: string,
+      query?: {
+        value?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SettingDetailsDto, void | ProblemDetails>({
+        path: `/api/settings/system/${key}`,
+        method: "PUT",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsSystemDelete
+     * @request DELETE:/api/settings/system/{key}
+     * @secure
+     */
+    settingsSystemDelete: (key: string, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/settings/system/${key}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsUserList
+     * @request GET:/api/settings/user
+     * @secure
+     */
+    settingsUserList: (params: RequestParams = {}) =>
+      this.request<Record<string, SettingValueDto>, void | ProblemDetails>({
+        path: `/api/settings/user`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsUserDetail
+     * @request GET:/api/settings/user/{key}
+     * @secure
+     */
+    settingsUserDetail: (key: string, params: RequestParams = {}) =>
+      this.request<SettingValueDto, void | ProblemDetails>({
+        path: `/api/settings/user/${key}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsUserUpdate
+     * @request PUT:/api/settings/user/{key}
+     * @secure
+     */
+    settingsUserUpdate: (
+      key: string,
+      query?: {
+        value?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SettingDetailsDto, void | ProblemDetails>({
+        path: `/api/settings/user/${key}`,
+        method: "PUT",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsUserDelete
+     * @request DELETE:/api/settings/user/{key}
+     * @secure
+     */
+    settingsUserDelete: (key: string, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/settings/user/${key}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsUserOverridesList
+     * @request GET:/api/settings/user/overrides
+     * @secure
+     */
+    settingsUserOverridesList: (params: RequestParams = {}) =>
+      this.request<SettingDetailsDto[], void | ProblemDetails>({
+        path: `/api/settings/user/overrides`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsDetail
+     * @request GET:/api/settings/{id}
+     * @secure
+     */
+    settingsDetail: (id: number, params: RequestParams = {}) =>
+      this.request<SettingDetailsDto, void | ProblemDetails>({
+        path: `/api/settings/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsPartialUpdate
+     * @request PATCH:/api/settings/{id}
+     * @secure
+     */
+    settingsPartialUpdate: (
+      id: number,
+      data: SettingUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SettingDetailsDto, void | ProblemDetails>({
+        path: `/api/settings/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsDelete
+     * @request DELETE:/api/settings/{id}
+     * @secure
+     */
+    settingsDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/settings/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsCreate
+     * @request POST:/api/settings
+     * @secure
+     */
+    settingsCreate: (data: SettingCreateDto, params: RequestParams = {}) =>
+      this.request<SettingDetailsDto, void | ProblemDetails>({
+        path: `/api/settings`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsList
+     * @request GET:/api/settings
+     * @secure
+     */
+    settingsList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SettingDetailsDto[], void | ProblemDetails>({
+        path: `/api/settings`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsExportList
+     * @request GET:/api/settings/export
+     * @secure
+     */
+    settingsExportList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, void | ProblemDetails>({
+        path: `/api/settings/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsSyncList
+     * @request GET:/api/settings/sync
+     * @secure
+     */
+    settingsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/settings/sync`,
         method: "GET",
         query: query,
         secure: true,
