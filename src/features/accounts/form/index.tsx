@@ -233,7 +233,6 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
     <ModuleWrapper
       breadcrumbs={accountFormBreadcrumbLinks}
       currentBreadcrumb={header}
-      saveIndicatorElement={<SavingBar />}
       actionButtons={actionButtons}
     >
       <form onSubmit={formik.handleSubmit}>

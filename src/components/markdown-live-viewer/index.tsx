@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { MarkdownLiveViewerProps } from "./types";
 import "./styles.css";
+import { useUserInfo } from "@providers/user-provider";
 
 const generatePreviewUrl = (template: string, params: Record<string, unknown>): string => {
   let url = template;
@@ -14,10 +15,16 @@ const generatePreviewUrl = (template: string, params: Record<string, unknown>): 
   return url;
 };
 
-const MarkdownLiveViewer = ({ params, template }: MarkdownLiveViewerProps) => {
+const MarkdownLiveViewer = ({ params, template, key: viewerKey }: MarkdownLiveViewerProps) => {
+  const userInfo = useUserInfo();
+  // Merge userId into params if available
+  const mergedParams: Record<string, unknown> = {
+    ...params,
+    userId: params.userId || userInfo?.details?.id || "",
+  };
   const previewUrl = useMemo(() => {
-    if (!params) {
-      console.debug("[MarkdownLiveViewer] No params provided", { params, template });
+    if (!mergedParams) {
+      console.debug("[MarkdownLiveViewer] No params provided", { params: mergedParams, template });
       return null;
     }
 
@@ -29,10 +36,10 @@ const MarkdownLiveViewer = ({ params, template }: MarkdownLiveViewerProps) => {
     const placeholders = template.match(/{(.*?)}/g) || [];
     const missingKeys = placeholders
       .map((k: string) => k.replace(/[{}]/g, ""))
-      .filter((key: string) => !params[key]);
+      .filter((key: string) => !mergedParams[key]);
     if (missingKeys.length > 0) {
       // Print all params and their values for debugging
-      console.debug("[MarkdownLiveViewer] Params received:", JSON.stringify(params, null, 2));
+      console.debug("[MarkdownLiveViewer] Params received:", JSON.stringify(mergedParams, null, 2));
       // Print all placeholders found in the template
       console.debug(
         "[MarkdownLiveViewer] Placeholders in template:",
@@ -40,13 +47,13 @@ const MarkdownLiveViewer = ({ params, template }: MarkdownLiveViewerProps) => {
       );
       // Print missing keys
       console.debug("[MarkdownLiveViewer] Missing required params for preview:", missingKeys, {
-        params,
+        params: mergedParams,
         template,
       });
       return null;
     }
-    return generatePreviewUrl(template, params);
-  }, [params, template]);
+    return generatePreviewUrl(template, mergedParams);
+  }, [mergedParams, template]);
 
   if (!previewUrl) {
     return (
@@ -67,8 +74,9 @@ const MarkdownLiveViewer = ({ params, template }: MarkdownLiveViewerProps) => {
         <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
           Loading preview...
         </Typography>
-        <Typography variant="caption" sx={{ mt: 1, color: "text.disabled" }}>
-          Missing required parameters for preview
+        <Typography variant="caption" sx={{ mt: 1, color: "text.disabled", textAlign: "center" }}>
+          Missing required parameters for preview. <br /> Please make sure to set right{" "}
+          <b>Content Type</b> as well as go to <b>SETTINGS</b> tab and set <b>Slug</b> value.
         </Typography>
       </Box>
     );
@@ -77,6 +85,7 @@ const MarkdownLiveViewer = ({ params, template }: MarkdownLiveViewerProps) => {
   return (
     <Box className="markdown-live-viewer-container" sx={{ height: "100%" }}>
       <iframe
+        key={viewerKey} // Pass key to iframe for remounting
         src={previewUrl}
         className="markdown-live-viewer-iframe"
         title="Live Preview"
@@ -88,10 +97,13 @@ const MarkdownLiveViewer = ({ params, template }: MarkdownLiveViewerProps) => {
   );
 };
 
-export const MarkdownLiveViewerFunc = (params: Record<string, unknown>, template: string) => {
-  console.log("[MarkdownLiveViewerFunc] Rendering with params:", params, template);
-
-  return <MarkdownLiveViewer params={params} template={template} />;
+export const MarkdownLiveViewerFunc = (
+  params: Record<string, unknown>,
+  template: string,
+  key?: React.Key
+) => {
+  console.log("[MarkdownLiveViewerFunc] Rendering with params:", params, template, key);
+  return <MarkdownLiveViewer params={params} template={template} key={key} />;
 };
 
 export default MarkdownLiveViewer;

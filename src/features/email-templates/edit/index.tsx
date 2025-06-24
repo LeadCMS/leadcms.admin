@@ -210,7 +210,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     <ModuleWrapper
       breadcrumbs={emailTemplateFormBreadcrumbLinks}
       currentBreadcrumb={formik.values.name}
-      saveIndicatorElement={<SavingBar />}
       actionButtons={
         <>
           <Box sx={{ display: "flex", width: "100%", gap: 2 }}>

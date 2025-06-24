@@ -231,10 +231,11 @@ export const OrderView = () => {
     formik.setValues({
       productName: "",
       orderId: order!.id!,
-      licenseCode: "",
       unitPrice: 0,
       currency: "",
       quantity: 0,
+      source: "",
+      id: undefined,
     });
     setIsEdit(true);
   };
@@ -270,17 +271,20 @@ export const OrderView = () => {
     unitPrice: zod.number().positive(),
     currency: zod.string(),
     quantity: zod.number().positive(),
+    source: zod.string().optional().nullable(),
+    id: zod.number().optional(),
   });
 
-  const formik = useFormik({
+  const formik = useFormik<OrderItemDetailsDto>({
     validationSchema: toFormikValidationSchema(OrderItemEditValidationScheme),
     initialValues: {
       orderId: 0,
       productName: "",
-      licenseCode: "",
       unitPrice: 0,
       currency: "",
       quantity: 0,
+      source: "",
+      id: undefined,
     },
     onSubmit: submit,
     validateOnChange: false,
@@ -368,21 +372,6 @@ export const OrderView = () => {
                                 formik.touched.productName && Boolean(formik.errors.productName)
                               }
                               helperText={formik.touched.productName && formik.errors.productName}
-                              onChange={formik.handleChange}
-                            />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField
-                              disabled={formik.isSubmitting}
-                              label="License Code"
-                              name="licenseCode"
-                              value={formik.values.licenseCode || ""}
-                              fullWidth
-                              size="small"
-                              error={
-                                formik.touched.licenseCode && Boolean(formik.errors.licenseCode)
-                              }
-                              helperText={formik.touched.licenseCode && formik.errors.licenseCode}
                               onChange={formik.handleChange}
                             />
                           </Grid>

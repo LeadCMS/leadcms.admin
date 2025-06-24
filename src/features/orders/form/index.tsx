@@ -207,7 +207,6 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     <ModuleWrapper
       breadcrumbs={orderFormBreadcrumbLinks}
       currentBreadcrumb={header}
-      saveIndicatorElement={<SavingBar />}
       actionButtons={actionButtons}
     >
       {order && (

@@ -23,7 +23,6 @@ export interface ModuleWrapperProps extends PropsWithChildren {
   leftContainerChildren?: ReactNode | undefined;
   extraActionsContainerChildren?: ReactNode | undefined;
   addButtonContainerChildren?: ReactNode | undefined;
-  saveIndicatorElement?: ReactNode | undefined;
   actionButtons?: ReactNode | undefined;
   isForm?: boolean;
 }

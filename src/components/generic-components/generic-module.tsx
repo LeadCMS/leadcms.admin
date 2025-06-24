@@ -205,18 +205,6 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         onCancelHandled={() => setTriggerCancel(false)}
       />
     );
-    const savingIndicatorElement = (
-      <>
-        <Grid container spacing={3} size={{ xs: "auto", sm: "auto" }}>
-          <Grid size={{ xs: 12, sm: "auto" }}>
-            <CircularProgress size={14} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: "auto" }}>
-            <Typography>Saving...</Typography>
-          </Grid>
-        </Grid>
-      </>
-    );
 
     const actionButtons = formProps.editable ? (
       <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
@@ -254,7 +242,6 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
     return (
       <ModuleWrapper
         key={key}
-        saveIndicatorElement={savingIndicatorElement}
         breadcrumbs={getBreadcrumbLinks(moduleName, modulePath)}
         currentBreadcrumb={currentBreadcrumb}
         actionButtons={actionButtons}

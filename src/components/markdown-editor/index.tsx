@@ -100,7 +100,8 @@ const MarkdownEditor = ({
   onFrontmatterErrorChange,
   livePreview,
   livePreviewTemplate,
-}: MarkdownEditorProps) => {
+  key: editorKey, // <-- add key prop support
+}: MarkdownEditorProps & { key?: React.Key }) => {
   const { notificationsService } = useNotificationsService();
   const [currentError, setCurrentError] = useState<string>("");
   const [currentImageCtxValue, setCurrentImageCtxValue] = useState<ImageUploadingContext | null>(
@@ -188,6 +189,7 @@ const MarkdownEditor = ({
           <input {...getInputProps()} />
           <ImageUploadingCtx.Provider value={currentImageCtxValue}>
             <MDEditor
+              key={editorKey} // <-- pass key to MDEditor for remounting
               aria-disabled={isReadOnly}
               hideToolbar={isReadOnly}
               height="100%"

@@ -85,7 +85,6 @@ export const DomainForm = (
   return (
     <ModuleWrapper
       key={key}
-      saveIndicatorElement={<SavingBar />}
       breadcrumbs={domainFormBreadcrumbLinks}
       currentBreadcrumb={currentBreadcrumb}
       actionButtons={actionButtons}

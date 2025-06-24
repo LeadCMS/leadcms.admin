@@ -66,6 +66,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import MonacoEditor from "@monaco-editor/react";
 import { openSitePreview } from "utils/preview-helper";
+import { useUserInfo } from "@providers/user-provider";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -101,7 +102,6 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [coverWasModified, setCoverWasModified] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDraftSaving, setIsDraftSaving] = useState<boolean>(false);
-  const [showSaveIndicator, setShowSaveIndicator] = useState<boolean>(false);
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!!id || !!sourceId);
   const [frontmatterState, setfrontmatterState] = useState<ValidateFrontmatterError | null>(null);
   const [restoreDataState, setRestoreDataState] = useState<ContentEditRestoreState>(
@@ -112,6 +112,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [useLivePreview, setUseLivePreview] = useState(true);
   const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
   const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
+  const [iframeKey, setIframeKey] = useState<number>(0);
+  const userInfo = useUserInfo();
 
   const supportsCover = contentType?.supportsCoverImage;
   const supportsComments = contentType?.supportsComments;
@@ -122,31 +124,39 @@ export const ContentEdit = (props: ContentEditProps) => {
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
 
   // API-based draft save (for live preview)
+  const filterEmptyValues = (obj: unknown) => {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).filter(
+        ([, v]) =>
+          v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)
+      )
+    );
+  };
+
   const saveDraft = useDebouncedCallback(async (values: ContentDetails) => {
     // Only save draft if:
     // 1. Live preview is enabled
     // 2. Backend supports live preview
-    // 3. We have an existing content ID (not create mode)
-    // 4. Content was actually modified
-    if (!useLivePreview || !hasLivePreview || !id || (!wasModified && !coverWasModified)) {
+    // 3. Content was actually modified
+    if (!useLivePreview || !hasLivePreview || (!wasModified && !coverWasModified)) {
       return;
     }
 
     try {
       setIsDraftSaving(true);
-      setShowSaveIndicator(true);
-      await client.api.contentDraftPartialUpdate(Number(id), {
-        ...values,
-      });
-
-      // Show "saved" state for 2 seconds
+      const filteredValues = filterEmptyValues(values);
+      if (id) {
+        await client.api.contentDraftPartialUpdate(Number(id), filteredValues);
+      } else {
+        await client.api.contentDraftCreate(filteredValues);
+      }
+      // Add 1 second delay, then refresh iframe
       setTimeout(() => {
-        setShowSaveIndicator(false);
-      }, 2000);
+        setIframeKey(Date.now());
+      }, 1000);
     } catch (error) {
       console.error("Failed to save draft:", error);
       // Don't show error to user for draft saves to avoid interrupting their workflow
-      setShowSaveIndicator(false);
     } finally {
       setIsDraftSaving(false);
     }
@@ -469,8 +479,12 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   // Handler for site preview
   const handleSitePreview = () => {
+    const params = {
+      ...formik.values,
+      userId: userInfo?.details?.id || "",
+    };
     const success = openSitePreview(
-      formik.values as unknown as Record<string, unknown>,
+      params as unknown as Record<string, unknown>,
       configSettings?.PreviewUrlTemplate || ""
     );
     if (!success) {
@@ -485,41 +499,6 @@ export const ContentEdit = (props: ContentEditProps) => {
       <ModuleWrapper
         breadcrumbs={[]}
         currentBreadcrumb={formik.values.title}
-        saveIndicatorElement={
-          showSaveIndicator ? (
-            <Box minWidth={200}>
-              <Grid container justifyContent={"flex-end"}>
-                <Grid size={{ xs: "auto" }}>
-                  {isDraftSaving ? (
-                    <Grid container spacing={1} alignItems="center">
-                      <Grid size={{ xs: "auto" }}>
-                        <CircularProgress size={14} />
-                      </Grid>
-                      <Grid size={{ xs: "auto" }}>
-                        <Typography variant="body2">
-                          {useLivePreview && hasLivePreview
-                            ? "Saving draft..."
-                            : "Saving locally..."}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  ) : (
-                    <Grid container spacing={1} alignItems="center">
-                      <Grid size={{ xs: "auto" }}>
-                        <Save size={14} />
-                      </Grid>
-                      <Grid size={{ xs: "auto" }}>
-                        <Typography variant="body2">
-                          {useLivePreview && hasLivePreview ? "Draft saved" : "Saved locally"}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  )}
-                </Grid>
-              </Grid>
-            </Box>
-          ) : undefined
-        }
         isForm={true}
         actionButtons={
           <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 2 }}>
@@ -793,6 +772,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                           contentDetails={formik.values}
                           livePreview={useLivePreview}
                           livePreviewTemplate={configSettings?.LivePreviewUrlTemplate}
+                          key={iframeKey}
                         />
                       )}
                     </Grid>

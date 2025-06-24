@@ -279,7 +279,6 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     <ModuleWrapper
       breadcrumbs={contactFormBreadcrumbLinks}
       currentBreadcrumb={header}
-      saveIndicatorElement={<SavingBar />}
       isForm={true}
       actionButtons={
         <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
@@ -409,10 +408,10 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                 <Autocomplete
                   disabled={isLoading || formik.isSubmitting}
                   options={languages}
-                  getOptionLabel={(option) => option.label}
+                  getOptionLabel={(option) => option.name}
                   size="small"
                   fullWidth
-                  value={languages.find((c) => c.value === formik.values.language) || null}
+                  value={languages.find((c) => c.code === formik.values.language) || null}
                   renderInput={(params) => (
                     <TextField {...params} label="Language" placeholder="Select language" />
                   )}

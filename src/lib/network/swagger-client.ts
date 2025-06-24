@@ -7348,7 +7348,7 @@ export class Api<
      * @request POST:/api/content/draft
      * @secure
      */
-    contentDraftCreate: (data: ContentCreateDto, params: RequestParams = {}) =>
+    contentDraftCreate: (data: ContentUpdateDto, params: RequestParams = {}) =>
       this.request<void, void | ProblemDetails>({
         path: `/api/content/draft`,
         method: "POST",
