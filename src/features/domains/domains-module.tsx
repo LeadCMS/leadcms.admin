@@ -5,7 +5,6 @@ import {
   CoreModule,
   editFormRoute,
   getCoreModuleRoute,
-  getEditFormRoute,
   viewFormRoute,
 } from "lib/router";
 import { Outlet, Route, Routes, useNavigate, useParams } from "react-router-dom";

@@ -241,10 +241,7 @@ export const OrderView = () => {
 
   const gridFinalizedColumns = columns.concat(actionsColumn);
 
-  const submitFunc = async (
-    values: OrderItemDetailsDto,
-    helpers: FormikHelpers<OrderItemDetailsDto>
-  ) => {
+  const submitFunc = async (values: OrderItemDetailsDto) => {
     try {
       if (values?.id) {
         await client.api.orderItemsPartialUpdate(values.id!, values!);
@@ -294,7 +291,7 @@ export const OrderView = () => {
       {order && (
         <>
           <Grid container spacing={3} marginTop={4} paddingRight={4}>
-            <Grid xs={12} sm={4} item>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Grid marginBottom={3}>
                 <DataView header="Order Info" rows={orderViewData}></DataView>
               </Grid>
@@ -313,7 +310,7 @@ export const OrderView = () => {
                 ></DataManagementBlock>
               </Grid>
             </Grid>
-            <Grid xs={12} sm={8} item>
+            <Grid size={{ xs: 12, sm: 8 }}>
               <Grid marginBottom={3}>
                 <Card>
                   {orderItems && (
@@ -353,12 +350,12 @@ export const OrderView = () => {
                     <Card>
                       <CardContent>
                         <Grid container spacing={4} marginBottom={4}>
-                          <Grid xs={12} sm={10} item>
+                          <Grid size={{ xs: 12, sm: 10 }}>
                             <Typography gutterBottom variant="h6" component="div">
                               {`${formik.values.id ? "Edit" : "Add"} Order Item`}
                             </Typography>
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               disabled={formik.isSubmitting}
                               label="Product Name"
@@ -374,7 +371,7 @@ export const OrderView = () => {
                               onChange={formik.handleChange}
                             />
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               disabled={formik.isSubmitting}
                               label="License Code"
@@ -389,7 +386,7 @@ export const OrderView = () => {
                               onChange={formik.handleChange}
                             />
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <Tooltip title="Unit Price field must contain only numbers">
                               <TextField
                                 disabled={formik.isSubmitting}
@@ -405,7 +402,7 @@ export const OrderView = () => {
                               />
                             </Tooltip>
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               disabled={formik.isSubmitting}
                               label="Currency"
@@ -418,7 +415,7 @@ export const OrderView = () => {
                               onChange={formik.handleChange}
                             />
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <Tooltip title="Quantity field must contain only numbers">
                               <TextField
                                 disabled={formik.isSubmitting}
@@ -434,7 +431,7 @@ export const OrderView = () => {
                               />
                             </Tooltip>
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               disabled={formik.isSubmitting}
                               label="Source"

@@ -53,7 +53,6 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
-import { useUserInfo } from "@providers/user-provider";
 import { LanguageSelect } from "@components/language-select";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";

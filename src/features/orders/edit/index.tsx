@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { OrderDetailsDto, OrderItemDetailsDto, OrderUpdateDto } from "lib/network/swagger-client";
+import { OrderDetailsDto, OrderUpdateDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { OrderForm } from "../form";
 import { useRouteParams } from "typesafe-routes";

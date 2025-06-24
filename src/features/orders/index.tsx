@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState } from "react";
-import { OrderDetailsDto, OrderImportDto } from "lib/network/swagger-client";
+import { OrderDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import {
   defaultFilterOrderColumn,

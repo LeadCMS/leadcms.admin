@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -10,10 +10,6 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import DownloadIcon from "@mui/icons-material/Download";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
-import MovieIcon from "@mui/icons-material/Movie";
-import MusicNoteIcon from "@mui/icons-material/MusicNote";
-import DescriptionIcon from "@mui/icons-material/Description";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 
 interface MediaPreviewProps {

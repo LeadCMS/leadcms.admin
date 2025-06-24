@@ -72,9 +72,9 @@ export const ActivityLogList = () => {
     ></SearchBar>
   );
 
-  const getActivitiesList = async (mainQuery: string, exportQuery?: string) => {
+  const getActivitiesList = async (mainQuery: string) => {
     try {
-      const result = await client.api.activityLogList({
+      const result = await client.api.activityLogsList({
         query: mainQuery,
       });
       return result;

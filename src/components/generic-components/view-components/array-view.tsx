@@ -12,7 +12,7 @@ import { camelCaseToTitleCase, isJsonArray } from "../common";
 import { ViewListItemText } from "../index.styled";
 import { ViewProps } from "./common";
 
-export const ArrayView = ({ key, value, label }: ViewProps<any>): ReactNode => {
+export const ArrayView = ({ value, label }: ViewProps<any>): ReactNode => {
   const [open, setOpen] = useState(false);
 
   if (!value) return <ViewListItemText primary={label} secondary={"N/A"} />;

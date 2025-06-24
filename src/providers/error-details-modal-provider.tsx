@@ -1,6 +1,6 @@
 import { ErrorDetailsModal } from "@components/error-details";
 import Box from "@mui/material/Box";
-import { memo, PropsWithChildren, useEffect, createContext, useState, useContext } from "react";
+import { memo, PropsWithChildren, createContext, useState, useContext } from "react";
 
 interface ErrorDetailsModalContextData {
   Show: (data: React.ReactNode | string[]) => void;

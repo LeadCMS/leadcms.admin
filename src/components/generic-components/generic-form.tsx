@@ -100,7 +100,6 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
   updateSchema,
   createSchema,
   mode,
-  deleteOptionProps,
   getItemId,
   onSaved,
   customDictionaries,
@@ -110,7 +109,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
   onCancelHandled,
   fieldSections,
 }: GenericFormProps<TView, TCreate, TUpdate>) {
-  const { setBusy, isBusy, setSaving, isSaving } = useModuleWrapperContext();
+  const { setBusy, setSaving } = useModuleWrapperContext();
   const handleCoreNavigation = useCoreModuleNavigation();
   const [validationResult, setValidationResult] = useState<ValidationResult>();
   const itemId = getItemId();
