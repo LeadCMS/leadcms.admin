@@ -91,7 +91,6 @@ export const ContentEdit = (props: ContentEditProps) => {
     ((data) => console.error("Error modal not available:", data));
   const { notificationsService } = useNotificationsService();
   const networkContext = useRequestContext();
-  const userInfo = useUserInfo();
   const handleNavigation = useCoreModuleNavigation();
   const navigate = useNavigate();
   const { config } = useConfig();
@@ -738,7 +737,20 @@ export const ContentEdit = (props: ContentEditProps) => {
                         ) : (
                           <Switch
                             checked={useLivePreview}
-                            onChange={(e) => setUseLivePreview(e.target.checked)}
+                            onChange={(e) => {
+                              const newValue = e.target.checked;
+                              setUseLivePreview(newValue);
+                              
+                              // When enabling live preview, immediately save current draft
+                              if (
+                                newValue && 
+                                hasLivePreview && 
+                                id && 
+                                (wasModified || coverWasModified)
+                              ) {
+                                saveDraft(formik.values);
+                              }
+                            }}
                             size="small"
                           />
                         )
