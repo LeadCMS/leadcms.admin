@@ -54,8 +54,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const editorRef = useRef<TinyMCEEditor | null>(null);
   const { setSaving, setBusy } = useModuleWrapperContext();
   const { notificationsService } = useNotificationsService();
-  const errorModalContext = useErrorDetailsModal();
-  const showErrorModal = errorModalContext?.Show;
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const { client } = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
   const { id } = useParams();
@@ -116,11 +115,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     helpers.setSubmitting(false);
     handleNavigation(CoreModule.emailTemplates);
   };
-
-  const noopErrorHandler = (errors: string[]) => {
-    console.log("Error occurred but error modal is not available:", errors);
-  };
-
   const submit = async (
     values: ExtendedEmailTemplateDetailsDto,
     helpers: FormikHelpers<ExtendedEmailTemplateDetailsDto>
@@ -130,7 +124,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       helpers,
       submitFunc,
       notificationsService,
-      showErrorModal || noopErrorHandler,
+      showErrorModal,
       "email template"
     );
   };

@@ -72,15 +72,11 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
   const context = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
   const { setBusy } = useModuleWrapperContext();
-  const showErrorModal = useErrorDetailsModal()?.Show;
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { config } = useConfig();
   const languages = config?.languages || [];
-
-  const noopErrorHandler = (errors: string[]) => {
-    console.log("Error occurred but error modal is not available:", errors);
-  };
 
   const [countryList, setCountryList] = useState<Country[]>([]);
   const [continentList, setContinentList] = useState<Continent[]>([]);
@@ -120,7 +116,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       helpers,
       submitFunc,
       notificationsService,
-      showErrorModal || noopErrorHandler,
+      showErrorModal,
       "contact"
     );
   };

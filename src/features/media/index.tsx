@@ -283,9 +283,7 @@ const MediaManagement = () => {
 
   // Delete logic
   const { notificationsService } = useNotificationsService();
-  const errorDetailsModal = useErrorDetailsModal();
-  const showErrorModal =
-    errorDetailsModal?.Show || ((errDetails: string[]) => console.error(errDetails));
+  const { Show: showErrorModal } = useErrorDetailsModal();
 
   const refreshMediaList = async () => {
     setLoading(true);

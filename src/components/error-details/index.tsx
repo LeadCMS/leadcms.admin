@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Fade,
-  Typography,
-} from "@mui/material";
+import { Button, DialogActions, DialogContent, DialogTitle, Fade, Typography } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import { TransitionProps } from "@mui/material/transitions";
 import React from "react";
@@ -21,7 +13,7 @@ interface ErrorDetailsModalProps {
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
-    children: React.ReactElement<any, any>;
+    children: React.ReactNode;
   },
   ref: React.Ref<unknown>
 ) {

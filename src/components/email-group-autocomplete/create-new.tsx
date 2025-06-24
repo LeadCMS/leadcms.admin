@@ -12,7 +12,6 @@ import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useRequestContext } from "@providers/request-provider";
 import { FormikHelpers, useFormik } from "formik";
 import React from "react";
-import { useState } from "react";
 import { networkErrorToStringArray } from "utils/general-helper";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { EmailGroupEditValidationScheme } from "./validation";
@@ -30,7 +29,7 @@ const Transition = React.forwardRef(function Transition(
 
 export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmailGroupProps) => {
   const { notificationsService } = useNotificationsService();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const { client } = useRequestContext();
 
   const submitFunc = async (

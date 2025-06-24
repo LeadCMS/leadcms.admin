@@ -4,7 +4,7 @@ import { CardContainer, ViewListItemText, ViewRowGrid } from "./index.styled";
 
 type dataViewProps = {
   header: string;
-  rows: { label: string; value: any }[] | undefined;
+  rows: { label: string; value: unknown }[] | undefined;
 };
 
 export const DataView = ({ header, rows }: dataViewProps) => {

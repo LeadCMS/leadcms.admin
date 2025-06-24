@@ -40,7 +40,7 @@ export const OrderView = () => {
   const { id } = useRouteParams(viewFormRoute);
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { Show: showErrorModal } = useErrorDetailsModal();
 
   const [order, setOrder] = useState<OrderDetailsDto | undefined>();
   const [contact, setContact] = useState<ContactDetailsDto>();

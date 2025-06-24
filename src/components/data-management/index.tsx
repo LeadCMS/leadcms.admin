@@ -13,7 +13,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import { CardHeaderStyled, DeleteButtonContainer } from "./index.styled";
+import { DeleteButtonContainer } from "./index.styled";
 import { Trash2, Edit } from "lucide-react";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { HttpResponse, ProblemDetails } from "@lib/network/swagger-client";
@@ -96,7 +96,7 @@ export const DataManagementBlock = ({
   showOnlyButtons = false,
 }: DataDeleteProps) => {
   const { notificationsService } = useNotificationsService();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const handleNavigation = useCoreModuleNavigation();
   const navigate = useNavigate();
   const { moduleName } = useRouteParams(coreModuleRoute);

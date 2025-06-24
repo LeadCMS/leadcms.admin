@@ -82,10 +82,7 @@ interface ContentEditProps {
 
 export const ContentEdit = (props: ContentEditProps) => {
   const { setSaving, setBusy } = useModuleWrapperContext();
-  const errorDetailsModal = useErrorDetailsModal();
-  // Use fallback function to satisfy TypeScript for the error modal
-  const showErrorModal =
-    errorDetailsModal?.Show || ((data) => console.error("Error modal not available:", data));
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const { notificationsService } = useNotificationsService();
   const networkContext = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();

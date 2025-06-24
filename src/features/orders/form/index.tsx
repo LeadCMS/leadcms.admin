@@ -39,7 +39,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
   const { client } = useRequestContext();
   const { setBusy } = useModuleWrapperContext();
   const handleNavigation = useCoreModuleNavigation();
-  const showErrorModal = useErrorDetailsModal()?.Show;
+  const { Show: showErrorModal } = useErrorDetailsModal();
 
   const noopErrorHandler = (errors: string[]) => {
     console.log("Error occurred but error modal is not available:", errors);

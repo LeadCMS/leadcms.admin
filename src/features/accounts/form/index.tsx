@@ -48,12 +48,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   const { notificationsService } = useNotificationsService();
   const context = useRequestContext();
   const { setBusy } = useModuleWrapperContext();
-  const errorDetails = useErrorDetailsModal();
-  const showErrorModal =
-    errorDetails?.Show ??
-    (() => {
-      /* no-op */
-    });
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const handleNavigation = useCoreModuleNavigation();
 
   const [countryList, setCountryList] = useState<Country[]>([]);

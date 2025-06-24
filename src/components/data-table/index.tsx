@@ -5,6 +5,7 @@ import {
   GridFilterModel,
   GridSortModel,
 } from "@mui/x-data-grid";
+import type { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { ActionButtonContainer, DataTableContainer } from "./index.styled";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
 import { Edit, ArrowRight } from "lucide-react";
@@ -15,7 +16,7 @@ import { GridDataFilterState } from "types";
 
 type DataTableProps = {
   columns: GridColDef[];
-  data?: any[];
+  data?: GridValidRowModel[];
   autoHeight: boolean;
   pageSize?: number | undefined;
   totalRowCount: number | undefined;
@@ -48,9 +49,9 @@ export const DataTableGrid = ({
   disableEditRoute,
   disableViewRoute,
 }: DataTableProps) => {
-  const empty = [] as const;
+  const empty: readonly GridValidRowModel[] = [];
 
-  const actionsColumn: GridColDef | any = {
+  const actionsColumn: GridColDef = {
     field: "actions",
     headerName: "Actions",
     flex: 1,
@@ -59,7 +60,7 @@ export const DataTableGrid = ({
     filterable: false,
     sortable: false,
     disableColumnMenu: true,
-    renderCell: ({ row }: any) => {
+    renderCell: ({ row }: { row: GridValidRowModel }) => {
       return (
         <ActionButtonContainer>
           <IconButton disabled={disableEditRoute} onClick={() => handleEditClick(row)}>
@@ -75,12 +76,16 @@ export const DataTableGrid = ({
 
   const navigate = useNavigate();
 
-  const handleEditClick = (row: any) => {
-    navigate(getEditFormRoute(row.id!), { state: row });
+  const handleEditClick = (row: GridValidRowModel) => {
+    if (row.id !== undefined && row.id !== null) {
+      navigate(getEditFormRoute(row.id), { state: row });
+    }
   };
 
-  const handleForwardClick = (row: any) => {
-    navigate(getViewFormRoute(row.id!), { state: row });
+  const handleForwardClick = (row: GridValidRowModel) => {
+    if (row.id !== undefined && row.id !== null) {
+      navigate(getViewFormRoute(row.id), { state: row });
+    }
   };
 
   const handlePaginationModelChange = (model: { page: number; pageSize: number }) => {

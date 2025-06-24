@@ -66,5 +66,11 @@ export const ErrorDetailsModalProvider = memo(function ErrorDetailsModalProvider
 
 export const useErrorDetailsModal = () => {
   const ctx = useContext(ErrorDetailsModalContext);
-  return ctx;
+  if (ctx) return ctx;
+
+  return {
+    Show: () => {
+      /* no-op */
+    },
+  };
 };

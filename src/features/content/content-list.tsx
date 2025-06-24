@@ -51,10 +51,7 @@ export const ContentList = () => {
   const { client } = useRequestContext();
   const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
-  const errorDetailsModal = useErrorDetailsModal();
-  const showErrorModal =
-    errorDetailsModal?.Show ||
-    ((data: unknown) => console.error("Error modal not available:", data));
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
   const [searchText, setSearchText] = useState<string>("");

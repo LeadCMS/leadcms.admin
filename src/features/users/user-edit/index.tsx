@@ -40,7 +40,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
   const { setBusy } = useModuleWrapperContext();
 
   const { notificationsService } = useNotificationsService();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const { client } = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
   const userInfo = useUserInfo();
