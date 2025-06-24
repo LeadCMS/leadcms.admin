@@ -7,8 +7,8 @@ export const AppBarStyled = styled(AppBar)`
   height: 64px;
   background-color: ${({ theme }) => theme.palette.background.default};
   border-bottom: 1px solid
-  ${({ theme }) =>
-    theme.palette.mode === "dark" ? theme.palette.secondary.light : theme.palette.divider};
+    ${({ theme }) =>
+      theme.palette.mode === "dark" ? theme.palette.secondary.light : theme.palette.divider};
   box-shadow: none;
   display: flex;
   justify-content: center;

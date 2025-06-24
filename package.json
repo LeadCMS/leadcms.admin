@@ -11,7 +11,7 @@
     "start": "cross-env TS_NODE_PROJECT=\"./webpack/tsconfig.json\" webpack serve --config=\"./webpack/webpack.config.ts\"  --mode=development",
     "build": "cross-env TS_NODE_PROJECT=\"./webpack/tsconfig.json\" webpack --config=\"./webpack/webpack.config.ts\" --mode=production",
     "lint": "eslint ./src/**/*",
-    "format": "prettier --write ./src/**/* !./src/**/{swagger.json,swagger-client.ts}",
+    "format": "prettier --write \"./src/**/*.{ts,tsx,js,jsx}\" --ignore-path .prettierignore",
     "prepare": "husky install",
     "generate:api": "ts-node ./scripts/generate-api.ts"
   },

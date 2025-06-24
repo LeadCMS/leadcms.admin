@@ -432,7 +432,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
               const SectionIcon = section.title ? getSectionIcon(section.title) : null;
 
               return (
-                <Box sx={{ p: { xs: 2.5, sm: 1 } }}>
+                <Box key={section.id} sx={{ p: { xs: 2.5, sm: 1 } }}>
                   {section.title && (
                     <Box
                       sx={{
