@@ -733,7 +733,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     <FormControlLabel
                       control={
                         isDraftSaving ? (
-                          <CircularProgress size={20} sx={{ mr: 1 }} />
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
                         ) : (
                           <Switch
                             checked={useLivePreview}
@@ -755,7 +755,11 @@ export const ContentEdit = (props: ContentEditProps) => {
                           />
                         )
                       }
-                      label={isDraftSaving ? "Saving Draft..." : "Live Preview"}
+                      label={
+                        <Typography variant="body2" component="span">
+                          {isDraftSaving ? "Saving Draft..." : "Live Preview"}
+                        </Typography>
+                      }
                       sx={{ mr: 5 }}
                     />
                   )}

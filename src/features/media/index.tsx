@@ -521,13 +521,17 @@ const MediaManagement = () => {
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={4}>
           {items.map((item) => {
             const type = getFileType(item.mimeType, item.extension);
             const isFolder = type === "folder";
             const folderItemCount = isFolder ? item.id : undefined;
             return (
-              <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+              <Grid 
+                key={item.id} 
+                size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}
+                sx={{ mb: 3, minWidth: 290, maxWidth: 330 }}
+              >
                 <Paper
                   elevation={2}
                   sx={{
@@ -545,7 +549,6 @@ const MediaManagement = () => {
                     flexDirection: "column",
                     justifyContent: "flex-start",
                     alignItems: "stretch",
-                    m: "auto",
                     "&:hover": {
                       boxShadow: 6,
                     },
