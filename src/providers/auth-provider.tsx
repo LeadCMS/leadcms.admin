@@ -1,4 +1,4 @@
-import { memo, PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, PropsWithChildren, useCallback, useEffect, useState } from "react";
 import { PublicClientApplication, Configuration, InteractionStatus } from "@azure/msal-browser";
 import { MsalProvider, useMsal } from "@azure/msal-react";
 import { Box, CircularProgress, Typography } from "@mui/material";
@@ -14,7 +14,6 @@ function RequireAuth({ children }: PropsWithChildren) {
   }
 
   if (!account && !localToken && !window.location.pathname.startsWith("/auth")) {
-    const from = encodeURIComponent(window.location.pathname);
     window.location.replace("/auth/login");
     return null;
   }
