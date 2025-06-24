@@ -11,7 +11,7 @@ import {
   IconButton,
   Grid,
   Paper,
-  Tooltip
+  Tooltip,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -36,8 +36,10 @@ interface MediaUploadDialogProps {
   uploadFolderError: string | null;
   handleDropFiles: (e: React.DragEvent<HTMLDivElement>) => void;
   handleFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleUploadFiles: (files: File[], 
-    setFileStatuses: (statuses: FileUploadStatus[]) => void) => void;
+  handleUploadFiles: (
+    files: File[],
+    setFileStatuses: (statuses: FileUploadStatus[]) => void
+  ) => void;
   setUploadError?: (err: string | null) => void;
   setUploadFolderError?: (err: string | null) => void;
   fileStatuses: FileUploadStatus[];
@@ -60,7 +62,7 @@ export const MediaUploadDialog = ({
   setUploadError,
   setUploadFolderError,
   fileStatuses,
-  onRemoveFile
+  onRemoveFile,
 }: MediaUploadDialogProps) => {
   // Reset errors and statuses on open/close or file list change
   useEffect(() => {
@@ -97,7 +99,7 @@ export const MediaUploadDialog = ({
         Upload Files to /
         {currentScopeUid ? (
           <>
-            {currentScopeUid} {" "}
+            {currentScopeUid}{" "}
             <input
               type="text"
               placeholder="(optional subfolder)"
@@ -109,7 +111,7 @@ export const MediaUploadDialog = ({
                 fontSize: 16,
                 border: "1px solid #ccc",
                 borderRadius: 4,
-                width: 160
+                width: 160,
               }}
             />
           </>
@@ -125,7 +127,7 @@ export const MediaUploadDialog = ({
               fontSize: 16,
               border: "1px solid #ccc",
               borderRadius: 4,
-              width: 180
+              width: 180,
             }}
           />
         )}
@@ -139,7 +141,7 @@ export const MediaUploadDialog = ({
             textAlign: "center",
             bgcolor: "#fafafa",
             cursor: "pointer",
-            mb: 2
+            mb: 2,
           }}
           onDrop={handleDropFiles}
           onDragOver={(e) => e.preventDefault()}
@@ -157,12 +159,18 @@ export const MediaUploadDialog = ({
             onChange={handleFileInputChange}
           />
         </Box>
-        {(uploadFiles.length > 0) && (
+        {uploadFiles.length > 0 && (
           <Paper sx={{ mb: 2, p: 2, width: "100%", overflowX: "auto" }}>
             <Grid container spacing={1} alignItems="center" sx={{ width: "100%" }}>
-              <Grid size={{ xs: 12, sm: 8 }}><b>File</b></Grid>
-              <Grid size={{ xs: 12, sm: 2 }}><b>Status</b></Grid>
-              <Grid size={{ xs: 12, sm: 2 }}><b>Action</b></Grid>
+              <Grid size={{ xs: 12, sm: 8 }}>
+                <b>File</b>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 2 }}>
+                <b>Status</b>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 2 }}>
+                <b>Action</b>
+              </Grid>
             </Grid>
             {uploadFiles.map((file) => {
               const statusObj = fileStatuses.find((s) => s.file.name === file.name);
@@ -181,9 +189,7 @@ export const MediaUploadDialog = ({
                   </Grid>
                   <Grid size={{ xs: 12, sm: 2 }}>
                     {status === "uploading" && <CircularProgress size={18} />}
-                    {status === "success" && (
-                      <Typography color="success.main">Uploaded</Typography>
-                    )}
+                    {status === "success" && <Typography color="success.main">Uploaded</Typography>}
                     {status === "error" && (
                       <Tooltip title={error || "Error"} arrow>
                         <Box display="flex" alignItems="center" sx={{ cursor: "pointer" }}>
@@ -194,9 +200,7 @@ export const MediaUploadDialog = ({
                         </Box>
                       </Tooltip>
                     )}
-                    {status === "idle" && (
-                      <Typography color="text.secondary">Ready</Typography>
-                    )}
+                    {status === "idle" && <Typography color="text.secondary">Ready</Typography>}
                   </Grid>
                   <Grid size={{ xs: 12, sm: 2 }}>
                     {(status === "idle" || status === "error") && (
@@ -214,9 +218,7 @@ export const MediaUploadDialog = ({
             })}
           </Paper>
         )}
-        {uploadError && (
-          <ApiErrorDisplay error={uploadError} fileName={uploadFiles[0]?.name} />
-        )}
+        {uploadError && <ApiErrorDisplay error={uploadError} fileName={uploadFiles[0]?.name} />}
         {currentScopeUid === "" && (
           <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
             Note: Uploading to root folder. Subfolder name is required.
@@ -241,8 +243,8 @@ export const MediaUploadDialog = ({
           {uploading
             ? "Uploading..."
             : fileStatuses.some((f) => f.status === "error")
-              ? `Retry Failed (${fileStatuses.filter((f) => f.status === "error").length})`
-              : "Upload"}
+            ? `Retry Failed (${fileStatuses.filter((f) => f.status === "error").length})`
+            : "Upload"}
         </Button>
       </DialogActions>
     </Dialog>

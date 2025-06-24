@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import {Login} from "./login";
-
+import { Login } from "./login";
 
 export const Auth = () => {
   return (

@@ -18,23 +18,25 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const toggle = () => setIsOpen(prev => !prev);
-  const toggleCollapse = () => setIsCollapsed(prev => !prev);
-  const toggleMobile = () => setIsMobileOpen(prev => !prev);
+  const toggle = () => setIsOpen((prev) => !prev);
+  const toggleCollapse = () => setIsCollapsed((prev) => !prev);
+  const toggleMobile = () => setIsMobileOpen((prev) => !prev);
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
 
   return (
-    <SidebarContext.Provider value={{ 
-      isOpen, 
-      isCollapsed, 
-      isMobileOpen, 
-      toggle, 
-      toggleCollapse, 
-      toggleMobile, 
-      open, 
-      close 
-    }}>
+    <SidebarContext.Provider
+      value={{
+        isOpen,
+        isCollapsed,
+        isMobileOpen,
+        toggle,
+        toggleCollapse,
+        toggleMobile,
+        open,
+        close,
+      }}
+    >
       {children}
     </SidebarContext.Provider>
   );

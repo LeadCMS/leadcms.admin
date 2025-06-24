@@ -56,10 +56,10 @@ export const AppLayout = ({
   return (
     <SidebarProvider>
       <AppLayoutWrapper className={`${className} ${sidebarHiddenClass} ${sidebarClass}`}>
-        <Sidebar 
-          onDrawerStateChange={handleDrawerToggle} 
-          menuItems={menuItems} 
-          isLoading={menuLoading} 
+        <Sidebar
+          onDrawerStateChange={handleDrawerToggle}
+          menuItems={menuItems}
+          isLoading={menuLoading}
         />
         <MainColumn>
           <AppHeader breadcrumbs={breadcrumbs} currentBreadcrumb={currentBreadcrumb} />

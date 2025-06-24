@@ -87,10 +87,10 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
 
   return (
     <>
-      <Dialog 
-        disableRestoreFocus 
-        open={isOpen} 
-        onClose={onClose} 
+      <Dialog
+        disableRestoreFocus
+        open={isOpen}
+        onClose={onClose}
         TransitionComponent={Transition}
         keepMounted={false}
         disablePortal={false}

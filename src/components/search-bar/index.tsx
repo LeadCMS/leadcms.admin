@@ -34,7 +34,7 @@ export const SearchBar = ({
           endAdornment: (
             <InputAdornment position="end">
               <IconButton>
-                <Search size={18}/>
+                <Search size={18} />
               </IconButton>
             </InputAdornment>
           ),

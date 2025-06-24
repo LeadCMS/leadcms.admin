@@ -18,24 +18,27 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
-    client.api.configList().then((response) => {
-      if (isMounted) {
-        setConfig(response.data);
-        setLoading(false);
-      }
-    }).catch((e) => {
-      if (isMounted) {
-        setError(e instanceof Error ? e.message : "Failed to fetch /api/config");
-        setLoading(false);
-      }
-    });
-    return () => { isMounted = false; };
+    client.api
+      .configList()
+      .then((response) => {
+        if (isMounted) {
+          setConfig(response.data);
+          setLoading(false);
+        }
+      })
+      .catch((e) => {
+        if (isMounted) {
+          setError(e instanceof Error ? e.message : "Failed to fetch /api/config");
+          setLoading(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
   }, [client]);
 
   return (
-    <ConfigContext.Provider value={{ config, loading, error }}>
-      {children}
-    </ConfigContext.Provider>
+    <ConfigContext.Provider value={{ config, loading, error }}>{children}</ConfigContext.Provider>
   );
 };
 

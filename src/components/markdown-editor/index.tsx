@@ -112,7 +112,7 @@ const MarkdownEditor = ({
       name: "LeadCMS components",
       groupName: "leadcms-components",
       buttonProps: { "aria-label": "Insert leadcms custom components" },
-      icon: <AppWindow size={14}/>,
+      icon: <AppWindow size={14} />,
     }),
   ]);
   const onErrorChange = (error: ValidateFrontmatterError | null) => {

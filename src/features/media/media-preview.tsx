@@ -150,7 +150,12 @@ export const MediaPreview = ({
                           background: "#fafafa",
                         }}
                       />
-                      <Button size="small" variant="outlined" onClick={handleCopyLink} sx={{ ml: 1 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleCopyLink}
+                        sx={{ ml: 1 }}
+                      >
                         {linkCopied ? "Copied!" : "Copy"}
                       </Button>
                     </Box>
@@ -163,7 +168,11 @@ export const MediaPreview = ({
             <Button onClick={onClose} variant="outlined">
               Close
             </Button>
-            <Button onClick={() => onDownload(file)} variant="outlined" startIcon={<DownloadIcon />}>
+            <Button
+              onClick={() => onDownload(file)}
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+            >
               Download
             </Button>
             <Button onClick={handleCopyLink} variant="contained" startIcon={<FileCopyIcon />}>

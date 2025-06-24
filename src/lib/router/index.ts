@@ -15,7 +15,7 @@ export const enum CoreModule {
   users = "users",
   about = "about",
   emailTemplates = "email-templates",
-  activityLogs = "activity-logs",  
+  activityLogs = "activity-logs",
 }
 
 const coreModuleParser: Parser<CoreModule> = {

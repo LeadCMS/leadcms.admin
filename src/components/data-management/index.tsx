@@ -134,73 +134,63 @@ export const DataManagementBlock = ({
 
   return (
     <>
-    {showOnlyButtons ? (
-       <Box sx={{ display: "flex", width: "100%", }}>
-     <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-      <Button
-        disabled={isDeleting}
-        startIcon={<Trash2 />}
-        color="error"
-        onClick={handleDelete}
-        variant="outlined"  
-        size="large" 
-      >
-        Delete 
-      </Button>
-    </Box>
-      {showEditButton && (
-      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          startIcon={<Edit />}
-          variant="outlined" 
-          size="large" 
-          onClick={editRecord}
-        >
-          Edit
-        </Button>
-      </Box>       
-        )}
-      </Box>
-    ):(
-    <Card>
-        <CardContent>
-          <Grid>
-            <Typography gutterBottom variant="h6" component="div">
-              {header}
-            </Typography>
-          </Grid>
-          <Grid>
-            <Typography>{description}</Typography>
-          </Grid>
-        </CardContent>
-        <CardActions>
-          <DeleteButtonContainer>
+      {showOnlyButtons ? (
+        <Box sx={{ display: "flex", width: "100%" }}>
+          <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
             <Button
               disabled={isDeleting}
               startIcon={<Trash2 />}
-              variant="contained"
               color="error"
               onClick={handleDelete}
-              size="small"
+              variant="outlined"
+              size="large"
             >
-              {`Delete ${entity}`}
+              Delete
             </Button>
-          </DeleteButtonContainer>
+          </Box>
           {showEditButton && (
+            <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+              <Button startIcon={<Edit />} variant="outlined" size="large" onClick={editRecord}>
+                Edit
+              </Button>
+            </Box>
+          )}
+        </Box>
+      ) : (
+        <Card>
+          <CardContent>
+            <Grid>
+              <Typography gutterBottom variant="h6" component="div">
+                {header}
+              </Typography>
+            </Grid>
+            <Grid>
+              <Typography>{description}</Typography>
+            </Grid>
+          </CardContent>
+          <CardActions>
             <DeleteButtonContainer>
               <Button
-                startIcon={<Edit />}
-                size="small"
+                disabled={isDeleting}
+                startIcon={<Trash2 />}
                 variant="contained"
-                onClick={editRecord}
+                color="error"
+                onClick={handleDelete}
+                size="small"
               >
-                {`Edit ${entity}`}
+                {`Delete ${entity}`}
               </Button>
             </DeleteButtonContainer>
-          )}
-        </CardActions>
-      </Card>
-          )}        
+            {showEditButton && (
+              <DeleteButtonContainer>
+                <Button startIcon={<Edit />} size="small" variant="contained" onClick={editRecord}>
+                  {`Edit ${entity}`}
+                </Button>
+              </DeleteButtonContainer>
+            )}
+          </CardActions>
+        </Card>
+      )}
       <DataDeleteConfirmation
         entity={entity}
         openConfirmation={openConfirmation}

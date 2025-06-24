@@ -14,7 +14,7 @@ interface BreadCrumbProps {
 
 export const BreadCrumbNavigation = ({ links = [], current }: BreadCrumbProps) => {
   return (
-    <Breadcrumbs separator={<ChevronRight size={20}/>}>
+    <Breadcrumbs separator={<ChevronRight size={20} />}>
       {Array.isArray(links) &&
         links.map((link, index) => (
           <Link key={index} to={link.toRoute} component={GhostLink} underline="hover">

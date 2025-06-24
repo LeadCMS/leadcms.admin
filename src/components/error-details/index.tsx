@@ -30,9 +30,9 @@ const Transition = React.forwardRef(function Transition(
 
 export const ErrorDetailsModal = ({ isOpen, onClose, errorDetails }: ErrorDetailsModalProps) => {
   return (
-    <Dialog 
-      open={isOpen} 
-      onClose={onClose} 
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
       TransitionComponent={Transition}
       keepMounted={false}
       disablePortal={false}

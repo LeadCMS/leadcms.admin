@@ -10,9 +10,7 @@ export interface ContentApi {
 }
 
 // Async: Get content type IDs for validation (from API)
-export const getContentEditAvailableTypeIds = async (
-  client: ContentApi
-): Promise<string[]> => {
+export const getContentEditAvailableTypeIds = async (client: ContentApi): Promise<string[]> => {
   const types = await client.api.contentTypesList();
   return types.data.map((type: ContentTypeDetailsDto) => type.uid);
 };

@@ -31,15 +31,12 @@ import {
   ContentEditRestoreState,
   ContentEditorAutoSave,
 } from "./types";
-import {
-  ContentEditValidationScheme,
-  ContentEditMaximumImageSize,
-} from "./validation";
+import { ContentEditValidationScheme, ContentEditMaximumImageSize } from "./validation";
 import {
   ContentTypeDropdown,
   getContentTypeByUid,
   generateDefaultValues,
-  fetchAllContentTypes
+  fetchAllContentTypes,
 } from "../content-types";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import MarkdownEditor from "@components/markdown-editor";
@@ -87,8 +84,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const { setSaving, setBusy } = useModuleWrapperContext();
   const errorDetailsModal = useErrorDetailsModal();
   // Use fallback function to satisfy TypeScript for the error modal
-  const showErrorModal = errorDetailsModal?.Show || 
-    ((data) => console.error("Error modal not available:", data));
+  const showErrorModal =
+    errorDetailsModal?.Show || ((data) => console.error("Error modal not available:", data));
   const { notificationsService } = useNotificationsService();
   const networkContext = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
@@ -122,7 +119,7 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   const supportsCover = contentType?.supportsCoverImage;
   const supportsComments = contentType?.supportsComments;
-  
+
   // Check if preview features are available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasLivePreview = !!configSettings?.LivePreviewUrlTemplate;
@@ -132,7 +129,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const saveDraft = useDebouncedCallback(async (values: ContentDetails) => {
     // Only save draft if:
     // 1. Live preview is enabled
-    // 2. Backend supports live preview 
+    // 2. Backend supports live preview
     // 3. We have an existing content ID (not create mode)
     // 4. Content was actually modified
     if (!useLivePreview || !hasLivePreview || !id || (!wasModified && !coverWasModified)) {
@@ -145,7 +142,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       await client.api.contentDraftPartialUpdate(Number(id), {
         ...values,
       });
-      
+
       // Show "saved" state for 2 seconds
       setTimeout(() => {
         setShowSaveIndicator(false);
@@ -220,9 +217,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       ...response.data,
       id: response.data.id ? response.data.id.toString() : null,
       coverImagePending: {
-        url: response.data.coverImageUrl
-          ? buildAbsoluteUrl(response.data.coverImageUrl)
-          : "",
+        url: response.data.coverImageUrl ? buildAbsoluteUrl(response.data.coverImageUrl) : "",
         fileName: "",
       },
       files: [],
@@ -271,7 +266,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       coverImageUrl: "",
       createdAt: null,
       updatedAt: null,
-      files: []
+      files: [],
     },
     onSubmit: submit,
     validateOnChange: false,
@@ -300,13 +295,11 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
     const currentValues = { ...formik.values };
     const defaults = generateDefaultValues(contentTypeId);
-    
+
     // Get current content type to compare formats
-    const currentContentType = await getContentTypeByUid(
-      client, currentValues.type);
-    const shouldResetBody = !currentContentType ||
-      currentContentType.format !== contentType.format;
-    
+    const currentContentType = await getContentTypeByUid(client, currentValues.type);
+    const shouldResetBody = !currentContentType || currentContentType.format !== contentType.format;
+
     // Preserve existing values, only update content type specific fields
     formik.setValues({
       ...currentValues,
@@ -315,8 +308,10 @@ export const ContentEdit = (props: ContentEditProps) => {
       // Reset body content only if format has changed
       body: shouldResetBody ? defaults.body : currentValues.body,
       // Apply content type specific defaults for these fields only if they don't have values
-      allowComments: currentValues.allowComments !== undefined ? 
-        currentValues.allowComments : defaults.allowComments,
+      allowComments:
+        currentValues.allowComments !== undefined
+          ? currentValues.allowComments
+          : defaults.allowComments,
       // Keep all other existing values (title, description, author, etc.)
     });
     setWasModified(true);
@@ -377,10 +372,7 @@ export const ContentEdit = (props: ContentEditProps) => {
             files: [],
           } as ContentDetails;
           await formik.setValues(patched);
-          await formik.setFieldValue(
-            "coverImagePending",
-            patched.coverImagePending
-          );
+          await formik.setFieldValue("coverImagePending", patched.coverImagePending);
         } else if (client && sourceId) {
           // Load content for duplication
           const { data } = await client.api.contentDetail(Number(sourceId));
@@ -398,10 +390,7 @@ export const ContentEdit = (props: ContentEditProps) => {
             files: [],
           } as ContentDetails;
           await formik.setValues(duplicatedContent);
-          await formik.setFieldValue(
-            "coverImagePending",
-            duplicatedContent.coverImagePending
-          );
+          await formik.setFieldValue("coverImagePending", duplicatedContent.coverImagePending);
           setWasModified(true); // Mark as modified since it's duplicated content
         }
         setIsInitialLoading(false);
@@ -418,15 +407,11 @@ export const ContentEdit = (props: ContentEditProps) => {
   }, [formik.values]);
 
   const isCreateMode = !id && !isDuplicateMode;
-  const shouldShowForm = (isCreateMode || isDuplicateMode) || !isInitialLoading;
-  
+  const shouldShowForm = isCreateMode || isDuplicateMode || !isInitialLoading;
+
   // Set default content type for new content when contentTypes are loaded
   useEffect(() => {
-    if (
-      isCreateMode &&
-      contentTypes.length > 0 &&
-      !formik.values.type
-    ) {
+    if (isCreateMode && contentTypes.length > 0 && !formik.values.type) {
       // Sort alphabetically by uid for consistency with dropdown
       const sorted = [...contentTypes].sort((a, b) => a.uid.localeCompare(b.uid));
       formik.setFieldValue("type", sorted[0].uid, false);
@@ -448,7 +433,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   // Set contentType when formik.values.type changes
   useEffect(() => {
     if (formik.values.type && contentTypes.length > 0) {
-      const found = contentTypes.find(t => t.uid === formik.values.type);
+      const found = contentTypes.find((t) => t.uid === formik.values.type);
       setContentType(found || null);
     } else {
       setContentType(null);
@@ -460,12 +445,12 @@ export const ContentEdit = (props: ContentEditProps) => {
   const hasCoverErrors = Boolean(formik.errors.coverImageAlt);
   const hasSettingsErrors = Boolean(
     formik.errors.slug ||
-    formik.errors.language ||
-    formik.errors.category ||
-    formik.errors.tags ||
-    formik.errors.allowComments ||
-    formik.errors.author ||
-    formik.errors.publishedAt
+      formik.errors.language ||
+      formik.errors.category ||
+      formik.errors.tags ||
+      formik.errors.allowComments ||
+      formik.errors.author ||
+      formik.errors.publishedAt
   );
 
   // Handler for delete action
@@ -490,7 +475,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const handleSitePreview = () => {
     const success = openSitePreview(
       formik.values as unknown as Record<string, unknown>,
-      configSettings?.PreviewUrlTemplate || "",
+      configSettings?.PreviewUrlTemplate || ""
     );
     if (!success) {
       notificationsService.error(
@@ -516,10 +501,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                       </Grid>
                       <Grid size={{ xs: "auto" }}>
                         <Typography variant="body2">
-                          {useLivePreview && hasLivePreview 
-                            ? "Saving draft..." 
-                            : "Saving locally..."
-                          }
+                          {useLivePreview && hasLivePreview
+                            ? "Saving draft..."
+                            : "Saving locally..."}
                         </Typography>
                       </Grid>
                     </Grid>
@@ -530,10 +514,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                       </Grid>
                       <Grid size={{ xs: "auto" }}>
                         <Typography variant="body2">
-                          {useLivePreview && hasLivePreview 
-                            ? "Draft saved" 
-                            : "Saved locally"
-                          }
+                          {useLivePreview && hasLivePreview ? "Draft saved" : "Saved locally"}
                         </Typography>
                       </Grid>
                     </Grid>
@@ -639,7 +620,7 @@ export const ContentEdit = (props: ContentEditProps) => {
           }
         />
         <ContentEditContainer>
-          {shouldShowForm ? (          
+          {shouldShowForm ? (
             <Card>
               <CardContent>
                 <Grid container spacing={2} alignItems="flex-start">
@@ -691,78 +672,78 @@ export const ContentEdit = (props: ContentEditProps) => {
                     onChange={(_, v) => setActiveTab(v)}
                     sx={{ minHeight: 36 }}
                   >
-                    <Tab 
-                      label="Content" 
+                    <Tab
+                      label="Content"
                       value="content"
                       sx={{
                         color: hasContentErrors ? "error.main" : "inherit",
                         fontWeight: hasContentErrors ? 600 : 400,
                         "&.Mui-selected": {
-                          color: hasContentErrors ? "error.main" : "primary.main"
-                        }
+                          color: hasContentErrors ? "error.main" : "primary.main",
+                        },
                       }}
                     />
                     {supportsCover && (
-                      <Tab 
-                        label="Cover" 
+                      <Tab
+                        label="Cover"
                         value="cover"
                         sx={{
                           color: hasCoverErrors ? "error.main" : "inherit",
                           fontWeight: hasCoverErrors ? 600 : 400,
                           "&.Mui-selected": {
-                            color: hasCoverErrors ? "error.main" : "primary.main"
-                          }
+                            color: hasCoverErrors ? "error.main" : "primary.main",
+                          },
                         }}
                       />
                     )}
-                    <Tab 
-                      label="Settings" 
+                    <Tab
+                      label="Settings"
                       value="settings"
                       sx={{
                         color: hasSettingsErrors ? "error.main" : "inherit",
                         fontWeight: hasSettingsErrors ? 600 : 400,
                         "&.Mui-selected": {
-                          color: hasSettingsErrors ? "error.main" : "primary.main"
-                        }
+                          color: hasSettingsErrors ? "error.main" : "primary.main",
+                        },
                       }}
                     />
                   </Tabs>
                   <Box sx={{ flex: 1 }} />
-                  {hasLivePreview && 
-                   (contentType?.format === "MDX" || contentType?.format === "MD") && (
-                    <FormControlLabel
-                      control={
-                        isDraftSaving ? (
-                          <CircularProgress size={16} sx={{ mr: 1 }} />
-                        ) : (
-                          <Switch
-                            checked={useLivePreview}
-                            onChange={(e) => {
-                              const newValue = e.target.checked;
-                              setUseLivePreview(newValue);
-                              
-                              // When enabling live preview, immediately save current draft
-                              if (
-                                newValue && 
-                                hasLivePreview && 
-                                id && 
-                                (wasModified || coverWasModified)
-                              ) {
-                                saveDraft(formik.values);
-                              }
-                            }}
-                            size="small"
-                          />
-                        )
-                      }
-                      label={
-                        <Typography variant="body2" component="span">
-                          {isDraftSaving ? "Saving Draft..." : "Live Preview"}
-                        </Typography>
-                      }
-                      sx={{ mr: 5 }}
-                    />
-                  )}
+                  {hasLivePreview &&
+                    (contentType?.format === "MDX" || contentType?.format === "MD") && (
+                      <FormControlLabel
+                        control={
+                          isDraftSaving ? (
+                            <CircularProgress size={16} sx={{ mr: 1 }} />
+                          ) : (
+                            <Switch
+                              checked={useLivePreview}
+                              onChange={(e) => {
+                                const newValue = e.target.checked;
+                                setUseLivePreview(newValue);
+
+                                // When enabling live preview, immediately save current draft
+                                if (
+                                  newValue &&
+                                  hasLivePreview &&
+                                  id &&
+                                  (wasModified || coverWasModified)
+                                ) {
+                                  saveDraft(formik.values);
+                                }
+                              }}
+                              size="small"
+                            />
+                          )
+                        }
+                        label={
+                          <Typography variant="body2" component="span">
+                            {isDraftSaving ? "Saving Draft..." : "Live Preview"}
+                          </Typography>
+                        }
+                        sx={{ mr: 5 }}
+                      />
+                    )}
                   {hasSitePreview && (
                     <Button
                       variant="text"
@@ -775,7 +756,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                         pl: 0,
                         pr: 0,
                         minWidth: 0,
-                        "&:hover": { textDecoration: "underline", background: "none" }
+                        "&:hover": { textDecoration: "underline", background: "none" },
                       }}
                     >
                       Preview on Site
@@ -799,9 +780,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                             minimap: { enabled: false },
                             lineNumbers: "on",
                             scrollBeyondLastLine: false,
-                            wordWrap: "on"
+                            wordWrap: "on",
                           }}
-                        />                        
+                        />
                       ) : (
                         <MarkdownEditor
                           onChange={async (value) => {
@@ -910,10 +891,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                               disabled={props.readonly}
                               checked={formik.values.allowComments}
                               onChange={(ev) =>
-                                valueUpdateGeneric(
-                                  "allowComments",
-                                  ev.target.checked
-                                )
+                                valueUpdateGeneric("allowComments", ev.target.checked)
                               }
                               name="allowComments"
                             />

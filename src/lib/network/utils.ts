@@ -6,7 +6,9 @@ export const buildAbsoluteUrl = (localUrl: string | null | undefined) => {
   const base =
     coreApi && coreApi.trim().length > 0
       ? coreApi
-      : typeof window !== "undefined" ? window.location.origin : "";
+      : typeof window !== "undefined"
+      ? window.location.origin
+      : "";
   if (!base) {
     throw new Error("Unable to determine base URL for absolute URL construction");
   }

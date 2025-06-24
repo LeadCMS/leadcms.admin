@@ -17,7 +17,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { SearchBar } from "@components/search-bar";
 import { Fragment, useRef, useState } from "react";
-import { Plus, Download, Upload} from "lucide-react";
+import { Plus, Download, Upload } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import { CsvExport } from "@components/export";
 import useLocalStorage from "use-local-storage";

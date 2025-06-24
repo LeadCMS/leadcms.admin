@@ -41,7 +41,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
   const handleNavigation = useCoreModuleNavigation();
   const showErrorModal = useErrorDetailsModal()?.Show;
 
-  const noopErrorHandler = (errors: string[]) => { 
+  const noopErrorHandler = (errors: string[]) => {
     console.log("Error occurred but error modal is not available:", errors);
   };
 
@@ -159,7 +159,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
   });
 
   const actionButtons = (
-    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent:"flex-end"}}>
+    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
       <Button
         disabled={formik.isSubmitting}
         type="submit"
@@ -168,33 +168,34 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
         onClick={handleCancel}
         size="large"
         startIcon={<XCircle size={22} />}
-
       >
         Cancel
       </Button>
-        <Button
-          type="submit"
-          disabled={formik.isSubmitting}
-          variant="contained"
-          color="primary"
-          size="large"
-          startIcon={<Save size={22} />}
-          onClick={formik.submitForm}
-        >
-          Save
-        </Button>
+      <Button
+        type="submit"
+        disabled={formik.isSubmitting}
+        variant="contained"
+        color="primary"
+        size="large"
+        startIcon={<Save size={22} />}
+        onClick={formik.submitForm}
+      >
+        Save
+      </Button>
     </Box>
-    );
+  );
 
-    const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
-    <Box sx={{ 
-      display: "flex", 
-      alignItems: "center", 
-      mb: 3, 
-      mt: 4,
-      pb: 1,
-      borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
-    }}>
+  const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        mb: 3,
+        mt: 4,
+        pb: 1,
+        borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+      }}
+    >
       <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
       <Typography variant="subtitle1" fontWeight="500" color="primary.main">
         {title}
@@ -212,45 +213,44 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
       {order && (
         <form onSubmit={formik.handleSubmit}>
           <Card>
-           <CardContent>
-            <Grid container spacing={4} marginBottom={4}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Autocomplete
-                  disabled={formik.isSubmitting}
-                  disablePortal
-                  open={open}
-                  onOpen={() => {
-                    setOpen(true);
-                  }}
-                  onClose={() => {
-                    setOpen(false);
-                  }}
-                  options={contactList}
-                  getOptionLabel={(option) => getOptionLabel(option)}
-                  value={formik.values.contact}
-                  onChange={(event, value) => 
-                    value && handleContactChange(value)}
-                  onInputChange={(event, value) => {
-                    loadContacts(event, value);
-                  }}
-                  loading={loading}
-                  filterOptions={(x) => x}
-                  fullWidth
-                  size="small"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Contact"
-                      error={formik.touched.contactId && Boolean(formik.errors.contactId)}
-                      helperText={formik.touched.contactId && formik.errors.contactId}
-                    />
-                  )}
-                />
+            <CardContent>
+              <Grid container spacing={4} marginBottom={4}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Autocomplete
+                    disabled={formik.isSubmitting}
+                    disablePortal
+                    open={open}
+                    onOpen={() => {
+                      setOpen(true);
+                    }}
+                    onClose={() => {
+                      setOpen(false);
+                    }}
+                    options={contactList}
+                    getOptionLabel={(option) => getOptionLabel(option)}
+                    value={formik.values.contact}
+                    onChange={(event, value) => value && handleContactChange(value)}
+                    onInputChange={(event, value) => {
+                      loadContacts(event, value);
+                    }}
+                    loading={loading}
+                    filterOptions={(x) => x}
+                    fullWidth
+                    size="small"
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Contact"
+                        error={formik.touched.contactId && Boolean(formik.errors.contactId)}
+                        helperText={formik.touched.contactId && formik.errors.contactId}
+                      />
+                    )}
+                  />
+                </Grid>
               </Grid>
-            </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<Receipt size={22}/>} title="Orders" />
+                  <SectionHeader icon={<Receipt size={22} />} title="Orders" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
@@ -296,7 +296,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<CircleDollarSign size={22} />} title="Currency" />
+                  <SectionHeader icon={<CircleDollarSign size={22} />} title="Currency" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <Tooltip title="Exchange Rate field must contain only numbers">
@@ -334,7 +334,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>
                 <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={< Link size={22}/>} title="Other" />
+                  <SectionHeader icon={<Link size={22} />} title="Other" />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField

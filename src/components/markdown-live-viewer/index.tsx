@@ -20,33 +20,29 @@ const MarkdownLiveViewer = ({ params, template }: MarkdownLiveViewerProps) => {
       console.debug("[MarkdownLiveViewer] No params provided", { params, template });
       return null;
     }
-    
+
     if (!template) {
       console.debug("[MarkdownLiveViewer] No template provided");
       return null;
     }
-    
+
     const placeholders = template.match(/{(.*?)}/g) || [];
     const missingKeys = placeholders
       .map((k: string) => k.replace(/[{}]/g, ""))
       .filter((key: string) => !params[key]);
     if (missingKeys.length > 0) {
       // Print all params and their values for debugging
-      console.debug(
-        "[MarkdownLiveViewer] Params received:",
-        JSON.stringify(params, null, 2)
-      );
+      console.debug("[MarkdownLiveViewer] Params received:", JSON.stringify(params, null, 2));
       // Print all placeholders found in the template
       console.debug(
         "[MarkdownLiveViewer] Placeholders in template:",
         placeholders.map((k: string) => k.replace(/[{}]/g, ""))
       );
       // Print missing keys
-      console.debug(
-        "[MarkdownLiveViewer] Missing required params for preview:",
-        missingKeys,
-        { params, template }
-      );
+      console.debug("[MarkdownLiveViewer] Missing required params for preview:", missingKeys, {
+        params,
+        template,
+      });
       return null;
     }
     return generatePreviewUrl(template, params);
@@ -92,10 +88,7 @@ const MarkdownLiveViewer = ({ params, template }: MarkdownLiveViewerProps) => {
   );
 };
 
-export const MarkdownLiveViewerFunc = (
-  params: Record<string, unknown>,
-  template: string
-) => {
+export const MarkdownLiveViewerFunc = (params: Record<string, unknown>, template: string) => {
   console.log("[MarkdownLiveViewerFunc] Rendering with params:", params, template);
 
   return <MarkdownLiveViewer params={params} template={template} />;

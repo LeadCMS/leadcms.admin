@@ -88,12 +88,12 @@ const MediaManagement = () => {
   const initialFolder = params.get("folder") || "";
   const initialBreadcrumbs = initialFolder
     ? initialFolder
-      .split("/")
-      .filter(Boolean)
-      .map((name, idx, arr) => ({
-        name,
-        scopeUid: arr.slice(0, idx + 1).join("/"),
-      }))
+        .split("/")
+        .filter(Boolean)
+        .map((name, idx, arr) => ({
+          name,
+          scopeUid: arr.slice(0, idx + 1).join("/"),
+        }))
     : [];
   const [search, setSearch] = useState<string>("");
   const [dialog, setDialog] = useState<DialogType>(null);
@@ -118,9 +118,7 @@ const MediaManagement = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   // For preview navigation
-  const imageItems = items.filter(
-    (item) => getFileType(item.mimeType, item.extension) === "image"
-  );
+  const imageItems = items.filter((item) => getFileType(item.mimeType, item.extension) === "image");
   const getCurrentImageIndex = useCallback(
     () => imageItems.findIndex((img) => img.id === previewFile?.id),
     [imageItems, previewFile]
@@ -286,9 +284,9 @@ const MediaManagement = () => {
   // Delete logic
   const { notificationsService } = useNotificationsService();
   const errorDetailsModal = useErrorDetailsModal();
-  const showErrorModal = errorDetailsModal?.Show || 
-    ((errDetails: string[]) => console.error(errDetails));
-  
+  const showErrorModal =
+    errorDetailsModal?.Show || ((errDetails: string[]) => console.error(errDetails));
+
   const refreshMediaList = async () => {
     setLoading(true);
     try {
@@ -337,7 +335,7 @@ const MediaManagement = () => {
             onClick: errDetails.length > 0 ? () => showErrorModal(errDetails) : undefined,
           };
         },
-      });    
+      });
     } catch (error) {
       // Error toast is already handled by notificationsService.promise
       // No need to refresh the list on error
@@ -390,7 +388,7 @@ const MediaManagement = () => {
       }
       scopeUid = toScopeUid(uploadFolderName.trim());
     }
-    
+
     // Initialize statuses: preserve existing success statuses, set others to uploading
     const statuses: FileUploadStatus[] = files.map((file) => {
       const existingStatus = fileStatuses.find((s) => s.file.name === file.name);
@@ -401,13 +399,13 @@ const MediaManagement = () => {
     });
     setFileStatuses(statuses);
     setFileStatusesCb(statuses);
-    
+
     // Only upload files that are not already successfully uploaded
     const filesToUpload = files.filter((file) => {
       const existingStatus = fileStatuses.find((s) => s.file.name === file.name);
       return !existingStatus || existingStatus.status !== "success";
     });
-    
+
     await Promise.all(
       filesToUpload.map(async (file) => {
         const idx = files.findIndex((f) => f.name === file.name);
@@ -419,10 +417,7 @@ const MediaManagement = () => {
           statuses[idx] = {
             file,
             status: "error",
-            error:
-              apiError && apiError.message
-                ? `Failed: ${apiError.message}`
-                : "Unknown error"
+            error: apiError && apiError.message ? `Failed: ${apiError.message}` : "Unknown error",
           };
         }
         setFileStatuses([...statuses]);
@@ -430,7 +425,7 @@ const MediaManagement = () => {
       })
     );
     setUploading(false);
-    
+
     // Check if all files are successfully uploaded and close dialog immediately
     if (statuses.every((s) => s.status === "success")) {
       setUploadFiles([]);
@@ -527,8 +522,8 @@ const MediaManagement = () => {
             const isFolder = type === "folder";
             const folderItemCount = isFolder ? item.id : undefined;
             return (
-              <Grid 
-                key={item.id} 
+              <Grid
+                key={item.id}
                 size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}
                 sx={{ mb: 3, minWidth: 290, maxWidth: 330 }}
               >

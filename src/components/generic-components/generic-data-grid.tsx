@@ -78,12 +78,12 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         <ActionButtonContainer>
           {editNavigate && (
             <IconButton onClick={() => editNavigate(row)}>
-              <Edit size={23}/>
+              <Edit size={23} />
             </IconButton>
           )}
           {detailsNavigate && (
             <IconButton onClick={() => detailsNavigate(row)}>
-              <ArrowRight size={23}/>
+              <ArrowRight size={23} />
             </IconButton>
           )}
         </ActionButtonContainer>

@@ -1,6 +1,4 @@
-import {
-  ModuleContainer,
-} from "@components/module";
+import { ModuleContainer } from "@components/module";
 import { PropsWithChildren, ReactNode } from "react";
 import {
   ActionsContainer,
@@ -61,11 +59,7 @@ export const ModuleWrapper = ({
         <ScrollContainer id="scrollTarget">
           {isForm ? <FormContainer>{children}</FormContainer> : children}
         </ScrollContainer>
-        {actionButtons && (
-          <FixedActionBar>
-            {actionButtons}
-          </FixedActionBar>
-        )}
+        {actionButtons && <FixedActionBar>{actionButtons}</FixedActionBar>}
         {isBusy && (
           <>
             <LoadingIndicatorContainer />

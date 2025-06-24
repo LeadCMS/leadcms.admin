@@ -4,7 +4,7 @@ import { SavingBar } from "@components/saving-bar";
 import { DomainCreateDto, DomainDetailsDto, DomainUpdateDto } from "@lib/network/swagger-client";
 import { domainFormBreadcrumbLinks } from "../constants";
 import { useState } from "react";
-import { Button,Box } from "@mui/material";
+import { Button, Box } from "@mui/material";
 import { XCircle, Save } from "lucide-react";
 
 const fieldSections = {
@@ -46,39 +46,39 @@ export const DomainForm = (
   const [triggerCancel, setTriggerCancel] = useState(false);
 
   const genericForm = (
-      <GenericForm<DomainDetailsDto, DomainCreateDto, DomainUpdateDto>
-        {...formProps}
-        triggerSave={triggerSave}
-        triggerCancel={triggerCancel}
-        onSaveHandled={() => setTriggerSave(false)}
-        onCancelHandled={() => setTriggerCancel(false)}
-        fieldSections={fieldSections}
-      />
-    );
+    <GenericForm<DomainDetailsDto, DomainCreateDto, DomainUpdateDto>
+      {...formProps}
+      triggerSave={triggerSave}
+      triggerCancel={triggerCancel}
+      onSaveHandled={() => setTriggerSave(false)}
+      onCancelHandled={() => setTriggerCancel(false)}
+      fieldSections={fieldSections}
+    />
+  );
 
-const handleSaveClick = () => setTriggerSave(true);
-const handleCancelClick = () => setTriggerCancel(true);  
+  const handleSaveClick = () => setTriggerSave(true);
+  const handleCancelClick = () => setTriggerCancel(true);
 
   const actionButtons = formProps.editable ? (
-    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
-        <Button
-          type="button"
-          variant="outlined"
-          onClick={handleCancelClick}
-          size="large"
-          startIcon={<XCircle size={22} />}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          variant="contained"
-          onClick={handleSaveClick}
-          size="large"
-          startIcon={<Save size={22} />}
-        >
-          Save
-        </Button>
+    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
+      <Button
+        type="button"
+        variant="outlined"
+        onClick={handleCancelClick}
+        size="large"
+        startIcon={<XCircle size={22} />}
+      >
+        Cancel
+      </Button>
+      <Button
+        type="button"
+        variant="contained"
+        onClick={handleSaveClick}
+        size="large"
+        startIcon={<Save size={22} />}
+      >
+        Save
+      </Button>
     </Box>
   ) : null;
 

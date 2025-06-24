@@ -5,16 +5,16 @@ export const DataTableContainer = styled("div")`
   display: flex;
   flex-direction: column;
   min-height: 400px;
-  
+
   .MuiDataGrid-root {
     border: none;
     width: 100%;
   }
-  
+
   .MuiDataGrid-cell {
     outline: none !important;
   }
-  
+
   .MuiDataGrid-columnHeaders {
     justify-content: space-between;
     width: 100%;

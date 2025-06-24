@@ -21,7 +21,7 @@ export const getCountryByCode = async (context: RequestContextType, code: string
   const countries = await getCountryList(context);
   if (countries) {
     const countryList = Object.entries(countries).map(([code, name]) => ({ code, name }));
-    return countryList.find((c) => c.code === code)!.name;
+    return countryList.find((c) => c.code === code)?.name;
   } else {
     return null;
   }
@@ -46,7 +46,7 @@ export const getContinentByCode = async (context: RequestContextType, code: stri
   const continents = await getContinentList(context);
   if (continents) {
     const continentList = Object.entries(continents).map(([code, name]) => ({ code, name }));
-    return continentList.find((c) => c.code === code)!.name;
+    return continentList.find((c) => c.code === code)?.name;
   } else {
     return null;
   }
@@ -79,7 +79,7 @@ export const getFormattedDateOnly = (dateToConvert: string) => {
   return formattedDate;
 };
 
-export const networkErrorToStringArray = (error: any) => {
+export const networkErrorToStringArray = (error: unknown) => {
   if (error === undefined || error === null) {
     return [];
   }
@@ -121,10 +121,7 @@ export const execDeleteWithToast = async (
       }
       return {
         title: errMessage,
-        onClick:
-          errDetails.length > 0
-            ? () => showErrorModalFunc(errDetails)
-            : undefined,
+        onClick: errDetails.length > 0 ? () => showErrorModalFunc(errDetails) : undefined,
       };
     },
   });

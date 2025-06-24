@@ -14,7 +14,7 @@ export const ImageUpload = (contentDetails: ContentDetails, isInToolbar: boolean
     name: "Upload Image",
     keyCommand: "image-upload",
     buttonProps: { "aria-label": "Upload image" },
-    icon: <Image size={14}/>,
+    icon: <Image size={14} />,
     render: isInToolbar
       ? undefined
       : (command, disabled, executeCommand) => {
@@ -26,7 +26,7 @@ export const ImageUpload = (contentDetails: ContentDetails, isInToolbar: boolean
               <Button
                 variant="outlined"
                 disabled={disabled}
-                startIcon={<Image size={14}/>}
+                startIcon={<Image size={14} />}
                 onClick={onClick}
               >
                 Upload Image

@@ -56,8 +56,7 @@ export const ContactView = () => {
     },
     {
       label: "Language",
-      value:
-        languages.find((c) => c.code === contact.language)?.name || "",
+      value: languages.find((c) => c.code === contact.language)?.name || "",
     },
   ];
   const contactData = contact && [

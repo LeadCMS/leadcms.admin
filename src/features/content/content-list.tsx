@@ -52,7 +52,8 @@ export const ContentList = () => {
   const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const errorDetailsModal = useErrorDetailsModal();
-  const showErrorModal = errorDetailsModal?.Show || 
+  const showErrorModal =
+    errorDetailsModal?.Show ||
     ((data: unknown) => console.error("Error modal not available:", data));
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
@@ -137,9 +138,7 @@ export const ContentList = () => {
       );
 
       // Remove the deleted item from the list with animation
-      setContentItems((prevItems) =>
-        prevItems.filter((item) => item.id !== deleteTarget)
-      );
+      setContentItems((prevItems) => prevItems.filter((item) => item.id !== deleteTarget));
       setContentItemsCount((prevCount) => Math.max(0, prevCount - 1));
     } catch (error) {
       console.error("Failed to delete content:", error);
@@ -278,7 +277,7 @@ const ItemCard = ({ item, onDelete, hasSitePreview, previewUrlTemplate }: ItemPr
     onDelete(item.id as number);
     setAnchorEl(null);
   };
-  
+
   const handleDuplicate = () => {
     navigate(`/content/${item.id}/duplicate`);
     setAnchorEl(null);
@@ -449,7 +448,7 @@ function getTypeColor(type: string, theme: Theme): string {
     hash = processedType.charCodeAt(i) + ((hash << 5) - hash);
   }
   // Avoid red zone: skip hues between 0-20 and 340-360 (red range)
-  let hue = Math.abs(hash) % 320 + 20; // 20-339
+  let hue = (Math.abs(hash) % 320) + 20; // 20-339
   if (hue > 360) hue = 360;
   const lightness = theme.palette.mode === "dark" ? 32 : 48;
   return `hsl(${hue}, 65%, ${lightness}%)`;

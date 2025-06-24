@@ -9,8 +9,12 @@ export interface ApiError {
 }
 
 export function isFetchResponse(obj: any): obj is Response {
-  return obj && typeof obj === "object" && 
-    typeof obj.status === "number" && typeof obj.json === "function";
+  return (
+    obj &&
+    typeof obj === "object" &&
+    typeof obj.status === "number" &&
+    typeof obj.json === "function"
+  );
 }
 
 export function wrapApiClient<T extends object>(client: T): T {
@@ -111,6 +115,6 @@ export function wrapApiClient<T extends object>(client: T): T {
 
         return result;
       };
-    }
+    },
   });
 }

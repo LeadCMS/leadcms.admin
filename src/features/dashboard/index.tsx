@@ -43,7 +43,9 @@ const StatTile: React.FC<StatTileProps> = ({ label, fetchCount }) => {
       {loading ? (
         <CircularProgress size={32} />
       ) : error ? (
-        <Typography color="error" variant="body2">{error}</Typography>
+        <Typography color="error" variant="body2">
+          {error}
+        </Typography>
       ) : (
         <Typography variant="h4">{count}</Typography>
       )}
@@ -59,57 +61,43 @@ const Dashboard: React.FC = () => {
       <Grid size={{ xs: 12, sm: 2 }}>
         <StatTile
           label="Users"
-          fetchCount={() =>
-            client.api.usersList().then((res) => res.data.length)
-          }
+          fetchCount={() => client.api.usersList().then((res) => res.data.length)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 2 }}>
         <StatTile
           label="Accounts"
-          fetchCount={() =>
-            client.api.accountsList().then((res) => res.data.length)
-          }
+          fetchCount={() => client.api.accountsList().then((res) => res.data.length)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 2 }}>
         <StatTile
           label="Contacts"
-          fetchCount={() =>
-            client.api.contactsList().then((res) => res.data.length)
-          }
+          fetchCount={() => client.api.contactsList().then((res) => res.data.length)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 2 }}>
         <StatTile
           label="Orders"
-          fetchCount={() =>
-            client.api.ordersList().then((res) => res.data.length)
-          }
+          fetchCount={() => client.api.ordersList().then((res) => res.data.length)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 2 }}>
         <StatTile
           label="Pages"
-          fetchCount={() =>
-            client.api.contentList().then((res) => res.data.length)
-          }
+          fetchCount={() => client.api.contentList().then((res) => res.data.length)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 2 }}>
         <StatTile
           label="Comments"
-          fetchCount={() =>
-            client.api.commentsList().then((res) => res.data.length)
-          }
+          fetchCount={() => client.api.commentsList().then((res) => res.data.length)}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 2 }}>
         <StatTile
           label="Links"
-          fetchCount={() =>
-            client.api.linksList().then((res) => res.data.length)
-          }
+          fetchCount={() => client.api.linksList().then((res) => res.data.length)}
         />
       </Grid>
     </Grid>

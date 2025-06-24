@@ -76,7 +76,7 @@ export const DropdownMenu = () => {
         <Divider />
         <MenuItem onClick={logout} disabled={userInfo === null}>
           <ListItemIcon>
-            <LogOut size={20}/>
+            <LogOut size={20} />
           </ListItemIcon>
           Logout
         </MenuItem>
