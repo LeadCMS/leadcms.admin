@@ -7344,6 +7344,24 @@ export class Api<
      * No description
      *
      * @tags Content
+     * @name ContentDraftCreate
+     * @request POST:/api/content/draft
+     * @secure
+     */
+    contentDraftCreate: (data: ContentCreateDto, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/content/draft`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
      * @name ContentImportCreate
      * @request POST:/api/content/import
      * @secure
