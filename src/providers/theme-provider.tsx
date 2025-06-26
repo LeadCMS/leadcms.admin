@@ -19,24 +19,24 @@ export const themeOptions: ThemeOptions = {
     subtitle2: {
       fontSize: "12px",
       fontWeight: 600,
-      lineHeight: "20px",
-      color: "rgb(107, 114, 128)",
+      lineHeight: "16px",
+      color: "#6B7280",
     },
   },
   palette: {
     primary: {
       main: "#3878FF",
-      light: "#6096FF",
+      light: "#f0f4ff",
       dark: "#2854B2",
     },
     secondary: {
-      main:"#18181B",
-      light: "#343A42",
+      main: "#0b0b0d",
+      light: "#f8faff",
       dark: "#060A10",
     },
     text: {
-      primary: "#0B0B0D",
-      secondary: "rgba(11, 11, 13, 0.86)",
+      primary: "#0b0b0d",
+      secondary: "#0b0b0ddb",
       disabled: "rgba(0, 0, 0, 0.38)",
     },
     info: {
@@ -64,11 +64,12 @@ export const themeOptions: ThemeOptions = {
       contrastText: "rgba(0, 0, 0, 0.87)",
     },
     background: {
-      default: "#f9fafb",
-      primary: "#ffffff",
-      primaryHover: "#F4F4F5",
+      default: "#ffffff",
+      primary: "#fbfcff",
+      primaryHover: "#F1F2F4",
+      secondary: "#FAFCFF",
     },
-    },
+  },
   components: {
     MuiButton: {
       styleOverrides: {
