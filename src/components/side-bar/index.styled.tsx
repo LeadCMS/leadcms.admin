@@ -11,15 +11,17 @@ import {
 export const SidebarTopContainer = styled("div")<{
   isMobile?: boolean;
   isOpen?: boolean;
+  isCollapsed?: boolean;
 }>(
-  ({ theme, isMobile, isOpen }) => `
+  ({ theme, isMobile, isOpen, isCollapsed }) => `
   display: flex;
   align-items: center;
   height: 64px;
   min-height: 64px;
   max-height: 64px;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: ${isCollapsed ? "10px" : "16px"};
+  padding-right: ${isCollapsed ? "8px" : "16px"};
+  width: 100%; 
   border-bottom: 1px solid ${
     theme.palette.mode === "dark" ? theme.palette.secondary.light : theme.palette.divider
   };
@@ -32,7 +34,7 @@ export const SidebarTopContainer = styled("div")<{
   }
   .sidebar-app-name {
     font-weight: bold;
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     color: ${theme.palette.primary.main};
     margin-left: ${isMobile && isOpen ? "40px" : "0"};
     transition: margin 0.2s;
@@ -66,13 +68,13 @@ export const SidebarStyled = styled(Drawer, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
 })<{ isCollapsed?: boolean }>(
   ({ theme, isCollapsed }) => `
-  width: ${isCollapsed ? "72px" : "260px"};
+  width: ${isCollapsed ? "65px" : "260px"};
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
   .MuiDrawer-paper {
-    width: ${isCollapsed ? "72px" : "260px"};
+    width: ${isCollapsed ? "65px" : "260px"};
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -111,17 +113,18 @@ export const ListSubheaderStyled = styled(ListSubheader, {
   color: ${({ theme }) => theme.typography.subtitle2.color};
   font-weight: ${({ theme }) => theme.typography.subtitle2.fontWeight};
   display: ${({ isCollapsed }) => (isCollapsed ? "none" : "block")};
-  padding-left: 20px;
+  padding-left: 16px;
   padding-right: 0px;
+  padding-bottom: 4px;
   min-height: 0;
-  line-height: 2;
+  line-height: ${({ theme }) => theme.typography.subtitle2.lineHeight};
 `;
 
 export const SidebarLink = styled(ListItemButton, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
 })<{ isCollapsed?: boolean }>`
   border-radius: ${({ theme }) => theme.spacing(2)};
-  height: ${({ theme }) => theme.spacing(10)};
+  height: ${({ theme }) => theme.spacing(9)};
   margin-top: ${({ theme }) => theme.spacing(1)};
   margin-left: ${({ theme, isCollapsed }) => (isCollapsed ? theme.spacing(1) : "0")};
   margin-right: ${({ theme, isCollapsed }) => (isCollapsed ? theme.spacing(1) : "10px")};
@@ -130,12 +133,12 @@ export const SidebarLink = styled(ListItemButton, {
   justify-content: ${({ isCollapsed }) => (isCollapsed ? "center" : "flex-start")};
   padding-left: ${({ theme, isCollapsed }) => (isCollapsed ? "0" : theme.spacing(2))};
   :hover {
-    background-color: ${({ theme: { palette } }) => palette.background.primaryHover};
+    background-color: ${({ theme: { palette } }) => palette.secondary.light};
   }
 
   &.Mui-selected {
     color: ${({ theme: { palette } }) => palette.primary.main};
-    background-color: ${({ theme: { palette } }) => palette.background.primary};
+    background-color: ${({ theme: { palette } }) => palette.primary.light};
   }
 ` as typeof ListItemButton;
 
@@ -154,6 +157,9 @@ export const SidebarLinkText = styled(ListItemText, {
 
 export const ListItemIconStyled = styled(ListItemIcon)`
   min-width: ${({ theme }) => theme.spacing(8)};
-  color: inherit;
+  color: ${({ theme }) => theme.typography.subtitle2.color};
   margin-left: ${({ theme }) => theme.spacing(3)};
+  .Mui-selected & {
+    color: ${({ theme }) => theme.palette.primary.main};
+  }
 ` as typeof ListItemIcon;
