@@ -1,13 +1,8 @@
-import {
-  DataGrid,
-  GridColDef,
-  GridColumnVisibilityModel,
-  GridSortModel,
-} from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridColumnVisibilityModel, GridSortModel } from "@mui/x-data-grid";
 import type { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { ActionButtonContainer, DataTableContainer } from "./index.styled";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
-import { Edit, ArrowRight } from "lucide-react";
+import { Pencil, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getEditFormRoute, getViewFormRoute } from "lib/router";
 import { IconButton } from "@mui/material";
@@ -57,9 +52,7 @@ export const DataTableGrid = ({
   const actionsColumn: GridColDef = {
     field: "actions",
     headerName: "Actions",
-    flex: 1,
-    align: "right",
-    headerAlign: "right",
+    minWidth: 100,
     filterable: false,
     sortable: false,
     disableColumnMenu: true,
@@ -67,10 +60,10 @@ export const DataTableGrid = ({
       return (
         <ActionButtonContainer>
           <IconButton disabled={disableEditRoute} onClick={() => handleEditClick(row)}>
-            <Edit size={20} />
+            <Pencil size={18} />
           </IconButton>
           <IconButton disabled={disableViewRoute} onClick={() => handleForwardClick(row)}>
-            <ArrowRight size={20} />
+            <Eye size={18} />
           </IconButton>
         </ActionButtonContainer>
       );
@@ -132,12 +125,13 @@ export const DataTableGrid = ({
   return (
     <DataTableContainer>
       <DataGrid
-        key={JSON.stringify([(data ?? []).map(row => (row as any).id)])}
+        key={JSON.stringify([(data ?? []).map((row) => (row as any).id)])}
         columns={gridFinalizedColumns}
         rows={data ?? empty}
         loading={!data}
         checkboxSelection={false}
         autoHeight={autoHeight}
+        rowHeight={72}
         rowCount={totalRowCount}
         pageSizeOptions={rowsPerPageOptions}
         pagination
@@ -151,8 +145,10 @@ export const DataTableGrid = ({
         onPaginationModelChange={handlePaginationModelChange}
         sortingMode={dataViewMode}
         onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}
-        columnVisibilityModel={columnVisibilityModel} 
-        onColumnVisibilityModelChange={onColumnVisibilityModelChange ?? handleColumnVisibilityModelChange}   
+        columnVisibilityModel={columnVisibilityModel}
+        onColumnVisibilityModelChange={
+          onColumnVisibilityModelChange ?? handleColumnVisibilityModelChange
+        }
         initialState={initialState}
       />
     </DataTableContainer>
