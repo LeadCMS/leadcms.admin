@@ -17,7 +17,7 @@ import { dataListBreadcrumbLinks } from "utils/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { Fragment, useRef, useState } from "react";
-import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";      
+import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
 import { getModelByName } from "lib/network/swagger-models";
@@ -81,11 +81,11 @@ export const Contacts = () => {
     await client.api.contactsImportCreate(importDtoCollection);
   };
 
-  const [columns, setColumns] =  useState<GridColDef<ContactDetailsDto>[] >([
+  const [columns, setColumns] = useState<GridColDef<ContactDetailsDto>[]>([
     {
       field: "prefix",
       headerName: "Prefix",
-      minWidth:80,
+      minWidth: 80,
       type: "string",
     },
     {
@@ -182,102 +182,83 @@ export const Contacts = () => {
   ]);
 
   const searchBar = (
-     <SearchBar
+    <SearchBar
       setSearchTermOnChange={setSearchTerm}
       searchBoxLabel={searchLabel}
       initialValue={gridSettings?.searchTerm ?? ""}
-      ></SearchBar>
+    ></SearchBar>
   );
 
   const extraActions = [
-    <Fragment>
-      <IconButton
-        onClick={() => setFilterPanelOpen(true)}
-        color="secondary"
-        sx={{
-          backgroundColor:theme=> theme.palette.background.primary,
-          border: "1px solid", 
-          borderColor: "#E4E4E7",
-          borderRadius: theme=>theme.spacing(1)
-        }}
-      >
-        <Filter size={18} />
-      </IconButton>
-    </Fragment>,
-    <Fragment>
-     <Button
+    <IconButton
+      onClick={() => setFilterPanelOpen(true)}
+      color="secondary"
+      sx={{
+        backgroundColor: (theme) => theme.palette.background.secondary,
+        border: "1px solid",
+        borderColor: "#E4E4E7",
+        borderRadius: (theme) => theme.spacing(1),
+      }}
+    >
+      <Filter size={18} />
+    </IconButton>,
+    <Button
       variant="outlined"
       startIcon={<Settings2 size={18} />}
       onClick={() => setColumnsPanelOpen((open) => !open)}
       color="secondary"
-      sx={theme => ({
-        backgroundColor: theme.palette.background.primary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-      },
-      })}
-      >
-      Columns
-     </Button>
-    </Fragment>,
-    <Fragment key={"import-action"}>
-      <Button key={"import-btn"} 
-        startIcon={<Upload size={18}/>} 
-        onClick={handleImportOpen} 
-        color="secondary" 
-        variant="outlined" 
-        sx={theme => ({
-          backgroundColor: theme.palette.background.primary,
-          borderColor: "#E4E4E7",
-          "&:hover": {
-            backgroundColor: theme.palette.background.primaryHover,
-          },
-        })}>
-        Import
-      </Button>
-      {importFieldsObject && (
-        <CsvImport
-          isOpen={openImport}
-          onClose={handleImportClose}
-          onUpload={handleFileUpload}
-          object={importFieldsObject}
-          endRoute={CoreModule.contacts}
-        ></CsvImport>
-      )}
-    </Fragment>,
-    <Fragment key={"export-action"}>
-      <Button key={"export-btn"} 
-        startIcon={<Download size={18}/>} 
-        onClick={handleExportOpen} 
-        color="secondary" 
-        variant="outlined" 
-        sx={theme => ({
-        backgroundColor: theme.palette.background.primary,
+      sx={(theme) => ({
+        backgroundColor: theme.palette.background.secondary,
         borderColor: "#E4E4E7",
         "&:hover": {
           backgroundColor: theme.palette.background.primaryHover,
         },
-        })}
-      >
-        Export
-      </Button>
-      {openExport && (
-        <CsvExport
-          exportAsync={exportContactsAsync}
-          closeExport={handleExportOpen}
-          fileName={"contacts"}
-        ></CsvExport>
-      )}
-    </Fragment>,   
+      })}
+    >
+      Columns
+    </Button>,
+    <Button
+      key={"import-btn"}
+      startIcon={<Upload size={18} />}
+      onClick={handleImportOpen}
+      color="secondary"
+      variant="outlined"
+      sx={(theme) => ({
+        backgroundColor: theme.palette.background.secondary,
+        borderColor: "#E4E4E7",
+        "&:hover": {
+          backgroundColor: theme.palette.background.primaryHover,
+        },
+      })}
+    >
+      Import
+    </Button>,
+
+    <Button
+      key={"export-btn"}
+      startIcon={<Download size={18} />}
+      onClick={handleExportOpen}
+      color="secondary"
+      variant="outlined"
+      sx={(theme) => ({
+        backgroundColor: theme.palette.background.secondary,
+        borderColor: "#E4E4E7",
+        "&:hover": {
+          backgroundColor: theme.palette.background.primaryHover,
+        },
+      })}
+    >
+      Export
+    </Button>,
   ];
 
   const addButton = (
-    <Button variant="contained" 
-      to={getAddFormRoute()} 
-      component={GhostLink} 
-      startIcon={<Plus size={18}/>} 
-      color="secondary" 
+    <Button
+      variant="contained"
+      to={getAddFormRoute()}
+      component={GhostLink}
+      startIcon={<Plus size={18} />}
+      color="primary"
     >
       Add contact
     </Button>
@@ -291,6 +272,22 @@ export const Contacts = () => {
       leftContainerChildren={searchBar}
       addButtonContainerChildren={addButton}
     >
+      {importFieldsObject && (
+        <CsvImport
+          isOpen={openImport}
+          onClose={handleImportClose}
+          onUpload={handleFileUpload}
+          object={importFieldsObject}
+          endRoute={CoreModule.contacts}
+        />
+      )}
+      {openExport && (
+        <CsvExport
+          exportAsync={exportContactsAsync}
+          closeExport={handleExportOpen}
+          fileName="contacts"
+        />
+      )}
       <DataList
         columns={columns}
         setColumns={setColumns}
