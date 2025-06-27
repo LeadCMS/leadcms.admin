@@ -100,7 +100,8 @@ const MarkdownEditor = ({
   onFrontmatterErrorChange,
   livePreview,
   livePreviewTemplate,
-  key: editorKey, // <-- add key prop support
+  key: editorKey,
+  isMetadataCollapsed,
 }: MarkdownEditorProps & { key?: React.Key }) => {
   const { notificationsService } = useNotificationsService();
   const [currentError, setCurrentError] = useState<string>("");
@@ -192,7 +193,7 @@ const MarkdownEditor = ({
               key={editorKey} // <-- pass key to MDEditor for remounting
               aria-disabled={isReadOnly}
               hideToolbar={isReadOnly}
-              height="100%"
+              height={isMetadataCollapsed ? "calc(100vh - 325px)" : "calc(100vh - 500px)"}
               preview={"live"}
               value={value}
               onChange={onChange}

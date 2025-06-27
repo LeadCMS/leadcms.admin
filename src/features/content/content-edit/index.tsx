@@ -23,6 +23,9 @@ import {
   CircularProgress,
   Switch,
   Typography,
+  Collapse,
+  IconButton,
+  Chip,
 } from "@mui/material";
 import { useFormik, FormikHelpers } from "formik";
 import {
@@ -58,7 +61,7 @@ import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
-import { Trash2, XCircle, Save, ExternalLink, Copy } from "lucide-react";
+import { Trash2, XCircle, Save, ExternalLink, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -113,6 +116,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
   const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
   const [iframeKey, setIframeKey] = useState<number>(0);
+  const [isMetadataCollapsed, setIsMetadataCollapsed] = useState(false);
   const userInfo = useUserInfo();
 
   const supportsCover = contentType?.supportsCoverImage;
@@ -494,6 +498,12 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
   };
 
+  // Helper function to get content type display name
+  const getContentTypeDisplayName = () => {
+    if (!contentType) return formik.values.type || "Unknown";
+    return contentType.uid || "Unknown";
+  };
+
   return (
     <form onSubmit={formik.handleSubmit}>
       <ModuleWrapper
@@ -596,52 +606,157 @@ export const ContentEdit = (props: ContentEditProps) => {
         />
         <ContentEditContainer>
           {shouldShowForm ? (
-            <Card>
-              <CardContent>
-                <Grid container spacing={2} alignItems="flex-start">
-                  <Grid size={{ xs: 12, sm: 8 }}>
-                    <TextField
-                      label="Title"
-                      name="title"
-                      value={formik.values.title}
-                      onChange={valueUpdate}
-                      error={formik.touched.title && Boolean(formik.errors.title)}
-                      helperText={formik.touched.title && formik.errors.title}
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <ContentTypeDropdown
-                      value={formik.values.type}
-                      options={[...contentTypes].sort((a, b) => a.uid.localeCompare(b.uid))}
-                      onChange={(val: string) => {
-                        if (val !== formik.values.type) {
-                          setContentTypeDefaults(val);
-                        }
+            <Card sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+              <CardContent
+                sx={{ display: "flex", flexDirection: "column", flex: 1, height: "100%" }}
+              >
+                {/* Collapsible Metadata Section */}
+                <Box sx={{ mb: 2 }}>
+                  {/* Collapsed Header */}
+                  {isMetadataCollapsed && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        p: 2,
+                        border: "1px solid",
+                        borderColor: "divider",
+                        borderRadius: 1,
+                        bgcolor: "grey.50",
+                        cursor: "pointer",
                       }}
-                      onAddNewType={reloadContentTypes}
-                      error={formik.touched.type && Boolean(formik.errors.type)}
-                      helperText={formik.touched.type && formik.errors.type}
-                      onBlur={() => formik.setFieldTouched("type", true)}
-                    />
-                  </Grid>
-                </Grid>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid size={{ xs: 12, sm: 12 }}>
-                    <TextField
-                      label="Description"
-                      name="description"
-                      value={formik.values.description}
-                      onChange={valueUpdate}
-                      error={formik.touched.description && Boolean(formik.errors.description)}
-                      helperText={formik.touched.description && formik.errors.description}
-                      multiline
-                      minRows={3}
-                      fullWidth
-                    />
-                  </Grid>
-                </Grid>
-                <Box sx={{ display: "flex", alignItems: "center", mt: 2, mb: 1 }}>
+                      onClick={() => setIsMetadataCollapsed(false)}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          minWidth: 0,
+                          flex: 1,
+                        }}
+                      >
+                        <Chip
+                          label={getContentTypeDisplayName()}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: "0.75rem", flexShrink: 0 }}
+                        />
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography
+                            variant="body1"
+                            sx={{
+                              fontWeight: 500,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {formik.values.title || "Untitled"}
+                            {formik.values.description && (
+                              <Typography
+                                component="span"
+                                variant="body2"
+                                sx={{
+                                  color: "text.secondary",
+                                  fontWeight: 400,
+                                  ml: 1,
+                                }}
+                              >
+                                - {formik.values.description}
+                              </Typography>
+                            )}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <IconButton size="small">
+                        <ChevronDown size={20} />
+                      </IconButton>
+                    </Box>
+                  )}
+
+                  {/* Expanded Header */}
+                  {!isMetadataCollapsed && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        mb: 2,
+                      }}
+                    >
+                      <IconButton
+                        size="small"
+                        onClick={() => setIsMetadataCollapsed(true)}
+                        sx={{ color: "text.secondary" }}
+                      >
+                        <ChevronUp size={20} />
+                      </IconButton>
+                    </Box>
+                  )}
+
+                  {/* Collapsible Content */}
+                  <Collapse in={!isMetadataCollapsed}>
+                    <Grid container spacing={2} alignItems="flex-start">
+                      <Grid size={{ xs: 12, sm: 8 }}>
+                        <TextField
+                          label="Title"
+                          name="title"
+                          value={formik.values.title}
+                          onChange={valueUpdate}
+                          error={formik.touched.title && Boolean(formik.errors.title)}
+                          helperText={formik.touched.title && formik.errors.title}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <ContentTypeDropdown
+                          value={formik.values.type}
+                          options={[...contentTypes].sort((a, b) => a.uid.localeCompare(b.uid))}
+                          onChange={(val: string) => {
+                            if (val !== formik.values.type) {
+                              setContentTypeDefaults(val);
+                            }
+                          }}
+                          onAddNewType={reloadContentTypes}
+                          error={formik.touched.type && Boolean(formik.errors.type)}
+                          helperText={formik.touched.type && formik.errors.type}
+                          onBlur={() => formik.setFieldTouched("type", true)}
+                        />
+                      </Grid>
+                    </Grid>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                      <Grid size={{ xs: 12, sm: 12 }}>
+                        <TextField
+                          label="Description"
+                          name="description"
+                          value={formik.values.description}
+                          onChange={valueUpdate}
+                          error={formik.touched.description && Boolean(formik.errors.description)}
+                          helperText={formik.touched.description && formik.errors.description}
+                          multiline
+                          minRows={3}
+                          fullWidth
+                        />
+                      </Grid>
+                    </Grid>
+                  </Collapse>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    mb: 1,
+                    ...(isMetadataCollapsed && {
+                      bgcolor: "grey.50",
+                      borderRadius: 1,
+                      p: 1,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }),
+                  }}
+                >
                   <Tabs
                     value={activeTab}
                     onChange={(_, v) => setActiveTab(v)}
@@ -729,7 +844,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                         textTransform: "none",
                         fontSize: 14,
                         pl: 0,
-                        pr: 0,
+                        pr: 3,
                         minWidth: 0,
                         "&:hover": { textDecoration: "underline", background: "none" },
                       }}
@@ -738,168 +853,187 @@ export const ContentEdit = (props: ContentEditProps) => {
                     </Button>
                   )}
                 </Box>
-                {activeTab === "content" && (
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 12 }}>
-                      {contentType?.format === "JSON" || contentType?.format === "YAML" ? (
-                        <MonacoEditor
-                          height="400px"
-                          defaultLanguage={contentType.format.toLowerCase() as "json" | "yaml"}
-                          value={formik.values.body}
-                          onChange={async (value) => {
-                            setWasModified(true);
-                            await formik.setFieldValue("body", value || "");
+                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                  {activeTab === "content" && (
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                      <Grid container spacing={2} sx={{ flex: 1, minHeight: 0 }}>
+                        <Grid
+                          size={{ xs: 12, sm: 12 }}
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            minHeight: 0,
+                            height: "100%",
                           }}
-                          options={{
-                            readOnly: !!props.readonly,
-                            minimap: { enabled: false },
-                            lineNumbers: "on",
-                            scrollBeyondLastLine: false,
-                            wordWrap: "on",
-                          }}
-                        />
-                      ) : (
-                        <MarkdownEditor
-                          onChange={async (value) => {
-                            setWasModified(true);
-                            await formik.setFieldValue("body", value || "");
-                          }}
-                          onFrontmatterErrorChange={async (value) => {
-                            setfrontmatterState(value);
-                          }}
-                          value={formik.values.body}
-                          isReadOnly={props.readonly}
-                          contentDetails={formik.values}
-                          livePreview={useLivePreview}
-                          livePreviewTemplate={configSettings?.LivePreviewUrlTemplate}
-                          key={iframeKey}
-                        />
-                      )}
-                    </Grid>
-                  </Grid>
-                )}
-                {activeTab === "cover" && supportsCover && (
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <FileDropdown
-                        onChange={onCoverImageChange}
-                        acceptMIME="image/*"
-                        maxFileSize={ContentEditMaximumImageSize}
-                        data={formik.values.coverImagePending}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        label="Cover Image Alt Text"
-                        name="coverImageAlt"
-                        value={formik.values.coverImageAlt || ""}
-                        error={Boolean(formik.touched.coverImageAlt && formik.errors.coverImageAlt)}
-                        helperText={formik.touched.coverImageAlt && formik.errors.coverImageAlt}
-                        placeholder="Enter Cover Image Alt Text"
-                        variant="outlined"
-                        onChange={valueUpdate}
-                        fullWidth
-                      />
-                    </Grid>
-                  </Grid>
-                )}
-                {activeTab === "settings" && (
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12 }}>
-                      <TextField
-                        disabled={props.readonly}
-                        label="Slug"
-                        name="slug"
-                        value={formik.values.slug}
-                        error={formik.touched.slug && Boolean(formik.errors.slug)}
-                        helperText={formik.touched.slug && formik.errors.slug}
-                        placeholder="Enter slug"
-                        variant="outlined"
-                        onChange={valueUpdate}
-                        fullWidth
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <LanguageSelect
-                        value={formik.values.language}
-                        onChange={(val) => autoCompleteValueUpdate("language", val)}
-                        label="Language"
-                        error={formik.touched.language && Boolean(formik.errors.language)}
-                        helperText={formik.touched.language && formik.errors.language}
-                        name="language"
-                        disabled={props.readonly}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <RemoteAutocomplete
-                        type={RemoteValues.CATEGORIES}
-                        label="Category"
-                        placeholder="Select Category"
-                        error={formik.touched.category && Boolean(formik.errors.category)}
-                        helperText={formik.touched.category && formik.errors.category}
-                        value={formik.values.category}
-                        onChange={(ev, val) => autoCompleteValueUpdate("category", val as string)}
-                        freeSolo
-                        multiple={false}
-                        limit={1}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <RemoteAutocomplete
-                        type={RemoteValues.TAGS}
-                        label="Tags"
-                        placeholder="Select Tags"
-                        error={formik.touched.tags && Boolean(formik.errors.tags)}
-                        helperText={formik.touched.tags && formik.errors.tags}
-                        value={formik.values.tags}
-                        onChange={(ev, val) => autoCompleteValueUpdate("tags", val as string[])}
-                        freeSolo
-                        multiple
-                        limit={3}
-                      />
-                    </Grid>
-                    {supportsComments && (
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <FormControlLabel
-                          label="Allow Comments"
-                          control={
-                            <Checkbox
-                              disabled={props.readonly}
-                              checked={formik.values.allowComments}
-                              onChange={(ev) =>
-                                valueUpdateGeneric("allowComments", ev.target.checked)
+                        >
+                          {contentType?.format === "JSON" || contentType?.format === "YAML" ? (
+                            <MonacoEditor
+                              height={
+                                isMetadataCollapsed ? "calc(100vh - 325px)" : "calc(100vh - 500px)"
                               }
-                              name="allowComments"
+                              defaultLanguage={contentType.format.toLowerCase() as "json" | "yaml"}
+                              value={formik.values.body}
+                              onChange={async (value) => {
+                                setWasModified(true);
+                                await formik.setFieldValue("body", value || "");
+                              }}
+                              options={{
+                                readOnly: !!props.readonly,
+                                minimap: { enabled: false },
+                                lineNumbers: "on",
+                                scrollBeyondLastLine: false,
+                                wordWrap: "on",
+                              }}
                             />
-                          }
+                          ) : (
+                            <MarkdownEditor
+                              onChange={async (value) => {
+                                setWasModified(true);
+                                await formik.setFieldValue("body", value || "");
+                              }}
+                              onFrontmatterErrorChange={async (value) => {
+                                setfrontmatterState(value);
+                              }}
+                              value={formik.values.body}
+                              isReadOnly={props.readonly}
+                              contentDetails={formik.values}
+                              livePreview={useLivePreview}
+                              livePreviewTemplate={configSettings?.LivePreviewUrlTemplate}
+                              key={iframeKey}
+                              isMetadataCollapsed={isMetadataCollapsed}
+                            />
+                          )}
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  )}
+                  {activeTab === "cover" && supportsCover && (
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <FileDropdown
+                          onChange={onCoverImageChange}
+                          acceptMIME="image/*"
+                          maxFileSize={ContentEditMaximumImageSize}
+                          data={formik.values.coverImagePending}
                         />
                       </Grid>
-                    )}
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <TextField
-                        disabled={props.readonly}
-                        label="Author"
-                        name="author"
-                        value={formik.values.author}
-                        error={formik.touched.author && Boolean(formik.errors.author)}
-                        helperText={formik.touched.author && formik.errors.author}
-                        placeholder="Enter author name"
-                        variant="outlined"
-                        onChange={valueUpdate}
-                        fullWidth
-                      />
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          label="Cover Image Alt Text"
+                          name="coverImageAlt"
+                          value={formik.values.coverImageAlt || ""}
+                          error={Boolean(
+                            formik.touched.coverImageAlt && formik.errors.coverImageAlt
+                          )}
+                          helperText={formik.touched.coverImageAlt && formik.errors.coverImageAlt}
+                          placeholder="Enter Cover Image Alt Text"
+                          variant="outlined"
+                          onChange={valueUpdate}
+                          fullWidth
+                        />
+                      </Grid>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <DatePicker
-                        label="Published At"
-                        disabled={props.readonly}
-                        value={formik.values.publishedAt ? dayjs(formik.values.publishedAt) : null}
-                        onChange={(newValue) => handleDateChange("publishedAt", newValue)}
-                        slotProps={{ textField: { fullWidth: true } }}
-                      />
+                  )}
+                  {activeTab === "settings" && (
+                    <Grid container spacing={6} sx={{ mt: 2 }}>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField
+                          disabled={props.readonly}
+                          label="Slug"
+                          name="slug"
+                          value={formik.values.slug}
+                          error={formik.touched.slug && Boolean(formik.errors.slug)}
+                          helperText={formik.touched.slug && formik.errors.slug}
+                          placeholder="Enter slug"
+                          variant="outlined"
+                          onChange={valueUpdate}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <LanguageSelect
+                          value={formik.values.language}
+                          onChange={(val) => autoCompleteValueUpdate("language", val)}
+                          label="Language"
+                          error={formik.touched.language && Boolean(formik.errors.language)}
+                          helperText={formik.touched.language && formik.errors.language}
+                          name="language"
+                          disabled={props.readonly}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <RemoteAutocomplete
+                          type={RemoteValues.CATEGORIES}
+                          label="Category"
+                          placeholder="Select Category"
+                          error={formik.touched.category && Boolean(formik.errors.category)}
+                          helperText={formik.touched.category && formik.errors.category}
+                          value={formik.values.category}
+                          onChange={(ev, val) => autoCompleteValueUpdate("category", val as string)}
+                          freeSolo
+                          multiple={false}
+                          limit={1}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <RemoteAutocomplete
+                          type={RemoteValues.TAGS}
+                          label="Tags"
+                          placeholder="Select Tags"
+                          error={formik.touched.tags && Boolean(formik.errors.tags)}
+                          helperText={formik.touched.tags && formik.errors.tags}
+                          value={formik.values.tags}
+                          onChange={(ev, val) => autoCompleteValueUpdate("tags", val as string[])}
+                          freeSolo
+                          multiple
+                          limit={3}
+                        />
+                      </Grid>
+                      {supportsComments && (
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <FormControlLabel
+                            label="Allow Comments"
+                            control={
+                              <Checkbox
+                                disabled={props.readonly}
+                                checked={formik.values.allowComments}
+                                onChange={(ev) =>
+                                  valueUpdateGeneric("allowComments", ev.target.checked)
+                                }
+                                name="allowComments"
+                              />
+                            }
+                          />
+                        </Grid>
+                      )}
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <TextField
+                          disabled={props.readonly}
+                          label="Author"
+                          name="author"
+                          value={formik.values.author}
+                          error={formik.touched.author && Boolean(formik.errors.author)}
+                          helperText={formik.touched.author && formik.errors.author}
+                          placeholder="Enter author name"
+                          variant="outlined"
+                          onChange={valueUpdate}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <DatePicker
+                          label="Published At"
+                          disabled={props.readonly}
+                          value={
+                            formik.values.publishedAt ? dayjs(formik.values.publishedAt) : null
+                          }
+                          onChange={(newValue) => handleDateChange("publishedAt", newValue)}
+                          slotProps={{ textField: { fullWidth: true } }}
+                        />
+                      </Grid>
                     </Grid>
-                  </Grid>
-                )}
+                  )}
+                </Box>
               </CardContent>
             </Card>
           ) : null}

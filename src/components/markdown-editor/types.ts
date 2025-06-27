@@ -25,6 +25,7 @@ export interface MarkdownEditorProps {
   onFrontmatterErrorChange: onFrontmatterErrorChangeFunc;
   livePreview?: boolean;
   livePreviewTemplate?: string;
+  isMetadataCollapsed: boolean;
 }
 
 export interface ImageUploadingContext {
