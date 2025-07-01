@@ -61,7 +61,16 @@ import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
-import { Trash2, XCircle, Save, ExternalLink, Copy, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Trash2,
+  XCircle,
+  Save,
+  ExternalLink,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+} from "lucide-react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -155,9 +164,9 @@ export const ContentEdit = (props: ContentEditProps) => {
         await client.api.contentDraftCreate(filteredValues);
       }
       // Add 1 second delay, then refresh iframe
-      setTimeout(() => {
-        setIframeKey(Date.now());
-      }, 1000);
+      // setTimeout(() => {
+      //   setIframeKey(Date.now());
+      // }, 1000);
     } catch (error) {
       console.error("Failed to save draft:", error);
       // Don't show error to user for draft saves to avoid interrupting their workflow
@@ -811,8 +820,6 @@ export const ContentEdit = (props: ContentEditProps) => {
                               onChange={(e) => {
                                 const newValue = e.target.checked;
                                 setUseLivePreview(newValue);
-
-                                // When enabling live preview, immediately save current draft
                                 if (
                                   newValue &&
                                   hasLivePreview &&
@@ -831,8 +838,21 @@ export const ContentEdit = (props: ContentEditProps) => {
                             {isDraftSaving ? "Saving Draft..." : "Live Preview"}
                           </Typography>
                         }
-                        sx={{ mr: 5 }}
+                        sx={{ mr: 2 }}
                       />
+                    )}
+                  {/* Manual refresh button for live preview */}
+                  {hasLivePreview &&
+                    useLivePreview &&
+                    (contentType?.format === "MDX" || contentType?.format === "MD") && (
+                      <IconButton
+                        aria-label="Refresh preview"
+                        onClick={() => setIframeKey(Date.now())}
+                        sx={{ color: "#1976d2", mr: 1 }}
+                        size="small"
+                      >
+                        <RefreshCw size={20} />
+                      </IconButton>
                     )}
                   {hasSitePreview && (
                     <Button
