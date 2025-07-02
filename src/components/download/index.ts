@@ -11,3 +11,14 @@ export const downloadFile = (data: string, contentType?: string, fileName?: stri
   link.click();
   document.body.removeChild(link);
 };
+
+export function downloadExportFile(blob: Blob, format: string, filename = "export"): void {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
