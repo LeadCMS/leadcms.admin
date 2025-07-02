@@ -125,7 +125,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
   const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
   const [iframeKey, setIframeKey] = useState<number>(0);
-  const [isMetadataCollapsed, setIsMetadataCollapsed] = useState(false);
+  const [isMetadataCollapsed, setIsMetadataCollapsed] = useState(!!id);
   const userInfo = useUserInfo();
 
   const supportsCover = contentType?.supportsCoverImage;
