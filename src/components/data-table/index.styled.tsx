@@ -15,6 +15,20 @@ export const DataTableContainer = styled(Paper)`
   && .MuiDataGrid-row:hover {
     background-color: #fafcff;
   }
+
+  .MuiCheckbox-root .MuiSvgIcon-root {
+    font-size: 20px;
+    color: #71717a;
+  }
+
+  .MuiCheckbox-root.Mui-checked .MuiSvgIcon-root {
+    color: #3878ff;
+  }
+
+  .MuiDataGrid-columnHeader .MuiCheckbox-root.Mui-checked .MuiSvgIcon-root,
+  .MuiDataGrid-columnHeader .MuiCheckbox-root.MuiCheckbox-indeterminate .MuiSvgIcon-root {
+    color: #3878ff !important;
+  }
 `;
 
 export const ActionButtonContainer = styled("div")`

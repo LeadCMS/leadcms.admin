@@ -6,16 +6,24 @@ import {
   getWhereFilterQuery,
   totalCountHeaderName,
 } from "@providers/query-provider";
-import { GridColDef, GridSortDirection, GridValidRowModel, GridColumnVisibilityModel } from "@mui/x-data-grid";
+import {
+  GridColDef,
+  GridSortDirection,
+  GridValidRowModel,
+  GridColumnVisibilityModel,
+} from "@mui/x-data-grid";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
 import { DataListContainer } from "./index.styled";
 import { DataTableGrid } from "@components/data-table";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, GridDataFilterState } from "types";
+import { DataListSettings, ExportParams, GridDataFilterState } from "types";
 import { useNotificationsService } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { CustomFilterBar } from "@components/custom-filter";
 import { ColumnsPanel } from "@components/custom-columns-panel";
+import { ExportPopup } from "@components/export-popup";
+import type { GridRowSelectionModel } from "@mui/x-data-grid";
+import React from "react";
 
 // Define response type for API model data
 interface ModelDataResponse {
@@ -36,8 +44,11 @@ type dataListProps<TModel extends GridValidRowModel> = {
   showViewButton?: boolean;
   filterPanelOpen?: boolean;
   setFilterPanelOpen?: (open: boolean) => void;
-  columnsPanelOpen?: boolean; 
+  columnsPanelOpen?: boolean;
   setColumnsPanelOpen?: (open: boolean) => void;
+  onExport?: (params: ExportParams) => Promise<void>;
+  onExportOpen?: boolean;
+  onExportClose?: () => void;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -55,6 +66,9 @@ export const DataList = <TModel extends GridValidRowModel>({
   setFilterPanelOpen,
   columnsPanelOpen,
   setColumnsPanelOpen,
+  onExport,
+  onExportOpen = false,
+  onExportClose = () => {},
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -69,8 +83,15 @@ export const DataList = <TModel extends GridValidRowModel>({
   const [filterState, setFilterState] = useState<GridDataFilterState>();
 
   const [columnVisibilityModel, setColumnVisibilityModel] = useState<Record<string, boolean>>(
-      gridSettings?.columnVisibilityModel ?? {}
-    );
+    gridSettings?.columnVisibilityModel ?? {}
+  );
+
+  const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set(),
+  });
+
+  const selectedRows = Array.from(rowSelectionModel.ids);
 
   const defaultFilterState = {
     filterLimit: defaultFilterLimit,
@@ -82,15 +103,10 @@ export const DataList = <TModel extends GridValidRowModel>({
     columnVisibilityModel: initialGridState?.columns?.columnVisibilityModel,
   };
 
-  const whereFilterQuery =
-  filterState?.whereFilters?.length
+  const whereFilterQuery = filterState?.whereFilters?.length
     ? filterState.whereFilters
-        .map(f =>
-          getWhereFilterQuery(
-            f.whereField || "",
-            f.whereFieldValue || "",
-            f.whereOperator || ""
-          )
+        .map((f) =>
+          getWhereFilterQuery(f.whereField || "", f.whereFieldValue || "", f.whereOperator || "")
         )
         .filter(Boolean)
         .join("")
@@ -187,14 +203,14 @@ export const DataList = <TModel extends GridValidRowModel>({
   };
 
   function sortColumnsByOrder<T>(
-  columns: GridColDef<TModel>[],
-  columnOrder: string[]
+    columns: GridColDef<TModel>[],
+    columnOrder: string[]
   ): GridColDef<TModel>[] {
     const ordered = columnOrder
-      .map(field => columns.find(col => col.field === field))
+      .map((field) => columns.find((col) => col.field === field))
       .filter(Boolean) as GridColDef<TModel>[];
 
-    const missing = columns.filter(col => !columnOrder.includes(col.field));
+    const missing = columns.filter((col) => !columnOrder.includes(col.field));
     return [...ordered, ...missing];
   }
 
@@ -251,7 +267,7 @@ export const DataList = <TModel extends GridValidRowModel>({
     setColumns?.(newColumns);
     setFilterState((prev) => ({
       ...(prev ?? {}),
-      columnOrder: newColumns.map(col => col.field),
+      columnOrder: newColumns.map((col) => col.field),
     }));
   };
 
@@ -276,16 +292,29 @@ export const DataList = <TModel extends GridValidRowModel>({
     else setTotalRowCount(-1);
   };
 
+  const handleExport = (scope: string, format: string, cols: string[]) => {
+    if (onExport) {
+      onExport({
+        scope,
+        format,
+        cols,
+        selectedRows,
+        whereFilterQuery,
+        basicFilterQuery,
+      });
+    }
+  };
+
   const gridInitialState = gridSettings && {
     filter:
       gridSettings.whereFilters && gridSettings.whereFilters.length > 0
         ? {
             filterModel: {
-              items: gridSettings.whereFilters.map(f => ({
-              field: f.whereField,
-              operator: f.whereOperator || "eq",
-              value: f.whereFieldValue,
-            })),
+              items: gridSettings.whereFilters.map((f) => ({
+                field: f.whereField,
+                operator: f.whereOperator || "eq",
+                value: f.whereFieldValue,
+              })),
             },
           }
         : undefined,
@@ -305,15 +334,16 @@ export const DataList = <TModel extends GridValidRowModel>({
 
   return filterState && totalRowCount != undefined ? (
     <DataListContainer>
-      <CustomFilterBar columns={columns} 
+      <CustomFilterBar
+        columns={columns}
         whereFilters={filterState.whereFilters || []}
         addFilter={(f, undefined, editIdx) => updateWhereFilters(f, undefined, editIdx)}
-        removeFilter={idx => updateWhereFilters(undefined, idx)}
+        removeFilter={(idx) => updateWhereFilters(undefined, idx)}
         filterPanelOpen={filterPanelOpen}
         setFilterPanelOpen={setFilterPanelOpen}
         clearAllFilters={clearAllFilters}
       />
-      {setColumns &&(
+      {setColumns && (
         <ColumnsPanel
           open={columnsPanelOpen}
           columns={columns}
@@ -323,7 +353,15 @@ export const DataList = <TModel extends GridValidRowModel>({
           onColumnsReorder={handleColumnsReorder}
           onClose={() => setColumnsPanelOpen?.(false)}
         />
-      )}   
+      )}
+      <ExportPopup
+        open={onExportOpen}
+        onClose={onExportClose}
+        onExport={handleExport}
+        columns={columns}
+        selectedCount={selectedRows.length}
+        columnVisibilityModel={columnVisibilityModel}
+      />
       <DataTableGrid
         columns={columns}
         data={modelData || []}
@@ -342,7 +380,11 @@ export const DataList = <TModel extends GridValidRowModel>({
         disableViewRoute={!showViewButton}
         columnVisibilityModel={columnVisibilityModel}
         onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
-        />
+        onRowSelectionModelChange={(newRowSelectionModel) => {
+          setRowSelectionModel(newRowSelectionModel);
+        }}
+        rowSelectionModel={rowSelectionModel}
+      />
     </DataListContainer>
   ) : null;
 };

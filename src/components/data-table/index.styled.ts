@@ -19,6 +19,13 @@ export const DataTableContainer = styled("div")`
     justify-content: space-between;
     width: 100%;
   }
+
+  .MuiCheckbox-root {
+    padding: 2px;
+  }
+  .MuiCheckbox-root .MuiSvgIcon-root {
+    font-size: 16px;
+  }
 `;
 
 export const ActionButtonContainer = styled("div")`

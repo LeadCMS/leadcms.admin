@@ -1,5 +1,12 @@
-import { DataGrid, GridColDef, GridColumnVisibilityModel, GridSortModel } from "@mui/x-data-grid";
-import type { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
+import {
+  DataGrid,
+  GridColDef,
+  GridColumnVisibilityModel,
+  GridSortModel,
+  GridRowSelectionModel,
+  GridCallbackDetails,
+} from "@mui/x-data-grid";
+import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { ActionButtonContainer, DataTableContainer } from "./index.styled";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
 import { Pencil, Eye } from "lucide-react";
@@ -26,6 +33,11 @@ type DataTableProps = {
   disableViewRoute: boolean;
   columnVisibilityModel?: GridColumnVisibilityModel;
   onColumnVisibilityModelChange?: (model: GridColumnVisibilityModel) => void;
+  onRowSelectionModelChange?: (
+    rowSelectionModel: GridRowSelectionModel,
+    details: GridCallbackDetails<any>
+  ) => void;
+  rowSelectionModel?: GridRowSelectionModel;
 };
 
 export const DataTableGrid = ({
@@ -46,6 +58,8 @@ export const DataTableGrid = ({
   disableViewRoute,
   columnVisibilityModel,
   onColumnVisibilityModelChange,
+  onRowSelectionModelChange,
+  rowSelectionModel,
 }: DataTableProps) => {
   const empty: readonly GridValidRowModel[] = [];
 
@@ -122,6 +136,7 @@ export const DataTableGrid = ({
   };
 
   const gridFinalizedColumns = showActionsColumn ? columns.concat(actionsColumn) : columns;
+
   return (
     <DataTableContainer>
       <DataGrid
@@ -129,7 +144,7 @@ export const DataTableGrid = ({
         columns={gridFinalizedColumns}
         rows={data ?? empty}
         loading={!data}
-        checkboxSelection={false}
+        checkboxSelection={true}
         autoHeight={autoHeight}
         rowHeight={72}
         rowCount={totalRowCount}
@@ -149,6 +164,8 @@ export const DataTableGrid = ({
         onColumnVisibilityModelChange={
           onColumnVisibilityModelChange ?? handleColumnVisibilityModelChange
         }
+        onRowSelectionModelChange={onRowSelectionModelChange}
+        rowSelectionModel={rowSelectionModel}
         initialState={initialState}
       />
     </DataTableContainer>
