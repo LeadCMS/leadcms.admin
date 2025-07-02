@@ -24,7 +24,9 @@ import { getModelByName } from "lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { CsvExport } from "@components/export";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings } from "types";
+import { DataListSettings, ExportParams } from "types";
+import { buildExportQueryString } from "@components/export";
+import { downloadExportFile, downloadFile } from "@components/download";
 
 export const Contacts = () => {
   const { client } = useRequestContext();
@@ -55,14 +57,18 @@ export const Contacts = () => {
     }
   };
 
-  const exportContactsAsync = async () => {
-    const response = await client.api.contactsExportList({
-      query: dataExportQuery.current,
-    });
+  const handleExport = async (params: ExportParams): Promise<void> => {
+    try {
+      const { finalQueryString, accept } = buildExportQueryString(params);
+      const response = await client.api.contactsExportList(
+        { query: finalQueryString },
+        { headers: { Accept: accept } }
+      );
 
-    return response.text();
+      const blob = await response.blob();
+      downloadExportFile(blob, params.format, "contacts");
+    } catch (error) {}
   };
-
   const handleImportOpen = () => {
     !importFieldsObject && setImportFieldsObject(getModelByName(modelName));
     setOpenImport(true);
@@ -281,13 +287,6 @@ export const Contacts = () => {
           endRoute={CoreModule.contacts}
         />
       )}
-      {openExport && (
-        <CsvExport
-          exportAsync={exportContactsAsync}
-          closeExport={handleExportOpen}
-          fileName="contacts"
-        />
-      )}
       <DataList
         columns={columns}
         setColumns={setColumns}
@@ -306,6 +305,9 @@ export const Contacts = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
+        onExport={handleExport}
+        onExportOpen={openExport}
+        onExportClose={handleExportOpen}
       ></DataList>
     </ModuleWrapper>
   );
