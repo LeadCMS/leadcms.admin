@@ -477,6 +477,14 @@ export const ContentEdit = (props: ContentEditProps) => {
       formik.errors.publishedAt
   );
 
+  // Helper to determine which preview template to use
+  const getPreviewTemplate = () => {
+    if (!wasModified) {
+      return configSettings?.PreviewUrlTemplate;
+    }
+    return configSettings?.LivePreviewUrlTemplate;
+  };
+
   // Handler for delete action
   const handleDelete = async () => {
     if (!id) return;
@@ -923,7 +931,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                               isReadOnly={props.readonly}
                               contentDetails={formik.values}
                               livePreview={useLivePreview}
-                              livePreviewTemplate={configSettings?.LivePreviewUrlTemplate}
+                              livePreviewTemplate={getPreviewTemplate()}
                               key={iframeKey}
                               isMetadataCollapsed={isMetadataCollapsed}
                             />

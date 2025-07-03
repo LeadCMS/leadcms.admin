@@ -190,7 +190,7 @@ const MarkdownEditor = ({
           <input {...getInputProps()} />
           <ImageUploadingCtx.Provider value={currentImageCtxValue}>
             <MDEditor
-              key={editorKey} // <-- pass key to MDEditor for remounting
+              key={editorKey}
               aria-disabled={isReadOnly}
               hideToolbar={isReadOnly}
               height={isMetadataCollapsed ? "calc(100vh - 325px)" : "calc(100vh - 500px)"}
