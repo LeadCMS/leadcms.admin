@@ -867,7 +867,8 @@ export const ContentEdit = (props: ContentEditProps) => {
                         <RefreshCw size={20} />
                       </IconButton>
                     )}
-                  {hasSitePreview && (
+                  {/* Show Preview on Site only for saved/existing content */}
+                  {hasSitePreview && id && (
                     <Button
                       variant="text"
                       onClick={handleSitePreview}
