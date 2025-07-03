@@ -205,12 +205,15 @@ export const ContentEdit = (props: ContentEditProps) => {
     if (frontmatterState !== null) {
       throw Error("Frontmatter validation error. Check preview window for details");
     }
+    // Always trim slashes from slug before using it anywhere (e.g., image upload, API calls)
+    const trimmedSlug = values.slug ? values.slug.replace(/^\/+|\/+$/g, "") : values.slug;
     if (coverWasModified && values.coverImagePending && values.coverImagePending.url) {
       const blob = await (await fetch(values.coverImagePending.url)).blob();
       const file = new File([blob], values.coverImagePending.fileName || "image.jpg");
+      // Always use trimmedSlug for ScopeUid
       const imageUploadingResponse = await client.api.mediaCreate({
         Image: file,
-        ScopeUid: values.slug,
+        ScopeUid: trimmedSlug,
       });
       if (imageUploadingResponse.error) {
         throw Error(imageUploadingResponse.error.title as string);
@@ -223,11 +226,13 @@ export const ContentEdit = (props: ContentEditProps) => {
     if (values?.id) {
       response = await client.api.contentPartialUpdate(Number(values.id), {
         ...values,
+        slug: trimmedSlug,
         coverImageUrl: coverUrl,
       });
     } else {
       response = await client.api.contentCreate({
         ...values,
+        slug: trimmedSlug,
         coverImageUrl: coverUrl,
       });
     }
