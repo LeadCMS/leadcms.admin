@@ -8,6 +8,7 @@ import {
   InputAdornment,
   Box,
   CircularProgress,
+  Link,
 } from "@mui/material";
 import { Eye, EyeOff } from "lucide-react";
 import { LoginDto } from "@lib/network/swagger-client";
@@ -126,6 +127,7 @@ export const Login = () => {
               {...register("email")}
               error={!!errors.email}
               helperText={errors.email?.message}
+              sx={{ mt: 6, mb: 5 }}
             />
             <TextField
               label="Password"
@@ -143,7 +145,18 @@ export const Login = () => {
                   </InputAdornment>
                 ),
               }}
+              sx={{ mt: 2, mb: 0 }}
             />
+            <Box sx={{ textAlign: "right", mb: 2, p: 0, alignSelf: "flex-start", pb: 2, pt: 2 }}>
+              <Link
+                href="/auth/forgot-password"
+                variant="body2"
+                underline="none"
+                sx={{ fontSize: "0.8rem" }}
+              >
+                Forgot Password?
+              </Link>
+            </Box>
             {loginError && (
               <Typography variant="body2" color="error" align="center" sx={{ mt: 1 }}>
                 {loginError}
