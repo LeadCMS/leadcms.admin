@@ -34,6 +34,7 @@ class ApiExtended<getTokenFn> extends Api<getTokenFn> {
             }
             throw e;
           }
+            throw e;
         }
       };
     });
