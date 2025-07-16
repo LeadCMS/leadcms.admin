@@ -15,6 +15,10 @@ import {
   Typography,
   Box,
   Card,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRequestContext } from "@providers/request-provider";
@@ -140,6 +144,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     orderNumber: zod.string().nullable().optional(),
     affiliateName: zod.string().nullable().optional(),
     source: zod.string().nullable().optional(),
+    status: zod.enum(["Pending", "Paid", "Cancelled", "Refunded", "Failed"]).nullable().optional(),
   });
 
   const formik = useFormik<OrderDetailsDto>({
@@ -152,6 +157,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
       orderNumber: "",
       affiliateName: "",
       source: "",
+      status: "Pending",
       contact: undefined as unknown as ContactDetailsDto,
     } as OrderDetailsDto,
     onSubmit: submit,
@@ -264,7 +270,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     helperText={formik.touched.refNo && formik.errors.refNo}
                     fullWidth
                     size="small"
-                  ></TextField>
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
@@ -277,7 +283,26 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     onChange={formik.handleChange}
                     fullWidth
                     size="small"
-                  ></TextField>
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                      disabled={formik.isSubmitting}
+                      label="Status"
+                      name="status"
+                      value={formik.values.status || "Pending"}
+                      onChange={formik.handleChange}
+                      error={formik.touched.status && Boolean(formik.errors.status)}
+                    >
+                      <MenuItem value="Pending">Pending</MenuItem>
+                      <MenuItem value="Paid">Paid</MenuItem>
+                      <MenuItem value="Cancelled">Cancelled</MenuItem>
+                      <MenuItem value="Refunded">Refunded</MenuItem>
+                      <MenuItem value="Failed">Failed</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
@@ -290,7 +315,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     onChange={formik.handleChange}
                     fullWidth
                     size="small"
-                  ></TextField>
+                  />
                 </Grid>
               </Grid>
               <Grid container spacing={4} marginTop={2} marginBottom={4}>

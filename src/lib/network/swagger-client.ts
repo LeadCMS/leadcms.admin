@@ -4739,113 +4739,6 @@ export interface ForgotPasswordDto {
   language?: string;
 }
 
-export interface ImapAccountCreateDto {
-  /**
-   * Host
-   * @minLength 1
-   * @example "string"
-   */
-  host: string;
-  /**
-   * User Name
-   * @minLength 1
-   * @example "string"
-   */
-  userName: string;
-  /**
-   * Port
-   * @format int32
-   * @example 1
-   */
-  port: number;
-  /**
-   * Use Ssl
-   * @example true
-   */
-  useSsl: boolean;
-  /**
-   * Password
-   * @minLength 1
-   * @example "string"
-   */
-  password: string;
-}
-
-export interface ImapAccountDetailsDto {
-  /**
-   * Host
-   * @minLength 1
-   * @example "string"
-   */
-  host: string;
-  /**
-   * User Name
-   * @minLength 1
-   * @example "string"
-   */
-  userName: string;
-  /**
-   * Port
-   * @format int32
-   * @example 1
-   */
-  port: number;
-  /**
-   * Use Ssl
-   * @example true
-   */
-  useSsl: boolean;
-  /**
-   * Id
-   * @format int32
-   * @example 1
-   */
-  id?: number;
-  /**
-   * Created At
-   * @format date-time
-   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
-   * @example "2023-04-18T12:00:00.0000000Z"
-   */
-  createdAt?: string;
-  /**
-   * Updated At
-   * @format date-time
-   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
-   * @example "2023-04-18T12:00:00.0000000Z"
-   */
-  updatedAt?: string | null;
-}
-
-export interface ImapAccountUpdateDto {
-  /**
-   * Host
-   * @example "string"
-   */
-  host?: string | null;
-  /**
-   * User Name
-   * @example "string"
-   */
-  userName?: string | null;
-  /**
-   * Password
-   * @example "string"
-   */
-  password?: string | null;
-  /**
-   * Port
-   * @format int32
-   * @example 1
-   */
-  port?: number | null;
-  /**
-   * Use Ssl
-   * @example true
-   */
-  useSsl?: boolean | null;
-}
-
 export interface ImportError {
   /**
    * Row
@@ -5838,6 +5731,35 @@ export interface PromotionUpdateDto {
   endDate?: string | null;
 }
 
+export interface RedirectDetailsDto {
+  /**
+   * Content Id
+   * @format int32
+   * @example 1
+   */
+  contentId?: number;
+  /**
+   * From Slug
+   * @example "string"
+   */
+  fromSlug?: string;
+  /**
+   * To Slug
+   * @example "string"
+   */
+  toSlug?: string;
+  /**
+   * From Language
+   * @example "string"
+   */
+  fromLanguage?: string;
+  /**
+   * To Language
+   * @example "string"
+   */
+  toLanguage?: string;
+}
+
 export interface ResetPasswordDto {
   /**
    * User Id
@@ -6502,7 +6424,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.49.0
+ * @version 1.2.56.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -9544,6 +9466,23 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsDiscoverList
+     * @request GET:/api/redirects/discover
+     * @secure
+     */
+    redirectsDiscoverList: (params: RequestParams = {}) =>
+      this.request<RedirectDetailsDto[], void | ProblemDetails>({
+        path: `/api/redirects/discover`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 
