@@ -35,7 +35,7 @@ const EditorViewFunc = (
         return;
       }
       const resp = await client.api.mediaCreate({
-        Image: file,
+        File: file,
         ScopeUid: imageCtx.contentDetails.slug,
       });
       const imageBlock = `![alt](${resp.data.location})`;

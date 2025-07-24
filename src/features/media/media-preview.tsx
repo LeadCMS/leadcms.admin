@@ -8,9 +8,14 @@ import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
-import { buildAbsoluteUrl } from "@lib/network/utils";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
+import { useRequestContext } from "@providers/request-provider";
+import { useNotificationsService } from "@hooks";
+import { ApiErrorDisplay } from "@components/api-error-display";
 
 interface MediaPreviewProps {
   file: any | null;
@@ -22,6 +27,8 @@ interface MediaPreviewProps {
   onPrev?: () => void;
   hasNext?: boolean;
   hasPrev?: boolean;
+  onReplace?: (file: any) => void;
+  onFileUpdate?: (updatedFile: any) => void;
 }
 
 const formatFileSize = (size: number | undefined) => {
@@ -42,15 +49,93 @@ export const MediaPreview = ({
   onPrev,
   hasNext,
   hasPrev,
+  onReplace,
+  onFileUpdate,
 }: MediaPreviewProps) => {
   const [tab, setTab] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isReplacing, setIsReplacing] = useState(false);
+  const [replaceError, setReplaceError] = useState<string | null>(null);
+  const { client } = useRequestContext();
+  const { notificationsService } = useNotificationsService();
+
   if (!file) return null;
 
   const handleCopyLink = () => {
     onCopyLink(file);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleReplaceMedia = async () => {
+    // Get file extension for filtering - ensure no leading dot
+    const currentExtension = (file.extension || file.name.split(".").pop() || "")
+      .toLowerCase()
+      .replace(/^\./, "");
+
+    // Create file input with extension filter
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = currentExtension ? `.${currentExtension}` : "*/*";
+
+    input.onchange = async (e) => {
+      const target = e.target as HTMLInputElement;
+      if (!target.files || target.files.length === 0) {
+        return;
+      }
+
+      const selectedFile = target.files[0];
+      const selectedExtension = (selectedFile.name.split(".").pop() || "").toLowerCase();
+
+      // Validate extension match
+      if (currentExtension && selectedExtension !== currentExtension) {
+        notificationsService.error(
+          `File extension mismatch. Expected .${currentExtension}, got .${selectedExtension}`
+        );
+        input.remove();
+        return;
+      }
+
+      setIsReplacing(true);
+      setReplaceError(null);
+
+      try {
+        // Use new mediaPartialUpdate method to replace existing file
+        const response = await client.api.mediaPartialUpdate({
+          File: selectedFile,
+          ScopeUid: file.scopeUid,
+          FileName: file.name,
+        });
+
+        if (response.error) {
+          throw new Error(response.error.detail || response.error.title || "Upload failed");
+        }
+
+        notificationsService.success("Media file replaced successfully");
+
+        // Use PATCH response to update preview immediately
+        if (response.data && onFileUpdate) {
+          onFileUpdate(response.data);
+        }
+
+        // Optionally, still call onReplace to refresh the media list elsewhere
+        if (onReplace) {
+          onReplace(file);
+        }
+
+        // Don't close the dialog - keep it open with updated file
+      } catch (error) {
+        const apiError = error as { message?: string };
+        const errorMessage = apiError.message || "Failed to replace media file";
+        setReplaceError(errorMessage);
+        notificationsService.error(errorMessage);
+      } finally {
+        setIsReplacing(false);
+        input.remove();
+      }
+    };
+
+    input.click();
   };
 
   // Navigation button style (match preview tab style)
@@ -94,7 +179,13 @@ export const MediaPreview = ({
                 }}
               >
                 <img
-                  src={buildAbsoluteUrl(file.location || file.url) || "/images/placeholder.svg"}
+                  src={
+                    buildAbsoluteUrlWithCacheBust(
+                      file.location || file.url,
+                      file.size,
+                      file.updatedAt
+                    ) || "/images/placeholder.svg"
+                  }
                   alt={file.name}
                   style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
                 />
@@ -135,7 +226,11 @@ export const MediaPreview = ({
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <input
                         type="text"
-                        value={buildAbsoluteUrl(file.location || file.url)}
+                        value={buildAbsoluteUrlWithCacheBust(
+                          file.location || file.url,
+                          file.size,
+                          file.updatedAt
+                        )}
                         readOnly
                         style={{
                           flex: 1,
@@ -159,6 +254,7 @@ export const MediaPreview = ({
                 </Box>
               </Box>
             )}
+            {replaceError && <ApiErrorDisplay error={replaceError} fileName={file.name} />}
           </DialogContent>
           <DialogActions sx={{ gap: 2, px: 3, pb: 2 }}>
             <Button onClick={onClose} variant="outlined">
@@ -170,6 +266,14 @@ export const MediaPreview = ({
               startIcon={<DownloadIcon />}
             >
               Download
+            </Button>
+            <Button
+              onClick={handleReplaceMedia}
+              variant="outlined"
+              startIcon={isReplacing ? <CircularProgress size={16} /> : <SwapHorizIcon />}
+              disabled={isReplacing}
+            >
+              {isReplacing ? "Replacing..." : "Replace Media"}
             </Button>
             <Button onClick={handleCopyLink} variant="contained" startIcon={<FileCopyIcon />}>
               {linkCopied ? "Copied!" : "Copy Link"}

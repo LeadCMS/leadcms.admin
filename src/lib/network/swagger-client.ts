@@ -6424,7 +6424,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.56.0
+ * @version 1.2.57.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8886,7 +8886,7 @@ export class Api<
     mediaCreate: (
       data: {
         /** @format binary */
-        Image: File;
+        File: File;
         ScopeUid: string;
       },
       params: RequestParams = {},
@@ -8923,6 +8923,33 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaPartialUpdate
+     * @request PATCH:/api/media
+     * @secure
+     */
+    mediaPartialUpdate: (
+      data: {
+        /** @format binary */
+        File: File;
+        ScopeUid: string;
+        FileName: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaDetailsDto, void | ProblemDetails>({
+        path: `/api/media`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.FormData,
         format: "json",
         ...params,
       }),

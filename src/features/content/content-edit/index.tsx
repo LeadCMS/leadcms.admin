@@ -212,7 +212,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       const file = new File([blob], values.coverImagePending.fileName || "image.jpg");
       // Always use trimmedSlug for ScopeUid
       const imageUploadingResponse = await client.api.mediaCreate({
-        Image: file,
+        File: file,
         ScopeUid: trimmedSlug,
       });
       if (imageUploadingResponse.error) {
