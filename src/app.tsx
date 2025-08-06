@@ -25,13 +25,13 @@ export const App = () => {
     contacts: { category: "CRM", name: "Contacts" },
     accounts: { category: "CRM", name: "Accounts" },
     orders: { category: "CRM", name: "Orders" },
-    deals: { category: "CRM", name: "Deals" },    
+    deals: { category: "CRM", name: "Deals" },
     domains: { category: "CRM", name: "Domains" },
     "activity-logs": { category: "CRM", name: "Activity logs" },
     "email-templates": { category: "MARKETING", name: "Email templates" },
     unsubscribes: { category: "MARKETING", name: "Unsubscribes" },
     users: { category: "GENERAL", name: "Users" },
-    about: { category: "GENERAL", name: "About" }
+    about: { category: "GENERAL", name: "About" },
   };
 
   interface Breadcrumb {
@@ -56,7 +56,7 @@ export const App = () => {
       breadcrumbs.push({
         linkText: menuCategories[firstPath].category,
         toRoute: `/${firstPath}`,
-        isCategory: true
+        isCategory: true,
       });
       currentBreadcrumb = menuCategories[firstPath].name;
     }
@@ -66,12 +66,7 @@ export const App = () => {
   function AppLayoutWithAutoBreadcrumbs({ children }: { children: React.ReactNode }) {
     const location = useLocation();
     let propsBreadcrumbs, propsCurrentBreadcrumb;
-    if (
-      children &&
-      typeof children === "object" &&
-      "props" in children &&
-      children.props
-    ) {
+    if (children && typeof children === "object" && "props" in children && children.props) {
       propsBreadcrumbs = children.props.breadcrumbs;
       propsCurrentBreadcrumb = children.props.currentBreadcrumb;
     }
@@ -99,21 +94,21 @@ export const App = () => {
                   <BrowserRouter
                     future={{
                       v7_startTransition: true,
-                      v7_relativeSplatPath: true
+                      v7_relativeSplatPath: true,
                     }}
                   >
                     <Routes>
                       <Route path="/auth/*" element={<Auth />} />
-                        <Route
-                          path={rootRoute}
-                          element={
-                            <AppLayoutWithAutoBreadcrumbs>
-                              <Outlet />
-                            </AppLayoutWithAutoBreadcrumbs>
-                          }
-                        >
-                          <Route path={rootRoute} element={<ModuleLoader />} />
-                          <Route path={`${coreModuleRoute.template}/*`} element={<ModuleLoader />} />
+                      <Route
+                        path={rootRoute}
+                        element={
+                          <AppLayoutWithAutoBreadcrumbs>
+                            <Outlet />
+                          </AppLayoutWithAutoBreadcrumbs>
+                        }
+                      >
+                        <Route path={rootRoute} element={<ModuleLoader />} />
+                        <Route path={`${coreModuleRoute.template}/*`} element={<ModuleLoader />} />
                       </Route>
                     </Routes>
                   </BrowserRouter>

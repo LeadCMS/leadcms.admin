@@ -32,7 +32,20 @@ import { useConfig } from "@providers/config-provider";
 import { prefixOptions, timezones } from "utils/constants";
 
 // Icons
-import { User, XCircle, Contact, Home, Briefcase, Facebook, Instagram, Twitter, Linkedin, Share2, Link, Save } from "lucide-react";
+import {
+  User,
+  XCircle,
+  Contact,
+  Home,
+  Briefcase,
+  Facebook,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Share2,
+  Link,
+  Save,
+} from "lucide-react";
 
 interface ContactFormProps {
   contact: ContactDetailsDto;
@@ -59,15 +72,11 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
   const context = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
   const { setBusy } = useModuleWrapperContext();
-  const showErrorModal = useErrorDetailsModal()?.Show;
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { config } = useConfig();
   const languages = config?.languages || [];
-
-  const noopErrorHandler = (errors: string[]) => { 
-    console.log("Error occurred but error modal is not available:", errors);
-  };
 
   const [countryList, setCountryList] = useState<Country[]>([]);
   const [continentList, setContinentList] = useState<Continent[]>([]);
@@ -107,7 +116,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       helpers,
       submitFunc,
       notificationsService,
-      showErrorModal || noopErrorHandler,
+      showErrorModal,
       "contact"
     );
   };
@@ -220,11 +229,16 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
 
   const getSocialMediaIcon = (platform: string) => {
     switch (platform) {
-      case "facebook": return <Facebook color="#1877F3" />;
-      case "instagram": return <Instagram color="#E1306C"  />;
-      case "twitter": return <Twitter color= "#1DA1F2" />;
-      case "linkedin": return <Linkedin color= "#0077B5" />;
-      default: return <Link />;
+      case "facebook":
+        return <Facebook color="#1877F3" />;
+      case "instagram":
+        return <Instagram color="#E1306C" />;
+      case "twitter":
+        return <Twitter color="#1DA1F2" />;
+      case "linkedin":
+        return <Linkedin color="#0077B5" />;
+      default:
+        return <Link />;
     }
   };
 
@@ -239,19 +253,21 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     const firstName = formik.values.firstName || "";
     const middleName = formik.values.middleName ? `${formik.values.middleName} ` : "";
     const lastName = formik.values.lastName || "";
-    
+
     return `${prefix}${firstName} ${middleName}${lastName}`.trim() || "New Contact";
   };
 
   const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
-    <Box sx={{ 
-      display: "flex", 
-      alignItems: "center", 
-      mb: 3, 
-      mt: 4,
-      pb: 1,
-      borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
-    }}>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        mb: 3,
+        mt: 4,
+        pb: 1,
+        borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+      }}
+    >
       <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
       <Typography variant="subtitle1" fontWeight="500" color="primary.main">
         {title}
@@ -263,10 +279,9 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     <ModuleWrapper
       breadcrumbs={contactFormBreadcrumbLinks}
       currentBreadcrumb={header}
-      saveIndicatorElement={<SavingBar />}
       isForm={true}
       actionButtons={
-       <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end' }}>
+        <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
           <Button
             disabled={isLoading || formik.isSubmitting}
             variant="outlined"
@@ -292,28 +307,33 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       }
     >
       <form onSubmit={formik.handleSubmit}>
-        <Paper elevation={0} sx={{ 
-          borderRadius: "8px", 
-          overflow: "hidden",
-          border: "1px solid rgba(0, 0, 0, 0.12)",
-          mb: 4
-        }}>
-          <Box sx={{ 
-            p: { xs: 2, sm: 2.5 }, 
-            display: "flex", 
-            flexDirection: isMobile ? "column" : "row",
-            alignItems: isMobile ? "center" : "flex-start",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
-            backgroundColor: "rgba(0, 0, 0, 0.02)",
-            gap: 2
-          }}>
-            <Avatar 
-              sx={{ 
-                width: { xs: 60, sm: 72 }, 
-                height: { xs: 60, sm: 72 }, 
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: "8px",
+            overflow: "hidden",
+            border: "1px solid rgba(0, 0, 0, 0.12)",
+            mb: 4,
+          }}
+        >
+          <Box
+            sx={{
+              p: { xs: 2, sm: 2.5 },
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "center" : "flex-start",
+              borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
+              backgroundColor: "rgba(0, 0, 0, 0.02)",
+              gap: 2,
+            }}
+          >
+            <Avatar
+              sx={{
+                width: { xs: 60, sm: 72 },
+                height: { xs: 60, sm: 72 },
                 bgcolor: "primary.main",
                 fontSize: { xs: "1.25rem", sm: "1.5rem" },
-                fontWeight: "bold"
+                fontWeight: "bold",
               }}
             >
               {getInitials()}
@@ -327,7 +347,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
               </Typography>
             </Box>
           </Box>
-          
+
           <Box sx={{ p: { xs: 2.5, sm: 3 } }}>
             <SectionHeader icon={<User />} title="Personal Information" />
             <Grid container spacing={3} marginBottom={5}>
@@ -388,12 +408,13 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                 <Autocomplete
                   disabled={isLoading || formik.isSubmitting}
                   options={languages}
-                  getOptionLabel={(option) => option.label}
+                  getOptionLabel={(option) => option.name}
                   size="small"
                   fullWidth
-                  value={languages.find((c) => c.value === formik.values.language) || null}
-                  renderInput={(params) => 
-                    <TextField {...params} label="Language" placeholder="Select language" />}
+                  value={languages.find((c) => c.code === formik.values.language) || null}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Language" placeholder="Select language" />
+                  )}
                   onChange={handleLanguageChange}
                 />
               </Grid>
@@ -610,14 +631,15 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   size="small"
                   fullWidth
                   value={timezones.find((c) => c.value === formik.values.timezone) || null}
-                  renderInput={(params) => 
-                    <TextField {...params} label="Timezone" placeholder="Select timezone" />}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Timezone" placeholder="Select timezone" />
+                  )}
                   onChange={handleTimezoneChange}
                 />
               </Grid>
             </Grid>
 
-            <SectionHeader icon={<Share2/>} title="Social Media" />
+            <SectionHeader icon={<Share2 />} title="Social Media" />
             <Grid container spacing={3} marginBottom={5}>
               {["facebook", "instagram", "twitter", "linkedin"].map((platform) => (
                 <Grid size={{ xs: 12, sm: 6 }} marginBottom={1} key={platform}>

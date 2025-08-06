@@ -23,18 +23,16 @@
   },
   "plugins": ["react", "react-hooks", "@typescript-eslint", "prettier"],
   "rules": {
-    "indent": [
-                "error", 
-                2,
-                { 
-                  "offsetTernaryExpressions": true,
-                  "SwitchCase": 1
-                }
-              ],
+    "prettier/prettier": ["error"],
     "linebreak-style": ["error", "unix"],
     "quotes": ["error", "double"],
     "semi": ["error", "always"],
     "max-len": ["error", 100]
   },
-  "ignorePatterns": ["swagger.json", "swagger-client.ts", "*.css"]
+  "ignorePatterns": [
+    "swagger.json",
+    "**/swagger-client.ts",
+    "*.css",
+    "src/lib/network/swagger-client.ts"
+  ]
 }

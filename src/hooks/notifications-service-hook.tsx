@@ -1,4 +1,3 @@
-import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 

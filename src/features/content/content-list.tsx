@@ -23,8 +23,9 @@ import {
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
 import { useEffect, useState, useRef } from "react";
-import { Plus, Search, MoreHorizontal, Edit} from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Copy, Trash2, ExternalLink } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
+import { useConfig } from "@providers/config-provider";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { getContentCoverImageUrl } from "@lib/network/utils";
 import { useNavigate } from "react-router-dom";
@@ -36,11 +37,21 @@ import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { execDeleteWithToast } from "utils/general-helper";
 import { GhostLink } from "@components/ghost-link";
+import { openSitePreview } from "utils/preview-helper";
+
+// Extended config interface to handle settings not in the swagger definition
+interface ExtendedConfig {
+  settings?: {
+    LivePreviewUrlTemplate?: string;
+    PreviewUrlTemplate?: string;
+  };
+}
 
 export const ContentList = () => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
   const [searchText, setSearchText] = useState<string>("");
@@ -49,6 +60,10 @@ export const ContentList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollTargetRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef(false);
+
+  // Check if preview features are available from backend config
+  const configSettings = (config as ExtendedConfig)?.settings;
+  const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
 
   // Fetch data logic for InfiniteScroll
   const fetchData = async () => {
@@ -120,9 +135,7 @@ export const ContentList = () => {
       );
 
       // Remove the deleted item from the list with animation
-      setContentItems((prevItems) =>
-        prevItems.filter((item) => item.id !== deleteTarget)
-      );
+      setContentItems((prevItems) => prevItems.filter((item) => item.id !== deleteTarget));
       setContentItemsCount((prevCount) => Math.max(0, prevCount - 1));
     } catch (error) {
       console.error("Failed to delete content:", error);
@@ -200,6 +213,8 @@ export const ContentList = () => {
                     <ItemCard
                       item={item}
                       onDelete={handleDeleteClick}
+                      hasSitePreview={hasSitePreview}
+                      previewUrlTemplate={configSettings?.PreviewUrlTemplate}
                       key={`content-card-${item.id}`}
                     />
                   </Grid>
@@ -235,13 +250,16 @@ export const ContentList = () => {
 interface ItemProps {
   item: ContentDetailsDto;
   onDelete: (id: number) => void;
+  hasSitePreview?: boolean;
+  previewUrlTemplate?: string;
 }
 
-const ItemCard = ({ item, onDelete }: ItemProps) => {
+const ItemCard = ({ item, onDelete, hasSitePreview, previewUrlTemplate }: ItemProps) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const theme = useTheme();
+  const { notificationsService } = useNotificationsService();
 
   const onClickEdit = () => {
     navigate(`/content/${item.id}/edit`);
@@ -254,6 +272,26 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
   };
   const handleDelete = () => {
     onDelete(item.id as number);
+    setAnchorEl(null);
+  };
+
+  const handleDuplicate = () => {
+    navigate(`/content/${item.id}/duplicate`);
+    setAnchorEl(null);
+  };
+
+  const handlePreview = () => {
+    if (hasSitePreview && previewUrlTemplate) {
+      const success = openSitePreview(
+        item as unknown as Record<string, unknown>,
+        previewUrlTemplate
+      );
+      if (!success) {
+        notificationsService.error(
+          "Cannot open site preview. Please ensure all required fields are filled."
+        );
+      }
+    }
     setAnchorEl(null);
   };
 
@@ -372,9 +410,22 @@ const ItemCard = ({ item, onDelete }: ItemProps) => {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            <MenuItem onClick={onClickEdit}>Edit</MenuItem>
-            <MenuItem disabled>Duplicate</MenuItem>
+            {hasSitePreview && (
+              <MenuItem onClick={handlePreview}>
+                <ExternalLink size={16} style={{ marginRight: 8 }} />
+                Preview on Site
+              </MenuItem>
+            )}
+            <MenuItem onClick={onClickEdit}>
+              <Edit size={16} style={{ marginRight: 8 }} />
+              Edit
+            </MenuItem>
+            <MenuItem onClick={handleDuplicate}>
+              <Copy size={16} style={{ marginRight: 8 }} />
+              Duplicate
+            </MenuItem>
             <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
+              <Trash2 size={16} style={{ marginRight: 8 }} />
               Delete
             </MenuItem>
           </Menu>
@@ -394,7 +445,7 @@ function getTypeColor(type: string, theme: Theme): string {
     hash = processedType.charCodeAt(i) + ((hash << 5) - hash);
   }
   // Avoid red zone: skip hues between 0-20 and 340-360 (red range)
-  let hue = Math.abs(hash) % 320 + 20; // 20-339
+  let hue = (Math.abs(hash) % 320) + 20; // 20-339
   if (hue > 360) hue = 360;
   const lightness = theme.palette.mode === "dark" ? 32 : 48;
   return `hsl(${hue}, 65%, ${lightness}%)`;

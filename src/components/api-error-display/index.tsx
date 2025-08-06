@@ -21,9 +21,7 @@ export const ApiErrorDisplay: React.FC<ApiErrorDisplayProps> = ({ error, fileNam
     message = error.message || "";
     if (error.errors && typeof error.errors === "object") {
       details = Object.entries(error.errors).flatMap(([field, msgs]) =>
-        Array.isArray(msgs)
-          ? msgs.map((msg: string) => `${field}: ${msg}`)
-          : []
+        Array.isArray(msgs) ? msgs.map((msg: string) => `${field}: ${msg}`) : []
       );
     }
   }

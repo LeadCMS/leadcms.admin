@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+*.json
+swagger.json
+swagger-client.ts
+**/swagger-client.ts
+src/lib/network/swagger-client.ts
+**/*.json
+!.prettierrc
+!tsconfig*.json
+!package*.json

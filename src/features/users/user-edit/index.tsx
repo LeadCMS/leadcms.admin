@@ -1,6 +1,11 @@
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
-import { HttpResponse, ProblemDetails, 
-  UserCreateDto, UserUpdateDto, UserDetailsDto} from "@lib/network/swagger-client";
+import {
+  HttpResponse,
+  ProblemDetails,
+  UserCreateDto,
+  UserUpdateDto,
+  UserDetailsDto,
+} from "@lib/network/swagger-client";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRequestContext } from "@providers/request-provider";
 import { FormikHelpers, useFormik } from "formik";
@@ -31,12 +36,11 @@ import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
 import { DataManagementBlock } from "@components/data-management";
 
-
 export const UserEdit = ({ readonly }: UserEditProps) => {
   const { setBusy } = useModuleWrapperContext();
 
   const { notificationsService } = useNotificationsService();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const { client } = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
   const userInfo = useUserInfo();
@@ -47,17 +51,17 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
   const [autoLangSet, setAutoLangSet] = useState(false);
 
   const submitFunc = async (
-    values: UserCreateDto | UserUpdateDto, 
+    values: UserCreateDto | UserUpdateDto,
     helpers: FormikHelpers<UserCreateDto | UserUpdateDto>
   ) => {
     let response: HttpResponse<UserDetailsDto, void | ProblemDetails>;
-    
+
     if (isCreateMode) {
       response = await client.api.usersCreate(values as UserCreateDto);
     } else {
       response = await client.api.usersPartialUpdate(id, values as UserUpdateDto);
     }
-    
+
     helpers.setValues(response.data);
     if (id === userInfo?.details?.id) {
       userInfo?.refresh();
@@ -67,7 +71,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
   };
 
   const submit = async (
-    values: UserCreateDto | UserUpdateDto, 
+    values: UserCreateDto | UserUpdateDto,
     helpers: FormikHelpers<UserCreateDto | UserUpdateDto>
   ) => {
     execSubmitWithToast<UserCreateDto | UserUpdateDto>(
@@ -102,9 +106,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
   useEffect(() => {
     if (!autoLangSet) {
       const browserLang =
-        navigator.language ||
-        (navigator.languages && navigator.languages[0]) ||
-        "en";
+        navigator.language || (navigator.languages && navigator.languages[0]) || "en";
       formik.setFieldValue("language", browserLang);
       setAutoLangSet(true);
     }
@@ -134,13 +136,11 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
       }
       const file = target.files[0];
       const imageUploadingResponse = await client.api.mediaCreate({
-        Image: file,
+        File: file,
         ScopeUid: "UserAvatarStorage",
       });
       if (imageUploadingResponse.error) {
-        notificationsService.error(
-          `Failed to upload image ${imageUploadingResponse.error.detail}`
-        );
+        notificationsService.error(`Failed to upload image ${imageUploadingResponse.error.detail}`);
       }
       input.remove();
       await formik.setFieldValue("avatarUrl", imageUploadingResponse.data.location);
@@ -152,32 +152,32 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
     formik.handleChange(event);
   };
 
-  const actionButtons=(
+  const actionButtons = (
     <>
-     <Box sx={{ display: "flex", width: "100%", gap: 2}}>
-      {!readonly && (
-        <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent:"flex-end"}}>
-        <Button
-          disabled={formik.isSubmitting}
-          variant="outlined"
-          color="primary"
-          onClick={() => handleNavigation(CoreModule.users)}
-          size="large"
-          startIcon={<XCircle size={22} />}
-        >
-          Cancel
-        </Button>
-        <Button 
-          type="submit" 
-          variant="contained" 
-          size="large"
-          startIcon={<Save size={22} />}
-          onClick={formik.submitForm}
-        >
-          Save
-        </Button>
-        </Box>
-       )}
+      <Box sx={{ display: "flex", width: "100%", gap: 2 }}>
+        {!readonly && (
+          <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
+            <Button
+              disabled={formik.isSubmitting}
+              variant="outlined"
+              color="primary"
+              onClick={() => handleNavigation(CoreModule.users)}
+              size="large"
+              startIcon={<XCircle size={22} />}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              startIcon={<Save size={22} />}
+              onClick={formik.submitForm}
+            >
+              Save
+            </Button>
+          </Box>
+        )}
         {id && readonly && (
           <DataManagementBlock
             header="Data Management"
@@ -188,10 +188,10 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
             successNavigationRoute={CoreModule.users}
             showOnlyButtons={true}
           ></DataManagementBlock>
-      )}
+        )}
       </Box>
     </>
-  )
+  );
 
   return (
     <ModuleWrapper
@@ -223,9 +223,11 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                     >
                       <Avatar
                         alt={formik.values.displayName || "Avatar image"}
-                        src={formik.values.avatarUrl ? 
-                          buildAbsoluteUrl(formik.values.avatarUrl) : 
-                          undefined}
+                        src={
+                          formik.values.avatarUrl
+                            ? buildAbsoluteUrl(formik.values.avatarUrl)
+                            : undefined
+                        }
                         sx={{
                           width: 96,
                           height: 96,
@@ -233,8 +235,11 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                       />
                     </Badge>
                   </Grid>
-                  <Grid sx={{ display: "flex", flexDirection: "column" }} size={{ xs: 6 }} 
-                    justifyContent={"center"}>
+                  <Grid
+                    sx={{ display: "flex", flexDirection: "column" }}
+                    size={{ xs: 6 }}
+                    justifyContent={"center"}
+                  >
                     <Grid>
                       <Typography>Display name: {formik.values.displayName}</Typography>
                     </Grid>
@@ -306,7 +311,9 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                           type="checkbox"
                           name="generatePassword"
                           checked={Boolean(formik.values.generatePassword)}
-                          onChange={e => formik.setFieldValue("generatePassword", e.target.checked)}
+                          onChange={(e) =>
+                            formik.setFieldValue("generatePassword", e.target.checked)
+                          }
                           disabled={readonly}
                         />
                         Generate strong password
@@ -316,7 +323,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
                           type="checkbox"
                           name="sendPasswordEmail"
                           checked={Boolean(formik.values.sendPasswordEmail)}
-                          onChange={e =>
+                          onChange={(e) =>
                             formik.setFieldValue("sendPasswordEmail", e.target.checked)
                           }
                           disabled={readonly}

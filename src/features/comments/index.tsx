@@ -60,31 +60,30 @@ export const CommentsModule = () => {
   }, [client]);
 
   const fieldSections = {
-  sections: [
-  {
-    id: "authorDetails",
-    title: "Author Details",
-    fields: ["authorEmail", "authorName"]
-  },
-  {
-    id: "content",
-    title: "Comment Body",
-    fields: ["body"]
-  },
-  {
-    id: "context",
-    title: "Comment Context",
-    description: "Where this comment is coming from",
-    fields: ["contactId", "parentId", "commentableId", "commentableUid", "commentableType"]
-  },
-  {
-    id: "meta",
-    title: "Metadata",
-    fields: ["source", "language"]
-  }
-  ]
+    sections: [
+      {
+        id: "authorDetails",
+        title: "Author Details",
+        fields: ["authorEmail", "authorName"],
+      },
+      {
+        id: "content",
+        title: "Comment Body",
+        fields: ["body"],
+      },
+      {
+        id: "context",
+        title: "Comment Context",
+        description: "Where this comment is coming from",
+        fields: ["contactId", "parentId", "commentableId", "commentableUid", "commentableType"],
+      },
+      {
+        id: "meta",
+        title: "Metadata",
+        fields: ["source", "language"],
+      },
+    ],
   };
-
 
   const formProps: GenericFormProps<CommentDetailsDto, CommentCreateDto, CommentUpdateDto> = {
     detailsSchema: getSchemaDto("CommentDetailsDto", swaggerJson.components.schemas),

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRequestContext } from "../../../providers/request-provider";
 import { CommentExtendedDto, CommentForm } from "./comment-form";
 import { CommentsContainer, CommentsTitle } from "../index.styled";

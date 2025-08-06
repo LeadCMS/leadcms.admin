@@ -26,7 +26,7 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate, useLocation } from "react-router-dom";
-import { buildAbsoluteUrl } from "@lib/network/utils";
+import { buildAbsoluteUrl, buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { MediaPreview } from "./media-preview";
 import { MediaUploadDialog } from "./media-upload-dialog";
 import { useNotificationsService } from "@hooks";
@@ -58,9 +58,10 @@ const getFileType = (mimeType: string, extension: string) => {
   if (mimeType.startsWith("image/")) return "image";
   if (mimeType.startsWith("video/")) return "video";
   if (mimeType.startsWith("audio/")) return "audio";
-  if (mimeType === "application/pdf" || extension.match(/\.(docx?|xlsx?|pptx?)$/))
-    return "document";
-  if (mimeType === "application/zip" || extension.match(/\.(zip|rar|tar|gz)$/)) return "archive";
+  // Clean extension by removing leading dot if present
+  const cleanExt = extension.toLowerCase().replace(/^\./, "");
+  if (mimeType === "application/pdf" || cleanExt.match(/^(docx?|xlsx?|pptx?)$/)) return "document";
+  if (mimeType === "application/zip" || cleanExt.match(/^(zip|rar|tar|gz)$/)) return "archive";
   return "other";
 };
 
@@ -88,12 +89,12 @@ const MediaManagement = () => {
   const initialFolder = params.get("folder") || "";
   const initialBreadcrumbs = initialFolder
     ? initialFolder
-      .split("/")
-      .filter(Boolean)
-      .map((name, idx, arr) => ({
-        name,
-        scopeUid: arr.slice(0, idx + 1).join("/"),
-      }))
+        .split("/")
+        .filter(Boolean)
+        .map((name, idx, arr) => ({
+          name,
+          scopeUid: arr.slice(0, idx + 1).join("/"),
+        }))
     : [];
   const [search, setSearch] = useState<string>("");
   const [dialog, setDialog] = useState<DialogType>(null);
@@ -117,31 +118,42 @@ const MediaManagement = () => {
   const [previewFile, setPreviewFile] = useState<MediaItem | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  // For preview navigation
-  const imageItems = items.filter(
-    (item) => getFileType(item.mimeType, item.extension) === "image"
+  // For preview navigation - include both images and PDFs
+  const previewableItems = items.filter((item) => {
+    const fileType = getFileType(item.mimeType, item.extension);
+    return fileType === "image" || item.mimeType === "application/pdf";
+  });
+
+  const getCurrentPreviewIndex = useCallback(
+    () => previewableItems.findIndex((item) => item.id === previewFile?.id),
+    [previewableItems, previewFile]
   );
-  const getCurrentImageIndex = useCallback(
-    () => imageItems.findIndex((img) => img.id === previewFile?.id),
-    [imageItems, previewFile]
-  );
+
   const handlePreview = (item: MediaItem) => {
     setPreviewFile(item);
     setPreviewOpen(true);
     handleMenuClose();
   };
+
+  // Add replace media handler
+  const handleReplaceMedia = async (item: MediaItem) => {
+    // Refresh the media list after successful replacement
+    await refreshMediaList();
+  };
+
   const handlePreviewNext = useCallback(() => {
-    const idx = getCurrentImageIndex();
-    if (idx >= 0 && idx < imageItems.length - 1) {
-      setPreviewFile(imageItems[idx + 1]);
+    const idx = getCurrentPreviewIndex();
+    if (idx >= 0 && idx < previewableItems.length - 1) {
+      setPreviewFile(previewableItems[idx + 1]);
     }
-  }, [getCurrentImageIndex, imageItems]);
+  }, [getCurrentPreviewIndex, previewableItems]);
+
   const handlePreviewPrev = useCallback(() => {
-    const idx = getCurrentImageIndex();
+    const idx = getCurrentPreviewIndex();
     if (idx > 0) {
-      setPreviewFile(imageItems[idx - 1]);
+      setPreviewFile(previewableItems[idx - 1]);
     }
-  }, [getCurrentImageIndex, imageItems]);
+  }, [getCurrentPreviewIndex, previewableItems]);
   // Keyboard navigation for preview
   useEffect(() => {
     if (!previewOpen) return;
@@ -285,10 +297,8 @@ const MediaManagement = () => {
 
   // Delete logic
   const { notificationsService } = useNotificationsService();
-  const errorDetailsModal = useErrorDetailsModal();
-  const showErrorModal = errorDetailsModal?.Show || 
-    ((errDetails: string[]) => console.error(errDetails));
-  
+  const { Show: showErrorModal } = useErrorDetailsModal();
+
   const refreshMediaList = async () => {
     setLoading(true);
     try {
@@ -337,7 +347,7 @@ const MediaManagement = () => {
             onClick: errDetails.length > 0 ? () => showErrorModal(errDetails) : undefined,
           };
         },
-      });    
+      });
     } catch (error) {
       // Error toast is already handled by notificationsService.promise
       // No need to refresh the list on error
@@ -390,7 +400,7 @@ const MediaManagement = () => {
       }
       scopeUid = toScopeUid(uploadFolderName.trim());
     }
-    
+
     // Initialize statuses: preserve existing success statuses, set others to uploading
     const statuses: FileUploadStatus[] = files.map((file) => {
       const existingStatus = fileStatuses.find((s) => s.file.name === file.name);
@@ -401,28 +411,25 @@ const MediaManagement = () => {
     });
     setFileStatuses(statuses);
     setFileStatusesCb(statuses);
-    
+
     // Only upload files that are not already successfully uploaded
     const filesToUpload = files.filter((file) => {
       const existingStatus = fileStatuses.find((s) => s.file.name === file.name);
       return !existingStatus || existingStatus.status !== "success";
     });
-    
+
     await Promise.all(
       filesToUpload.map(async (file) => {
         const idx = files.findIndex((f) => f.name === file.name);
         try {
-          await api.mediaCreate({ Image: file, ScopeUid: scopeUid });
+          await api.mediaCreate({ File: file, ScopeUid: scopeUid });
           statuses[idx] = { file, status: "success" };
         } catch (err) {
           const apiError = err as { message?: string };
           statuses[idx] = {
             file,
             status: "error",
-            error:
-              apiError && apiError.message
-                ? `Failed: ${apiError.message}`
-                : "Unknown error"
+            error: apiError && apiError.message ? `Failed: ${apiError.message}` : "Unknown error",
           };
         }
         setFileStatuses([...statuses]);
@@ -430,7 +437,7 @@ const MediaManagement = () => {
       })
     );
     setUploading(false);
-    
+
     // Check if all files are successfully uploaded and close dialog immediately
     if (statuses.every((s) => s.status === "success")) {
       setUploadFiles([]);
@@ -521,13 +528,17 @@ const MediaManagement = () => {
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={4}>
           {items.map((item) => {
             const type = getFileType(item.mimeType, item.extension);
             const isFolder = type === "folder";
             const folderItemCount = isFolder ? item.id : undefined;
             return (
-              <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+              <Grid
+                key={item.id}
+                size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}
+                sx={{ mb: 3, minWidth: 290, maxWidth: 330 }}
+              >
                 <Paper
                   elevation={2}
                   sx={{
@@ -545,7 +556,6 @@ const MediaManagement = () => {
                     flexDirection: "column",
                     justifyContent: "flex-start",
                     alignItems: "stretch",
-                    m: "auto",
                     "&:hover": {
                       boxShadow: 6,
                     },
@@ -588,7 +598,13 @@ const MediaManagement = () => {
                         }}
                       >
                         <img
-                          src={buildAbsoluteUrl(item.location)}
+                          src={
+                            buildAbsoluteUrlWithCacheBust(
+                              item.location,
+                              item.size,
+                              item.updatedAt
+                            ) || "/images/placeholder.svg"
+                          }
                           alt={item.name}
                           style={{
                             width: "100%",
@@ -733,8 +749,10 @@ const MediaManagement = () => {
         onCopyLink={handleCopyLink}
         onNext={handlePreviewNext}
         onPrev={handlePreviewPrev}
-        hasNext={getCurrentImageIndex() < imageItems.length - 1}
-        hasPrev={getCurrentImageIndex() > 0}
+        hasNext={getCurrentPreviewIndex() < previewableItems.length - 1}
+        hasPrev={getCurrentPreviewIndex() > 0}
+        onReplace={handleReplaceMedia}
+        onFileUpdate={(updatedFile) => setPreviewFile(updatedFile)}
       />
       {/* Dialogs (New Folder, Upload, etc.) */}
       <MediaUploadDialog

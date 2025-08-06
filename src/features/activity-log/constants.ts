@@ -1,4 +1,4 @@
-import { CoreModule, getCoreModuleRoute, rootRoute } from "lib/router";
+import { CoreModule, getCoreModuleRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { BreadcrumbLink } from "types";
 
@@ -16,7 +16,7 @@ export const activityLogFormBreadcrumbLinks: BreadcrumbLink[] = [
   ...dataListBreadcrumbLinks,
   {
     linkText: activityLogListPageBreadcrumb,
-    toRoute: getCoreModuleRoute(CoreModule.emailTemplates),
+    toRoute: getCoreModuleRoute(CoreModule.activityLogs),
   },
 ];
 

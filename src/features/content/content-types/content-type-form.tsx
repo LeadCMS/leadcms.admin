@@ -20,9 +20,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Info } from "lucide-react";
-import { 
-  ContentFormat, displayNameToId, addContentType 
-} from "./content-types";
+import { ContentFormat, displayNameToId, addContentType } from "./content-types";
 import { useRequestContext } from "@providers/request-provider";
 import { ContentTypeDetailsDto } from "@lib/network/swagger-client";
 
@@ -87,7 +85,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
           Define a new content type for your SaaS website.
         </Typography>
-        
+
         <Grid container spacing={3} sx={{ mt: 0.5 }}>
           <Grid size={{ xs: 12 }}>
             <TextField
@@ -100,7 +98,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
               margin="normal"
             />
           </Grid>
-          
+
           <Grid size={{ xs: 12 }}>
             <FormControl fullWidth margin="normal">
               <InputLabel id="content-format-label">Content Format</InputLabel>
@@ -122,7 +120,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
               Select the format that best suits this content type&apos;s needs
             </Typography>
           </Grid>
-          
+
           <Grid size={{ xs: 12 }}>
             <Typography variant="subtitle2" sx={{ mb: 1, display: "flex", alignItems: "center" }}>
               Features
@@ -135,7 +133,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
             <FormGroup>
               <FormControlLabel
                 control={
-                  <Switch 
+                  <Switch
                     checked={supportsCoverImage}
                     onChange={(e) => setSupportsCoverImage(e.target.checked)}
                   />
@@ -144,7 +142,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
               />
               <FormControlLabel
                 control={
-                  <Switch 
+                  <Switch
                     checked={supportsComments}
                     onChange={(e) => setSupportsComments(e.target.checked)}
                   />
@@ -156,7 +154,9 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={saving}>Cancel</Button>
+        <Button onClick={handleClose} disabled={saving}>
+          Cancel
+        </Button>
         <Button onClick={handleSave} variant="contained" color="primary" disabled={saving}>
           {saving ? <CircularProgress size={20} sx={{ color: "white", mr: 1 }} /> : null}
           Create

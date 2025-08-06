@@ -33,11 +33,11 @@ export const ContactBase = () => {
           secondary={`contact_id: ${contact.id}`}
         />
       </ListItem>
-      <Tabs value={tabValue} onChange={handleChange}>
+      {/* <Tabs value={tabValue} onChange={handleChange}>
         <Tab value="details" label="Details" />
         <Tab value="logs" label="Logs" />
-      </Tabs>
-      <Divider></Divider>
+      </Tabs> */}
+      {/* <Divider></Divider> */}
       <Outlet />
     </ModuleWrapper>
   );

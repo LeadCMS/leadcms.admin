@@ -1,5 +1,5 @@
 import { Avatar, ListItemAvatar } from "@mui/material";
-import { DomainDetailsDto, DomainImportDto } from "lib/network/swagger-client";
+import { DomainDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { DomainListItem, DomainListItemText } from "./index.styled";
 import {

@@ -35,7 +35,7 @@ export const ContactLogs = () => {
 
   const getContactLogs = async (contactId: number) => {
     try {
-      const { data } = await client.api.activityLogList({
+      const { data } = await client.api.activityLogsList({
         query: getWhereFilterQuery("contactId", contactId.toString(), "equals"),
       });
       if (data.length > 0) {
@@ -110,7 +110,7 @@ export const ContactLogs = () => {
 
   return (
     <Grid container spacing={3} marginTop={4} paddingRight={4}>
-      <Grid xs={12} sm={12} item>
+      <Grid size={{ xs: 12, sm: 12 }}>
         <Card>
           <CardContent>
             <Grid marginBottom={4}>

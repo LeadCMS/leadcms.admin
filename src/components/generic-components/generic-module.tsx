@@ -101,7 +101,12 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
     );
 
     const addButton = (
-      <Button to={getAddFormRoute()} component={GhostLink} variant="contained" startIcon={<Plus size={22}/>}>
+      <Button
+        to={getAddFormRoute()}
+        component={GhostLink}
+        variant="contained"
+        startIcon={<Plus size={22} />}
+      >
         {addButtonContent || "Add"}
       </Button>
     );
@@ -115,7 +120,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             onClick={() => {
               setImportIsOpen(true);
             }}
-            startIcon={<Upload size={22}/>}
+            startIcon={<Upload size={22} />}
           >
             Import
           </Button>
@@ -127,7 +132,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             onClick={() => {
               setExportIsOpen(true);
             }}
-            startIcon={<Download size={22}/>}
+            startIcon={<Download size={22} />}
           >
             Export
           </Button>
@@ -154,7 +159,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             onUpload={async (data: Result<string>) => {
               if (extraActions?.import?.importItemsFn) {
                 await extraActions.import.importItemsFn(
-                  data.validData as Record<string, unknown>[], 
+                  data.validData as Record<string, unknown>[],
                   {}
                 );
               }
@@ -200,21 +205,9 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         onCancelHandled={() => setTriggerCancel(false)}
       />
     );
-    const savingIndicatorElement = (
-      <>
-        <Grid container spacing={3} size={{ xs: "auto", sm: "auto" }}>
-          <Grid size={{ xs: 12, sm: "auto" }}>
-            <CircularProgress size={14} />
-          </Grid>
-          <Grid size={{ xs: 12, sm: "auto" }}>
-            <Typography>Saving...</Typography>
-          </Grid>
-        </Grid>
-      </>
-    );
 
     const actionButtons = formProps.editable ? (
-    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
+      <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
         <Button
           type="button"
           variant="outlined"
@@ -233,23 +226,22 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         >
           Save
         </Button>
-    </Box>  
-      ) : formProps.deleteOptionProps ? (
-        <DataManagementBlock
-          header={formProps.deleteOptionProps.header}
-          description={formProps.deleteOptionProps.description}
-          entity={formProps.deleteOptionProps.entity}
-          handleDeleteAsync={(id) => formProps.deleteOptionProps!.deleteItemFn(Number(id))}
-          itemId={formProps.getItemId?.() ?? ""}
-          successNavigationRoute={formProps.deleteOptionProps.listRoute}
-          showOnlyButtons={true}
-        />
-      ) : null;
+      </Box>
+    ) : formProps.deleteOptionProps ? (
+      <DataManagementBlock
+        header={formProps.deleteOptionProps.header}
+        description={formProps.deleteOptionProps.description}
+        entity={formProps.deleteOptionProps.entity}
+        handleDeleteAsync={(id) => formProps.deleteOptionProps!.deleteItemFn(Number(id))}
+        itemId={formProps.getItemId?.() ?? ""}
+        successNavigationRoute={formProps.deleteOptionProps.listRoute}
+        showOnlyButtons={true}
+      />
+    ) : null;
 
     return (
       <ModuleWrapper
         key={key}
-        saveIndicatorElement={savingIndicatorElement}
         breadcrumbs={getBreadcrumbLinks(moduleName, modulePath)}
         currentBreadcrumb={currentBreadcrumb}
         actionButtons={actionButtons}

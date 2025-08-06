@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, Grid, IconButton, Typography } from "@mui/material";
+import { Card, CardContent, Grid, IconButton, Typography } from "@mui/material";
 import { ContactDetailsDto, OrderDetailsDto } from "lib/network/swagger-client";
 import { CoreModule, getViewFormRoute, viewFormRoute } from "lib/router";
 import { useRequestContext } from "providers/request-provider";
@@ -56,8 +56,7 @@ export const ContactView = () => {
     },
     {
       label: "Language",
-      value:
-        languages.find((c) => c.code === contact.language)?.name || "",
+      value: languages.find((c) => c.code === contact.language)?.name || "",
     },
   ];
   const contactData = contact && [
@@ -204,7 +203,7 @@ export const ContactView = () => {
   return (
     <>
       <Grid container spacing={3} marginTop={4} paddingRight={4}>
-        <Grid xs={12} sm={4} item>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <Grid marginBottom={3}>
             <DataView header="Personal data" rows={contactPersonalData}></DataView>
           </Grid>
@@ -224,7 +223,7 @@ export const ContactView = () => {
             <DataView header="Other" rows={contactOtherData}></DataView>
           </Grid>
         </Grid>
-        <Grid xs={12} sm={8} item>
+        <Grid size={{ xs: 12, sm: 8 }}>
           <Grid marginBottom={3}>
             <Card>
               <CardContent>

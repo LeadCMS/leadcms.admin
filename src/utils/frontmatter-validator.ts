@@ -38,7 +38,7 @@ const ProcessError = (errorObject: any, level: number) => {
       error = (value as ErrorInfo)._errors[0];
     }
     const newLine = i === Object.keys(errorObject).length ? "" : "\n";
-    const levelTabs = [...Array(level).keys()].reduce((acc, val, index) => {
+    const levelTabs = [...Array(level).keys()].reduce((acc) => {
       return `${acc} &nbsp; &nbsp; `;
     }, "");
     errMessage = `${errMessage}${level > 0 ? "\n" : ""}${levelTabs}**${key}** : ${error}${newLine}`;

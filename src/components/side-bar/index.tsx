@@ -1,16 +1,21 @@
-import { 
-  List, useMediaQuery, useTheme, CircularProgress, IconButton, Tooltip 
+import {
+  List,
+  useMediaQuery,
+  useTheme,
+  CircularProgress,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { useEffect, useCallback } from "react";
-import { PanelLeftOpen, Menu } from "lucide-react";  
-import { 
-  ListItemIconStyled, 
-  ListSubheaderStyled, 
-  SidebarLinkText, 
-  SidebarLink, 
+import { PanelLeftOpen, Menu } from "lucide-react";
+import {
+  ListItemIconStyled,
+  ListSubheaderStyled,
+  SidebarLinkText,
+  SidebarLink,
   SidebarStyled,
   SidebarTopContainer,
-  SidebarMenuScrollArea
+  SidebarMenuScrollArea,
 } from "./index.styled";
 import { getCoreModuleRoute, CoreModule } from "lib/router";
 import { useSidebar } from "@providers/sidebar-provider";
@@ -37,16 +42,16 @@ interface SidebarProps {
   isLoading?: boolean;
 }
 
-export const Sidebar = ({ 
-  menuItems = [], 
-  onDrawerStateChange, 
-  isLoading = false 
+export const Sidebar = ({
+  menuItems = [],
+  onDrawerStateChange,
+  isLoading = false,
 }: SidebarProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { isOpen, isCollapsed, isMobileOpen, toggleCollapse, toggleMobile } = useSidebar();
   const navigate = useNavigate();
-  
+
   // Notify parent component when drawer state changes
   useEffect(() => {
     if (onDrawerStateChange) {
@@ -60,7 +65,7 @@ export const Sidebar = ({
 
   const effectiveOpen = isMobile ? isMobileOpen : isOpen;
   const showCollapsed = !isMobile && isCollapsed;
-  
+
   return (
     <>
       <SidebarStyled
@@ -79,19 +84,11 @@ export const Sidebar = ({
             aria-label="Go to dashboard"
           >
             <LogoComponent />
-            {!showCollapsed && (
-              <Typography className="sidebar-app-name">
-                LeadCMS.ai
-              </Typography>
-            )}
+            {!showCollapsed && <Typography className="sidebar-app-name">LeadCMS.ai</Typography>}
           </div>
           {!isMobile && (
             <Tooltip title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-              <IconButton
-                onClick={toggleCollapse}
-                size="small"
-                sx={{ ml: 1 }}
-              >
+              <IconButton onClick={toggleCollapse} size="small" sx={{ ml: 1 }}>
                 {isCollapsed ? <Menu /> : <PanelLeftOpen />}
               </IconButton>
             </Tooltip>
@@ -99,12 +96,14 @@ export const Sidebar = ({
         </SidebarTopContainer>
         <SidebarMenuScrollArea sx={{ pt: 3 }}>
           {isLoading ? (
-            <div style={{ 
-              display: "flex", 
-              justifyContent: "center", 
-              alignItems: "center", 
-              height: "100%" 
-            }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+              }}
+            >
               <CircularProgress />
             </div>
           ) : (
@@ -119,19 +118,19 @@ export const Sidebar = ({
                 sx={{ mb: 2 }}
               >
                 {group.items.map((menuItem) => (
-                  <Tooltip 
+                  <Tooltip
                     key={menuItem.id}
                     title={showCollapsed ? menuItem.label : ""}
                     placement="right"
                   >
                     <span>
                       <SidebarLink
-                        sx={{ 
-                          ...(showCollapsed && { 
+                        sx={{
+                          ...(showCollapsed && {
                             justifyContent: "center",
-                            padding: (theme) => theme.spacing(1, 0)
-                          })
-                        }}                        
+                            padding: (theme) => theme.spacing(1, 0),
+                          }),
+                        }}
                         onClick={(e: React.MouseEvent) => {
                           e.preventDefault();
                           if (typeof menuItem.onClick === "function") {

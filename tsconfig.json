@@ -18,12 +18,11 @@
       "@lib/*": ["lib/*"],
       "@features/*": ["features/*"],
       "@components/*": ["components/*"],
-      "@hooks": ["hooks/index"],
+      "@utils/*": ["utils/*"],
+      "@hooks": ["hooks/index"]
     },
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": [
-      "node"
-    ],
+    "types": ["node"]
   }
 }

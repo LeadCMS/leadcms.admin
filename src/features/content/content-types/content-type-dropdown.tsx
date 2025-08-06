@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Grid,
-  TextField,
-  Typography,
-  Box,
-  MenuItem
-} from "@mui/material";
+import { Grid, TextField, Typography, Box, MenuItem } from "@mui/material";
 import { Plus } from "lucide-react";
 import { idToDisplayName } from "./content-types";
 import { ContentTypeForm } from "./content-type-form";
@@ -28,13 +22,13 @@ export const ContentTypeDropdown = ({
   onAddNewType,
   error,
   helperText,
-  onBlur
+  onBlur,
 }: ContentTypeDropdownProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingSelect, setPendingSelect] = useState<string | null>(null);
 
   // Auto-select the new type after reload
-  if (pendingSelect && options.some(t => t.uid === pendingSelect)) {
+  if (pendingSelect && options.some((t) => t.uid === pendingSelect)) {
     onChange(pendingSelect);
     setPendingSelect(null);
   }
@@ -56,19 +50,20 @@ export const ContentTypeDropdown = ({
             select
             label="Content Type"
             value={value}
-            onChange={e => onChange(e.target.value)}
+            onChange={(e) => onChange(e.target.value)}
             error={!!error}
             helperText={helperText}
             onBlur={onBlur}
             fullWidth
           >
-            {options.map(type => (
+            {options.map((type) => (
               <MenuItem key={type.uid} value={type.uid}>
                 {idToDisplayName(type.uid)}
               </MenuItem>
             ))}
             <MenuItem value="__add__" onClick={() => setDialogOpen(true)}>
-              <Plus size={20} />Add Custom Type
+              <Plus size={20} />
+              Add Custom Type
             </MenuItem>
           </TextField>
         </Grid>
@@ -77,7 +72,7 @@ export const ContentTypeDropdown = ({
         <Box mt={2}>
           <Typography variant="caption" color="text.secondary">
             {(() => {
-              const selected = options.find(t => t.uid === value);
+              const selected = options.find((t) => t.uid === value);
               if (!selected) return null;
               return (
                 <>

@@ -5,16 +5,16 @@ import { ThemeOptions } from "@mui/material/styles";
 export const themeOptions: ThemeOptions = {
   spacing: 4,
   typography: {
-    fontFamily: `'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif`,
+    fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
     h3: {
       fontSize: "36px",
       fontWeight: 600,
       lineHeight: "42px",
     },
     subtitle1: {
-    fontSize: "16px",
-    fontWeight: 500,
-    lineHeight: "20px",
+      fontSize: "16px",
+      fontWeight: 500,
+      lineHeight: "20px",
     },
     subtitle2: {
       fontSize: "12px",

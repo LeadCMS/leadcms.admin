@@ -20,12 +20,7 @@ interface FileDropdownProps {
   helperText?: string | boolean | undefined;
 }
 
-const FileDropdown = ({
-  acceptMIME,
-  maxFileSize,
-  onChange,
-  data,
-}: FileDropdownProps) => {
+const FileDropdown = ({ acceptMIME, maxFileSize, onChange, data }: FileDropdownProps) => {
   const { notificationsService } = useNotificationsService();
   const onDrop = (acceptedFiles: File[], rejections: FileRejection[]) => {
     if (rejections.length > 0) {
@@ -52,7 +47,7 @@ const FileDropdown = ({
   const onReset = () => {
     onChange({ fileName: "", url: "" });
   };
-  
+
   return (
     <>
       <BoxStyled>
@@ -64,10 +59,10 @@ const FileDropdown = ({
             accept={{ [acceptMIME]: [] } as Accept}
           >
             {({ getRootProps, getInputProps }) => (
-              <Grid 
-                container 
-                spacing={0} 
-                direction="row" 
+              <Grid
+                container
+                spacing={0}
+                direction="row"
                 justifyContent="center"
                 alignItems="center"
                 sx={{ height: "100%", textAlign: "center" }}
@@ -90,7 +85,7 @@ const FileDropdown = ({
               height: "100%",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center"
+              justifyContent: "center",
             }}
           >
             <Box
@@ -99,7 +94,7 @@ const FileDropdown = ({
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                borderRadius: 1
+                borderRadius: 1,
               }}
               alt="Cover image preview"
               src={data.url}
@@ -113,10 +108,10 @@ const FileDropdown = ({
                 backgroundColor: "rgba(0, 0, 0, 0.6)",
                 color: "white",
                 "&:hover": {
-                  backgroundColor: "rgba(0, 0, 0, 0.8)"
+                  backgroundColor: "rgba(0, 0, 0, 0.8)",
                 },
                 width: 32,
-                height: 32
+                height: 32,
               }}
               size="small"
             >

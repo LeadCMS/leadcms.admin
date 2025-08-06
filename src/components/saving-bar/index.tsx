@@ -2,7 +2,7 @@
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { Save } from "lucide-react"; 
+import { Save } from "lucide-react";
 import { Box, Fade } from "@mui/material";
 import { useEffect, useState } from "react";
 import React from "react";

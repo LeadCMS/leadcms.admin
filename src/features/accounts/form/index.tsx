@@ -14,7 +14,7 @@ import {
   Tooltip,
   Typography,
   Box,
-  Card
+  Card,
 } from "@mui/material";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRequestContext } from "@providers/request-provider";
@@ -48,8 +48,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   const { notificationsService } = useNotificationsService();
   const context = useRequestContext();
   const { setBusy } = useModuleWrapperContext();
-  const errorDetails = useErrorDetailsModal();
-  const showErrorModal = errorDetails?.Show ?? (() => { /* no-op */ });
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const handleNavigation = useCoreModuleNavigation();
 
   const [countryList, setCountryList] = useState<Country[]>([]);
@@ -138,9 +137,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
     formik.setFieldValue("socialMedia", updatedSocialMedia);
   };
 
-  const submitFunc = async (
-    values: AccountDetailsDto
-  ) => {
+  const submitFunc = async (values: AccountDetailsDto) => {
     try {
       await handleSave(values);
       handleNavigation(CoreModule.accounts);
@@ -164,7 +161,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   const AccountEditValidationScheme = zod.object({
     name: zod.string(),
     revenue: zod.number().nullable().optional(),
-    socialMedia: zod.record(zod.string()).optional()
+    socialMedia: zod.record(zod.string()).optional(),
   });
 
   const formik = useFormik({
@@ -188,7 +185,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   });
 
   const actionButtons = (
-    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: 'flex-end'}}>
+    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
       <Button
         disabled={isLoading || formik.isSubmitting}
         type="submit"
@@ -206,7 +203,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
         variant="contained"
         color="primary"
         size="large"
-        startIcon={ isEdit? <Save size={22} /> : <Plus size={22}/>}
+        startIcon={isEdit ? <Save size={22} /> : <Plus size={22} />}
         onClick={formik.submitForm}
       >
         {isEdit ? "Save" : "Add"}
@@ -215,14 +212,16 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   );
 
   const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
-    <Box sx={{ 
-      display: "flex", 
-      alignItems: "center", 
-      mb: 3, 
-      mt: 4,
-      pb: 1,
-      borderBottom: "1px solid rgba(0, 0, 0, 0.08)"
-    }}>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        mb: 3,
+        mt: 4,
+        pb: 1,
+        borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+      }}
+    >
       <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
       <Typography variant="subtitle1" fontWeight="500" color="primary.main">
         {title}
@@ -234,14 +233,13 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
     <ModuleWrapper
       breadcrumbs={accountFormBreadcrumbLinks}
       currentBreadcrumb={header}
-      saveIndicatorElement={<SavingBar />}
       actionButtons={actionButtons}
     >
       <form onSubmit={formik.handleSubmit}>
         <Card>
           <CardContent>
             <Grid container spacing={4} marginBottom={4}>
-              <Grid size={{ xs: 12, sm: 12}}>
+              <Grid size={{ xs: 12, sm: 12 }}>
                 <SectionHeader icon={<Info size={22} />} title="About" />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
@@ -321,7 +319,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<MapPin size={22}/>} title="Location" />
+                <SectionHeader icon={<MapPin size={22} />} title="Location" />
               </Grid>
               <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
@@ -403,7 +401,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<Share2 size={22}/>} title="Social Media" />
+                <SectionHeader icon={<Share2 size={22} />} title="Social Media" />
               </Grid>
               <Grid size={{ xs: 12, sm: 12 }}>
                 <Grid container spacing={3}>
@@ -433,7 +431,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                         <Grid size={{ xs: 12, sm: 4 }}>
                           <Tooltip title="Remove social media">
                             <IconButton onClick={() => handleSocialMediaRemove(key)}>
-                              <Minus size={22}/>
+                              <Minus size={22} />
                             </IconButton>
                           </Tooltip>
                         </Grid>
@@ -462,7 +460,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Tooltip title="Add social media">
                       <IconButton onClick={handleSocialMediaAdd}>
-                        <Plus size={22}/>
+                        <Plus size={22} />
                       </IconButton>
                     </Tooltip>
                   </Grid>
@@ -472,7 +470,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
-                <SectionHeader icon={<Link size={22}/>} title="Other" />
+                <SectionHeader icon={<Link size={22} />} title="Other" />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField

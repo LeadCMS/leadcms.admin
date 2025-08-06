@@ -8,6 +8,7 @@ export const ContentModule = () => {
       <Route path={"/"} element={<ContentList />} />
       <Route path={"/:id/edit"} element={<ContentEdit />} />
       <Route path={"/new"} element={<ContentEdit />} />
+      <Route path={"/:sourceId/duplicate"} element={<ContentEdit />} />
     </Routes>
   );
 };

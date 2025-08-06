@@ -79,7 +79,7 @@ export const UserList = () => {
     ></SearchBar>
   );
 
-  const getUserList = async (mainQuery: string, exportQuery?: string) => {
+  const getUserList = async () => {
     try {
       const result = await client.api.usersList();
       return result;

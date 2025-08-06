@@ -1,39 +1,39 @@
-import { memo, PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
-import {
-  PublicClientApplication,
-  Configuration,
-  InteractionStatus,
-} from "@azure/msal-browser";
-import { MsalProvider, useMsal} from "@azure/msal-react";
+import { memo, PropsWithChildren, useCallback, useEffect, useState } from "react";
+import { PublicClientApplication, Configuration, InteractionStatus } from "@azure/msal-browser";
+import { MsalProvider, useMsal } from "@azure/msal-react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { useConfig } from "@providers/config-provider";
 
 function RequireAuth({ children }: PropsWithChildren) {
-
-  const { isTokenLoaded ,localToken} = useAuthState();
-  const { accounts, inProgress  } = useMsal();
+  const { isTokenLoaded, localToken } = useAuthState();
+  const { accounts, inProgress } = useMsal();
   const account = accounts.at(0);
 
   if (!isTokenLoaded || inProgress !== InteractionStatus.None) {
-      return <Loading message="Authenticating, please wait..." />;
+    return <Loading message="Authenticating, please wait..." />;
   }
 
   if (!account && !localToken && !window.location.pathname.startsWith("/auth")) {
-    const from = encodeURIComponent(window.location.pathname);
     window.location.replace("/auth/login");
     return null;
   }
 
   if ((localToken || account) && window.location.pathname.startsWith("/auth")) {
     window.location.replace("/");
-    return null; 
+    return null;
   }
 
   return <>{children}</>;
 }
 
-  export const Loading = ({ message = "Authenticating, please wait...", showProgress= true }: { message?: string, showProgress?: boolean }) => {
-    return (
+export const Loading = ({
+  message = "Authenticating, please wait...",
+  showProgress = true,
+}: {
+  message?: string;
+  showProgress?: boolean;
+}) => {
+  return (
     <Box
       sx={{
         minHeight: "100vh",
@@ -55,53 +55,49 @@ function RequireAuth({ children }: PropsWithChildren) {
 };
 
 export const AuthProvider = memo(function AuthProvider({ children }: PropsWithChildren) {
-  
   const { config, loading } = useConfig();
 
   if (loading) {
-  return <Loading message="Loading configuration, please wait..." />;
+    return <Loading message="Loading configuration, please wait..." />;
   }
 
   if (!config?.auth || !Array.isArray(config.auth.methods) || config.auth.methods.length === 0) {
-    return <Loading message="No authentication methods are configured."showProgress={false}/> ;
+    return <Loading message="No authentication methods are configured." showProgress={false} />;
   }
 
   const hasLocal = config.auth.methods.includes("Local");
   const hasAzure = config.auth.methods.includes("AzureAD");
   const msalConfigObj = config.auth.msal;
 
-  if (!hasLocal && hasAzure ) {
+  if (!hasLocal && hasAzure) {
     if (!msalConfigObj) {
-     return <Loading message="Azure authentication is configured, but MSAL settings are missing." showProgress={false}/> ;}
+      return (
+        <Loading
+          message="Azure authentication is configured, but MSAL settings are missing."
+          showProgress={false}
+        />
+      );
+    }
   }
 
-  if (hasAzure && msalConfigObj ) {
-
+  if (hasAzure && msalConfigObj) {
     const msalConfig: Configuration = {
-    auth: {
-      clientId: msalConfigObj.clientId?? "",
-      redirectUri: location.origin,
-      authority: msalConfigObj.authority,
+      auth: {
+        clientId: msalConfigObj.clientId ?? "",
+        redirectUri: location.origin,
+        authority: msalConfigObj.authority,
       },
     };
 
-  const msalInstance = new PublicClientApplication(msalConfig);
+    const msalInstance = new PublicClientApplication(msalConfig);
 
-  return (
-    <MsalProvider instance={msalInstance}>
-      <RequireAuth>
-        {children}
-      </RequireAuth>
-    </MsalProvider>
-    );
-  }
-  else{
     return (
-      <RequireAuth>
-        {children}
-      </RequireAuth>
-    
+      <MsalProvider instance={msalInstance}>
+        <RequireAuth>{children}</RequireAuth>
+      </MsalProvider>
     );
+  } else {
+    return <RequireAuth>{children}</RequireAuth>;
   }
 });
 
@@ -135,7 +131,7 @@ export const useAuthState = () => {
       await instance.logoutRedirect({
         postLogoutRedirectUri: "/auth/login",
       });
-    } else{
+    } else {
       localStorage.removeItem("token");
       setLocalToken(null);
       window.location.replace("/auth/login");
@@ -147,13 +143,11 @@ export const useAuthState = () => {
       await instance.logoutRedirect({
         postLogoutRedirectUri: "/auth/login",
       });
-    }
-    else{
+    } else {
       localStorage.removeItem("token");
       setLocalToken(null);
       window.location.replace("/auth/login");
     }
-
   }, [instance, account]);
 
   useEffect(() => {
@@ -161,8 +155,8 @@ export const useAuthState = () => {
     if (token) {
       setLocalToken(token);
     }
-    setIsTokenLoaded(true); 
+    setIsTokenLoaded(true);
   }, []);
 
-  return { account, getToken, logout, reLogin,localToken, setLocalToken ,isTokenLoaded};
+  return { account, getToken, logout, reLogin, localToken, setLocalToken, isTokenLoaded };
 };

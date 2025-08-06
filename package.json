@@ -1,6 +1,6 @@
 {
   "name": "leadcms.admin",
-  "version": "1.2.7-pre",
+  "version": "1.2.58-pre",
   "private": true,
   "sideEffects": false,
   "description": "React based Admin UI for LeadCMS (lightweight, extendable headless CMS for product websites)",
@@ -11,7 +11,7 @@
     "start": "cross-env TS_NODE_PROJECT=\"./webpack/tsconfig.json\" webpack serve --config=\"./webpack/webpack.config.ts\"  --mode=development",
     "build": "cross-env TS_NODE_PROJECT=\"./webpack/tsconfig.json\" webpack --config=\"./webpack/webpack.config.ts\" --mode=production",
     "lint": "eslint ./src/**/*",
-    "format": "prettier --write ./src/**/* !./src/**/{swagger.json,swagger-client.ts}",
+    "format": "prettier --write \"./src/**/*.{ts,tsx,js,jsx}\" --ignore-path .prettierignore",
     "prepare": "husky install",
     "generate:api": "ts-node ./scripts/generate-api.ts"
   },
@@ -62,8 +62,6 @@
     "webpack-dev-server": "^4.11.1"
   },
   "dependencies": {
-    "@automapper/core": "^8.7.7",
-    "@automapper/pojos": "^8.7.7",
     "@azure/msal-browser": "^4.12.0",
     "@azure/msal-react": "^3.0.12",
     "@chakra-ui/icon": "^3.2.0",

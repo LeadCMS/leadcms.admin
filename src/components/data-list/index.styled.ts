@@ -60,15 +60,15 @@ export const DataListContainer = styled("div")`
   height: 100%;
   width: 100%;
   gap: ${({ theme }) => theme.spacing(6)};
-  
+
   .MuiDataGrid-root {
     width: 100%;
     box-sizing: border-box;
   }
-  
+
   .MuiDataGrid-columnHeaders {
   }
-  
+
   .MuiDataGrid-columnHeadersInner {
   }
 

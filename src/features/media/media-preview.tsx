@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -8,13 +8,15 @@ import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
-import MovieIcon from "@mui/icons-material/Movie";
-import MusicNoteIcon from "@mui/icons-material/MusicNote";
-import DescriptionIcon from "@mui/icons-material/Description";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import { buildAbsoluteUrl } from "@lib/network/utils";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
+import { useRequestContext } from "@providers/request-provider";
+import { useNotificationsService } from "@hooks";
+import { ApiErrorDisplay } from "@components/api-error-display";
 
 interface MediaPreviewProps {
   file: any | null;
@@ -26,6 +28,8 @@ interface MediaPreviewProps {
   onPrev?: () => void;
   hasNext?: boolean;
   hasPrev?: boolean;
+  onReplace?: (file: any) => void;
+  onFileUpdate?: (updatedFile: any) => void;
 }
 
 const formatFileSize = (size: number | undefined) => {
@@ -34,6 +38,11 @@ const formatFileSize = (size: number | undefined) => {
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
   return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`;
+};
+
+// Helper function to check if file is PDF
+const isPdfFile = (file: any) => {
+  return file?.mimeType === "application/pdf" || file?.name?.toLowerCase().endsWith(".pdf");
 };
 
 export const MediaPreview = ({
@@ -46,15 +55,157 @@ export const MediaPreview = ({
   onPrev,
   hasNext,
   hasPrev,
+  onReplace,
+  onFileUpdate,
 }: MediaPreviewProps) => {
   const [tab, setTab] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isReplacing, setIsReplacing] = useState(false);
+  const [replaceError, setReplaceError] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const { client } = useRequestContext();
+  const { notificationsService } = useNotificationsService();
+
+  const isPdf = file ? isPdfFile(file) : false;
+  const fileUrl = file
+    ? buildAbsoluteUrlWithCacheBust(file.location || file.url, file.size, file.updatedAt)
+    : "";
+
+  // Fetch PDF as blob and create object URL for inline viewing
+  useEffect(() => {
+    if (!isPdf || !open) {
+      setPdfBlobUrl(null);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingPdf(true);
+    setPdfError(false);
+
+    const fetchPdfBlob = async () => {
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        if (isCancelled) return;
+
+        // Ensure the blob has PDF mime type for proper handling
+        const pdfBlob = new Blob([blob], { type: "application/pdf" });
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        setPdfBlobUrl(blobUrl);
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("Failed to fetch PDF:", error);
+          setPdfError(true);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingPdf(false);
+        }
+      }
+    };
+
+    fetchPdfBlob();
+
+    return () => {
+      isCancelled = true;
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
+  }, [isPdf, open, fileUrl]);
+
+  // Cleanup blob URL when component unmounts or file changes
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
+  }, [pdfBlobUrl]);
+
   if (!file) return null;
 
   const handleCopyLink = () => {
     onCopyLink(file);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleReplaceMedia = async () => {
+    // Get file extension for filtering - ensure no leading dot
+    const currentExtension = (file.extension || file.name.split(".").pop() || "")
+      .toLowerCase()
+      .replace(/^\./, "");
+
+    // Create file input with extension filter
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = currentExtension ? `.${currentExtension}` : "*/*";
+
+    input.onchange = async (e) => {
+      const target = e.target as HTMLInputElement;
+      if (!target.files || target.files.length === 0) {
+        return;
+      }
+
+      const selectedFile = target.files[0];
+      const selectedExtension = (selectedFile.name.split(".").pop() || "").toLowerCase();
+
+      // Validate extension match
+      if (currentExtension && selectedExtension !== currentExtension) {
+        notificationsService.error(
+          `File extension mismatch. Expected .${currentExtension}, got .${selectedExtension}`
+        );
+        input.remove();
+        return;
+      }
+
+      setIsReplacing(true);
+      setReplaceError(null);
+
+      try {
+        // Use new mediaPartialUpdate method to replace existing file
+        const response = await client.api.mediaPartialUpdate({
+          File: selectedFile,
+          ScopeUid: file.scopeUid,
+          FileName: file.name,
+        });
+
+        if (response.error) {
+          throw new Error(response.error.detail || response.error.title || "Upload failed");
+        }
+
+        notificationsService.success("Media file replaced successfully");
+
+        // Use PATCH response to update preview immediately
+        if (response.data && onFileUpdate) {
+          onFileUpdate(response.data);
+        }
+
+        // Optionally, still call onReplace to refresh the media list elsewhere
+        if (onReplace) {
+          onReplace(file);
+        }
+
+        // Don't close the dialog - keep it open with updated file
+      } catch (error) {
+        const apiError = error as { message?: string };
+        const errorMessage = apiError.message || "Failed to replace media file";
+        setReplaceError(errorMessage);
+        notificationsService.error(errorMessage);
+      } finally {
+        setIsReplacing(false);
+        input.remove();
+      }
+    };
+
+    input.click();
   };
 
   // Navigation button style (match preview tab style)
@@ -77,7 +228,10 @@ export const MediaPreview = ({
         </Box>
         {/* Main content */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <DialogTitle>{file.name}</DialogTitle>
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {isPdf && <PictureAsPdfIcon color="error" />}
+            {file.name}
+          </DialogTitle>
           <DialogContent>
             <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
               <Tab label="Preview" />
@@ -97,11 +251,48 @@ export const MediaPreview = ({
                   position: "relative",
                 }}
               >
-                <img
-                  src={buildAbsoluteUrl(file.location || file.url) || "/images/placeholder.svg"}
-                  alt={file.name}
-                  style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-                />
+                {isPdf ? (
+                  isLoadingPdf ? (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <CircularProgress size={48} sx={{ mb: 2 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        Loading PDF...
+                      </Typography>
+                    </Box>
+                  ) : pdfError || !pdfBlobUrl ? (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <PictureAsPdfIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        PDF Preview Not Available
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Unable to display PDF preview. You can download the file to view it.
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<DownloadIcon />}
+                        onClick={() => onDownload(file)}
+                      >
+                        Download PDF
+                      </Button>
+                    </Box>
+                  ) : (
+                    <iframe
+                      src={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: "none" }}
+                      title={`PDF Preview: ${file.name}`}
+                      onError={() => setPdfError(true)}
+                    />
+                  )
+                ) : (
+                  <img
+                    src={fileUrl || "/images/placeholder.svg"}
+                    alt={file.name}
+                    style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                  />
+                )}
               </Box>
             )}
             {tab === 1 && (
@@ -139,7 +330,11 @@ export const MediaPreview = ({
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <input
                         type="text"
-                        value={buildAbsoluteUrl(file.location || file.url)}
+                        value={buildAbsoluteUrlWithCacheBust(
+                          file.location || file.url,
+                          file.size,
+                          file.updatedAt
+                        )}
                         readOnly
                         style={{
                           flex: 1,
@@ -150,7 +345,12 @@ export const MediaPreview = ({
                           background: "#fafafa",
                         }}
                       />
-                      <Button size="small" variant="outlined" onClick={handleCopyLink} sx={{ ml: 1 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleCopyLink}
+                        sx={{ ml: 1 }}
+                      >
                         {linkCopied ? "Copied!" : "Copy"}
                       </Button>
                     </Box>
@@ -158,13 +358,26 @@ export const MediaPreview = ({
                 </Box>
               </Box>
             )}
+            {replaceError && <ApiErrorDisplay error={replaceError} fileName={file.name} />}
           </DialogContent>
           <DialogActions sx={{ gap: 2, px: 3, pb: 2 }}>
             <Button onClick={onClose} variant="outlined">
               Close
             </Button>
-            <Button onClick={() => onDownload(file)} variant="outlined" startIcon={<DownloadIcon />}>
+            <Button
+              onClick={() => onDownload(file)}
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+            >
               Download
+            </Button>
+            <Button
+              onClick={handleReplaceMedia}
+              variant="outlined"
+              startIcon={isReplacing ? <CircularProgress size={16} /> : <SwapHorizIcon />}
+              disabled={isReplacing}
+            >
+              {isReplacing ? "Replacing..." : "Replace Media"}
             </Button>
             <Button onClick={handleCopyLink} variant="contained" startIcon={<FileCopyIcon />}>
               {linkCopied ? "Copied!" : "Copy Link"}

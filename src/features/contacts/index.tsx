@@ -17,7 +17,7 @@ import { dataListBreadcrumbLinks } from "utils/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { Fragment, useRef, useState } from "react";
-import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";      
+import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
 import { getModelByName } from "lib/network/swagger-models";
@@ -81,11 +81,11 @@ export const Contacts = () => {
     await client.api.contactsImportCreate(importDtoCollection);
   };
 
-  const [columns, setColumns] =  useState<GridColDef<ContactDetailsDto>[] >([
+  const [columns, setColumns] = useState<GridColDef<ContactDetailsDto>[]>([
     {
       field: "prefix",
       headerName: "Prefix",
-      minWidth:80,
+      minWidth: 80,
       type: "string",
     },
     {
@@ -184,9 +184,9 @@ export const Contacts = () => {
   const extraActions = [
     <Fragment>
       <SearchBar
-      setSearchTermOnChange={setSearchTerm}
-      searchBoxLabel={searchLabel}
-      initialValue={gridSettings?.searchTerm ?? ""}
+        setSearchTermOnChange={setSearchTerm}
+        searchBoxLabel={searchLabel}
+        initialValue={gridSettings?.searchTerm ?? ""}
       ></SearchBar>
     </Fragment>,
     <Fragment>
@@ -194,45 +194,47 @@ export const Contacts = () => {
         onClick={() => setFilterPanelOpen(true)}
         color="secondary"
         sx={{
-          backgroundColor:theme=> theme.palette.background.primary,
-          border: "1px solid", 
+          backgroundColor: (theme) => theme.palette.background.primary,
+          border: "1px solid",
           borderColor: "#E4E4E7",
-          borderRadius: theme=>theme.spacing(1)
+          borderRadius: (theme) => theme.spacing(1),
         }}
       >
         <Filter size={18} />
       </IconButton>
     </Fragment>,
     <Fragment>
-     <Button
-      variant="outlined"
-      startIcon={<Settings2 size={18} />}
-      onClick={() => setColumnsPanelOpen((open) => !open)}
-      color="secondary"
-      sx={theme => ({
-        backgroundColor: theme.palette.background.primary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-      },
-      })}
-      >
-      Columns
-     </Button>
-    </Fragment>,
-    <Fragment key={"import-action"}>
-      <Button key={"import-btn"} 
-        startIcon={<Upload size={18}/>} 
-        onClick={handleImportOpen} 
-        color="secondary" 
-        variant="outlined" 
-        sx={theme => ({
+      <Button
+        variant="outlined"
+        startIcon={<Settings2 size={18} />}
+        onClick={() => setColumnsPanelOpen((open) => !open)}
+        color="secondary"
+        sx={(theme) => ({
           backgroundColor: theme.palette.background.primary,
           borderColor: "#E4E4E7",
           "&:hover": {
             backgroundColor: theme.palette.background.primaryHover,
           },
-        })}>
+        })}
+      >
+        Columns
+      </Button>
+    </Fragment>,
+    <Fragment key={"import-action"}>
+      <Button
+        key={"import-btn"}
+        startIcon={<Upload size={18} />}
+        onClick={handleImportOpen}
+        color="secondary"
+        variant="outlined"
+        sx={(theme) => ({
+          backgroundColor: theme.palette.background.primary,
+          borderColor: "#E4E4E7",
+          "&:hover": {
+            backgroundColor: theme.palette.background.primaryHover,
+          },
+        })}
+      >
         Import
       </Button>
       {importFieldsObject && (
@@ -246,17 +248,18 @@ export const Contacts = () => {
       )}
     </Fragment>,
     <Fragment key={"export-action"}>
-      <Button key={"export-btn"} 
-        startIcon={<Download size={18}/>} 
-        onClick={handleExportOpen} 
-        color="secondary" 
-        variant="outlined" 
-        sx={theme => ({
-        backgroundColor: theme.palette.background.primary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-        },
+      <Button
+        key={"export-btn"}
+        startIcon={<Download size={18} />}
+        onClick={handleExportOpen}
+        color="secondary"
+        variant="outlined"
+        sx={(theme) => ({
+          backgroundColor: theme.palette.background.primary,
+          borderColor: "#E4E4E7",
+          "&:hover": {
+            backgroundColor: theme.palette.background.primaryHover,
+          },
         })}
       >
         Export
@@ -268,15 +271,16 @@ export const Contacts = () => {
           fileName={"contacts"}
         ></CsvExport>
       )}
-    </Fragment>,   
+    </Fragment>,
   ];
 
   const addButton = (
-    <Button variant="contained" 
-      to={getAddFormRoute()} 
-      component={GhostLink} 
-      startIcon={<Plus size={18}/>} 
-      color="secondary" 
+    <Button
+      variant="contained"
+      to={getAddFormRoute()}
+      component={GhostLink}
+      startIcon={<Plus size={18} />}
+      color="secondary"
     >
       Add contact
     </Button>
@@ -300,9 +304,7 @@ export const Contacts = () => {
         initialGridState={{
           columns: { columnVisibilityModel: { lastName: false, email: false } },
           sorting: {
-            sortModel: [
-              { field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection },
-            ],
+            sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
           },
         }}
         filterPanelOpen={filterPanelOpen}

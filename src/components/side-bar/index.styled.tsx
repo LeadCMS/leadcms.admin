@@ -11,7 +11,8 @@ import {
 export const SidebarTopContainer = styled("div")<{
   isMobile?: boolean;
   isOpen?: boolean;
-}>(({ theme, isMobile, isOpen }) => `
+}>(
+  ({ theme, isMobile, isOpen }) => `
   display: flex;
   align-items: center;
   height: 64px;
@@ -19,12 +20,12 @@ export const SidebarTopContainer = styled("div")<{
   max-height: 64px;
   padding-left: 16px;
   padding-right: 16px;
-  border-bottom: 1px solid ${theme.palette.mode === "dark"
-    ? theme.palette.secondary.light
-    : theme.palette.divider};
-  background: ${theme.palette.mode === "dark"
-    ? theme.palette.secondary.main
-    : theme.palette.background.default};
+  border-bottom: 1px solid ${
+    theme.palette.mode === "dark" ? theme.palette.secondary.light : theme.palette.divider
+  };
+  background: ${
+    theme.palette.mode === "dark" ? theme.palette.secondary.main : theme.palette.background.default
+  };
   z-index: 1;
   .sidebar-logo {
     display: none;
@@ -33,7 +34,7 @@ export const SidebarTopContainer = styled("div")<{
     font-weight: bold;
     font-size: 1.25rem;
     color: ${theme.palette.primary.main};
-    margin-left: ${(isMobile && isOpen) ? "40px" : "0"};
+    margin-left: ${isMobile && isOpen ? "40px" : "0"};
     transition: margin 0.2s;
   }
   @media (min-width: ${theme.breakpoints.values.md}px) {
@@ -50,7 +51,8 @@ export const SidebarTopContainer = styled("div")<{
       display: none;
     }
   }
-`);
+`
+);
 
 export const SidebarMenuScrollArea = styled("div")`
   flex: 1 1 auto;
@@ -106,9 +108,9 @@ export const ListSubheaderStyled = styled(ListSubheader, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
 })<{ isCollapsed?: boolean }>`
   font-size: ${({ theme }) => theme.typography.subtitle2.fontSize};
-  color: ${({ theme }) => theme.typography.subtitle2.color}; 
+  color: ${({ theme }) => theme.typography.subtitle2.color};
   font-weight: ${({ theme }) => theme.typography.subtitle2.fontWeight};
-  display: ${({ isCollapsed }) => isCollapsed ? "none" : "block"};
+  display: ${({ isCollapsed }) => (isCollapsed ? "none" : "block")};
   padding-left: 20px;
   padding-right: 0px;
   min-height: 0;
@@ -121,12 +123,12 @@ export const SidebarLink = styled(ListItemButton, {
   border-radius: ${({ theme }) => theme.spacing(2)};
   height: ${({ theme }) => theme.spacing(10)};
   margin-top: ${({ theme }) => theme.spacing(1)};
-  margin-left: ${({ theme, isCollapsed }) => isCollapsed ? theme.spacing(1) : "0"};
-  margin-right: ${({ theme, isCollapsed }) => isCollapsed ? theme.spacing(1) : "10px"};
+  margin-left: ${({ theme, isCollapsed }) => (isCollapsed ? theme.spacing(1) : "0")};
+  margin-right: ${({ theme, isCollapsed }) => (isCollapsed ? theme.spacing(1) : "10px")};
   color: ${({ theme: { palette } }) => palette.text.secondary};
-  min-width: ${({ isCollapsed }) => isCollapsed ? "56px" : "auto"};
-  justify-content: ${({ isCollapsed }) => isCollapsed ? "center" : "flex-start"};
-  padding-left: ${({ theme, isCollapsed }) => isCollapsed ? "0" : theme.spacing(2)};
+  min-width: ${({ isCollapsed }) => (isCollapsed ? "56px" : "auto")};
+  justify-content: ${({ isCollapsed }) => (isCollapsed ? "center" : "flex-start")};
+  padding-left: ${({ theme, isCollapsed }) => (isCollapsed ? "0" : theme.spacing(2))};
   :hover {
     background-color: ${({ theme: { palette } }) => palette.background.primaryHover};
   }
@@ -147,11 +149,11 @@ export const SidebarLinkText = styled(ListItemText, {
     margin-left: ${({ theme }) => theme.spacing(1)};
   }
 
-  display: ${({ isCollapsed }) => isCollapsed ? "none" : "block"};
+  display: ${({ isCollapsed }) => (isCollapsed ? "none" : "block")};
 ` as typeof ListItemText;
 
 export const ListItemIconStyled = styled(ListItemIcon)`
   min-width: ${({ theme }) => theme.spacing(8)};
-  color: inherit; 
+  color: inherit;
   margin-left: ${({ theme }) => theme.spacing(3)};
 ` as typeof ListItemIcon;

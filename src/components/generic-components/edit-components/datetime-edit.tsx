@@ -4,14 +4,11 @@ import { DateField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 
 export const DatetimeEdit = ({
-  key,
   label,
   example,
-  required,
   value,
   onChangeValue,
   disabled,
-  error,
 }: EditProps<Date>): ReactNode => {
   return (
     <div title={example}>

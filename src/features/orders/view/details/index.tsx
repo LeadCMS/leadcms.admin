@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Grid,
   IconButton,
   Link,
@@ -40,7 +41,7 @@ export const OrderView = () => {
   const { id } = useRouteParams(viewFormRoute);
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
-  const { Show: showErrorModal } = useErrorDetailsModal()!;
+  const { Show: showErrorModal } = useErrorDetailsModal();
 
   const [order, setOrder] = useState<OrderDetailsDto | undefined>();
   const [contact, setContact] = useState<ContactDetailsDto>();
@@ -148,10 +149,37 @@ export const OrderView = () => {
     </div>
   );
 
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+        return "warning";
+      case "paid":
+        return "success";
+      case "cancelled":
+        return "error";
+      case "refunded":
+        return "info";
+      case "failed":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
+  const StatusChip = ({ status }: { status: string }) => (
+    <Chip
+      label={status || "Pending"}
+      color={getStatusColor(status)}
+      size="small"
+      variant="filled"
+    />
+  );
+
   const orderViewData = [
     { label: "Order Id", value: order?.orderNumber || "" },
     { label: "Reference no", value: order?.refNo || "" },
     { label: "Order date", value: order?.createdAt ? getFormattedDateTime(order?.createdAt) : "" },
+    { label: "Status", value: <StatusChip status={order?.status || "Pending"} /> },
     { label: "Quantity", value: order?.quantity || "" },
     { label: "Total", value: order?.total || "" },
   ];
@@ -165,16 +193,6 @@ export const OrderView = () => {
     {
       field: "productName",
       headerName: "Product",
-      flex: 2,
-    },
-    {
-      field: "licenseCode",
-      headerName: "License",
-      flex: 2,
-    },
-    {
-      field: "unitPrice",
-      headerName: "Unit price",
       flex: 2,
     },
     {
@@ -231,20 +249,18 @@ export const OrderView = () => {
     formik.setValues({
       productName: "",
       orderId: order!.id!,
-      licenseCode: "",
       unitPrice: 0,
       currency: "",
       quantity: 0,
+      source: "",
+      id: undefined,
     });
     setIsEdit(true);
   };
 
   const gridFinalizedColumns = columns.concat(actionsColumn);
 
-  const submitFunc = async (
-    values: OrderItemDetailsDto,
-    helpers: FormikHelpers<OrderItemDetailsDto>
-  ) => {
+  const submitFunc = async (values: OrderItemDetailsDto) => {
     try {
       if (values?.id) {
         await client.api.orderItemsPartialUpdate(values.id!, values!);
@@ -269,21 +285,23 @@ export const OrderView = () => {
 
   const OrderItemEditValidationScheme = zod.object({
     productName: zod.string(),
-    licenseCode: zod.string(),
     unitPrice: zod.number().positive(),
     currency: zod.string(),
     quantity: zod.number().positive(),
+    source: zod.string().optional().nullable(),
+    id: zod.number().optional(),
   });
 
-  const formik = useFormik({
+  const formik = useFormik<OrderItemDetailsDto>({
     validationSchema: toFormikValidationSchema(OrderItemEditValidationScheme),
     initialValues: {
       orderId: 0,
       productName: "",
-      licenseCode: "",
       unitPrice: 0,
       currency: "",
       quantity: 0,
+      source: "",
+      id: undefined,
     },
     onSubmit: submit,
     validateOnChange: false,
@@ -294,7 +312,7 @@ export const OrderView = () => {
       {order && (
         <>
           <Grid container spacing={3} marginTop={4} paddingRight={4}>
-            <Grid xs={12} sm={4} item>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Grid marginBottom={3}>
                 <DataView header="Order Info" rows={orderViewData}></DataView>
               </Grid>
@@ -313,7 +331,7 @@ export const OrderView = () => {
                 ></DataManagementBlock>
               </Grid>
             </Grid>
-            <Grid xs={12} sm={8} item>
+            <Grid size={{ xs: 12, sm: 8 }}>
               <Grid marginBottom={3}>
                 <Card>
                   {orderItems && (
@@ -353,12 +371,12 @@ export const OrderView = () => {
                     <Card>
                       <CardContent>
                         <Grid container spacing={4} marginBottom={4}>
-                          <Grid xs={12} sm={10} item>
+                          <Grid size={{ xs: 12, sm: 10 }}>
                             <Typography gutterBottom variant="h6" component="div">
                               {`${formik.values.id ? "Edit" : "Add"} Order Item`}
                             </Typography>
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               disabled={formik.isSubmitting}
                               label="Product Name"
@@ -374,22 +392,7 @@ export const OrderView = () => {
                               onChange={formik.handleChange}
                             />
                           </Grid>
-                          <Grid xs={12} sm={4} item>
-                            <TextField
-                              disabled={formik.isSubmitting}
-                              label="License Code"
-                              name="licenseCode"
-                              value={formik.values.licenseCode || ""}
-                              fullWidth
-                              size="small"
-                              error={
-                                formik.touched.licenseCode && Boolean(formik.errors.licenseCode)
-                              }
-                              helperText={formik.touched.licenseCode && formik.errors.licenseCode}
-                              onChange={formik.handleChange}
-                            />
-                          </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <Tooltip title="Unit Price field must contain only numbers">
                               <TextField
                                 disabled={formik.isSubmitting}
@@ -405,7 +408,7 @@ export const OrderView = () => {
                               />
                             </Tooltip>
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               disabled={formik.isSubmitting}
                               label="Currency"
@@ -418,7 +421,7 @@ export const OrderView = () => {
                               onChange={formik.handleChange}
                             />
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <Tooltip title="Quantity field must contain only numbers">
                               <TextField
                                 disabled={formik.isSubmitting}
@@ -434,7 +437,7 @@ export const OrderView = () => {
                               />
                             </Tooltip>
                           </Grid>
-                          <Grid xs={12} sm={4} item>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                               disabled={formik.isSubmitting}
                               label="Source"
