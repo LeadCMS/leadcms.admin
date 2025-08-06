@@ -39,6 +39,6 @@ export const MainContent = styled("main")`
   flex-direction: column;
   align-items: stretch;
   padding: ${({ theme }) => theme.spacing(2)};
-  background-color: ${({ theme }) => theme.palette.background.default};
+  background-color: ${({ theme }) => theme.palette.background.primary};
   box-sizing: border-box;
 `;

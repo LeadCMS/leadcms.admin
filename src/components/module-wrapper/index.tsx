@@ -1,10 +1,9 @@
 import { ModuleContainer } from "@components/module";
 import { PropsWithChildren, ReactNode } from "react";
+import React from "react";
 import {
   ActionsContainer,
-  AddButtonContainer,
   CenteredCircularProgress,
-  ExtraActionsContainer,
   FixedActionBar,
   FormContainer,
   LeftContainer,
@@ -15,6 +14,7 @@ import {
 } from "./index.styled";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { BreadcrumbLink } from "../../types";
+import { ResponsiveActions } from "@components/responsive-actions";
 
 export interface ModuleWrapperProps extends PropsWithChildren {
   key?: string;
@@ -36,6 +36,10 @@ export const ModuleWrapper = ({
   children,
 }: ModuleWrapperProps) => {
   const { isBusy } = useModuleWrapperContext();
+  const rightActions = [
+    ...flattenChildren(extraActionsContainerChildren),
+    addButtonContainerChildren,
+  ].filter(React.isValidElement);
 
   return (
     <ModuleContainer>
@@ -44,12 +48,7 @@ export const ModuleWrapper = ({
           {leftContainerChildren && <LeftContainer>{leftContainerChildren}</LeftContainer>}
           {(extraActionsContainerChildren || addButtonContainerChildren) && (
             <RightContainer>
-              {extraActionsContainerChildren && (
-                <ExtraActionsContainer>{extraActionsContainerChildren}</ExtraActionsContainer>
-              )}
-              {addButtonContainerChildren && (
-                <AddButtonContainer>{addButtonContainerChildren}</AddButtonContainer>
-              )}
+              <ResponsiveActions actions={rightActions} gap={3} />
             </RightContainer>
           )}
         </ActionsContainer>
@@ -69,3 +68,15 @@ export const ModuleWrapper = ({
     </ModuleContainer>
   );
 };
+
+function flattenChildren(children: React.ReactNode): React.ReactElement[] {
+  const result: React.ReactElement[] = [];
+  React.Children.forEach(children, (child) => {
+    if (React.isValidElement(child) && child.type === React.Fragment) {
+      result.push(...flattenChildren(child.props.children));
+    } else if (React.isValidElement(child)) {
+      result.push(child);
+    }
+  });
+  return result;
+}

@@ -7,7 +7,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useEffect, useCallback } from "react";
-import { PanelLeftOpen, Menu } from "lucide-react";
+import { PanelRightOpen, PanelLeftOpen } from "lucide-react";
 import {
   ListItemIconStyled,
   ListSubheaderStyled,
@@ -74,27 +74,37 @@ export const Sidebar = ({
         onClose={toggleMobile}
         isCollapsed={showCollapsed}
       >
-        <SidebarTopContainer isMobile={isMobile} isOpen={effectiveOpen}>
-          <div
-            className="sidebar-logo sidebar-link"
-            style={{ display: "flex", alignItems: "center", cursor: "pointer", flex: 1 }}
-            onClick={navigateToDashboard}
-            tabIndex={0}
-            role="button"
-            aria-label="Go to dashboard"
-          >
-            <LogoComponent />
-            {!showCollapsed && <Typography className="sidebar-app-name">LeadCMS.ai</Typography>}
-          </div>
+        <SidebarTopContainer isMobile={isMobile} isOpen={effectiveOpen} isCollapsed={showCollapsed}>
+          {!showCollapsed && (
+            <div
+              className="sidebar-logo sidebar-link"
+              style={{ display: "flex", alignItems: "center", cursor: "pointer", flex: 1 }}
+              onClick={navigateToDashboard}
+              tabIndex={0}
+              role="button"
+              aria-label="Go to dashboard"
+            >
+              <LogoComponent />
+              <Typography className="sidebar-app-name">LeadCMS.ai</Typography>
+            </div>
+          )}
+
           {!isMobile && (
             <Tooltip title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-              <IconButton onClick={toggleCollapse} size="small" sx={{ ml: 1 }}>
-                {isCollapsed ? <Menu /> : <PanelLeftOpen />}
+              <IconButton
+                onClick={toggleCollapse}
+                size="small"
+                sx={{
+                  ml: showCollapsed ? 2 : 1,
+                  pr: showCollapsed ? 2 : 0,
+                }}
+              >
+                {isCollapsed ? <PanelLeftOpen /> : <PanelRightOpen />}
               </IconButton>
             </Tooltip>
           )}
         </SidebarTopContainer>
-        <SidebarMenuScrollArea sx={{ pt: 3 }}>
+        <SidebarMenuScrollArea sx={{ pt: 4 }}>
           {isLoading ? (
             <div
               style={{

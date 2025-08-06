@@ -48,12 +48,15 @@ export const ContactNameListItem = styled(ListItem)({
   alignItems: "center",
   paddingLeft: "0",
   disablePadding: true,
+  height: "100%",
+  display: "flex",
 });
 
 export const ContactNameListItemText = styled(ListItemText)`
   .MuiListItemText-primary {
     font-size: ${({ theme }) => theme.typography.body2.fontSize};
     font-weight: 500;
+    margin-bottom: 2px;
   }
   .MuiListItemText-secondary {
     font-size: ${({ theme }) => theme.typography.body2.fontSize};

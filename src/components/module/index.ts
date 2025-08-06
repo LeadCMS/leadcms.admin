@@ -4,6 +4,7 @@ export const ModuleContainer = styled("div")`
   display: flex;
   flex-flow: column;
   height: 100%;
+  width: 100%;
   gap: ${({ theme }) => theme.spacing(6)};
   padding: ${({ theme }) => theme.spacing(5)};
 `;

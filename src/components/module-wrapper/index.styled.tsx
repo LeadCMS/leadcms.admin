@@ -2,18 +2,27 @@ import { CircularProgress, styled } from "@mui/material";
 
 export const ActionsContainer = styled("div")`
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  width: 100%;
+  justify-content: space-between;
 `;
 
 export const LeftContainer = styled("div")`
   display: flex;
   align-items: center;
+  margin-right: ${({ theme }) => theme.spacing(0)};
 `;
 
 export const RightContainer = styled("div")`
   display: flex;
   align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  flex: 1 1 0%;
+  justify-content: flex-end;
+  max-width: 100%;
+  margin-left: ${({ theme }) => theme.spacing(0)};
+  padding-left: ${({ theme }) => theme.spacing(0)};
 `;
 
 export const ExtraActionsContainer = styled("div")`
@@ -23,7 +32,7 @@ export const ExtraActionsContainer = styled("div")`
 `;
 
 export const AddButtonContainer = styled("div")`
-  margin-left: ${({ theme }) => theme.spacing(10)};
+  margin-left: ${({ theme }) => theme.spacing(5)};
 `;
 
 export const ModuleContentContainer = styled("div")`

@@ -6,14 +6,24 @@ import {
   getWhereFilterQuery,
   totalCountHeaderName,
 } from "@providers/query-provider";
-import { GridColDef, GridSortDirection, GridValidRowModel } from "@mui/x-data-grid";
+import {
+  GridColDef,
+  GridSortDirection,
+  GridValidRowModel,
+  GridColumnVisibilityModel,
+} from "@mui/x-data-grid";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
 import { DataListContainer } from "./index.styled";
 import { DataTableGrid } from "@components/data-table";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, GridDataFilterState } from "types";
+import { DataListSettings, ExportParams, GridDataFilterState } from "types";
 import { useNotificationsService } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
+import { CustomFilterBar } from "@components/custom-filter";
+import { ColumnsPanel } from "@components/custom-columns-panel";
+import { ExportPopup } from "@components/export-popup";
+import type { GridRowSelectionModel } from "@mui/x-data-grid";
+import React from "react";
 
 // Define response type for API model data
 interface ModelDataResponse {
@@ -23,6 +33,7 @@ interface ModelDataResponse {
 
 type dataListProps<TModel extends GridValidRowModel> = {
   columns: GridColDef<TModel>[];
+  setColumns?: (cols: GridColDef<TModel>[]) => void;
   gridSettingsStorageKey: string;
   searchText: string;
   defaultFilterOrderColumn: string;
@@ -31,10 +42,18 @@ type dataListProps<TModel extends GridValidRowModel> = {
   getModelDataList: (mainQuery: string, exportQuery?: string) => Promise<ModelDataResponse | null>;
   showEditButton?: boolean;
   showViewButton?: boolean;
+  filterPanelOpen?: boolean;
+  setFilterPanelOpen?: (open: boolean) => void;
+  columnsPanelOpen?: boolean;
+  setColumnsPanelOpen?: (open: boolean) => void;
+  onExport?: (params: ExportParams) => Promise<void>;
+  onExportOpen?: boolean;
+  onExportClose?: () => void;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
   columns,
+  setColumns,
   gridSettingsStorageKey,
   searchText,
   defaultFilterOrderColumn,
@@ -43,6 +62,13 @@ export const DataList = <TModel extends GridValidRowModel>({
   getModelDataList,
   showEditButton = true,
   showViewButton = true,
+  filterPanelOpen,
+  setFilterPanelOpen,
+  columnsPanelOpen,
+  setColumnsPanelOpen,
+  onExport,
+  onExportOpen = false,
+  onExportClose = () => {},
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -56,25 +82,36 @@ export const DataList = <TModel extends GridValidRowModel>({
 
   const [filterState, setFilterState] = useState<GridDataFilterState>();
 
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState<Record<string, boolean>>(
+    gridSettings?.columnVisibilityModel ?? {}
+  );
+
+  const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set(),
+  });
+
+  const selectedRows = Array.from(rowSelectionModel.ids);
+
   const defaultFilterState = {
     filterLimit: defaultFilterLimit,
     sortColumn: defaultFilterOrderColumn,
     sortOrder: defaultFilterOrderDirection,
-    whereField: "",
-    whereFieldValue: "",
-    whereOperator: "",
+    whereFilters: [],
     skipLimit: 0,
     pageNumber: 0,
     columnVisibilityModel: initialGridState?.columns?.columnVisibilityModel,
   };
 
-  const whereFilterQuery =
-    filterState &&
-    getWhereFilterQuery(
-      filterState.whereField || "",
-      filterState.whereFieldValue || "",
-      filterState.whereOperator || ""
-    );
+  const whereFilterQuery = filterState?.whereFilters?.length
+    ? filterState.whereFilters
+        .map((f) =>
+          getWhereFilterQuery(f.whereField || "", f.whereFieldValue || "", f.whereOperator || "")
+        )
+        .filter(Boolean)
+        .join("")
+    : "";
+
   const basicFilterQuery =
     filterState &&
     getBasicFilterQuery(
@@ -98,23 +135,28 @@ export const DataList = <TModel extends GridValidRowModel>({
         skipLimit,
         sortColumn,
         sortOrder,
-        whereField,
-        whereFieldValue,
-        whereOperator,
+        whereFilters,
         pageNumber,
         columnVisibilityModel,
+        columnOrder,
       } = gridSettings;
       setFilterState({
         filterLimit,
         skipLimit,
         sortColumn,
         sortOrder,
-        whereField,
-        whereFieldValue,
-        whereOperator,
+        whereFilters,
         pageNumber,
         columnVisibilityModel,
+        columnOrder,
       });
+
+      if (columnOrder && columnOrder.length > 0) {
+        setColumns?.(sortColumnsByOrder(columns, columnOrder));
+      } else {
+        setColumns?.(columns);
+      }
+
       setSearchTerm(searchTerm);
     } else {
       setFilterState(defaultFilterState);
@@ -152,13 +194,50 @@ export const DataList = <TModel extends GridValidRowModel>({
         skipLimit: filterState.skipLimit || 0,
         sortColumn: filterState.sortColumn || defaultFilterOrderColumn,
         sortOrder: filterState.sortOrder || defaultFilterOrderDirection,
-        whereField: filterState.whereField || "",
-        whereFieldValue: filterState.whereFieldValue || "",
-        whereOperator: filterState.whereOperator || "",
+        whereFilters: filterState.whereFilters || [],
         pageNumber: filterState.pageNumber || 0,
         columnVisibilityModel: filterState.columnVisibilityModel || {},
+        columnOrder: filterState.columnOrder || [],
       });
     }
+  };
+
+  function sortColumnsByOrder<T>(
+    columns: GridColDef<TModel>[],
+    columnOrder: string[]
+  ): GridColDef<TModel>[] {
+    const ordered = columnOrder
+      .map((field) => columns.find((col) => col.field === field))
+      .filter(Boolean) as GridColDef<TModel>[];
+
+    const missing = columns.filter((col) => !columnOrder.includes(col.field));
+    return [...ordered, ...missing];
+  }
+
+  const updateWhereFilters = (
+    newFilter?: { whereField?: string; whereOperator?: string; whereFieldValue?: string },
+    removeIndex?: number,
+    editIdx?: number
+  ) => {
+    let updatedFilters = [...(filterState?.whereFilters || [])];
+
+    if (typeof removeIndex === "number") {
+      updatedFilters.splice(removeIndex, 1);
+    } else if (
+      typeof editIdx === "number" &&
+      newFilter &&
+      newFilter.whereField &&
+      newFilter.whereOperator
+    ) {
+      updatedFilters[editIdx] = newFilter as any;
+    } else if (newFilter && newFilter.whereField && newFilter.whereOperator) {
+      updatedFilters.push(newFilter as any);
+    }
+
+    setFilterState({
+      ...filterState,
+      whereFilters: updatedFilters,
+    });
   };
 
   const updateFilterState = (state: GridDataFilterState) => {
@@ -167,6 +246,29 @@ export const DataList = <TModel extends GridValidRowModel>({
       ...state,
     };
     setFilterState(updatedFilterState);
+  };
+
+  const clearAllFilters = () => {
+    setFilterState({
+      ...filterState,
+      whereFilters: [],
+    });
+  };
+
+  const handleColumnVisibilityModelChange = (newModel: GridColumnVisibilityModel) => {
+    setColumnVisibilityModel(newModel);
+    setFilterState((prev) => ({
+      ...(prev ?? {}),
+      columnVisibilityModel: newModel,
+    }));
+  };
+
+  const handleColumnsReorder = (newColumns: GridColDef[]) => {
+    setColumns?.(newColumns);
+    setFilterState((prev) => ({
+      ...(prev ?? {}),
+      columnOrder: newColumns.map((col) => col.field),
+    }));
   };
 
   const getDataListAsync = () => {
@@ -190,18 +292,29 @@ export const DataList = <TModel extends GridValidRowModel>({
     else setTotalRowCount(-1);
   };
 
+  const handleExport = (scope: string, format: string, cols: string[]) => {
+    if (onExport) {
+      onExport({
+        scope,
+        format,
+        cols,
+        selectedRows,
+        whereFilterQuery,
+        basicFilterQuery,
+      });
+    }
+  };
+
   const gridInitialState = gridSettings && {
     filter:
-      gridSettings.whereField && gridSettings.whereFieldValue
+      gridSettings.whereFilters && gridSettings.whereFilters.length > 0
         ? {
             filterModel: {
-              items: [
-                {
-                  field: gridSettings.whereField,
-                  operator: gridSettings.whereOperator || "eq",
-                  value: gridSettings.whereFieldValue,
-                },
-              ],
+              items: gridSettings.whereFilters.map((f) => ({
+                field: f.whereField,
+                operator: f.whereOperator || "eq",
+                value: f.whereFieldValue,
+              })),
             },
           }
         : undefined,
@@ -221,6 +334,34 @@ export const DataList = <TModel extends GridValidRowModel>({
 
   return filterState && totalRowCount != undefined ? (
     <DataListContainer>
+      <CustomFilterBar
+        columns={columns}
+        whereFilters={filterState.whereFilters || []}
+        addFilter={(f, undefined, editIdx) => updateWhereFilters(f, undefined, editIdx)}
+        removeFilter={(idx) => updateWhereFilters(undefined, idx)}
+        filterPanelOpen={filterPanelOpen}
+        setFilterPanelOpen={setFilterPanelOpen}
+        clearAllFilters={clearAllFilters}
+      />
+      {setColumns && (
+        <ColumnsPanel
+          open={columnsPanelOpen}
+          columns={columns}
+          setColumns={setColumns}
+          columnVisibilityModel={columnVisibilityModel}
+          setColumnVisibilityModel={handleColumnVisibilityModelChange}
+          onColumnsReorder={handleColumnsReorder}
+          onClose={() => setColumnsPanelOpen?.(false)}
+        />
+      )}
+      <ExportPopup
+        open={onExportOpen}
+        onClose={onExportClose}
+        onExport={handleExport}
+        columns={columns}
+        selectedCount={selectedRows.length}
+        columnVisibilityModel={columnVisibilityModel}
+      />
       <DataTableGrid
         columns={columns}
         data={modelData || []}
@@ -232,11 +373,17 @@ export const DataList = <TModel extends GridValidRowModel>({
         dataViewMode="server"
         setFilterState={updateFilterState}
         initialState={gridInitialState}
-        disableColumnFilter={false}
+        disableColumnFilter={true}
         disablePagination={false}
         showActionsColumn={true}
         disableEditRoute={!showEditButton}
         disableViewRoute={!showViewButton}
+        columnVisibilityModel={columnVisibilityModel}
+        onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
+        onRowSelectionModelChange={(newRowSelectionModel) => {
+          setRowSelectionModel(newRowSelectionModel);
+        }}
+        rowSelectionModel={rowSelectionModel}
       />
     </DataListContainer>
   ) : null;
