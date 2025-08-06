@@ -118,12 +118,17 @@ const MediaManagement = () => {
   const [previewFile, setPreviewFile] = useState<MediaItem | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  // For preview navigation
-  const imageItems = items.filter((item) => getFileType(item.mimeType, item.extension) === "image");
-  const getCurrentImageIndex = useCallback(
-    () => imageItems.findIndex((img) => img.id === previewFile?.id),
-    [imageItems, previewFile]
+  // For preview navigation - include both images and PDFs
+  const previewableItems = items.filter((item) => {
+    const fileType = getFileType(item.mimeType, item.extension);
+    return fileType === "image" || item.mimeType === "application/pdf";
+  });
+
+  const getCurrentPreviewIndex = useCallback(
+    () => previewableItems.findIndex((item) => item.id === previewFile?.id),
+    [previewableItems, previewFile]
   );
+
   const handlePreview = (item: MediaItem) => {
     setPreviewFile(item);
     setPreviewOpen(true);
@@ -137,17 +142,18 @@ const MediaManagement = () => {
   };
 
   const handlePreviewNext = useCallback(() => {
-    const idx = getCurrentImageIndex();
-    if (idx >= 0 && idx < imageItems.length - 1) {
-      setPreviewFile(imageItems[idx + 1]);
+    const idx = getCurrentPreviewIndex();
+    if (idx >= 0 && idx < previewableItems.length - 1) {
+      setPreviewFile(previewableItems[idx + 1]);
     }
-  }, [getCurrentImageIndex, imageItems]);
+  }, [getCurrentPreviewIndex, previewableItems]);
+
   const handlePreviewPrev = useCallback(() => {
-    const idx = getCurrentImageIndex();
+    const idx = getCurrentPreviewIndex();
     if (idx > 0) {
-      setPreviewFile(imageItems[idx - 1]);
+      setPreviewFile(previewableItems[idx - 1]);
     }
-  }, [getCurrentImageIndex, imageItems]);
+  }, [getCurrentPreviewIndex, previewableItems]);
   // Keyboard navigation for preview
   useEffect(() => {
     if (!previewOpen) return;
@@ -743,8 +749,8 @@ const MediaManagement = () => {
         onCopyLink={handleCopyLink}
         onNext={handlePreviewNext}
         onPrev={handlePreviewPrev}
-        hasNext={getCurrentImageIndex() < imageItems.length - 1}
-        hasPrev={getCurrentImageIndex() > 0}
+        hasNext={getCurrentPreviewIndex() < previewableItems.length - 1}
+        hasPrev={getCurrentPreviewIndex() > 0}
         onReplace={handleReplaceMedia}
         onFileUpdate={(updatedFile) => setPreviewFile(updatedFile)}
       />

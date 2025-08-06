@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -12,6 +12,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
@@ -39,6 +40,11 @@ const formatFileSize = (size: number | undefined) => {
   return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`;
 };
 
+// Helper function to check if file is PDF
+const isPdfFile = (file: any) => {
+  return file?.mimeType === "application/pdf" || file?.name?.toLowerCase().endsWith(".pdf");
+};
+
 export const MediaPreview = ({
   file,
   open,
@@ -56,8 +62,72 @@ export const MediaPreview = ({
   const [linkCopied, setLinkCopied] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
   const [replaceError, setReplaceError] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
+
+  const isPdf = file ? isPdfFile(file) : false;
+  const fileUrl = file
+    ? buildAbsoluteUrlWithCacheBust(file.location || file.url, file.size, file.updatedAt)
+    : "";
+
+  // Fetch PDF as blob and create object URL for inline viewing
+  useEffect(() => {
+    if (!isPdf || !open) {
+      setPdfBlobUrl(null);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingPdf(true);
+    setPdfError(false);
+
+    const fetchPdfBlob = async () => {
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        if (isCancelled) return;
+
+        // Ensure the blob has PDF mime type for proper handling
+        const pdfBlob = new Blob([blob], { type: "application/pdf" });
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        setPdfBlobUrl(blobUrl);
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("Failed to fetch PDF:", error);
+          setPdfError(true);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingPdf(false);
+        }
+      }
+    };
+
+    fetchPdfBlob();
+
+    return () => {
+      isCancelled = true;
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
+  }, [isPdf, open, fileUrl]);
+
+  // Cleanup blob URL when component unmounts or file changes
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
+  }, [pdfBlobUrl]);
 
   if (!file) return null;
 
@@ -158,7 +228,10 @@ export const MediaPreview = ({
         </Box>
         {/* Main content */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <DialogTitle>{file.name}</DialogTitle>
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {isPdf && <PictureAsPdfIcon color="error" />}
+            {file.name}
+          </DialogTitle>
           <DialogContent>
             <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
               <Tab label="Preview" />
@@ -178,17 +251,48 @@ export const MediaPreview = ({
                   position: "relative",
                 }}
               >
-                <img
-                  src={
-                    buildAbsoluteUrlWithCacheBust(
-                      file.location || file.url,
-                      file.size,
-                      file.updatedAt
-                    ) || "/images/placeholder.svg"
-                  }
-                  alt={file.name}
-                  style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-                />
+                {isPdf ? (
+                  isLoadingPdf ? (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <CircularProgress size={48} sx={{ mb: 2 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        Loading PDF...
+                      </Typography>
+                    </Box>
+                  ) : pdfError || !pdfBlobUrl ? (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <PictureAsPdfIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        PDF Preview Not Available
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Unable to display PDF preview. You can download the file to view it.
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<DownloadIcon />}
+                        onClick={() => onDownload(file)}
+                      >
+                        Download PDF
+                      </Button>
+                    </Box>
+                  ) : (
+                    <iframe
+                      src={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: "none" }}
+                      title={`PDF Preview: ${file.name}`}
+                      onError={() => setPdfError(true)}
+                    />
+                  )
+                ) : (
+                  <img
+                    src={fileUrl || "/images/placeholder.svg"}
+                    alt={file.name}
+                    style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                  />
+                )}
               </Box>
             )}
             {tab === 1 && (
