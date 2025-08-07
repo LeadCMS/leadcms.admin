@@ -70,13 +70,14 @@ export const ContentList = () => {
     setIsLoading(true);
     const filter: Record<string, unknown> = {
       "filter[order]": "updatedAt desc",
-      "filter[skip]": contentItems.length,
+      "filter[skip]": !initialLoadRef.current ? 0 : contentItems.length,
       "filter[limit]": 20,
     };
+
     if (searchText) {
       filter.query = searchText;
-      filter["filter[skip]"] = contentItems.length;
     }
+
     try {
       const { data, headers } = await client.api.contentList(filter);
       // Deduplicate by id
@@ -109,7 +110,9 @@ export const ContentList = () => {
     setContentItemsCount(0);
     initialLoadRef.current = false;
     scrollTargetRef.current?.scrollTo?.(0, 0);
-    fetchData();
+    fetchData().then(() => {
+      initialLoadRef.current = true;
+    });
     // eslint-disable-next-line
   }, [searchText]);
 
