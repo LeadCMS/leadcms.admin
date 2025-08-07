@@ -1,31 +1,58 @@
 export const generateSitePreviewUrl = (
   template: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
+  defaultLanguage?: string
 ): string => {
   let url = template;
-  Object.keys(params).forEach((key) => {
+
+  // Create enhanced params with calculated fields
+  const enhancedParams = { ...params };
+
+  // Calculate lang+slug parameter
+  if (params.language && params.slug) {
+    const lang = calculateLangPrefix(String(params.language), defaultLanguage);
+    enhancedParams["lang+slug"] = `${lang}${params.slug}`;
+  }
+
+  Object.keys(enhancedParams).forEach((key) => {
+    // Escape special regex characters in the key
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     url = url.replace(
-      new RegExp(`{${key}}`, "g"),
-      params[key] !== undefined ? String(params[key]) : ""
+      new RegExp(`\\{${escapedKey}\\}`, "g"),
+      enhancedParams[key] !== undefined ? String(enhancedParams[key]) : ""
     );
   });
   return url;
 };
 
-export const openSitePreview = (params: Record<string, unknown>, template: string): boolean => {
-  // Check for required parameters
-  const placeholders = template.match(/{(.*?)}/g) || [];
-  const missingKeys = placeholders.map((k) => k.replace(/[{}]/g, "")).filter((key) => !params[key]);
+export const calculateLangPrefix = (contentLanguage: string, defaultLanguage?: string): string => {
+  if (!contentLanguage || !defaultLanguage || contentLanguage === defaultLanguage) {
+    return "";
+  }
+  return `${contentLanguage}/`;
+};
 
-  if (missingKeys.length > 0) {
+export const openSitePreview = (
+  params: Record<string, unknown>,
+  template: string,
+  defaultLanguage?: string
+): boolean => {
+  // Generate the preview URL (this will calculate lang+slug and other enhanced params)
+  const previewUrl = generateSitePreviewUrl(template, params, defaultLanguage);
+
+  // Check if there are still unresolved placeholders after URL generation
+  const unresolvedPlaceholders = previewUrl.match(/{(.*?)}/g) || [];
+
+  if (unresolvedPlaceholders.length > 0) {
+    const missingKeys = unresolvedPlaceholders.map((k) => k.replace(/[{}]/g, ""));
     console.debug("[PreviewHelper] Missing required params for site preview:", missingKeys, {
       params,
       template,
+      previewUrl,
     });
     return false;
   }
 
-  const previewUrl = generateSitePreviewUrl(template, params);
   console.log("[PreviewHelper] Opening site preview:", previewUrl);
 
   // Open in new tab

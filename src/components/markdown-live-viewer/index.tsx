@@ -3,26 +3,53 @@ import { Box, CircularProgress, Typography, Alert } from "@mui/material";
 import { MarkdownLiveViewerProps } from "./types";
 import "./styles.css";
 import { useUserInfo } from "@providers/user-provider";
+import { useConfig } from "@providers/config-provider";
 
-const generatePreviewUrl = (template: string, params: Record<string, unknown>): string => {
+const generatePreviewUrl = (
+  template: string,
+  params: Record<string, unknown>,
+  defaultLanguage?: string
+): string => {
   let url = template;
-  Object.keys(params).forEach((key) => {
+
+  // Create enhanced params with calculated fields
+  const enhancedParams = { ...params };
+
+  // Calculate lang+slug parameter
+  if (params.language && params.slug) {
+    const lang = calculateLangPrefix(String(params.language), defaultLanguage);
+    enhancedParams["lang+slug"] = `${lang}${params.slug}`;
+  }
+
+  Object.keys(enhancedParams).forEach((key) => {
+    // Escape special regex characters in the key
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     url = url.replace(
-      new RegExp(`{${key}}`, "g"),
-      params[key] !== undefined ? String(params[key]) : ""
+      new RegExp(`\\{${escapedKey}\\}`, "g"),
+      enhancedParams[key] !== undefined ? String(enhancedParams[key]) : ""
     );
   });
   return url;
+};
+
+const calculateLangPrefix = (contentLanguage: string, defaultLanguage?: string): string => {
+  if (!contentLanguage || !defaultLanguage || contentLanguage === defaultLanguage) {
+    return "";
+  }
+  return `${contentLanguage}/`;
 };
 
 const REQUIRED_KEYS = ["type", "slug", "body"];
 
 const MarkdownLiveViewer = ({ params, template, key: viewerKey }: MarkdownLiveViewerProps) => {
   const userInfo = useUserInfo();
+  const { config } = useConfig();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const defaultLanguage = config?.defaultLanguage;
 
   // Merge userId into params if available
   const mergedParams: Record<string, unknown> = {
@@ -31,18 +58,24 @@ const MarkdownLiveViewer = ({ params, template, key: viewerKey }: MarkdownLiveVi
   };
 
   // Check for missing required params (for new page)
-  const placeholders = template ? template.match(/{(.*?)}/g) || [] : [];
-  const missingKeys = placeholders
-    .map((k: string) => k.replace(/[{}]/g, ""))
-    .filter((key: string) => !mergedParams[key]);
   const missingRequired = REQUIRED_KEYS.some((k) => !mergedParams[k]);
 
   // Compute preview URL
   const previewUrl = useMemo(() => {
     if (!mergedParams || !template) return null;
-    if (missingKeys.length > 0) return null;
-    return generatePreviewUrl(template, mergedParams);
-  }, [mergedParams, template, missingKeys]);
+    if (missingRequired) return null;
+
+    const generatedUrl = generatePreviewUrl(template, mergedParams, defaultLanguage);
+
+    // Check if there are still unresolved placeholders after URL generation
+    const unresolvedPlaceholders = generatedUrl.match(/{(.*?)}/g) || [];
+    if (unresolvedPlaceholders.length > 0) {
+      console.debug("[MarkdownLiveViewer] Unresolved placeholders:", unresolvedPlaceholders);
+      return null;
+    }
+
+    return generatedUrl;
+  }, [mergedParams, template, missingRequired, defaultLanguage]);
 
   // Always poll for preview URL availability
   useEffect(() => {

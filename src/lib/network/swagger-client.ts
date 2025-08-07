@@ -1747,6 +1747,11 @@ export interface ConfigDto {
    * @example {"key1":"value1","key2":"value2"}
    */
   settings?: Record<string, string>;
+  /**
+   * Default Language
+   * @example "string"
+   */
+  defaultLanguage?: string;
 }
 
 export interface ContactCreateDto {
@@ -6424,7 +6429,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.57.0
+ * @version 1.2.62.0
  */
 export class Api<
   SecurityDataType extends unknown,

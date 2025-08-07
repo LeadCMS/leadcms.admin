@@ -86,6 +86,7 @@ interface ExtendedConfig {
     LivePreviewUrlTemplate?: string;
     PreviewUrlTemplate?: string;
   };
+  defaultLanguage?: string;
 }
 
 interface ContentEditProps {
@@ -135,6 +136,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasLivePreview = !!configSettings?.LivePreviewUrlTemplate;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
+  const defaultLanguage = config?.defaultLanguage;
 
   // API-based draft save (for live preview)
   const filterEmptyValues = (obj: unknown) => {
@@ -511,7 +513,8 @@ export const ContentEdit = (props: ContentEditProps) => {
     };
     const success = openSitePreview(
       params as unknown as Record<string, unknown>,
-      configSettings?.PreviewUrlTemplate || ""
+      configSettings?.PreviewUrlTemplate || "",
+      defaultLanguage
     );
     if (!success) {
       notificationsService.error(
