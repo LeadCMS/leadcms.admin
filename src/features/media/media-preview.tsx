@@ -13,6 +13,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import MovieIcon from "@mui/icons-material/Movie";
 import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
@@ -45,6 +46,14 @@ const isPdfFile = (file: any) => {
   return file?.mimeType === "application/pdf" || file?.name?.toLowerCase().endsWith(".pdf");
 };
 
+// Helper function to check if file is video
+const isVideoFile = (file: any) => {
+  return (
+    file?.mimeType?.startsWith("video/") ||
+    /\.(mp4|webm|ogg|avi|mov|wmv|flv|mkv)$/i.test(file?.name || "")
+  );
+};
+
 export const MediaPreview = ({
   file,
   open,
@@ -65,10 +74,12 @@ export const MediaPreview = ({
   const [pdfError, setPdfError] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
 
   const isPdf = file ? isPdfFile(file) : false;
+  const isVideo = file ? isVideoFile(file) : false;
   const fileUrl = file
     ? buildAbsoluteUrlWithCacheBust(file.location || file.url, file.size, file.updatedAt)
     : "";
@@ -230,6 +241,7 @@ export const MediaPreview = ({
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {isPdf && <PictureAsPdfIcon color="error" />}
+            {isVideo && <MovieIcon color="secondary" />}
             {file.name}
           </DialogTitle>
           <DialogContent>
@@ -285,6 +297,40 @@ export const MediaPreview = ({
                       title={`PDF Preview: ${file.name}`}
                       onError={() => setPdfError(true)}
                     />
+                  )
+                ) : isVideo ? (
+                  videoError ? (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <MovieIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        Video Preview Not Available
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Unable to display video preview. You can download the file to view it.
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<DownloadIcon />}
+                        onClick={() => onDownload(file)}
+                      >
+                        Download Video
+                      </Button>
+                    </Box>
+                  ) : (
+                    <video
+                      src={fileUrl}
+                      controls
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        maxHeight: "100%",
+                        objectFit: "contain",
+                      }}
+                      onError={() => setVideoError(true)}
+                      preload="metadata"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
                   )
                 ) : (
                   <img

@@ -62,6 +62,8 @@ const getFileType = (mimeType: string, extension: string) => {
   const cleanExt = extension.toLowerCase().replace(/^\./, "");
   if (mimeType === "application/pdf" || cleanExt.match(/^(docx?|xlsx?|pptx?)$/)) return "document";
   if (mimeType === "application/zip" || cleanExt.match(/^(zip|rar|tar|gz)$/)) return "archive";
+  // Additional video format detection by extension
+  if (cleanExt.match(/^(mp4|webm|ogg|avi|mov|wmv|flv|mkv)$/)) return "video";
   return "other";
 };
 
