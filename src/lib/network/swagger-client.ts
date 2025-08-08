@@ -1727,6 +1727,43 @@ export interface CommentImportDto {
   parentKey?: string | null;
 }
 
+export interface CommentSummaryDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * User
+   * @example "string"
+   */
+  user?: string;
+  /**
+   * Comment
+   * @example "string"
+   */
+  comment?: string;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Article Id
+   * @format int32
+   * @example 1
+   */
+  articleId?: number | null;
+  /**
+   * Article
+   * @example "string"
+   */
+  article?: string | null;
+}
+
 export interface CommentUpdateDto {
   /**
    * Body
@@ -2535,6 +2572,20 @@ export interface ContactDetailsDto {
   account?: AccountDetailsDto;
   /** Orders */
   orders?: OrderDetailsDto[] | null;
+}
+
+export interface ContactGrowthPointDto {
+  /**
+   * Period
+   * @example "string"
+   */
+  period?: string;
+  /**
+   * Contacts
+   * @format int32
+   * @example 1
+   */
+  contacts?: number;
 }
 
 export interface ContactImportDto {
@@ -3530,6 +3581,20 @@ export interface ContentDetailsDto {
   comments?: CommentDetailsDto[] | null;
 }
 
+export interface ContentDistributionItemDto {
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+  /**
+   * Value
+   * @format int32
+   * @example 1
+   */
+  value?: number;
+}
+
 export interface ContentImportDto {
   /**
    * Id
@@ -3903,6 +3968,54 @@ export interface ContentUpdateDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   publishedAt?: string | null;
+}
+
+export interface CrmMetricsDto {
+  /**
+   * Total Contacts
+   * @format int64
+   */
+  totalContacts?: number;
+  /**
+   * Contacts Change Pct
+   * @format double
+   * @example 1
+   */
+  contactsChangePct?: number | null;
+  /**
+   * Total Accounts
+   * @format int64
+   */
+  totalAccounts?: number;
+  /**
+   * Accounts Change Pct
+   * @format double
+   * @example 1
+   */
+  accountsChangePct?: number | null;
+  /**
+   * Total Orders
+   * @format int64
+   */
+  totalOrders?: number;
+  /**
+   * Orders Change Pct
+   * @format double
+   * @example 1
+   */
+  ordersChangePct?: number | null;
+  /**
+   * Revenue
+   * @format double
+   * @example 1
+   */
+  revenue?: number;
+  /**
+   * Revenue Change Pct
+   * @format double
+   * @example 1
+   */
+  revenueChangePct?: number | null;
 }
 
 export interface DealCreateDto {
@@ -5602,6 +5715,43 @@ export interface OrderItemUpdateDto {
   data?: string | null;
 }
 
+export interface OrderSummaryDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Order Number
+   * @example "string"
+   */
+  orderNumber?: string;
+  /**
+   * Customer
+   * @example "string"
+   */
+  customer?: string;
+  /**
+   * Amount
+   * @format double
+   * @example 1
+   */
+  amount?: number;
+  /**
+   * Status
+   * @example "string"
+   */
+  status?: string;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+}
+
 export interface OrderUpdateDto {
   /**
    * Ref No
@@ -5786,6 +5936,27 @@ export interface ResetPasswordDto {
   newPassword: string;
 }
 
+export interface SalesPerformancePointDto {
+  /**
+   * Period
+   * @minLength 1
+   * @example "string"
+   */
+  period: string;
+  /**
+   * Revenue
+   * @format double
+   * @example 1
+   */
+  revenue?: number;
+  /**
+   * Orders
+   * @format int32
+   * @example 1
+   */
+  orders?: number;
+}
+
 export interface SettingCreateDto {
   /**
    * Key
@@ -5933,6 +6104,59 @@ export interface TaskExecutionDto {
    * @example true
    */
   completed?: boolean;
+}
+
+export interface TopAccountDto {
+  /**
+   * Account Id
+   * @format int32
+   * @example 1
+   */
+  accountId?: number;
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+  /**
+   * Revenue
+   * @format double
+   * @example 1
+   */
+  revenue?: number;
+  /**
+   * Change Pct
+   * @format double
+   * @example 1
+   */
+  changePct?: number | null;
+}
+
+export interface TopContentItemDto {
+  /**
+   * Content Id
+   * @format int32
+   * @example 1
+   */
+  contentId?: number;
+  /**
+   * Title
+   * @example "string"
+   */
+  title?: string;
+  /**
+   * Comment Count
+   * @format int32
+   * @example 1
+   */
+  commentCount?: number;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
 }
 
 export interface UnsubscribeDetailsDto {
@@ -6429,7 +6653,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.62.0
+ * @version 1.2.63.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -7526,6 +7750,1762 @@ export class Api<
       this.request<Record<string, string>, ProblemDetails>({
         path: `/api/countries`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardCrmMetricsList
+     * @request GET:/api/dashboard/crm/metrics
+     * @secure
+     */
+    dashboardCrmMetricsList: (
+      query?: {
+        /** @format date-time */
+        From?: string;
+        /** @format date-time */
+        To?: string;
+        Period?: string;
+        Compare?: boolean;
+        GroupBy?: "Day" | "Week" | "Month" | "Quarter" | "Year";
+        CountryCode?:
+          | "ZZ"
+          | "AF"
+          | "AL"
+          | "AQ"
+          | "DZ"
+          | "AS"
+          | "AD"
+          | "AO"
+          | "AG"
+          | "AZ"
+          | "AR"
+          | "AU"
+          | "AT"
+          | "BS"
+          | "BH"
+          | "BD"
+          | "AM"
+          | "BB"
+          | "BE"
+          | "BM"
+          | "BT"
+          | "BO"
+          | "BA"
+          | "BW"
+          | "BV"
+          | "BR"
+          | "BZ"
+          | "IO"
+          | "SB"
+          | "VG"
+          | "BN"
+          | "BG"
+          | "MM"
+          | "BI"
+          | "BY"
+          | "KH"
+          | "CM"
+          | "CA"
+          | "CV"
+          | "KY"
+          | "CF"
+          | "LK"
+          | "TD"
+          | "CL"
+          | "CN"
+          | "TW"
+          | "CX"
+          | "CC"
+          | "CO"
+          | "KM"
+          | "YT"
+          | "CG"
+          | "CD"
+          | "CK"
+          | "CR"
+          | "HR"
+          | "CU"
+          | "CY"
+          | "CZ"
+          | "BJ"
+          | "DK"
+          | "DM"
+          | "DO"
+          | "EC"
+          | "SV"
+          | "GQ"
+          | "ET"
+          | "ER"
+          | "EE"
+          | "FO"
+          | "FK"
+          | "GS"
+          | "FJ"
+          | "FI"
+          | "AX"
+          | "FR"
+          | "GF"
+          | "PF"
+          | "TF"
+          | "DJ"
+          | "GA"
+          | "GE"
+          | "GM"
+          | "PS"
+          | "DE"
+          | "GH"
+          | "GI"
+          | "KI"
+          | "GR"
+          | "GL"
+          | "GD"
+          | "GP"
+          | "GU"
+          | "GT"
+          | "GN"
+          | "GY"
+          | "HT"
+          | "HM"
+          | "VA"
+          | "HN"
+          | "HK"
+          | "HU"
+          | "IS"
+          | "IN"
+          | "ID"
+          | "IR"
+          | "IQ"
+          | "IE"
+          | "IL"
+          | "IT"
+          | "CI"
+          | "JM"
+          | "JP"
+          | "KZ"
+          | "JO"
+          | "KE"
+          | "KP"
+          | "KR"
+          | "KW"
+          | "KG"
+          | "LA"
+          | "LB"
+          | "LS"
+          | "LV"
+          | "LR"
+          | "LY"
+          | "LI"
+          | "LT"
+          | "LU"
+          | "MO"
+          | "MG"
+          | "MW"
+          | "MY"
+          | "MV"
+          | "ML"
+          | "MT"
+          | "MQ"
+          | "MR"
+          | "MU"
+          | "MX"
+          | "MC"
+          | "MN"
+          | "MD"
+          | "ME"
+          | "MS"
+          | "MA"
+          | "MZ"
+          | "OM"
+          | "NA"
+          | "NR"
+          | "NP"
+          | "NL"
+          | "CW"
+          | "AW"
+          | "SX"
+          | "BQ"
+          | "NC"
+          | "VU"
+          | "NZ"
+          | "NI"
+          | "NE"
+          | "NG"
+          | "NU"
+          | "NF"
+          | "NO"
+          | "MP"
+          | "UM"
+          | "FM"
+          | "MH"
+          | "PW"
+          | "PK"
+          | "PA"
+          | "PG"
+          | "PY"
+          | "PE"
+          | "PH"
+          | "PN"
+          | "PL"
+          | "PT"
+          | "GW"
+          | "TL"
+          | "PR"
+          | "QA"
+          | "RE"
+          | "RO"
+          | "RU"
+          | "RW"
+          | "BL"
+          | "SH"
+          | "KN"
+          | "AI"
+          | "LC"
+          | "MF"
+          | "PM"
+          | "VC"
+          | "SM"
+          | "ST"
+          | "SA"
+          | "SN"
+          | "RS"
+          | "SC"
+          | "SL"
+          | "SG"
+          | "SK"
+          | "VN"
+          | "SI"
+          | "SO"
+          | "ZA"
+          | "ZW"
+          | "ES"
+          | "SS"
+          | "SD"
+          | "EH"
+          | "SR"
+          | "SJ"
+          | "SZ"
+          | "SE"
+          | "CH"
+          | "SY"
+          | "TJ"
+          | "TH"
+          | "TG"
+          | "TK"
+          | "TO"
+          | "TT"
+          | "AE"
+          | "TN"
+          | "TR"
+          | "TM"
+          | "TC"
+          | "TV"
+          | "UG"
+          | "UA"
+          | "MK"
+          | "EG"
+          | "GB"
+          | "GG"
+          | "JE"
+          | "IM"
+          | "TZ"
+          | "US"
+          | "VI"
+          | "BF"
+          | "UY"
+          | "UZ"
+          | "VE"
+          | "WF"
+          | "WS"
+          | "YE"
+          | "ZM";
+        /** @format int32 */
+        AccountId?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<CrmMetricsDto, void | ProblemDetails>({
+        path: `/api/dashboard/crm/metrics`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardCrmSalesPerformanceList
+     * @request GET:/api/dashboard/crm/sales-performance
+     * @secure
+     */
+    dashboardCrmSalesPerformanceList: (
+      query?: {
+        /** @format date-time */
+        From?: string;
+        /** @format date-time */
+        To?: string;
+        Period?: string;
+        Compare?: boolean;
+        GroupBy?: "Day" | "Week" | "Month" | "Quarter" | "Year";
+        CountryCode?:
+          | "ZZ"
+          | "AF"
+          | "AL"
+          | "AQ"
+          | "DZ"
+          | "AS"
+          | "AD"
+          | "AO"
+          | "AG"
+          | "AZ"
+          | "AR"
+          | "AU"
+          | "AT"
+          | "BS"
+          | "BH"
+          | "BD"
+          | "AM"
+          | "BB"
+          | "BE"
+          | "BM"
+          | "BT"
+          | "BO"
+          | "BA"
+          | "BW"
+          | "BV"
+          | "BR"
+          | "BZ"
+          | "IO"
+          | "SB"
+          | "VG"
+          | "BN"
+          | "BG"
+          | "MM"
+          | "BI"
+          | "BY"
+          | "KH"
+          | "CM"
+          | "CA"
+          | "CV"
+          | "KY"
+          | "CF"
+          | "LK"
+          | "TD"
+          | "CL"
+          | "CN"
+          | "TW"
+          | "CX"
+          | "CC"
+          | "CO"
+          | "KM"
+          | "YT"
+          | "CG"
+          | "CD"
+          | "CK"
+          | "CR"
+          | "HR"
+          | "CU"
+          | "CY"
+          | "CZ"
+          | "BJ"
+          | "DK"
+          | "DM"
+          | "DO"
+          | "EC"
+          | "SV"
+          | "GQ"
+          | "ET"
+          | "ER"
+          | "EE"
+          | "FO"
+          | "FK"
+          | "GS"
+          | "FJ"
+          | "FI"
+          | "AX"
+          | "FR"
+          | "GF"
+          | "PF"
+          | "TF"
+          | "DJ"
+          | "GA"
+          | "GE"
+          | "GM"
+          | "PS"
+          | "DE"
+          | "GH"
+          | "GI"
+          | "KI"
+          | "GR"
+          | "GL"
+          | "GD"
+          | "GP"
+          | "GU"
+          | "GT"
+          | "GN"
+          | "GY"
+          | "HT"
+          | "HM"
+          | "VA"
+          | "HN"
+          | "HK"
+          | "HU"
+          | "IS"
+          | "IN"
+          | "ID"
+          | "IR"
+          | "IQ"
+          | "IE"
+          | "IL"
+          | "IT"
+          | "CI"
+          | "JM"
+          | "JP"
+          | "KZ"
+          | "JO"
+          | "KE"
+          | "KP"
+          | "KR"
+          | "KW"
+          | "KG"
+          | "LA"
+          | "LB"
+          | "LS"
+          | "LV"
+          | "LR"
+          | "LY"
+          | "LI"
+          | "LT"
+          | "LU"
+          | "MO"
+          | "MG"
+          | "MW"
+          | "MY"
+          | "MV"
+          | "ML"
+          | "MT"
+          | "MQ"
+          | "MR"
+          | "MU"
+          | "MX"
+          | "MC"
+          | "MN"
+          | "MD"
+          | "ME"
+          | "MS"
+          | "MA"
+          | "MZ"
+          | "OM"
+          | "NA"
+          | "NR"
+          | "NP"
+          | "NL"
+          | "CW"
+          | "AW"
+          | "SX"
+          | "BQ"
+          | "NC"
+          | "VU"
+          | "NZ"
+          | "NI"
+          | "NE"
+          | "NG"
+          | "NU"
+          | "NF"
+          | "NO"
+          | "MP"
+          | "UM"
+          | "FM"
+          | "MH"
+          | "PW"
+          | "PK"
+          | "PA"
+          | "PG"
+          | "PY"
+          | "PE"
+          | "PH"
+          | "PN"
+          | "PL"
+          | "PT"
+          | "GW"
+          | "TL"
+          | "PR"
+          | "QA"
+          | "RE"
+          | "RO"
+          | "RU"
+          | "RW"
+          | "BL"
+          | "SH"
+          | "KN"
+          | "AI"
+          | "LC"
+          | "MF"
+          | "PM"
+          | "VC"
+          | "SM"
+          | "ST"
+          | "SA"
+          | "SN"
+          | "RS"
+          | "SC"
+          | "SL"
+          | "SG"
+          | "SK"
+          | "VN"
+          | "SI"
+          | "SO"
+          | "ZA"
+          | "ZW"
+          | "ES"
+          | "SS"
+          | "SD"
+          | "EH"
+          | "SR"
+          | "SJ"
+          | "SZ"
+          | "SE"
+          | "CH"
+          | "SY"
+          | "TJ"
+          | "TH"
+          | "TG"
+          | "TK"
+          | "TO"
+          | "TT"
+          | "AE"
+          | "TN"
+          | "TR"
+          | "TM"
+          | "TC"
+          | "TV"
+          | "UG"
+          | "UA"
+          | "MK"
+          | "EG"
+          | "GB"
+          | "GG"
+          | "JE"
+          | "IM"
+          | "TZ"
+          | "US"
+          | "VI"
+          | "BF"
+          | "UY"
+          | "UZ"
+          | "VE"
+          | "WF"
+          | "WS"
+          | "YE"
+          | "ZM";
+        /** @format int32 */
+        AccountId?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SalesPerformancePointDto[], any>({
+        path: `/api/dashboard/crm/sales-performance`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardCrmTopAccountsList
+     * @request GET:/api/dashboard/crm/top-accounts
+     * @secure
+     */
+    dashboardCrmTopAccountsList: (
+      query?: {
+        /** @format date-time */
+        From?: string;
+        /** @format date-time */
+        To?: string;
+        Period?: string;
+        Compare?: boolean;
+        GroupBy?: "Day" | "Week" | "Month" | "Quarter" | "Year";
+        CountryCode?:
+          | "ZZ"
+          | "AF"
+          | "AL"
+          | "AQ"
+          | "DZ"
+          | "AS"
+          | "AD"
+          | "AO"
+          | "AG"
+          | "AZ"
+          | "AR"
+          | "AU"
+          | "AT"
+          | "BS"
+          | "BH"
+          | "BD"
+          | "AM"
+          | "BB"
+          | "BE"
+          | "BM"
+          | "BT"
+          | "BO"
+          | "BA"
+          | "BW"
+          | "BV"
+          | "BR"
+          | "BZ"
+          | "IO"
+          | "SB"
+          | "VG"
+          | "BN"
+          | "BG"
+          | "MM"
+          | "BI"
+          | "BY"
+          | "KH"
+          | "CM"
+          | "CA"
+          | "CV"
+          | "KY"
+          | "CF"
+          | "LK"
+          | "TD"
+          | "CL"
+          | "CN"
+          | "TW"
+          | "CX"
+          | "CC"
+          | "CO"
+          | "KM"
+          | "YT"
+          | "CG"
+          | "CD"
+          | "CK"
+          | "CR"
+          | "HR"
+          | "CU"
+          | "CY"
+          | "CZ"
+          | "BJ"
+          | "DK"
+          | "DM"
+          | "DO"
+          | "EC"
+          | "SV"
+          | "GQ"
+          | "ET"
+          | "ER"
+          | "EE"
+          | "FO"
+          | "FK"
+          | "GS"
+          | "FJ"
+          | "FI"
+          | "AX"
+          | "FR"
+          | "GF"
+          | "PF"
+          | "TF"
+          | "DJ"
+          | "GA"
+          | "GE"
+          | "GM"
+          | "PS"
+          | "DE"
+          | "GH"
+          | "GI"
+          | "KI"
+          | "GR"
+          | "GL"
+          | "GD"
+          | "GP"
+          | "GU"
+          | "GT"
+          | "GN"
+          | "GY"
+          | "HT"
+          | "HM"
+          | "VA"
+          | "HN"
+          | "HK"
+          | "HU"
+          | "IS"
+          | "IN"
+          | "ID"
+          | "IR"
+          | "IQ"
+          | "IE"
+          | "IL"
+          | "IT"
+          | "CI"
+          | "JM"
+          | "JP"
+          | "KZ"
+          | "JO"
+          | "KE"
+          | "KP"
+          | "KR"
+          | "KW"
+          | "KG"
+          | "LA"
+          | "LB"
+          | "LS"
+          | "LV"
+          | "LR"
+          | "LY"
+          | "LI"
+          | "LT"
+          | "LU"
+          | "MO"
+          | "MG"
+          | "MW"
+          | "MY"
+          | "MV"
+          | "ML"
+          | "MT"
+          | "MQ"
+          | "MR"
+          | "MU"
+          | "MX"
+          | "MC"
+          | "MN"
+          | "MD"
+          | "ME"
+          | "MS"
+          | "MA"
+          | "MZ"
+          | "OM"
+          | "NA"
+          | "NR"
+          | "NP"
+          | "NL"
+          | "CW"
+          | "AW"
+          | "SX"
+          | "BQ"
+          | "NC"
+          | "VU"
+          | "NZ"
+          | "NI"
+          | "NE"
+          | "NG"
+          | "NU"
+          | "NF"
+          | "NO"
+          | "MP"
+          | "UM"
+          | "FM"
+          | "MH"
+          | "PW"
+          | "PK"
+          | "PA"
+          | "PG"
+          | "PY"
+          | "PE"
+          | "PH"
+          | "PN"
+          | "PL"
+          | "PT"
+          | "GW"
+          | "TL"
+          | "PR"
+          | "QA"
+          | "RE"
+          | "RO"
+          | "RU"
+          | "RW"
+          | "BL"
+          | "SH"
+          | "KN"
+          | "AI"
+          | "LC"
+          | "MF"
+          | "PM"
+          | "VC"
+          | "SM"
+          | "ST"
+          | "SA"
+          | "SN"
+          | "RS"
+          | "SC"
+          | "SL"
+          | "SG"
+          | "SK"
+          | "VN"
+          | "SI"
+          | "SO"
+          | "ZA"
+          | "ZW"
+          | "ES"
+          | "SS"
+          | "SD"
+          | "EH"
+          | "SR"
+          | "SJ"
+          | "SZ"
+          | "SE"
+          | "CH"
+          | "SY"
+          | "TJ"
+          | "TH"
+          | "TG"
+          | "TK"
+          | "TO"
+          | "TT"
+          | "AE"
+          | "TN"
+          | "TR"
+          | "TM"
+          | "TC"
+          | "TV"
+          | "UG"
+          | "UA"
+          | "MK"
+          | "EG"
+          | "GB"
+          | "GG"
+          | "JE"
+          | "IM"
+          | "TZ"
+          | "US"
+          | "VI"
+          | "BF"
+          | "UY"
+          | "UZ"
+          | "VE"
+          | "WF"
+          | "WS"
+          | "YE"
+          | "ZM";
+        /** @format int32 */
+        AccountId?: number;
+        /**
+         * @format int32
+         * @default 5
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<TopAccountDto[], any>({
+        path: `/api/dashboard/crm/top-accounts`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardCrmRecentOrdersList
+     * @request GET:/api/dashboard/crm/recent-orders
+     * @secure
+     */
+    dashboardCrmRecentOrdersList: (
+      query?: {
+        /**
+         * @format int32
+         * @default 5
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<OrderSummaryDto[], any>({
+        path: `/api/dashboard/crm/recent-orders`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardCrmContactGrowthList
+     * @request GET:/api/dashboard/crm/contact-growth
+     * @secure
+     */
+    dashboardCrmContactGrowthList: (
+      query?: {
+        /** @format date-time */
+        From?: string;
+        /** @format date-time */
+        To?: string;
+        Period?: string;
+        Compare?: boolean;
+        GroupBy?: "Day" | "Week" | "Month" | "Quarter" | "Year";
+        CountryCode?:
+          | "ZZ"
+          | "AF"
+          | "AL"
+          | "AQ"
+          | "DZ"
+          | "AS"
+          | "AD"
+          | "AO"
+          | "AG"
+          | "AZ"
+          | "AR"
+          | "AU"
+          | "AT"
+          | "BS"
+          | "BH"
+          | "BD"
+          | "AM"
+          | "BB"
+          | "BE"
+          | "BM"
+          | "BT"
+          | "BO"
+          | "BA"
+          | "BW"
+          | "BV"
+          | "BR"
+          | "BZ"
+          | "IO"
+          | "SB"
+          | "VG"
+          | "BN"
+          | "BG"
+          | "MM"
+          | "BI"
+          | "BY"
+          | "KH"
+          | "CM"
+          | "CA"
+          | "CV"
+          | "KY"
+          | "CF"
+          | "LK"
+          | "TD"
+          | "CL"
+          | "CN"
+          | "TW"
+          | "CX"
+          | "CC"
+          | "CO"
+          | "KM"
+          | "YT"
+          | "CG"
+          | "CD"
+          | "CK"
+          | "CR"
+          | "HR"
+          | "CU"
+          | "CY"
+          | "CZ"
+          | "BJ"
+          | "DK"
+          | "DM"
+          | "DO"
+          | "EC"
+          | "SV"
+          | "GQ"
+          | "ET"
+          | "ER"
+          | "EE"
+          | "FO"
+          | "FK"
+          | "GS"
+          | "FJ"
+          | "FI"
+          | "AX"
+          | "FR"
+          | "GF"
+          | "PF"
+          | "TF"
+          | "DJ"
+          | "GA"
+          | "GE"
+          | "GM"
+          | "PS"
+          | "DE"
+          | "GH"
+          | "GI"
+          | "KI"
+          | "GR"
+          | "GL"
+          | "GD"
+          | "GP"
+          | "GU"
+          | "GT"
+          | "GN"
+          | "GY"
+          | "HT"
+          | "HM"
+          | "VA"
+          | "HN"
+          | "HK"
+          | "HU"
+          | "IS"
+          | "IN"
+          | "ID"
+          | "IR"
+          | "IQ"
+          | "IE"
+          | "IL"
+          | "IT"
+          | "CI"
+          | "JM"
+          | "JP"
+          | "KZ"
+          | "JO"
+          | "KE"
+          | "KP"
+          | "KR"
+          | "KW"
+          | "KG"
+          | "LA"
+          | "LB"
+          | "LS"
+          | "LV"
+          | "LR"
+          | "LY"
+          | "LI"
+          | "LT"
+          | "LU"
+          | "MO"
+          | "MG"
+          | "MW"
+          | "MY"
+          | "MV"
+          | "ML"
+          | "MT"
+          | "MQ"
+          | "MR"
+          | "MU"
+          | "MX"
+          | "MC"
+          | "MN"
+          | "MD"
+          | "ME"
+          | "MS"
+          | "MA"
+          | "MZ"
+          | "OM"
+          | "NA"
+          | "NR"
+          | "NP"
+          | "NL"
+          | "CW"
+          | "AW"
+          | "SX"
+          | "BQ"
+          | "NC"
+          | "VU"
+          | "NZ"
+          | "NI"
+          | "NE"
+          | "NG"
+          | "NU"
+          | "NF"
+          | "NO"
+          | "MP"
+          | "UM"
+          | "FM"
+          | "MH"
+          | "PW"
+          | "PK"
+          | "PA"
+          | "PG"
+          | "PY"
+          | "PE"
+          | "PH"
+          | "PN"
+          | "PL"
+          | "PT"
+          | "GW"
+          | "TL"
+          | "PR"
+          | "QA"
+          | "RE"
+          | "RO"
+          | "RU"
+          | "RW"
+          | "BL"
+          | "SH"
+          | "KN"
+          | "AI"
+          | "LC"
+          | "MF"
+          | "PM"
+          | "VC"
+          | "SM"
+          | "ST"
+          | "SA"
+          | "SN"
+          | "RS"
+          | "SC"
+          | "SL"
+          | "SG"
+          | "SK"
+          | "VN"
+          | "SI"
+          | "SO"
+          | "ZA"
+          | "ZW"
+          | "ES"
+          | "SS"
+          | "SD"
+          | "EH"
+          | "SR"
+          | "SJ"
+          | "SZ"
+          | "SE"
+          | "CH"
+          | "SY"
+          | "TJ"
+          | "TH"
+          | "TG"
+          | "TK"
+          | "TO"
+          | "TT"
+          | "AE"
+          | "TN"
+          | "TR"
+          | "TM"
+          | "TC"
+          | "TV"
+          | "UG"
+          | "UA"
+          | "MK"
+          | "EG"
+          | "GB"
+          | "GG"
+          | "JE"
+          | "IM"
+          | "TZ"
+          | "US"
+          | "VI"
+          | "BF"
+          | "UY"
+          | "UZ"
+          | "VE"
+          | "WF"
+          | "WS"
+          | "YE"
+          | "ZM";
+        /** @format int32 */
+        AccountId?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ContactGrowthPointDto[], any>({
+        path: `/api/dashboard/crm/contact-growth`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardCmsTopContentList
+     * @request GET:/api/dashboard/cms/top-content
+     * @secure
+     */
+    dashboardCmsTopContentList: (
+      query?: {
+        /** @format date-time */
+        From?: string;
+        /** @format date-time */
+        To?: string;
+        Period?: string;
+        Compare?: boolean;
+        GroupBy?: "Day" | "Week" | "Month" | "Quarter" | "Year";
+        CountryCode?:
+          | "ZZ"
+          | "AF"
+          | "AL"
+          | "AQ"
+          | "DZ"
+          | "AS"
+          | "AD"
+          | "AO"
+          | "AG"
+          | "AZ"
+          | "AR"
+          | "AU"
+          | "AT"
+          | "BS"
+          | "BH"
+          | "BD"
+          | "AM"
+          | "BB"
+          | "BE"
+          | "BM"
+          | "BT"
+          | "BO"
+          | "BA"
+          | "BW"
+          | "BV"
+          | "BR"
+          | "BZ"
+          | "IO"
+          | "SB"
+          | "VG"
+          | "BN"
+          | "BG"
+          | "MM"
+          | "BI"
+          | "BY"
+          | "KH"
+          | "CM"
+          | "CA"
+          | "CV"
+          | "KY"
+          | "CF"
+          | "LK"
+          | "TD"
+          | "CL"
+          | "CN"
+          | "TW"
+          | "CX"
+          | "CC"
+          | "CO"
+          | "KM"
+          | "YT"
+          | "CG"
+          | "CD"
+          | "CK"
+          | "CR"
+          | "HR"
+          | "CU"
+          | "CY"
+          | "CZ"
+          | "BJ"
+          | "DK"
+          | "DM"
+          | "DO"
+          | "EC"
+          | "SV"
+          | "GQ"
+          | "ET"
+          | "ER"
+          | "EE"
+          | "FO"
+          | "FK"
+          | "GS"
+          | "FJ"
+          | "FI"
+          | "AX"
+          | "FR"
+          | "GF"
+          | "PF"
+          | "TF"
+          | "DJ"
+          | "GA"
+          | "GE"
+          | "GM"
+          | "PS"
+          | "DE"
+          | "GH"
+          | "GI"
+          | "KI"
+          | "GR"
+          | "GL"
+          | "GD"
+          | "GP"
+          | "GU"
+          | "GT"
+          | "GN"
+          | "GY"
+          | "HT"
+          | "HM"
+          | "VA"
+          | "HN"
+          | "HK"
+          | "HU"
+          | "IS"
+          | "IN"
+          | "ID"
+          | "IR"
+          | "IQ"
+          | "IE"
+          | "IL"
+          | "IT"
+          | "CI"
+          | "JM"
+          | "JP"
+          | "KZ"
+          | "JO"
+          | "KE"
+          | "KP"
+          | "KR"
+          | "KW"
+          | "KG"
+          | "LA"
+          | "LB"
+          | "LS"
+          | "LV"
+          | "LR"
+          | "LY"
+          | "LI"
+          | "LT"
+          | "LU"
+          | "MO"
+          | "MG"
+          | "MW"
+          | "MY"
+          | "MV"
+          | "ML"
+          | "MT"
+          | "MQ"
+          | "MR"
+          | "MU"
+          | "MX"
+          | "MC"
+          | "MN"
+          | "MD"
+          | "ME"
+          | "MS"
+          | "MA"
+          | "MZ"
+          | "OM"
+          | "NA"
+          | "NR"
+          | "NP"
+          | "NL"
+          | "CW"
+          | "AW"
+          | "SX"
+          | "BQ"
+          | "NC"
+          | "VU"
+          | "NZ"
+          | "NI"
+          | "NE"
+          | "NG"
+          | "NU"
+          | "NF"
+          | "NO"
+          | "MP"
+          | "UM"
+          | "FM"
+          | "MH"
+          | "PW"
+          | "PK"
+          | "PA"
+          | "PG"
+          | "PY"
+          | "PE"
+          | "PH"
+          | "PN"
+          | "PL"
+          | "PT"
+          | "GW"
+          | "TL"
+          | "PR"
+          | "QA"
+          | "RE"
+          | "RO"
+          | "RU"
+          | "RW"
+          | "BL"
+          | "SH"
+          | "KN"
+          | "AI"
+          | "LC"
+          | "MF"
+          | "PM"
+          | "VC"
+          | "SM"
+          | "ST"
+          | "SA"
+          | "SN"
+          | "RS"
+          | "SC"
+          | "SL"
+          | "SG"
+          | "SK"
+          | "VN"
+          | "SI"
+          | "SO"
+          | "ZA"
+          | "ZW"
+          | "ES"
+          | "SS"
+          | "SD"
+          | "EH"
+          | "SR"
+          | "SJ"
+          | "SZ"
+          | "SE"
+          | "CH"
+          | "SY"
+          | "TJ"
+          | "TH"
+          | "TG"
+          | "TK"
+          | "TO"
+          | "TT"
+          | "AE"
+          | "TN"
+          | "TR"
+          | "TM"
+          | "TC"
+          | "TV"
+          | "UG"
+          | "UA"
+          | "MK"
+          | "EG"
+          | "GB"
+          | "GG"
+          | "JE"
+          | "IM"
+          | "TZ"
+          | "US"
+          | "VI"
+          | "BF"
+          | "UY"
+          | "UZ"
+          | "VE"
+          | "WF"
+          | "WS"
+          | "YE"
+          | "ZM";
+        /** @format int32 */
+        AccountId?: number;
+        /**
+         * @format int32
+         * @default 5
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<TopContentItemDto[], any>({
+        path: `/api/dashboard/cms/top-content`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardCmsContentDistributionList
+     * @request GET:/api/dashboard/cms/content-distribution
+     * @secure
+     */
+    dashboardCmsContentDistributionList: (
+      query?: {
+        /** @format date-time */
+        From?: string;
+        /** @format date-time */
+        To?: string;
+        Period?: string;
+        Compare?: boolean;
+        GroupBy?: "Day" | "Week" | "Month" | "Quarter" | "Year";
+        CountryCode?:
+          | "ZZ"
+          | "AF"
+          | "AL"
+          | "AQ"
+          | "DZ"
+          | "AS"
+          | "AD"
+          | "AO"
+          | "AG"
+          | "AZ"
+          | "AR"
+          | "AU"
+          | "AT"
+          | "BS"
+          | "BH"
+          | "BD"
+          | "AM"
+          | "BB"
+          | "BE"
+          | "BM"
+          | "BT"
+          | "BO"
+          | "BA"
+          | "BW"
+          | "BV"
+          | "BR"
+          | "BZ"
+          | "IO"
+          | "SB"
+          | "VG"
+          | "BN"
+          | "BG"
+          | "MM"
+          | "BI"
+          | "BY"
+          | "KH"
+          | "CM"
+          | "CA"
+          | "CV"
+          | "KY"
+          | "CF"
+          | "LK"
+          | "TD"
+          | "CL"
+          | "CN"
+          | "TW"
+          | "CX"
+          | "CC"
+          | "CO"
+          | "KM"
+          | "YT"
+          | "CG"
+          | "CD"
+          | "CK"
+          | "CR"
+          | "HR"
+          | "CU"
+          | "CY"
+          | "CZ"
+          | "BJ"
+          | "DK"
+          | "DM"
+          | "DO"
+          | "EC"
+          | "SV"
+          | "GQ"
+          | "ET"
+          | "ER"
+          | "EE"
+          | "FO"
+          | "FK"
+          | "GS"
+          | "FJ"
+          | "FI"
+          | "AX"
+          | "FR"
+          | "GF"
+          | "PF"
+          | "TF"
+          | "DJ"
+          | "GA"
+          | "GE"
+          | "GM"
+          | "PS"
+          | "DE"
+          | "GH"
+          | "GI"
+          | "KI"
+          | "GR"
+          | "GL"
+          | "GD"
+          | "GP"
+          | "GU"
+          | "GT"
+          | "GN"
+          | "GY"
+          | "HT"
+          | "HM"
+          | "VA"
+          | "HN"
+          | "HK"
+          | "HU"
+          | "IS"
+          | "IN"
+          | "ID"
+          | "IR"
+          | "IQ"
+          | "IE"
+          | "IL"
+          | "IT"
+          | "CI"
+          | "JM"
+          | "JP"
+          | "KZ"
+          | "JO"
+          | "KE"
+          | "KP"
+          | "KR"
+          | "KW"
+          | "KG"
+          | "LA"
+          | "LB"
+          | "LS"
+          | "LV"
+          | "LR"
+          | "LY"
+          | "LI"
+          | "LT"
+          | "LU"
+          | "MO"
+          | "MG"
+          | "MW"
+          | "MY"
+          | "MV"
+          | "ML"
+          | "MT"
+          | "MQ"
+          | "MR"
+          | "MU"
+          | "MX"
+          | "MC"
+          | "MN"
+          | "MD"
+          | "ME"
+          | "MS"
+          | "MA"
+          | "MZ"
+          | "OM"
+          | "NA"
+          | "NR"
+          | "NP"
+          | "NL"
+          | "CW"
+          | "AW"
+          | "SX"
+          | "BQ"
+          | "NC"
+          | "VU"
+          | "NZ"
+          | "NI"
+          | "NE"
+          | "NG"
+          | "NU"
+          | "NF"
+          | "NO"
+          | "MP"
+          | "UM"
+          | "FM"
+          | "MH"
+          | "PW"
+          | "PK"
+          | "PA"
+          | "PG"
+          | "PY"
+          | "PE"
+          | "PH"
+          | "PN"
+          | "PL"
+          | "PT"
+          | "GW"
+          | "TL"
+          | "PR"
+          | "QA"
+          | "RE"
+          | "RO"
+          | "RU"
+          | "RW"
+          | "BL"
+          | "SH"
+          | "KN"
+          | "AI"
+          | "LC"
+          | "MF"
+          | "PM"
+          | "VC"
+          | "SM"
+          | "ST"
+          | "SA"
+          | "SN"
+          | "RS"
+          | "SC"
+          | "SL"
+          | "SG"
+          | "SK"
+          | "VN"
+          | "SI"
+          | "SO"
+          | "ZA"
+          | "ZW"
+          | "ES"
+          | "SS"
+          | "SD"
+          | "EH"
+          | "SR"
+          | "SJ"
+          | "SZ"
+          | "SE"
+          | "CH"
+          | "SY"
+          | "TJ"
+          | "TH"
+          | "TG"
+          | "TK"
+          | "TO"
+          | "TT"
+          | "AE"
+          | "TN"
+          | "TR"
+          | "TM"
+          | "TC"
+          | "TV"
+          | "UG"
+          | "UA"
+          | "MK"
+          | "EG"
+          | "GB"
+          | "GG"
+          | "JE"
+          | "IM"
+          | "TZ"
+          | "US"
+          | "VI"
+          | "BF"
+          | "UY"
+          | "UZ"
+          | "VE"
+          | "WF"
+          | "WS"
+          | "YE"
+          | "ZM";
+        /** @format int32 */
+        AccountId?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentDistributionItemDto[], any>({
+        path: `/api/dashboard/cms/content-distribution`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardCmsRecentCommentsList
+     * @request GET:/api/dashboard/cms/recent-comments
+     * @secure
+     */
+    dashboardCmsRecentCommentsList: (
+      query?: {
+        /**
+         * @format int32
+         * @default 4
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<CommentSummaryDto[], any>({
+        path: `/api/dashboard/cms/recent-comments`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,

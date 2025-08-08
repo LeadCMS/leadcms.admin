@@ -1,5 +1,5 @@
 import { CardContent, Grid, Typography } from "@mui/material";
-import { Fragment } from "react";
+import { Fragment, ReactNode } from "react";
 import { CardContainer, ViewListItemText, ViewRowGrid } from "./index.styled";
 
 type dataViewProps = {
@@ -8,6 +8,11 @@ type dataViewProps = {
 };
 
 export const DataView = ({ header, rows }: dataViewProps) => {
+  const renderValue = (value: unknown): ReactNode => {
+    if (value === null || value === undefined) return "-";
+    if (typeof value === "string" && value.trim() === "") return "-";
+    return value as ReactNode;
+  };
   return (
     <CardContainer>
       <CardContent>
@@ -20,7 +25,7 @@ export const DataView = ({ header, rows }: dataViewProps) => {
           rows.map(({ label, value }, index) => (
             <Fragment key={index}>
               <ViewRowGrid container marginBottom={2}>
-                <ViewListItemText primary={label} secondary={value} />
+                <ViewListItemText primary={label} secondary={renderValue(value)} />
               </ViewRowGrid>
             </Fragment>
           ))}
@@ -30,6 +35,11 @@ export const DataView = ({ header, rows }: dataViewProps) => {
 };
 
 export const DataViewNoLabel = ({ header, rows }: dataViewProps) => {
+  const renderValue = (value: unknown): ReactNode => {
+    if (value === null || value === undefined) return "-";
+    if (typeof value === "string" && value.trim() === "") return "-";
+    return value as ReactNode;
+  };
   return (
     <CardContainer>
       <CardContent>
@@ -41,7 +51,7 @@ export const DataViewNoLabel = ({ header, rows }: dataViewProps) => {
         {rows &&
           rows.map(({ value }, index) => (
             <Fragment key={index}>
-              <Typography variant="body2">{value}</Typography>
+              <Typography variant="body2">{renderValue(value)}</Typography>
             </Fragment>
           ))}
       </CardContent>
