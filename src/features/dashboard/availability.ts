@@ -10,9 +10,18 @@ export const CRM_ENTITY_MAP = {
 } as const;
 
 export const CMS_ENTITY_MAP = {
+  // Key metrics
+  totalContent: ["content"],
+  contentUpdates: ["content"],
+  totalMedia: ["media"],
+  totalComments: ["comment"],
+  // Tiles
   topContent: ["content"],
   contentDistribution: ["content"],
   recentComments: ["comment"],
+  recentContent: ["content"],
+  contentGrowth: ["content"],
+  topAuthors: ["content"],
 } as const;
 
 export type DashboardAvailability = ReturnType<typeof getDashboardAvailability>;
@@ -33,9 +42,18 @@ export function getDashboardAvailability(entities?: string[]) {
   } as const;
 
   const cms = {
+    // Key metrics
+    totalContent: has(CMS_ENTITY_MAP.totalContent),
+    contentUpdates: has(CMS_ENTITY_MAP.contentUpdates),
+    totalMedia: has(CMS_ENTITY_MAP.totalMedia),
+    totalComments: has(CMS_ENTITY_MAP.totalComments),
+    // Tiles
     topContent: has(CMS_ENTITY_MAP.topContent),
     contentDistribution: has(CMS_ENTITY_MAP.contentDistribution),
     recentComments: has(CMS_ENTITY_MAP.recentComments),
+    recentContent: has(CMS_ENTITY_MAP.recentContent),
+    contentGrowth: has(CMS_ENTITY_MAP.contentGrowth),
+    topAuthors: has(CMS_ENTITY_MAP.topAuthors),
   } as const;
 
   const hasCrmTiles = Object.values(crm).some(Boolean);

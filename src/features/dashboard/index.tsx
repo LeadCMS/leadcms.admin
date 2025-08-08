@@ -52,6 +52,10 @@ import type {
   TopContentItemDto,
   ContentDistributionItemDto,
   CommentSummaryDto,
+  CmsMetricsDto,
+  ContentGrowthPointDto,
+  TopAuthorDto,
+  ContentSummaryDto,
 } from "lib/network/swagger-client";
 
 type TimeRange =
@@ -546,6 +550,10 @@ const Dashboard: React.FC = () => {
   const [contactGrowth, setContactGrowth] = React.useState<ContactGrowthPointDto[] | null>(null);
 
   // CMS data
+  const [cmsMetricsLoading, setCmsMetricsLoading] = React.useState(true);
+  const [cmsMetricsError, setCmsMetricsError] = React.useState<string | null>(null);
+  const [cmsMetrics, setCmsMetrics] = React.useState<CmsMetricsDto | null>(null);
+
   const [topContentLoading, setTopContentLoading] = React.useState(true);
   const [topContentError, setTopContentError] = React.useState<string | null>(null);
   const [topContent, setTopContent] = React.useState<TopContentItemDto[] | null>(null);
@@ -557,6 +565,20 @@ const Dashboard: React.FC = () => {
   const [recentCommentsLoading, setRecentCommentsLoading] = React.useState(true);
   const [recentCommentsError, setRecentCommentsError] = React.useState<string | null>(null);
   const [recentComments, setRecentComments] = React.useState<CommentSummaryDto[] | null>(null);
+
+  const [recentContentLoading, setRecentContentLoading] = React.useState(true);
+  const [recentContentError, setRecentContentError] = React.useState<string | null>(null);
+  const [recentContent, setRecentContent] = React.useState<ContentSummaryDto[] | null>(null);
+
+  const [contentGrowthLoading, setContentGrowthLoading] = React.useState(true);
+  const [contentGrowthError, setContentGrowthError] = React.useState<string | null>(null);
+  const [contentGrowthCms, setContentGrowthCms] = React.useState<ContentGrowthPointDto[] | null>(
+    null
+  );
+
+  const [topAuthorsLoading, setTopAuthorsLoading] = React.useState(true);
+  const [topAuthorsError, setTopAuthorsError] = React.useState<string | null>(null);
+  const [topAuthors, setTopAuthors] = React.useState<TopAuthorDto[] | null>(null);
 
   const loadCrm = React.useCallback(async () => {
     const q = getQuery(useCustom ? "custom" : range, groupBy, from, to);
@@ -609,36 +631,64 @@ const Dashboard: React.FC = () => {
 
   const loadCms = React.useCallback(async () => {
     const q = getQuery(useCustom ? "custom" : range, groupBy, from, to);
+    setCmsMetricsLoading(true);
     setTopContentLoading(true);
     setContentDistLoading(true);
     setRecentCommentsLoading(true);
+    setRecentContentLoading(true);
+    setContentGrowthLoading(true);
+    setTopAuthorsLoading(true);
+    setCmsMetricsError(null);
     setTopContentError(null);
     setContentDistError(null);
     setRecentCommentsError(null);
+    setRecentContentError(null);
+    setContentGrowthError(null);
+    setTopAuthorsError(null);
     if (!q) {
+      setCmsMetricsLoading(false);
       setTopContentLoading(false);
       setContentDistLoading(false);
       setRecentCommentsLoading(false);
+      setRecentContentLoading(false);
+      setContentGrowthLoading(false);
+      setTopAuthorsLoading(false);
       return;
     }
     try {
-      const [tc, cd, rc] = await Promise.all([
+      const [cm, tc, cd, rc, rct, cg, ta] = await Promise.all([
+        client.api.dashboardCmsMetricsList(q),
         client.api.dashboardCmsTopContentList({ ...q, limit: 5 }),
         client.api.dashboardCmsContentDistributionList(q),
         client.api.dashboardCmsRecentCommentsList({ limit: 4 }),
+        client.api.dashboardCmsRecentContentList({ limit: 5 }),
+        client.api.dashboardCmsContentGrowthList(q),
+        client.api.dashboardCmsTopAuthorsList(q),
       ]);
+      setCmsMetrics(cm.data);
       setTopContent(tc.data);
       setContentDist(cd.data);
       setRecentComments(rc.data);
+      setRecentContent(rct.data);
+      setContentGrowthCms(cg.data);
+      setTopAuthors(ta.data);
     } catch (e: unknown) {
       const msg = errMessage(e, "Failed to load CMS data");
+      setCmsMetricsError(msg);
       setTopContentError(msg);
       setContentDistError(msg);
       setRecentCommentsError(msg);
+      setRecentContentError(msg);
+      setContentGrowthError(msg);
+      setTopAuthorsError(msg);
     } finally {
+      setCmsMetricsLoading(false);
       setTopContentLoading(false);
       setContentDistLoading(false);
       setRecentCommentsLoading(false);
+      setRecentContentLoading(false);
+      setContentGrowthLoading(false);
+      setTopAuthorsLoading(false);
     }
   }, [client, range, groupBy, useCustom, from, to]);
 
@@ -710,11 +760,101 @@ const Dashboard: React.FC = () => {
     </Grid>
   );
 
-  const hasKeyMetrics =
+  const hasCrmKeyMetrics =
     availability.crm.revenue ||
     availability.crm.totalOrders ||
     availability.crm.totalContacts ||
     availability.crm.totalAccounts;
+
+  const CmsKeyMetrics = (
+    <Grid container spacing={2} sx={{ mb: 2, alignItems: "stretch" }}>
+      {availability.cms.totalContent && (
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricTile
+            label="Total Content"
+            value={cmsMetrics?.totalContent}
+            changePct={cmsMetrics?.contentChangePct ?? null}
+            loading={cmsMetricsLoading}
+          />
+        </Grid>
+      )}
+      {availability.cms.contentUpdates && (
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricTile
+            label="Content Updates"
+            value={cmsMetrics?.contentUpdates}
+            changePct={cmsMetrics?.contentUpdatesChangePct ?? null}
+            loading={cmsMetricsLoading}
+          />
+        </Grid>
+      )}
+      {availability.cms.totalMedia && (
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricTile
+            label="Total Media"
+            value={cmsMetrics?.totalMedia}
+            changePct={cmsMetrics?.mediaChangePct ?? null}
+            loading={cmsMetricsLoading}
+          />
+        </Grid>
+      )}
+      {availability.cms.totalComments && (
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricTile
+            label="Total Comments"
+            value={cmsMetrics?.totalComments}
+            changePct={cmsMetrics?.commentsChangePct ?? null}
+            loading={cmsMetricsLoading}
+          />
+        </Grid>
+      )}
+      {cmsMetricsError && (
+        <Grid size={{ xs: 12 }}>
+          <Typography color="error" variant="body2">
+            {cmsMetricsError}
+          </Typography>
+        </Grid>
+      )}
+    </Grid>
+  );
+
+  const hasCmsKeyMetrics =
+    availability.cms.totalContent ||
+    availability.cms.contentUpdates ||
+    availability.cms.totalMedia ||
+    availability.cms.totalComments;
+
+  const renderedKeyMetrics =
+    tab === "crm"
+      ? hasCrmKeyMetrics
+        ? KeyMetrics
+        : null
+      : hasCmsKeyMetrics
+      ? CmsKeyMetrics
+      : null;
+
+  // Only show Sales Performance and Recent Orders if there are any orders with the total value > 0
+  const hasPositiveRecentOrderValue = React.useMemo(() => {
+    return Array.isArray(orders) && orders.some((o) => (o.amount ?? 0) > 0);
+  }, [orders]);
+
+  const hasRevenueFromSales = React.useMemo(() => {
+    return Array.isArray(sales) && sales.some((s) => (s.revenue ?? 0) > 0);
+  }, [sales]);
+
+  const hasPositiveMetricsRevenue = (metrics?.revenue ?? 0) > 0;
+
+  const shouldShowSalesPerformanceTile =
+    availability.crm.salesPerformance &&
+    (salesLoading ||
+      metricsLoading ||
+      ordersLoading ||
+      hasPositiveMetricsRevenue ||
+      hasRevenueFromSales ||
+      hasPositiveRecentOrderValue);
+
+  const shouldShowRecentOrdersTile =
+    availability.crm.recentOrders && (ordersLoading || hasPositiveRecentOrderValue);
 
   return (
     <Box>
@@ -812,11 +952,11 @@ const Dashboard: React.FC = () => {
         </Stack>
       </Box>
 
-      {hasKeyMetrics && KeyMetrics}
+      {renderedKeyMetrics}
 
       {tab === "crm" && availability.hasCrmTiles ? (
         <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
-          {availability.crm.salesPerformance && (
+          {shouldShowSalesPerformanceTile && (
             <Grid size={{ xs: 12, md: 8 }}>
               <Card title="Sales Performance" subtitle="Revenue and orders over time">
                 {salesLoading ? (
@@ -841,7 +981,7 @@ const Dashboard: React.FC = () => {
               </Card>
             </Grid>
           )}
-          {availability.crm.recentOrders && (
+          {shouldShowRecentOrdersTile && (
             <Grid size={{ xs: 12, md: 4 }}>
               <Card title="Recent Orders" subtitle="Last 5 orders">
                 {ordersLoading ? (
@@ -978,6 +1118,69 @@ const Dashboard: React.FC = () => {
         </Grid>
       ) : availability.hasCmsTiles ? (
         <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+          {availability.cms.contentGrowth && (
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Card title="Content Growth" subtitle="New content over time">
+                {contentGrowthLoading ? (
+                  <SectionLoader />
+                ) : contentGrowthError ? (
+                  <Typography color="error" variant="body2">
+                    {contentGrowthError}
+                  </Typography>
+                ) : contentGrowthCms && contentGrowthCms.length > 0 ? (
+                  <RechartsBar
+                    data={contentGrowthCms.map((g) => ({
+                      label: g.period ?? "",
+                      v: g.contents ?? 0,
+                    }))}
+                    seriesLabel="New Content"
+                  />
+                ) : (
+                  <EmptyState />
+                )}
+              </Card>
+            </Grid>
+          )}
+
+          {availability.cms.recentContent && (
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Card title="Recent Content" subtitle="Last 5 items">
+                {recentContentLoading ? (
+                  <SectionLoader />
+                ) : recentContentError ? (
+                  <Typography color="error" variant="body2">
+                    {recentContentError}
+                  </Typography>
+                ) : recentContent && recentContent.length > 0 ? (
+                  <>
+                    <List dense sx={{ mb: 2 }}>
+                      {recentContent.map((c) => (
+                        <ListItem key={c.id} sx={{ px: 0 }}>
+                          <ListItemIcon>
+                            <FileText size={18} />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={c.title}
+                            secondary={<Typography variant="body2">{c.author ?? ""}</Typography>}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      to={getCoreModuleRoute(CoreModule.content)}
+                      component={GhostLink}
+                    >
+                      {"View All Content"}
+                    </Button>
+                  </>
+                ) : (
+                  <EmptyState />
+                )}
+              </Card>
+            </Grid>
+          )}
           {availability.cms.topContent && (
             <Grid size={{ xs: 12, md: 6 }}>
               <Card title="Top Content" subtitle="Most viewed / engaged">
@@ -1014,7 +1217,41 @@ const Dashboard: React.FC = () => {
             </Grid>
           )}
 
-          {availability.cms.contentDistribution && (
+          {availability.cms.topAuthors && (
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Card title="Top Authors" subtitle="By content created in period">
+                {topAuthorsLoading ? (
+                  <SectionLoader />
+                ) : topAuthorsError ? (
+                  <Typography color="error" variant="body2">
+                    {topAuthorsError}
+                  </Typography>
+                ) : topAuthors && topAuthors.length > 0 ? (
+                  <List dense>
+                    {topAuthors.map((a, idx) => (
+                      <ListItem
+                        key={idx}
+                        sx={{ px: 0 }}
+                        secondaryAction={<ChangeChip pct={a.changePct ?? null} />}
+                      >
+                        <ListItemIcon>
+                          <Bullet />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={a.author}
+                          secondary={<Typography variant="body2">{a.count ?? 0} items</Typography>}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                ) : (
+                  <EmptyState />
+                )}
+              </Card>
+            </Grid>
+          )}
+
+          {/* {availability.cms.contentDistribution && (
             <Grid size={{ xs: 12, md: 6 }}>
               <Card title="Content Distribution" subtitle="By type/category">
                 {contentDistLoading ? (
@@ -1042,7 +1279,7 @@ const Dashboard: React.FC = () => {
                 )}
               </Card>
             </Grid>
-          )}
+          )} */}
 
           {availability.cms.recentComments && (
             <Grid size={{ xs: 12 }}>
