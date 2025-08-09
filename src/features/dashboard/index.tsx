@@ -27,7 +27,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useTheme, alpha } from "@mui/material/styles";
-import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "lib/router";
+import { CoreModule, getCoreModuleRoute, getEditFormRoute, getViewFormRoute } from "lib/router";
 import { GhostLink } from "@components/ghost-link";
 import {
   ResponsiveContainer,
@@ -50,7 +50,6 @@ import type {
   OrderSummaryDto,
   ContactGrowthPointDto,
   TopContentItemDto,
-  ContentDistributionItemDto,
   CommentSummaryDto,
   CmsMetricsDto,
   ContentGrowthPointDto,
@@ -558,10 +557,6 @@ const Dashboard: React.FC = () => {
   const [topContentError, setTopContentError] = React.useState<string | null>(null);
   const [topContent, setTopContent] = React.useState<TopContentItemDto[] | null>(null);
 
-  const [contentDistLoading, setContentDistLoading] = React.useState(true);
-  const [contentDistError, setContentDistError] = React.useState<string | null>(null);
-  const [contentDist, setContentDist] = React.useState<ContentDistributionItemDto[] | null>(null);
-
   const [recentCommentsLoading, setRecentCommentsLoading] = React.useState(true);
   const [recentCommentsError, setRecentCommentsError] = React.useState<string | null>(null);
   const [recentComments, setRecentComments] = React.useState<CommentSummaryDto[] | null>(null);
@@ -633,14 +628,14 @@ const Dashboard: React.FC = () => {
     const q = getQuery(useCustom ? "custom" : range, groupBy, from, to);
     setCmsMetricsLoading(true);
     setTopContentLoading(true);
-    setContentDistLoading(true);
+
     setRecentCommentsLoading(true);
     setRecentContentLoading(true);
     setContentGrowthLoading(true);
     setTopAuthorsLoading(true);
     setCmsMetricsError(null);
     setTopContentError(null);
-    setContentDistError(null);
+
     setRecentCommentsError(null);
     setRecentContentError(null);
     setContentGrowthError(null);
@@ -648,7 +643,7 @@ const Dashboard: React.FC = () => {
     if (!q) {
       setCmsMetricsLoading(false);
       setTopContentLoading(false);
-      setContentDistLoading(false);
+
       setRecentCommentsLoading(false);
       setRecentContentLoading(false);
       setContentGrowthLoading(false);
@@ -656,10 +651,9 @@ const Dashboard: React.FC = () => {
       return;
     }
     try {
-      const [cm, tc, cd, rc, rct, cg, ta] = await Promise.all([
+      const [cm, tc, rc, rct, cg, ta] = await Promise.all([
         client.api.dashboardCmsMetricsList(q),
         client.api.dashboardCmsTopContentList({ ...q, limit: 5 }),
-        client.api.dashboardCmsContentDistributionList(q),
         client.api.dashboardCmsRecentCommentsList({ limit: 4 }),
         client.api.dashboardCmsRecentContentList({ limit: 5 }),
         client.api.dashboardCmsContentGrowthList(q),
@@ -667,7 +661,6 @@ const Dashboard: React.FC = () => {
       ]);
       setCmsMetrics(cm.data);
       setTopContent(tc.data);
-      setContentDist(cd.data);
       setRecentComments(rc.data);
       setRecentContent(rct.data);
       setContentGrowthCms(cg.data);
@@ -676,7 +669,6 @@ const Dashboard: React.FC = () => {
       const msg = errMessage(e, "Failed to load CMS data");
       setCmsMetricsError(msg);
       setTopContentError(msg);
-      setContentDistError(msg);
       setRecentCommentsError(msg);
       setRecentContentError(msg);
       setContentGrowthError(msg);
@@ -684,7 +676,6 @@ const Dashboard: React.FC = () => {
     } finally {
       setCmsMetricsLoading(false);
       setTopContentLoading(false);
-      setContentDistLoading(false);
       setRecentCommentsLoading(false);
       setRecentContentLoading(false);
       setContentGrowthLoading(false);
@@ -1001,7 +992,11 @@ const Dashboard: React.FC = () => {
                         return (
                           <ListItem
                             key={o.id ?? idx}
-                            sx={{ px: 0 }}
+                            sx={{
+                              px: 0,
+                              cursor: "pointer",
+                              "&:hover .list-link-text": { textDecoration: "underline" },
+                            }}
                             {...(toHref ? ({ component: GhostLink, to: toHref } as const) : {})}
                           >
                             <ListItemIcon>
@@ -1009,6 +1004,12 @@ const Dashboard: React.FC = () => {
                             </ListItemIcon>
                             <ListItemText
                               primary={o.orderNumber ?? (o.id ? `Order #${o.id}` : "Order")}
+                              slotProps={{
+                                primary: {
+                                  color: "primary",
+                                  className: "list-link-text",
+                                },
+                              }}
                               secondary={
                                 <Typography variant="body2">{o.customer ?? ""}</Typography>
                               }
@@ -1088,14 +1089,27 @@ const Dashboard: React.FC = () => {
                         return (
                           <ListItem
                             key={idx}
-                            sx={{ px: 0 }}
+                            sx={{
+                              px: 0,
+                              cursor: "pointer",
+                              "&:hover .list-link-text": { textDecoration: "underline" },
+                            }}
                             secondaryAction={<ChangeChip pct={a.changePct ?? null} />}
                             {...(toHref ? ({ component: GhostLink, to: toHref } as const) : {})}
                           >
                             <ListItemIcon>
                               <Building2 size={18} />
                             </ListItemIcon>
-                            <ListItemText primary={a.name} secondary={formatCurrency(a.revenue)} />
+                            <ListItemText
+                              primary={a.name}
+                              slotProps={{
+                                primary: {
+                                  color: "primary",
+                                  className: "list-link-text",
+                                },
+                              }}
+                              secondary={formatCurrency(a.revenue)}
+                            />
                           </ListItem>
                         );
                       })}
@@ -1154,17 +1168,37 @@ const Dashboard: React.FC = () => {
                 ) : recentContent && recentContent.length > 0 ? (
                   <>
                     <List dense sx={{ mb: 2 }}>
-                      {recentContent.map((c) => (
-                        <ListItem key={c.id} sx={{ px: 0 }}>
-                          <ListItemIcon>
-                            <FileText size={18} />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={c.title}
-                            secondary={<Typography variant="body2">{c.author ?? ""}</Typography>}
-                          />
-                        </ListItem>
-                      ))}
+                      {recentContent.map((c) => {
+                        const toHref =
+                          typeof c.id === "number"
+                            ? `${getCoreModuleRoute(CoreModule.content)}/${getEditFormRoute(c.id)}`
+                            : undefined;
+                        return (
+                          <ListItem
+                            key={c.id}
+                            sx={{
+                              px: 0,
+                              cursor: "pointer",
+                              "&:hover .list-link-text": { textDecoration: "underline" },
+                            }}
+                            {...(toHref ? ({ component: GhostLink, to: toHref } as const) : {})}
+                          >
+                            <ListItemIcon>
+                              <FileText size={18} />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={c.title}
+                              slotProps={{
+                                primary: {
+                                  color: "primary",
+                                  className: "list-link-text",
+                                },
+                              }}
+                              secondary={<Typography variant="body2">{c.author ?? ""}</Typography>}
+                            />
+                          </ListItem>
+                        );
+                      })}
                     </List>
                     <Button
                       fullWidth
@@ -1192,23 +1226,45 @@ const Dashboard: React.FC = () => {
                   </Typography>
                 ) : topContent && topContent.length > 0 ? (
                   <List dense>
-                    {topContent.map((c) => (
-                      <ListItem key={c.contentId} sx={{ px: 0 }}>
-                        <ListItemIcon>
-                          <FileText size={18} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={c.title}
-                          secondary={
-                            <Typography variant="body2">
-                              {typeof c.commentCount === "number"
-                                ? `${c.commentCount} comments`
-                                : ""}
-                            </Typography>
-                          }
-                        />
-                      </ListItem>
-                    ))}
+                    {topContent.map((c) => {
+                      const toHref =
+                        typeof c.contentId === "number"
+                          ? `${getCoreModuleRoute(CoreModule.content)}/${getEditFormRoute(
+                              c.contentId
+                            )}`
+                          : undefined;
+                      return (
+                        <ListItem
+                          key={c.contentId}
+                          sx={{
+                            px: 0,
+                            cursor: "pointer",
+                            "&:hover .list-link-text": { textDecoration: "underline" },
+                          }}
+                          {...(toHref ? ({ component: GhostLink, to: toHref } as const) : {})}
+                        >
+                          <ListItemIcon>
+                            <FileText size={18} />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={c.title}
+                            slotProps={{
+                              primary: {
+                                color: "primary",
+                                className: "list-link-text",
+                              },
+                            }}
+                            secondary={
+                              <Typography variant="body2">
+                                {typeof c.commentCount === "number"
+                                  ? `${c.commentCount} comments`
+                                  : ""}
+                              </Typography>
+                            }
+                          />
+                        </ListItem>
+                      );
+                    })}
                   </List>
                 ) : (
                   <EmptyState />
@@ -1251,36 +1307,6 @@ const Dashboard: React.FC = () => {
             </Grid>
           )}
 
-          {/* {availability.cms.contentDistribution && (
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card title="Content Distribution" subtitle="By type/category">
-                {contentDistLoading ? (
-                  <SectionLoader />
-                ) : contentDistError ? (
-                  <Typography color="error" variant="body2">
-                    {contentDistError}
-                  </Typography>
-                ) : contentDist && contentDist.length > 0 ? (
-                  <List dense>
-                    {contentDist.map((d, idx) => (
-                      <ListItem key={idx} sx={{ px: 0 }}>
-                        <ListItemIcon>
-                          <Bullet />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={d.name}
-                          secondary={<Typography variant="body2">{d.value ?? 0}</Typography>}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <EmptyState />
-                )}
-              </Card>
-            </Grid>
-          )} */}
-
           {availability.cms.recentComments && (
             <Grid size={{ xs: 12 }}>
               <Card title="Recent Comments" subtitle="Latest user engagement">
@@ -1292,26 +1318,46 @@ const Dashboard: React.FC = () => {
                   </Typography>
                 ) : recentComments && recentComments.length > 0 ? (
                   <List dense>
-                    {recentComments.map((c) => (
-                      <ListItem key={c.id} sx={{ px: 0 }}>
-                        <ListItemIcon>
-                          <MessageSquare size={18} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={`${c.user ?? "Unknown"}`}
-                          secondary={
-                            <>
-                              <Typography variant="body2">{c.comment}</Typography>
-                              {c.article && (
-                                <Typography variant="caption" color="text.secondary">
-                                  {c.article}
-                                </Typography>
-                              )}
-                            </>
-                          }
-                        />
-                      </ListItem>
-                    ))}
+                    {recentComments.map((c) => {
+                      const toHref =
+                        typeof c.id === "number"
+                          ? `${getCoreModuleRoute(CoreModule.comments)}/${getEditFormRoute(c.id)}`
+                          : undefined;
+                      return (
+                        <ListItem
+                          key={c.id}
+                          sx={{
+                            px: 0,
+                            cursor: "pointer",
+                            "&:hover .list-link-text": { textDecoration: "underline" },
+                          }}
+                          {...(toHref ? ({ component: GhostLink, to: toHref } as const) : {})}
+                        >
+                          <ListItemIcon>
+                            <MessageSquare size={18} />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={`${c.user ?? "Unknown"}`}
+                            slotProps={{
+                              primary: {
+                                color: "primary",
+                                className: "list-link-text",
+                              },
+                            }}
+                            secondary={
+                              <>
+                                <Typography variant="body2">{c.comment}</Typography>
+                                {c.article && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {c.article}
+                                  </Typography>
+                                )}
+                              </>
+                            }
+                          />
+                        </ListItem>
+                      );
+                    })}
                   </List>
                 ) : (
                   <EmptyState />
