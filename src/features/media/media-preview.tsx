@@ -9,28 +9,30 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
 import DownloadIcon from "@mui/icons-material/Download";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import MovieIcon from "@mui/icons-material/Movie";
 import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
+import { MediaDetailsDto, ProblemDetails } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { ApiErrorDisplay } from "@components/api-error-display";
 
 interface MediaPreviewProps {
-  file: any | null;
+  file: MediaDetailsDto | null;
   open: boolean;
   onClose: () => void;
-  onDownload: (file: any) => void;
-  onCopyLink: (file: any) => void;
+  onDownload: (file: MediaDetailsDto) => void;
+  onCopyLink: (file: MediaDetailsDto) => void;
   onNext?: () => void;
   onPrev?: () => void;
   hasNext?: boolean;
   hasPrev?: boolean;
-  onReplace?: (file: any) => void;
-  onFileUpdate?: (updatedFile: any) => void;
+  onReplace?: (file: MediaDetailsDto) => void;
+  onFileUpdate?: (updatedFile: MediaDetailsDto) => void;
 }
 
 const formatFileSize = (size: number | undefined) => {
@@ -42,12 +44,12 @@ const formatFileSize = (size: number | undefined) => {
 };
 
 // Helper function to check if file is PDF
-const isPdfFile = (file: any) => {
+const isPdfFile = (file: MediaDetailsDto) => {
   return file?.mimeType === "application/pdf" || file?.name?.toLowerCase().endsWith(".pdf");
 };
 
 // Helper function to check if file is video
-const isVideoFile = (file: any) => {
+const isVideoFile = (file: MediaDetailsDto) => {
   return (
     file?.mimeType?.startsWith("video/") ||
     /\.(mp4|webm|ogg|avi|mov|wmv|flv|mkv)$/i.test(file?.name || "")
@@ -77,11 +79,15 @@ export const MediaPreview = ({
   const [videoError, setVideoError] = useState(false);
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [description, setDescription] = useState<string>(file?.description || "");
+  const [isSavingDescription, setIsSavingDescription] = useState(false);
+  const [justSavedDescription, setJustSavedDescription] = useState(false);
 
   const isPdf = file ? isPdfFile(file) : false;
   const isVideo = file ? isVideoFile(file) : false;
   const fileUrl = file
-    ? buildAbsoluteUrlWithCacheBust(file.location || file.url, file.size, file.updatedAt)
+    ? buildAbsoluteUrlWithCacheBust(file.location, file.size, file.updatedAt)
     : "";
 
   // Fetch PDF as blob and create object URL for inline viewing
@@ -140,6 +146,12 @@ export const MediaPreview = ({
     };
   }, [pdfBlobUrl]);
 
+  // Keep local description synced with the incoming file
+  useEffect(() => {
+    setDescription(file?.description || "");
+    setIsEditingDescription(false);
+  }, [file]);
+
   if (!file) return null;
 
   const handleCopyLink = () => {
@@ -150,7 +162,7 @@ export const MediaPreview = ({
 
   const handleReplaceMedia = async () => {
     // Get file extension for filtering - ensure no leading dot
-    const currentExtension = (file.extension || file.name.split(".").pop() || "")
+    const currentExtension = (file.extension || (file.name ?? "").split(".").pop() || "")
       .toLowerCase()
       .replace(/^\./, "");
 
@@ -182,6 +194,11 @@ export const MediaPreview = ({
 
       try {
         // Use new mediaPartialUpdate method to replace existing file
+        if (!file.scopeUid || !file.name) {
+          notificationsService.error("Missing file identifiers");
+          return;
+        }
+
         const response = await client.api.mediaPartialUpdate({
           File: selectedFile,
           ScopeUid: file.scopeUid,
@@ -353,6 +370,109 @@ export const MediaPreview = ({
                   </Box>
                   <Box>
                     <Typography variant="caption" color="text.secondary">
+                      Description
+                    </Typography>
+                    {!isEditingDescription ? (
+                      <Box
+                        onClick={() => setIsEditingDescription(true)}
+                        sx={{
+                          cursor: "pointer",
+                          px: 0,
+                          py: 0.5,
+                          borderRadius: 1,
+                          "&:hover": { backgroundColor: "action.hover" },
+                        }}
+                      >
+                        <Typography sx={{ whiteSpace: "pre-line" }}>
+                          {description?.trim() ? description : "Click to add description"}
+                        </Typography>
+                        {justSavedDescription && (
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "success.main", mt: 0.5, display: "block" }}
+                          >
+                            Saved
+                          </Typography>
+                        )}
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        <TextField
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Enter description"
+                          size="small"
+                          multiline
+                          minRows={2}
+                          maxRows={6}
+                          fullWidth
+                        />
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={async () => {
+                              try {
+                                setIsSavingDescription(true);
+                                if (!file.scopeUid || !file.name) {
+                                  notificationsService.error("Missing file identifiers");
+                                  return;
+                                }
+
+                                const response = await client.api.mediaPartialUpdate({
+                                  ScopeUid: file.scopeUid,
+                                  FileName: file.name,
+                                  Description: description,
+                                });
+
+                                if (response.error) {
+                                  const err = response.error as ProblemDetails;
+                                  throw new Error(err.detail || err.title || "Save failed");
+                                }
+
+                                notificationsService.success("Description saved");
+                                setIsEditingDescription(false);
+                                setJustSavedDescription(true);
+                                setTimeout(() => setJustSavedDescription(false), 2000);
+
+                                if (response.data && onFileUpdate) {
+                                  onFileUpdate(response.data);
+                                }
+                              } catch (error) {
+                                const apiError = error as { message?: string };
+                                const errorMessage =
+                                  apiError.message || "Failed to save description";
+                                notificationsService.error(errorMessage);
+                              } finally {
+                                setIsSavingDescription(false);
+                              }
+                            }}
+                            disabled={
+                              isSavingDescription || description === (file.description || "")
+                            }
+                            startIcon={
+                              isSavingDescription ? <CircularProgress size={14} /> : undefined
+                            }
+                          >
+                            Confirm
+                          </Button>
+                          <Button
+                            variant="text"
+                            size="small"
+                            onClick={() => {
+                              setDescription(file.description || "");
+                              setIsEditingDescription(false);
+                            }}
+                            disabled={isSavingDescription}
+                          >
+                            Cancel
+                          </Button>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
                       Size
                     </Typography>
                     <Typography>{formatFileSize(file.size)}</Typography>
@@ -377,7 +497,7 @@ export const MediaPreview = ({
                       <input
                         type="text"
                         value={buildAbsoluteUrlWithCacheBust(
-                          file.location || file.url,
+                          file.location,
                           file.size,
                           file.updatedAt
                         )}

@@ -5245,6 +5245,11 @@ export interface MediaDetailsDto {
    */
   name?: string;
   /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
    * Size
    * @format int64
    */
@@ -6772,7 +6777,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.63.0
+ * @version 1.2.64.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -11870,6 +11875,7 @@ export class Api<
         /** @format binary */
         File: File;
         ScopeUid: string;
+        Description?: string;
       },
       params: RequestParams = {},
     ) =>
@@ -11920,9 +11926,10 @@ export class Api<
     mediaPartialUpdate: (
       data: {
         /** @format binary */
-        File: File;
+        File?: File;
         ScopeUid: string;
         FileName: string;
+        Description?: string;
       },
       params: RequestParams = {},
     ) =>
