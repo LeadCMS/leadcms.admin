@@ -86,6 +86,7 @@ interface ExtendedConfig {
     LivePreviewUrlTemplate?: string;
     PreviewUrlTemplate?: string;
   };
+  defaultLanguage?: string;
 }
 
 interface ContentEditProps {
@@ -135,6 +136,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasLivePreview = !!configSettings?.LivePreviewUrlTemplate;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
+  const defaultLanguage = config?.defaultLanguage;
 
   // API-based draft save (for live preview)
   const filterEmptyValues = (obj: unknown) => {
@@ -205,12 +207,15 @@ export const ContentEdit = (props: ContentEditProps) => {
     if (frontmatterState !== null) {
       throw Error("Frontmatter validation error. Check preview window for details");
     }
+    // Always trim slashes from slug before using it anywhere (e.g., image upload, API calls)
+    const trimmedSlug = values.slug ? values.slug.replace(/^\/+|\/+$/g, "") : values.slug;
     if (coverWasModified && values.coverImagePending && values.coverImagePending.url) {
       const blob = await (await fetch(values.coverImagePending.url)).blob();
       const file = new File([blob], values.coverImagePending.fileName || "image.jpg");
+      // Always use trimmedSlug for ScopeUid
       const imageUploadingResponse = await client.api.mediaCreate({
-        Image: file,
-        ScopeUid: values.slug,
+        File: file,
+        ScopeUid: trimmedSlug,
       });
       if (imageUploadingResponse.error) {
         throw Error(imageUploadingResponse.error.title as string);
@@ -223,11 +228,13 @@ export const ContentEdit = (props: ContentEditProps) => {
     if (values?.id) {
       response = await client.api.contentPartialUpdate(Number(values.id), {
         ...values,
+        slug: trimmedSlug,
         coverImageUrl: coverUrl,
       });
     } else {
       response = await client.api.contentCreate({
         ...values,
+        slug: trimmedSlug,
         coverImageUrl: coverUrl,
       });
     }
@@ -472,6 +479,14 @@ export const ContentEdit = (props: ContentEditProps) => {
       formik.errors.publishedAt
   );
 
+  // Helper to determine which preview template to use
+  const getPreviewTemplate = () => {
+    if (!wasModified) {
+      return configSettings?.PreviewUrlTemplate;
+    }
+    return configSettings?.LivePreviewUrlTemplate;
+  };
+
   // Handler for delete action
   const handleDelete = async () => {
     if (!id) return;
@@ -498,7 +513,8 @@ export const ContentEdit = (props: ContentEditProps) => {
     };
     const success = openSitePreview(
       params as unknown as Record<string, unknown>,
-      configSettings?.PreviewUrlTemplate || ""
+      configSettings?.PreviewUrlTemplate || "",
+      defaultLanguage
     );
     if (!success) {
       notificationsService.error(
@@ -854,7 +870,8 @@ export const ContentEdit = (props: ContentEditProps) => {
                         <RefreshCw size={20} />
                       </IconButton>
                     )}
-                  {hasSitePreview && (
+                  {/* Show Preview on Site only for saved/existing content */}
+                  {hasSitePreview && id && (
                     <Button
                       variant="text"
                       onClick={handleSitePreview}
@@ -918,7 +935,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                               isReadOnly={props.readonly}
                               contentDetails={formik.values}
                               livePreview={useLivePreview}
-                              livePreviewTemplate={configSettings?.LivePreviewUrlTemplate}
+                              livePreviewTemplate={getPreviewTemplate()}
                               key={iframeKey}
                               isMetadataCollapsed={isMetadataCollapsed}
                             />

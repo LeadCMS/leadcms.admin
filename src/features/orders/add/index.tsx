@@ -11,6 +11,7 @@ export const OrderAdd = () => {
     currency: "",
     exchangeRate: 0,
     refNo: "",
+    status: "Pending",
   });
 
   const handleSave = async (newOrder: OrderDetailsDto) => {

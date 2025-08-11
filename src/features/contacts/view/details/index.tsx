@@ -134,7 +134,6 @@ export const ContactView = () => {
       if (data.length > 0) {
         return data;
       } else {
-        notificationsService.info("No orders available for selected contact.");
         return [];
       }
     } catch (error) {

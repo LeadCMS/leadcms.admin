@@ -18,7 +18,7 @@ import { DataListSettings } from "types";
 import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { SearchBar } from "@components/search-bar";
-import { Button } from "@mui/material";
+import { Button, Chip } from "@mui/material";
 import { Plus, Upload, Download } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import { CsvExport } from "@components/export";
@@ -77,6 +77,27 @@ export const Orders = () => {
     await client.api.ordersImportCreate(importDtoCollection);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+        return "warning";
+      case "paid":
+        return "success";
+      case "cancelled":
+        return "error";
+      case "refunded":
+        return "info";
+      case "failed":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
+  const StatusCell = ({ value }: { value: string }) => (
+    <Chip label={value || "Unknown"} color={getStatusColor(value)} size="small" variant="filled" />
+  );
+
   const columns: GridColDef<OrderDetailsDto>[] = [
     {
       field: "orderNumber",
@@ -125,6 +146,13 @@ export const Orders = () => {
       headerName: "Currency",
       flex: 2,
       type: "string",
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      flex: 2,
+      type: "string",
+      renderCell: (params) => <StatusCell value={params.value} />,
     },
     {
       field: "createdAt",

@@ -1,61 +1,181 @@
-import { useMemo } from "react";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { useMemo, useEffect, useState, useRef } from "react";
+import { Box, CircularProgress, Typography, Alert } from "@mui/material";
 import { MarkdownLiveViewerProps } from "./types";
 import "./styles.css";
 import { useUserInfo } from "@providers/user-provider";
+import { useConfig } from "@providers/config-provider";
 
-const generatePreviewUrl = (template: string, params: Record<string, unknown>): string => {
+const generatePreviewUrl = (
+  template: string,
+  params: Record<string, unknown>,
+  defaultLanguage?: string
+): string => {
   let url = template;
-  Object.keys(params).forEach((key) => {
+
+  // Create enhanced params with calculated fields
+  const enhancedParams = { ...params };
+
+  // Calculate lang+slug parameter
+  if (params.language && params.slug) {
+    const lang = calculateLangPrefix(String(params.language), defaultLanguage);
+    enhancedParams["lang+slug"] = `${lang}${params.slug}`;
+  }
+
+  Object.keys(enhancedParams).forEach((key) => {
+    // Escape special regex characters in the key
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     url = url.replace(
-      new RegExp(`{${key}}`, "g"),
-      params[key] !== undefined ? String(params[key]) : ""
+      new RegExp(`\\{${escapedKey}\\}`, "g"),
+      enhancedParams[key] !== undefined ? String(enhancedParams[key]) : ""
     );
   });
   return url;
 };
 
+const calculateLangPrefix = (contentLanguage: string, defaultLanguage?: string): string => {
+  if (!contentLanguage || !defaultLanguage || contentLanguage === defaultLanguage) {
+    return "";
+  }
+  return `${contentLanguage}/`;
+};
+
+const REQUIRED_KEYS = ["type", "slug", "body"];
+
 const MarkdownLiveViewer = ({ params, template, key: viewerKey }: MarkdownLiveViewerProps) => {
   const userInfo = useUserInfo();
+  const { config } = useConfig();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const defaultLanguage = config?.defaultLanguage;
+
   // Merge userId into params if available
   const mergedParams: Record<string, unknown> = {
     ...params,
     userId: params.userId || userInfo?.details?.id || "",
   };
+
+  // Check for missing required params (for new page)
+  const missingRequired = REQUIRED_KEYS.some((k) => !mergedParams[k]);
+
+  // Compute preview URL
   const previewUrl = useMemo(() => {
-    if (!mergedParams) {
-      console.debug("[MarkdownLiveViewer] No params provided", { params: mergedParams, template });
+    if (!mergedParams || !template) return null;
+    if (missingRequired) return null;
+
+    const generatedUrl = generatePreviewUrl(template, mergedParams, defaultLanguage);
+
+    // Check if there are still unresolved placeholders after URL generation
+    const unresolvedPlaceholders = generatedUrl.match(/{(.*?)}/g) || [];
+    if (unresolvedPlaceholders.length > 0) {
+      console.debug("[MarkdownLiveViewer] Unresolved placeholders:", unresolvedPlaceholders);
       return null;
     }
 
-    if (!template) {
-      console.debug("[MarkdownLiveViewer] No template provided");
-      return null;
-    }
+    return generatedUrl;
+  }, [mergedParams, template, missingRequired, defaultLanguage]);
 
-    const placeholders = template.match(/{(.*?)}/g) || [];
-    const missingKeys = placeholders
-      .map((k: string) => k.replace(/[{}]/g, ""))
-      .filter((key: string) => !mergedParams[key]);
-    if (missingKeys.length > 0) {
-      // Print all params and their values for debugging
-      console.debug("[MarkdownLiveViewer] Params received:", JSON.stringify(mergedParams, null, 2));
-      // Print all placeholders found in the template
-      console.debug(
-        "[MarkdownLiveViewer] Placeholders in template:",
-        placeholders.map((k: string) => k.replace(/[{}]/g, ""))
-      );
-      // Print missing keys
-      console.debug("[MarkdownLiveViewer] Missing required params for preview:", missingKeys, {
-        params: mergedParams,
-        template,
-      });
-      return null;
+  // Always poll for preview URL availability
+  useEffect(() => {
+    if (!previewUrl) {
+      setIframeUrl(null);
+      setLoading(false);
+      setError(null);
+      return;
     }
-    return generatePreviewUrl(template, mergedParams);
-  }, [mergedParams, template]);
+    let cancelled = false;
+    let tries = 0;
+    setLoading(true);
+    setError(null);
+    setIframeUrl(null);
+    const checkUrl = async () => {
+      try {
+        const resp = await fetch(previewUrl, { method: "HEAD" });
+        if (!cancelled && resp.status !== 404) {
+          setIframeUrl(previewUrl);
+          setLoading(false);
+          setError(null);
+        } else if (!cancelled && tries < 4) {
+          tries++;
+          timerRef.current = setTimeout(checkUrl, 2000);
+        } else if (!cancelled) {
+          setLoading(false);
+          setError(
+            "Preview is not available. Please make some changes or refresh the page manually."
+          );
+        }
+      } catch (e) {
+        if (!cancelled && tries < 4) {
+          tries++;
+          timerRef.current = setTimeout(checkUrl, 2000);
+        } else if (!cancelled) {
+          setLoading(false);
+          setError(
+            "Preview is not available. Please make some changes or refresh the page manually."
+          );
+        }
+      }
+    };
+    checkUrl();
+    return () => {
+      cancelled = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewUrl, viewerKey]);
 
-  if (!previewUrl) {
+  // Show missing required params error (for new page)
+  if (missingRequired) {
+    return (
+      <Box
+        className="markdown-live-viewer-container"
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          backgroundColor: "#f5f5f5",
+          border: "1px solid #e0e0e0",
+          borderRadius: 1,
+        }}
+      >
+        <Typography variant="caption" sx={{ color: "text.disabled", textAlign: "center" }}>
+          Missing required parameters for preview.
+          <br />
+          Please make sure to set right <b>Content Type</b>, <b>Slug</b> and <b>Body</b> value.
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Show error if polling failed
+  if (error) {
+    return (
+      <Box
+        className="markdown-live-viewer-container"
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          backgroundColor: "#f5f5f5",
+          border: "1px solid #e0e0e0",
+          borderRadius: 1,
+        }}
+      >
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      </Box>
+    );
+  }
+
+  // Show loading spinner while polling
+  if (loading) {
     return (
       <Box
         className="markdown-live-viewer-container"
@@ -74,27 +194,29 @@ const MarkdownLiveViewer = ({ params, template, key: viewerKey }: MarkdownLiveVi
         <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
           Loading preview...
         </Typography>
-        <Typography variant="caption" sx={{ mt: 1, color: "text.disabled", textAlign: "center" }}>
-          Missing required parameters for preview. <br /> Please make sure to set right{" "}
-          <b>Content Type</b> as well as go to <b>SETTINGS</b> tab and set <b>Slug</b> value.
-        </Typography>
       </Box>
     );
   }
 
-  return (
-    <Box className="markdown-live-viewer-container" sx={{ height: "100%" }}>
-      <iframe
-        key={viewerKey} // Pass key to iframe for remounting
-        src={previewUrl}
-        className="markdown-live-viewer-iframe"
-        title="Live Preview"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        loading="lazy"
-        style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-      />
-    </Box>
-  );
+  // Show iframe if available
+  if (iframeUrl) {
+    return (
+      <Box className="markdown-live-viewer-container" sx={{ height: "100%" }}>
+        <iframe
+          key={viewerKey}
+          src={iframeUrl}
+          className="markdown-live-viewer-iframe"
+          title="Preview"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          loading="lazy"
+          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+        />
+      </Box>
+    );
+  }
+
+  // Fallback (should not happen)
+  return null;
 };
 
 export const MarkdownLiveViewerFunc = (
@@ -102,7 +224,6 @@ export const MarkdownLiveViewerFunc = (
   template: string,
   key?: React.Key
 ) => {
-  console.log("[MarkdownLiveViewerFunc] Rendering with params:", params, template, key);
   return <MarkdownLiveViewer params={params} template={template} key={key} />;
 };
 

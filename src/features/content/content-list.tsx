@@ -45,6 +45,7 @@ interface ExtendedConfig {
     LivePreviewUrlTemplate?: string;
     PreviewUrlTemplate?: string;
   };
+  defaultLanguage?: string;
 }
 
 export const ContentList = () => {
@@ -64,19 +65,21 @@ export const ContentList = () => {
   // Check if preview features are available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
+  const defaultLanguage = config?.defaultLanguage;
 
   // Fetch data logic for InfiniteScroll
   const fetchData = async () => {
     setIsLoading(true);
     const filter: Record<string, unknown> = {
       "filter[order]": "updatedAt desc",
-      "filter[skip]": contentItems.length,
+      "filter[skip]": !initialLoadRef.current ? 0 : contentItems.length,
       "filter[limit]": 20,
     };
+
     if (searchText) {
       filter.query = searchText;
-      filter["filter[skip]"] = contentItems.length;
     }
+
     try {
       const { data, headers } = await client.api.contentList(filter);
       // Deduplicate by id
@@ -109,7 +112,9 @@ export const ContentList = () => {
     setContentItemsCount(0);
     initialLoadRef.current = false;
     scrollTargetRef.current?.scrollTo?.(0, 0);
-    fetchData();
+    fetchData().then(() => {
+      initialLoadRef.current = true;
+    });
     // eslint-disable-next-line
   }, [searchText]);
 
@@ -215,6 +220,7 @@ export const ContentList = () => {
                       onDelete={handleDeleteClick}
                       hasSitePreview={hasSitePreview}
                       previewUrlTemplate={configSettings?.PreviewUrlTemplate}
+                      defaultLanguage={defaultLanguage}
                       key={`content-card-${item.id}`}
                     />
                   </Grid>
@@ -252,9 +258,16 @@ interface ItemProps {
   onDelete: (id: number) => void;
   hasSitePreview?: boolean;
   previewUrlTemplate?: string;
+  defaultLanguage?: string;
 }
 
-const ItemCard = ({ item, onDelete, hasSitePreview, previewUrlTemplate }: ItemProps) => {
+const ItemCard = ({
+  item,
+  onDelete,
+  hasSitePreview,
+  previewUrlTemplate,
+  defaultLanguage,
+}: ItemProps) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -284,7 +297,8 @@ const ItemCard = ({ item, onDelete, hasSitePreview, previewUrlTemplate }: ItemPr
     if (hasSitePreview && previewUrlTemplate) {
       const success = openSitePreview(
         item as unknown as Record<string, unknown>,
-        previewUrlTemplate
+        previewUrlTemplate,
+        defaultLanguage
       );
       if (!success) {
         notificationsService.error(
