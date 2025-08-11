@@ -53,6 +53,14 @@ interface ExtendedConfig {
   defaultLanguage?: string;
 }
 
+type ContentListFilterSettings = {
+  whereFilters: Array<{ whereField: string; whereOperator: string; whereFieldValue: string }>;
+  sortField: string;
+  sortDirection: "asc" | "desc";
+};
+
+const CONTENT_FILTERS_KEY = "content-list-filters";
+
 export const ContentList = () => {
   const { client } = useRequestContext();
   const { config } = useConfig();
@@ -69,6 +77,17 @@ export const ContentList = () => {
   const [sortAnchorEl, setSortAnchorEl] = useState<HTMLElement | null>(null);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
 
+  const [storedSettings, setStoredSettings] = useLocalStorage<ContentListFilterSettings>(
+  CONTENT_FILTERS_KEY,
+    {
+      whereFilters: [],
+      sortField: "updatedAt",
+      sortDirection: "desc",
+    }
+  );
+  const [whereFilters, setWhereFilters] = useState(storedSettings.whereFilters);
+  const [sortField, setSortField] = useState(storedSettings.sortField);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(storedSettings.sortDirection);
 
   // Check if preview features are available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
@@ -172,6 +191,20 @@ export const ContentList = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    setStoredSettings({
+      whereFilters,
+      sortField,
+      sortDirection,
+    });
+  }, [whereFilters, sortField, sortDirection]);
+
+  useEffect(() => {
+    setWhereFilters(storedSettings.whereFilters);
+    setSortField(storedSettings.sortField);
+    setSortDirection(storedSettings.sortDirection);
+  }, [storedSettings]);
 
   // Initial load and search
   useEffect(() => {
