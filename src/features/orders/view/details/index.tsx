@@ -109,7 +109,6 @@ export const OrderView = () => {
       if (data.length > 0) {
         return data;
       } else {
-        notificationsService.info("No order items available for seleted order.");
         return [];
       }
     } catch (error) {
