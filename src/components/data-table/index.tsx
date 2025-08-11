@@ -38,6 +38,7 @@ type DataTableProps = {
     details: GridCallbackDetails<any>
   ) => void;
   rowSelectionModel?: GridRowSelectionModel;
+  onColumnWidthChange?: (field: string, width: number) => void;
 };
 
 export const DataTableGrid = ({
@@ -60,6 +61,7 @@ export const DataTableGrid = ({
   onColumnVisibilityModelChange,
   onRowSelectionModelChange,
   rowSelectionModel,
+  onColumnWidthChange,
 }: DataTableProps) => {
   const empty: readonly GridValidRowModel[] = [];
 
@@ -164,6 +166,9 @@ export const DataTableGrid = ({
         onColumnVisibilityModelChange={
           onColumnVisibilityModelChange ?? handleColumnVisibilityModelChange
         }
+         onColumnWidthChange={params => {
+          onColumnWidthChange?.(params.colDef.field, params.width);
+        }}
         onRowSelectionModelChange={onRowSelectionModelChange}
         rowSelectionModel={rowSelectionModel}
         initialState={initialState}

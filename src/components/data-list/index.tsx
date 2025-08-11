@@ -139,6 +139,7 @@ export const DataList = <TModel extends GridValidRowModel>({
         pageNumber,
         columnVisibilityModel,
         columnOrder,
+        columnWidths,
       } = gridSettings;
       setFilterState({
         filterLimit,
@@ -149,6 +150,7 @@ export const DataList = <TModel extends GridValidRowModel>({
         pageNumber,
         columnVisibilityModel,
         columnOrder,
+        columnWidths,
       });
 
       if (columnOrder && columnOrder.length > 0) {
@@ -186,6 +188,18 @@ export const DataList = <TModel extends GridValidRowModel>({
     }
   }, [modelData]);
 
+  useEffect(() => {
+    if (filterState?.columnWidths && setColumns) {
+      setColumns(
+        columns.map((col) =>
+          filterState.columnWidths![col.field] !== undefined
+            ? { ...col, width: filterState.columnWidths![col.field] }
+            : col
+        )
+      );
+    }
+  }, [filterState?.columnWidths]);
+
   const saveGridStateInLocalStorage = () => {
     if (filterState) {
       setGridSettings({
@@ -198,6 +212,7 @@ export const DataList = <TModel extends GridValidRowModel>({
         pageNumber: filterState.pageNumber || 0,
         columnVisibilityModel: filterState.columnVisibilityModel || {},
         columnOrder: filterState.columnOrder || [],
+        columnWidths: filterState.columnWidths || {},
       });
     }
   };
@@ -332,6 +347,16 @@ export const DataList = <TModel extends GridValidRowModel>({
     columns: { columnVisibilityModel: gridSettings.columnVisibilityModel || {} },
   };
 
+  const handleColumnWidthChange = (field: string, width: number) => {
+    setFilterState(prev => ({
+      ...(prev ?? {}),
+      columnWidths: {
+        ...(prev?.columnWidths || {}),
+        [field]: width,
+      },
+    }));
+  };
+
   return filterState && totalRowCount != undefined ? (
     <DataListContainer>
       <CustomFilterBar
@@ -379,6 +404,7 @@ export const DataList = <TModel extends GridValidRowModel>({
         disableEditRoute={!showEditButton}
         disableViewRoute={!showViewButton}
         columnVisibilityModel={columnVisibilityModel}
+        onColumnWidthChange={handleColumnWidthChange}
         onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
         onRowSelectionModelChange={(newRowSelectionModel) => {
           setRowSelectionModel(newRowSelectionModel);
