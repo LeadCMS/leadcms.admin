@@ -38,6 +38,9 @@ import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { execDeleteWithToast } from "utils/general-helper";
 import { GhostLink } from "@components/ghost-link";
 import { openSitePreview } from "utils/preview-helper";
+import { GridColDef } from "@mui/x-data-grid";
+import { getWhereFilterQuery } from "@providers/query-provider";
+import { CustomFilterBar } from "@components/custom-filter";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -61,11 +64,60 @@ export const ContentList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollTargetRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef(false);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+
 
   // Check if preview features are available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
   const defaultLanguage = config?.defaultLanguage;
+
+  const contentFilterColumns: GridColDef[] = [
+    { field: "title", headerName: "Title" },
+    { field: "description", headerName: "Description" },
+    { field: "body", headerName: "Body" },
+    { field: "slug", headerName: "Slug" },
+    { field: "type", headerName: "Type" },
+    { field: "author", headerName: "Author" },
+    { field: "language", headerName: "Language" },
+    { field: "category", headerName: "Category" },
+    { field: "tags", headerName: "Tags" },
+    { field: "publishedAt", headerName: "Published At" },
+    { field: "createdAt", headerName: "Created At" },
+    { field: "updatedAt", headerName: "Updated At" },
+  ];
+
+  const addFilter = (
+    filter: { whereField?: string; whereOperator?: string; whereFieldValue?: string },
+    _removeIdx?: number,
+    editIdx?: number
+  ) => {
+    setWhereFilters((old) => {
+      if (typeof editIdx === "number" && editIdx >= 0) {
+        const copy = [...old];
+        copy[editIdx] = filter as any;
+        return copy;
+      }
+      return [...old, filter as any];
+    });
+  };
+
+  const removeFilter = (idx: number) => {
+    setWhereFilters((old) => old.filter((_, i) => i !== idx));
+  };
+
+  const clearAllFilters = () => setWhereFilters([]);
+
+  const buildWhereQuery = () => {
+    const queries = whereFilters
+      .map((f, idx) => {
+        const query = getWhereFilterQuery(f.whereField || "", f.whereFieldValue || "", f.whereOperator || "");
+        return query;
+      })
+      .filter(Boolean);
+    const joined = queries.join("");
+    return joined;
+  };
 
   // Fetch data logic for InfiniteScroll
   const fetchData = async () => {
@@ -78,6 +130,12 @@ export const ContentList = () => {
 
     if (searchText) {
       filter.query = searchText;
+    }
+
+    const whereQuery = buildWhereQuery();
+
+    if (whereQuery) {
+      filter.query = (filter.query || "") + whereQuery;
     }
 
     try {
@@ -116,7 +174,7 @@ export const ContentList = () => {
       initialLoadRef.current = true;
     });
     // eslint-disable-next-line
-  }, [searchText]);
+  }, [searchText, whereFilters, sortField, sortDirection]);
 
   // Action handlers
   const handleDeleteClick = (contentId: number) => {
@@ -174,12 +232,28 @@ export const ContentList = () => {
     </Box>
   );
 
+   const extraActions = [
+
+    <IconButton
+      onClick={() => setFilterPanelOpen(true)}
+      color="secondary"
+      sx={{
+        backgroundColor: (theme) => theme.palette.background.secondary,
+        border: "1px solid",
+        borderColor: "#E4E4E7",
+        borderRadius: (theme) => theme.spacing(1),
+      }}
+    >
+      <Filter size={18} />
+    </IconButton>,
+   ]
+
   return (
     <ModuleWrapper
       breadcrumbs={[]}
       currentBreadcrumb={"Content"}
       leftContainerChildren={leftControls}
-      extraActionsContainerChildren={null}
+      extraActionsContainerChildren={extraActions}
       addButtonContainerChildren={
         <Button
           variant="contained"
@@ -192,6 +266,15 @@ export const ContentList = () => {
         </Button>
       }
     >
+      <CustomFilterBar
+        columns={contentFilterColumns}
+        whereFilters={whereFilters}
+        addFilter={addFilter}
+        removeFilter={removeFilter}
+        filterPanelOpen={filterPanelOpen}
+        setFilterPanelOpen={setFilterPanelOpen}
+        clearAllFilters={clearAllFilters}
+      />
       <ContentListContainer>
         {isLoading && contentItems.length === 0 ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
