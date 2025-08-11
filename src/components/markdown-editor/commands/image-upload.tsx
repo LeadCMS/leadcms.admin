@@ -52,7 +52,7 @@ export const ImageUpload = (contentDetails: ContentDetails, isInToolbar: boolean
         const textPosStart = api.replaceSelection("").selection.start;
         api.replaceSelection(replaceText);
         const imageUploadingResponse = await this.networkContext.client.api.mediaCreate({
-          Image: selectedFile,
+          File: selectedFile,
           ScopeUid: this.contentDetails.slug,
         });
         if (imageUploadingResponse.error) {

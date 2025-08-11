@@ -2,42 +2,52 @@ import { AccountDetailsDto } from "@lib/network/swagger-client";
 import { CoreModule, viewFormRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
 import { useEffect, useState } from "react";
-import { useRouteParams } from "typesafe-routes";
 import { DataView, DataViewNoLabel } from "components/data-view";
 import { getContinentByCode, getCountryByCode } from "utils/general-helper";
 import { Grid } from "@mui/material";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { DataManagementBlock } from "@components/data-management";
 import { AccountUrlHref } from "@features/accounts/index.styled";
+import { useOutletContext } from "react-router-dom";
+import { useRouteParams } from "typesafe-routes";
 
 interface DataViewRow {
   label: string;
-  value: any;
+  value: unknown;
 }
 
 export const AccountView = () => {
   const context = useRequestContext();
   const { setBusy } = useModuleWrapperContext();
   const { client } = context;
+  const { account } = useOutletContext<{ account: AccountDetailsDto | null }>();
   const { id } = useRouteParams(viewFormRoute);
-  const [account, setAccount] = useState<AccountDetailsDto>();
   const [country, setCountry] = useState<string>();
   const [continent, setContinent] = useState<string>();
+  const currencyFormatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  });
 
   useEffect(() => {
+    if (!account) return;
     setBusy(async () => {
       try {
-        const { data } = await client.api.accountsDetail(id);
-        setAccount(data);
-        const country = await getCountryByCode(context, data.countryCode!);
-        if (country) setCountry(country);
-        const continent = await getContinentByCode(context, data.continentCode!);
-        if (continent) setContinent(continent);
+        if (account.countryCode) {
+          const c = await getCountryByCode(context, account.countryCode);
+          if (c) setCountry(c);
+        }
+        if (account.continentCode) {
+          const cont = await getContinentByCode(context, account.continentCode);
+          if (cont) setContinent(cont);
+        }
       } catch (e) {
         console.log(e);
       }
     });
-  }, [client]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.countryCode, account?.continentCode]);
 
   const getAbsoluteUrl = (url: string) => {
     const absoluteUrl =
@@ -55,30 +65,58 @@ export const AccountView = () => {
     </AccountUrlHref>
   );
 
-  const accountAboutData: DataViewRow[] | undefined = account && [
-    { label: "Name", value: account.name || "" },
-    { label: "Site url", value: accountSiteUrl || "" },
-    { label: "Revenue", value: account.revenue || "" },
-    { label: "Employees range", value: account.employeesRange || "" },
-  ];
+  const accountAboutData: DataViewRow[] | undefined = account
+    ? [
+        { label: "Name", value: account.name || "" },
+        { label: "Site url", value: accountSiteUrl || "" },
+        {
+          label: "Revenue",
+          value:
+            account.revenue !== null && account.revenue !== undefined
+              ? currencyFormatter.format(account.revenue)
+              : "",
+        },
+        { label: "Employees range", value: account.employeesRange || "" },
+      ]
+    : undefined;
 
-  const accountLocationData: DataViewRow[] | undefined = account && [
-    { label: "City", value: account.cityName || "" },
-    { label: "Country", value: country || "" },
-    { label: "Continent", value: continent || "" },
-  ];
+  const accountLocationData: DataViewRow[] | undefined = account
+    ? [
+        { label: "City", value: account.cityName || "" },
+        { label: "Country", value: country || "" },
+        { label: "Continent", value: continent || "" },
+      ]
+    : undefined;
 
-  const accountOtherData: DataViewRow[] | undefined = account && [
-    { label: "Tags", value: account.tags?.join(", ") || "" },
-    { label: "Source", value: account.source || "" },
-  ];
+  const accountOtherData: DataViewRow[] | undefined = account
+    ? [
+        { label: "Tags", value: account.tags?.join(", ") || "" },
+        { label: "Source", value: account.source || "" },
+      ]
+    : undefined;
 
-  const accountSocialMediaData: DataViewRow[] | undefined =
-    account?.socialMedia &&
-    Object.entries(account.socialMedia!).map(([label, value]) => ({
-      label,
-      value: getAbsoluteUrl(value),
-    }));
+  const socialEntries = account
+    ? Object.entries(account.socialMedia ?? {}).filter(
+        ([, value]) => typeof value === "string" && value.trim() !== ""
+      )
+    : undefined;
+
+  const accountSocialMediaData: DataViewRow[] | undefined = socialEntries
+    ? socialEntries.map(([label, value]) => ({ label, value: getAbsoluteUrl(value) }))
+    : undefined;
+
+  const hasLocation = !!(
+    (account?.cityName && account.cityName.trim()) ||
+    (country && country.trim()) ||
+    (continent && continent.trim())
+  );
+
+  const hasOther = !!(
+    (account?.tags && account.tags.length > 0) ||
+    (account?.source && account.source.trim())
+  );
+
+  const hasSocial = !!(socialEntries && socialEntries.length > 0);
 
   return (
     <>
@@ -86,22 +124,28 @@ export const AccountView = () => {
         <Grid size={{ xs: 12, sm: 3 }}>
           <DataView header="About" rows={accountAboutData} />
         </Grid>
-        <Grid size={{ xs: 12, sm: 3 }}>
-          <DataView header="Location" rows={accountLocationData} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 3 }}>
-          <DataViewNoLabel header="Social media" rows={accountSocialMediaData} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 3 }}>
-          <DataView header="Other" rows={accountOtherData} />
-        </Grid>
+        {hasLocation && (
+          <Grid size={{ xs: 12, sm: 3 }}>
+            <DataView header="Location" rows={accountLocationData} />
+          </Grid>
+        )}
+        {hasSocial && (
+          <Grid size={{ xs: 12, sm: 3 }}>
+            <DataViewNoLabel header="Social media" rows={accountSocialMediaData} />
+          </Grid>
+        )}
+        {hasOther && (
+          <Grid size={{ xs: 12, sm: 3 }}>
+            <DataView header="Other" rows={accountOtherData} />
+          </Grid>
+        )}
         <Grid size={{ xs: 12, sm: 6 }}>
           <DataManagementBlock
             header="Data Management"
             description="Please be aware that what
             has been deleted can never be brought back."
             entity="account"
-            handleDeleteAsync={(id) => client.api.accountsDelete(id as number)}
+            handleDeleteAsync={(idVal) => client.api.accountsDelete(idVal as number)}
             itemId={id}
             successNavigationRoute={CoreModule.accounts}
           ></DataManagementBlock>

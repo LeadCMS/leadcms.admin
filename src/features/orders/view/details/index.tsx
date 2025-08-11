@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Grid,
   IconButton,
   Link,
@@ -148,10 +149,37 @@ export const OrderView = () => {
     </div>
   );
 
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+        return "warning";
+      case "paid":
+        return "success";
+      case "cancelled":
+        return "error";
+      case "refunded":
+        return "info";
+      case "failed":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
+  const StatusChip = ({ status }: { status: string }) => (
+    <Chip
+      label={status || "Pending"}
+      color={getStatusColor(status)}
+      size="small"
+      variant="filled"
+    />
+  );
+
   const orderViewData = [
     { label: "Order Id", value: order?.orderNumber || "" },
     { label: "Reference no", value: order?.refNo || "" },
     { label: "Order date", value: order?.createdAt ? getFormattedDateTime(order?.createdAt) : "" },
+    { label: "Status", value: <StatusChip status={order?.status || "Pending"} /> },
     { label: "Quantity", value: order?.quantity || "" },
     { label: "Total", value: order?.total || "" },
   ];
@@ -165,16 +193,6 @@ export const OrderView = () => {
     {
       field: "productName",
       headerName: "Product",
-      flex: 2,
-    },
-    {
-      field: "licenseCode",
-      headerName: "License",
-      flex: 2,
-    },
-    {
-      field: "unitPrice",
-      headerName: "Unit price",
       flex: 2,
     },
     {
@@ -267,7 +285,6 @@ export const OrderView = () => {
 
   const OrderItemEditValidationScheme = zod.object({
     productName: zod.string(),
-    licenseCode: zod.string(),
     unitPrice: zod.number().positive(),
     currency: zod.string(),
     quantity: zod.number().positive(),

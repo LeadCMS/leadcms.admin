@@ -13,7 +13,7 @@ export const StyledForm = styled("form")`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 2rem;
   width: 400px;
   padding: 2rem;
   border-radius: 8px;

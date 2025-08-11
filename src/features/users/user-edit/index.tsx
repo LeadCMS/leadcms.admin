@@ -136,7 +136,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
       }
       const file = target.files[0];
       const imageUploadingResponse = await client.api.mediaCreate({
-        Image: file,
+        File: file,
         ScopeUid: "UserAvatarStorage",
       });
       if (imageUploadingResponse.error) {

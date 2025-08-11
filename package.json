@@ -1,6 +1,6 @@
 {
   "name": "leadcms.admin",
-  "version": "1.2.7-pre",
+  "version": "1.2.64-pre",
   "private": true,
   "sideEffects": false,
   "description": "React based Admin UI for LeadCMS (lightweight, extendable headless CMS for product websites)",
@@ -95,6 +95,7 @@
     "react-hook-form": "^7.56.4",
     "react-infinite-scroll-component": "^6.1.0",
     "react-markdown": "^8.0.6",
+    "recharts": "^2.12.7",
     "react-router-dom": "^6.7.0",
     "react-spreadsheet-import": "^4.7.1",
     "react-toastify": "^9.1.2",
