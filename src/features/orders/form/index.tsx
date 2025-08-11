@@ -1,6 +1,5 @@
 import { SyntheticEvent, useEffect, useState } from "react";
 import { ModuleWrapper } from "@components/module-wrapper";
-import { SavingBar } from "@components/saving-bar";
 import { useNotificationsService } from "@hooks";
 import { ContactDetailsDto, OrderDetailsDto } from "@lib/network/swagger-client";
 import { defaultFilterLimit } from "@providers/query-provider";
@@ -168,7 +167,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
       <Button
         disabled={formik.isSubmitting}
-        type="submit"
+        type="button"
         variant="outlined"
         color="primary"
         onClick={handleCancel}
