@@ -1,5 +1,4 @@
 import { ModuleWrapper } from "@components/module-wrapper";
-import { SavingBar } from "@components/saving-bar";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { AccountDetailsDto } from "@lib/network/swagger-client";
 import { CoreModule } from "@lib/router";
@@ -80,15 +79,25 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   }, []);
 
   useEffect(() => {
-    if (account.name) {
-      formik.setValues(account);
+    if (account && account.name) {
+      formik.setValues({
+        name: account.name || "",
+        socialMedia: account.socialMedia || {},
+        revenue: account.revenue || null,
+        siteUrl: account.siteUrl || "",
+        logoUrl: account.logoUrl || "",
+        employeesRange: account.employeesRange || "",
+        cityName: account.cityName || "",
+        state: account.state || "",
+        countryCode: account.countryCode || "ZZ",
+        continentCode: account.continentCode || "ZZ",
+        tags: account.tags || [],
+        source: account.source || "",
+      });
     }
   }, [account]);
 
-  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    formik.setFieldValue("tags", value.split(","));
-  };
+  // Tags now handled via multi Autocomplete (freeSolo) below.
 
   const handleCancel = () => {
     handleNavigation(CoreModule.accounts);
@@ -138,16 +147,20 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   };
 
   const submitFunc = async (values: AccountDetailsDto) => {
+    console.log("submitFunc called with values:", values);
     try {
       await handleSave(values);
+      console.log("handleSave completed successfully");
       handleNavigation(CoreModule.accounts);
     } catch (error) {
+      console.error("Error in submitFunc:", error);
       formik.setSubmitting(false);
       throw error;
     }
   };
 
   const submit = (values: AccountDetailsDto, helpers: FormikHelpers<AccountDetailsDto>) => {
+    console.log("Account form submit called with values:", values);
     execSubmitWithToast<AccountDetailsDto>(
       values,
       helpers,
@@ -159,9 +172,26 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   };
 
   const AccountEditValidationScheme = zod.object({
-    name: zod.string(),
-    revenue: zod.number().nullable().optional(),
+    name: zod.string().min(1, "Name is required"),
+    revenue: zod
+      .preprocess((val) => {
+        if (val === "" || val === undefined) return null;
+        if (val === null) return null;
+        const num = Number(val);
+        return Number.isNaN(num) ? null : num;
+      }, zod.number().nullable().optional())
+      .nullable()
+      .optional(),
     socialMedia: zod.record(zod.string()).optional(),
+    siteUrl: zod.string().optional(),
+    logoUrl: zod.string().optional(),
+    employeesRange: zod.string().optional(),
+    cityName: zod.string().optional(),
+    state: zod.string().optional(),
+    countryCode: zod.string().optional(),
+    continentCode: zod.string().optional(),
+    tags: zod.array(zod.string()).optional(),
+    source: zod.string().optional(),
   });
 
   const formik = useFormik({
@@ -182,13 +212,14 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
     },
     onSubmit: submit,
     validateOnChange: false,
+    enableReinitialize: true,
   });
 
   const actionButtons = (
     <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
       <Button
         disabled={isLoading || formik.isSubmitting}
-        type="submit"
+        type="button"
         variant="outlined"
         color="primary"
         onClick={handleCancel}
@@ -198,13 +229,17 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
         Cancel
       </Button>
       <Button
+        form="accountForm"
         type="submit"
         disabled={isLoading || formik.isSubmitting}
         variant="contained"
         color="primary"
         size="large"
         startIcon={isEdit ? <Save size={22} /> : <Plus size={22} />}
-        onClick={formik.submitForm}
+        onClick={() => {
+          console.log("Save button clicked");
+          formik.submitForm();
+        }}
       >
         {isEdit ? "Save" : "Add"}
       </Button>
@@ -235,7 +270,13 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
       currentBreadcrumb={header}
       actionButtons={actionButtons}
     >
-      <form onSubmit={formik.handleSubmit}>
+      <form
+        id="accountForm"
+        onSubmit={(e) => {
+          console.log("Form submit event");
+          formik.handleSubmit(e);
+        }}
+      >
         <Card>
           <CardContent>
             <Grid container spacing={4} marginBottom={4}>
@@ -255,7 +296,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   helperText={formik.touched.name && formik.errors.name}
                   fullWidth
                   size="small"
-                ></TextField>
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
@@ -268,7 +309,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   onChange={formik.handleChange}
                   fullWidth
                   size="small"
-                ></TextField>
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
@@ -282,7 +323,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   onChange={formik.handleChange}
                   fullWidth
                   size="small"
-                ></TextField>
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 2 }}>
                 <TextField
@@ -295,7 +336,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   onChange={formik.handleChange}
                   fullWidth
                   size="small"
-                ></TextField>
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 2 }}>
                 <Tooltip title="Revenue field must contain only numbers">
@@ -312,7 +353,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                     onChange={formik.handleChange}
                     fullWidth
                     size="small"
-                  ></TextField>
+                  />
                 </Tooltip>
               </Grid>
             </Grid>
@@ -325,27 +366,27 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="City"
-                  name="city"
-                  value={formik.values.cityName}
+                  name="cityName"
+                  value={formik.values.cityName || ""}
                   placeholder="Enter City"
                   variant="outlined"
                   onChange={formik.handleChange}
                   fullWidth
                   size="small"
-                ></TextField>
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="State"
                   name="state"
-                  value={formik.values.state}
+                  value={formik.values.state || ""}
                   placeholder="Enter State"
                   variant="outlined"
                   onChange={formik.handleChange}
                   fullWidth
                   size="small"
-                ></TextField>
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 3 }}>
                 {!isLoading && (
@@ -473,17 +514,20 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                 <SectionHeader icon={<Link size={22} />} title="Other" />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Tags"
-                  name="tags"
-                  value={formik.values.tags?.join(",") || ""}
-                  placeholder="Enter Tags"
-                  variant="outlined"
-                  onChange={handleTagInputChange}
-                  fullWidth
+                <Autocomplete
+                  multiple
+                  freeSolo
                   size="small"
-                ></TextField>
+                  disabled={isLoading || formik.isSubmitting}
+                  options={[]}
+                  value={formik.values.tags || []}
+                  onChange={(e, value) => {
+                    formik.setFieldValue("tags", value);
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Tags" placeholder="Add tag" variant="outlined" />
+                  )}
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
@@ -496,7 +540,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   onChange={formik.handleChange}
                   size="small"
                   fullWidth
-                ></TextField>
+                />
               </Grid>
             </Grid>
           </CardContent>
