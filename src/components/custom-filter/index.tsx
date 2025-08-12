@@ -73,7 +73,7 @@ export function CustomFilterBar({ columns, whereFilters, addFilter, removeFilter
 
   return (
   <>
-    <Box display="flex" sx={{backgroundColor:"#fafbfd"}} >
+    <Box display="flex" sx={{backgroundColor:"#fafbfd", mb:4}} >
       {whereFilters.map((f, idx) => (
           <Chip
             key={idx}

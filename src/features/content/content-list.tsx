@@ -23,7 +23,7 @@ import {
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
 import { useEffect, useState, useRef } from "react";
-import { Plus, Search, MoreHorizontal, Edit, Copy, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Copy, Trash2, ExternalLink, Filter, SortAsc, SortDesc } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
 import { ModuleWrapper } from "@components/module-wrapper";
@@ -38,6 +38,11 @@ import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { execDeleteWithToast } from "utils/general-helper";
 import { GhostLink } from "@components/ghost-link";
 import { openSitePreview } from "utils/preview-helper";
+import { GridColDef } from "@mui/x-data-grid";
+import { getWhereFilterQuery } from "@providers/query-provider";
+import { CustomFilterBar } from "@components/custom-filter";
+import { ContentSortPopup } from "@components/content-sort-popup";
+import useLocalStorage from "use-local-storage";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -47,6 +52,14 @@ interface ExtendedConfig {
   };
   defaultLanguage?: string;
 }
+
+type ContentListFilterSettings = {
+  whereFilters: Array<{ whereField: string; whereOperator: string; whereFieldValue: string }>;
+  sortField: string;
+  sortDirection: "asc" | "desc";
+};
+
+const CONTENT_FILTERS_KEY = "content-list-filters";
 
 export const ContentList = () => {
   const { client } = useRequestContext();
@@ -61,23 +74,96 @@ export const ContentList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollTargetRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef(false);
+  const [sortAnchorEl, setSortAnchorEl] = useState<HTMLElement | null>(null);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+
+  const [storedSettings, setStoredSettings] = useLocalStorage<ContentListFilterSettings>(
+  CONTENT_FILTERS_KEY,
+    {
+      whereFilters: [],
+      sortField: "updatedAt",
+      sortDirection: "desc",
+    }
+  );
+  const [whereFilters, setWhereFilters] = useState(storedSettings.whereFilters);
+  const [sortField, setSortField] = useState(storedSettings.sortField);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(storedSettings.sortDirection);
 
   // Check if preview features are available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
   const defaultLanguage = config?.defaultLanguage;
 
+  const contentFilterColumns: GridColDef[] = [
+    { field: "title", headerName: "Title" },
+    { field: "description", headerName: "Description" },
+    { field: "body", headerName: "Body" },
+    { field: "slug", headerName: "Slug" },
+    { field: "type", headerName: "Type" },
+    { field: "author", headerName: "Author" },
+    { field: "language", headerName: "Language" },
+    { field: "category", headerName: "Category" },
+    { field: "tags", headerName: "Tags" },
+    { field: "publishedAt", headerName: "Published At" },
+    { field: "createdAt", headerName: "Created At" },
+    { field: "updatedAt", headerName: "Updated At" },
+  ];
+
+  const addFilter = (
+    filter: { whereField?: string; whereOperator?: string; whereFieldValue?: string },
+    _removeIdx?: number,
+    editIdx?: number
+  ) => {
+    setWhereFilters((old) => {
+      if (typeof editIdx === "number" && editIdx >= 0) {
+        const copy = [...old];
+        copy[editIdx] = filter as any;
+        return copy;
+      }
+      return [...old, filter as any];
+    });
+  };
+
+  const removeFilter = (idx: number) => {
+    setWhereFilters((old) => old.filter((_, i) => i !== idx));
+  };
+
+  const clearAllFilters = () => setWhereFilters([]);
+
+  const buildWhereQuery = () => {
+    const queries = whereFilters
+      .map((f, idx) => {
+        const query = getWhereFilterQuery(f.whereField || "", f.whereFieldValue || "", f.whereOperator || "");
+        return query;
+      })
+      .filter(Boolean);
+    const joined = queries.join("");
+    return joined;
+  };
+
+  const handleSortButtonClick = (event: React.MouseEvent<HTMLElement>) => {
+    setSortAnchorEl(event.currentTarget);
+  };
+  const handleSortPopupClose = () => setSortAnchorEl(null);
+  const handleSortDirectionToggle = () => setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+
   // Fetch data logic for InfiniteScroll
   const fetchData = async () => {
     setIsLoading(true);
     const filter: Record<string, unknown> = {
-      "filter[order]": "updatedAt desc",
+      [`filter[order]`]: `${sortField} ${sortDirection === "asc" ? "" : "desc"}`.trim(),
       "filter[skip]": !initialLoadRef.current ? 0 : contentItems.length,
       "filter[limit]": 20,
     };
 
     if (searchText) {
       filter.query = searchText;
+    }
+
+    const whereQuery = buildWhereQuery();
+
+    if (whereQuery) {
+      filter.query = (filter.query || "") + whereQuery;
     }
 
     try {
@@ -106,6 +192,20 @@ export const ContentList = () => {
     }
   };
 
+  useEffect(() => {
+    setStoredSettings({
+      whereFilters,
+      sortField,
+      sortDirection,
+    });
+  }, [whereFilters, sortField, sortDirection]);
+
+  useEffect(() => {
+    setWhereFilters(storedSettings.whereFilters);
+    setSortField(storedSettings.sortField);
+    setSortDirection(storedSettings.sortDirection);
+  }, [storedSettings]);
+
   // Initial load and search
   useEffect(() => {
     setContentItems([]);
@@ -116,7 +216,7 @@ export const ContentList = () => {
       initialLoadRef.current = true;
     });
     // eslint-disable-next-line
-  }, [searchText]);
+  }, [searchText, whereFilters, sortField, sortDirection]);
 
   // Action handlers
   const handleDeleteClick = (contentId: number) => {
@@ -174,12 +274,69 @@ export const ContentList = () => {
     </Box>
   );
 
+  const sortLabel = (() => {
+    switch (sortField) {
+      case "updatedAt": return "Updated At";
+      case "publishedAt": return "Published At";
+      case "createdAt": return "Created At";
+      case "author": return "Author";
+      case "title": return "Title";
+      case "type": return "Type";
+      default: return sortField;
+    }
+  })();
+
+   const extraActions = [
+    <Button
+      key="sort"
+      onClick={handleSortButtonClick}
+      color="secondary"
+      variant="outlined"
+      sx={{
+        backgroundColor: (theme) => theme.palette.background.secondary,
+        border: "1px solid",
+        borderColor: "#E4E4E7",
+        borderRadius: (theme) => theme.spacing(1),
+        ml: 1,
+        px: 2,
+        py: 1,
+        minWidth: 0,
+        fontSize: "14px",
+        textTransform: "none",
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+      }}
+      startIcon={
+        sortDirection === "asc"
+          ? <SortAsc size={18} />
+          : <SortDesc size={18} />
+      }
+    >
+      <span >Sort:</span>
+      <span >{sortLabel}</span>
+    </Button>,
+
+    <IconButton
+      onClick={() => setFilterPanelOpen(true)}
+      color="secondary"
+      sx={{
+        backgroundColor: (theme) => theme.palette.background.secondary,
+        border: "1px solid",
+        borderColor: "#E4E4E7",
+        borderRadius: (theme) => theme.spacing(1),
+      }}
+    >
+      <Filter size={18} />
+    </IconButton>,
+   ]
+
   return (
     <ModuleWrapper
       breadcrumbs={[]}
       currentBreadcrumb={"Content"}
       leftContainerChildren={leftControls}
-      extraActionsContainerChildren={null}
+      extraActionsContainerChildren={extraActions}
       addButtonContainerChildren={
         <Button
           variant="contained"
@@ -192,6 +349,27 @@ export const ContentList = () => {
         </Button>
       }
     >
+      <CustomFilterBar
+        columns={contentFilterColumns}
+        whereFilters={whereFilters}
+        addFilter={addFilter}
+        removeFilter={removeFilter}
+        filterPanelOpen={filterPanelOpen}
+        setFilterPanelOpen={setFilterPanelOpen}
+        clearAllFilters={clearAllFilters}
+      />
+        <ContentSortPopup
+        anchorEl={sortAnchorEl}
+        open={!!sortAnchorEl}
+        selectedField={sortField}
+        direction={sortDirection}
+        onClose={handleSortPopupClose}
+        onChangeField={(f) => {
+          setSortField(f);
+          handleSortPopupClose();
+        }}
+        onToggleDirection={handleSortDirectionToggle}
+      />
       <ContentListContainer>
         {isLoading && contentItems.length === 0 ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
