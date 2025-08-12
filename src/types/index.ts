@@ -23,6 +23,7 @@ export type DataListSettings = {
     whereFieldValue: string;
   }>;
   columnOrder?: string[];
+  columnWidths?: Record<string, number>;
 };
 
 export type GridDataFilterSettings = {
@@ -54,6 +55,7 @@ export interface GridDataFilterState {
   pageNumber?: number;
   columnVisibilityModel?: GridColumnVisibilityModel | undefined;
   columnOrder?: string[];
+  columnWidths?: Record<string, number>;
 }
 
 export type GridSizeProps = {
