@@ -53,6 +53,7 @@ export interface GridDataFilterState {
   }>;
   skipLimit?: number;
   pageNumber?: number;
+  searchTerm?: string;
   columnVisibilityModel?: GridColumnVisibilityModel | undefined;
   columnOrder?: string[];
   columnWidths?: Record<string, number>;
@@ -73,4 +74,5 @@ export interface ExportParams {
   selectedRows: any[];
   whereFilterQuery: string;
   basicFilterQuery: string | undefined;
+  searchTerm: string;
 }
