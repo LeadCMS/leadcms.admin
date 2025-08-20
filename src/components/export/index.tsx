@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { downloadFile } from "components/download";
+import { downloadExportFile, downloadFile } from "components/download";
 import { useNotificationsService } from "@hooks";
 import { ExportParams } from "types";
 
@@ -31,6 +31,21 @@ export const CsvExport = ({ exportAsync, closeExport, fileName }: ExportPorps) =
 
   return <></>;
 };
+
+export async function genericExportHandler(
+  params: ExportParams,
+  exportApiCall: (finalQueryString: string, accept: string) => Promise<Response>,
+  moduleName: string
+): Promise<void> {
+  try {
+    const { finalQueryString, accept } = buildExportQueryString(params);
+    const response = await exportApiCall(finalQueryString, accept);
+    const blob = await response.blob();
+    downloadExportFile(blob, params.format, moduleName);
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 export function buildExportQueryString({
   scope,
