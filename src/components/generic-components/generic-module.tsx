@@ -20,7 +20,7 @@ import {
 import { ModuleWrapper } from "@components/module-wrapper";
 import { dataListBreadcrumbLinks } from "../../utils/constants";
 import { GenericForm, GenericFormProps } from "@components/generic-components/generic-form";
-import { Button, CircularProgress, Grid, Typography, Box } from "@mui/material";
+import { Button, Box } from "@mui/material";
 import { SearchBar } from "@components/search-bar";
 import { GhostLink } from "@components/ghost-link";
 import {
@@ -32,8 +32,11 @@ import {
 import { CsvExport } from "@components/export";
 import { CsvImport } from "@components/spreadsheet-import";
 import { Result } from "react-spreadsheet-import/types/types";
-import { Download, Upload, XCircle, Save, Plus } from "lucide-react";
+import { Download, Upload, XCircle, Save, Plus, Settings2, Filter } from "lucide-react";
 import { DataManagementBlock } from "@components/data-management";
+import { ToolbarButton } from "@components/tool-bar-button";
+import { ColumnsPanel } from "@components/custom-columns-panel";
+import { CustomFilterBar } from "@components/custom-filter";
 
 interface ExtraActions {
   export?: {
@@ -51,6 +54,8 @@ interface ExtraActions {
       params: RequestParams
     ) => Promise<HttpResponse<ImportResult, void | ProblemDetails>>;
   };
+  showColumnsPanel?: boolean;
+  showFiltersPanel?: boolean;
 }
 
 interface GenericModuleProps<TView extends BasicTypeForGeneric, TCreate, TUpdate> {
@@ -82,6 +87,8 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
   const [triggerCancel, setTriggerCancel] = useState(false);
   const handleSaveClick = () => setTriggerSave(true);
   const handleCancelClick = () => setTriggerCancel(true);
+  const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
 
   const getGenericTable = (key: string, tableProps: GenericDataGridProps<TView>) => {
     const genericDataGrid = GenericDataGrid<TView>(
@@ -105,7 +112,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         to={getAddFormRoute()}
         component={GhostLink}
         variant="contained"
-        startIcon={<Plus size={22} />}
+        startIcon={<Plus size={18} />}
       >
         {addButtonContent || "Add"}
       </Button>
@@ -113,6 +120,27 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
 
     const extraActionsChildren = (
       <>
+        {extraActions?.showFiltersPanel && (
+          <ToolbarButton
+            startIcon={<Filter size={18} />}
+            onClick={() => setFilterPanelOpen(true)}
+            sx={{
+              minWidth: 0,
+              py: 2,
+              px: 2,
+              ".MuiButton-startIcon": { marginRight: 0, marginLeft: 0 },
+            }}
+          ></ToolbarButton>
+        )}
+
+        {extraActions?.showColumnsPanel && (
+          <ToolbarButton
+            startIcon={<Settings2 size={18} />}
+            onClick={() => setColumnsPanelOpen((open) => !open)}
+          >
+            Columns
+          </ToolbarButton>
+        )}
         {extraActions?.import?.showButton && (
           <Button
             key={"import-btn"}
@@ -139,6 +167,8 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         )}
       </>
     );
+    const columnsPanelProps = genericDataGridRef.current?.getColumnsPanelProps();
+    const filtersPanelProps = genericDataGridRef.current?.getFiltersPanelProps();
 
     return (
       <ModuleWrapper
@@ -149,6 +179,29 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         extraActionsContainerChildren={extraActionsChildren}
         addButtonContainerChildren={addButton}
       >
+        {extraActions?.showFiltersPanel && filtersPanelProps && (
+          <CustomFilterBar
+            columns={filtersPanelProps.columns}
+            whereFilters={filtersPanelProps.whereFilters || []}
+            addFilter={filtersPanelProps.addFilter}
+            removeFilter={filtersPanelProps.removeFilter}
+            filterPanelOpen={filterPanelOpen}
+            setFilterPanelOpen={setFilterPanelOpen}
+            clearAllFilters={filtersPanelProps.clearAllFilters}
+          />
+        )}
+
+        {extraActions?.showColumnsPanel && columnsPanelProps && (
+          <ColumnsPanel
+            open={columnsPanelOpen}
+            columns={columnsPanelProps.columns}
+            setColumns={columnsPanelProps.setColumns}
+            columnVisibilityModel={columnsPanelProps.columnVisibilityModel}
+            setColumnVisibilityModel={columnsPanelProps.setColumnVisibilityModel}
+            onColumnsReorder={columnsPanelProps.onColumnsReorder}
+            onClose={() => setColumnsPanelOpen(false)}
+          />
+        )}
         {genericDataGrid}
         {importIsOpen && extraActions?.import?.importSchema && (
           <CsvImport
