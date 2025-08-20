@@ -5,7 +5,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { EmailTemplateDetailsDto } from "@lib/network/swagger-client";
 import { getAddFormRoute } from "@lib/router";
-import { Plus, Download } from "lucide-react";
+import { Plus, Download, Filter, Settings2 } from "lucide-react";
 import Button from "@mui/material/Button";
 import { GridColDef } from "@mui/x-data-grid";
 import { useRequestContext } from "@providers/request-provider";
@@ -20,58 +20,7 @@ import {
   searchLabel,
 } from "../constants";
 import { dataListBreadcrumbLinks } from "utils/constants";
-
-const columns: GridColDef<EmailTemplateDetailsDto>[] = [
-  {
-    field: "id",
-    headerName: "id",
-    flex: 1,
-  },
-  {
-    field: "name",
-    headerName: "Name",
-    flex: 2,
-    type: "string",
-  },
-  {
-    field: "subject",
-    headerName: "Subject",
-    flex: 2,
-    type: "string",
-  },
-  {
-    field: "fromEmail",
-    headerName: "Sender Email",
-    flex: 2,
-    type: "string",
-  },
-  {
-    field: "fromName",
-    headerName: "Sender Name",
-    flex: 2,
-    type: "string",
-  },
-  {
-    field: "language",
-    headerName: "Language",
-    flex: 2,
-    type: "string",
-  },
-  {
-    field: "createdAt",
-    headerName: "Created At",
-    flex: 2,
-    valueGetter: DateValueGetter,
-    valueFormatter: DateValueFormatter,
-  },
-  {
-    field: "updatedAt",
-    headerName: "Updated At",
-    flex: 2,
-    valueGetter: DateValueGetter,
-    valueFormatter: DateValueFormatter,
-  },
-];
+import { ToolbarButton } from "@components/tool-bar-button";
 
 export const EmailTemplatesList = () => {
   const { client } = useRequestContext();
@@ -82,6 +31,8 @@ export const EmailTemplatesList = () => {
 
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");
   const [openExport, setOpenExport] = useState(false);
+  const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const dataExportQuery = useRef("");
 
   const getContactList = async (mainQuery: string, exportQuery?: string) => {
@@ -108,6 +59,57 @@ export const EmailTemplatesList = () => {
   const handleExportOpen = () => {
     openExport ? setOpenExport(false) : setOpenExport(true);
   };
+  const [columns, setColumns] = useState<GridColDef<EmailTemplateDetailsDto>[]>([
+    {
+      field: "id",
+      headerName: "id",
+      minWidth: 100,
+    },
+    {
+      field: "name",
+      headerName: "Name",
+      minWidth: 140,
+      type: "string",
+    },
+    {
+      field: "subject",
+      headerName: "Subject",
+      minWidth: 120,
+      type: "string",
+    },
+    {
+      field: "fromEmail",
+      headerName: "Sender Email",
+      minWidth: 120,
+      type: "string",
+    },
+    {
+      field: "fromName",
+      headerName: "Sender Name",
+      minWidth: 140,
+      type: "string",
+    },
+    {
+      field: "language",
+      headerName: "Language",
+      minWidth: 120,
+      type: "string",
+    },
+    {
+      field: "createdAt",
+      headerName: "Created At",
+      minWidth: 120,
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+    },
+    {
+      field: "updatedAt",
+      headerName: "Updated At",
+      flex: 2,
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+    },
+  ]);
 
   const searchBar = (
     <SearchBar
@@ -118,18 +120,22 @@ export const EmailTemplatesList = () => {
   );
 
   const extraActions = [
-    <Fragment key={"export-action"}>
-      <Button key={"export-btn"} startIcon={<Download />} onClick={handleExportOpen}>
-        Export
-      </Button>
-      {openExport && (
-        <CsvExport
-          exportAsync={exportContactsAsync}
-          closeExport={handleExportOpen}
-          fileName={"email-templates"}
-        ></CsvExport>
-      )}
-    </Fragment>,
+    <ToolbarButton
+      startIcon={<Filter size={18} />}
+      onClick={() => setFilterPanelOpen(true)}
+      sx={{
+        minWidth: 0,
+        py: 2,
+        px: 2,
+        ".MuiButton-startIcon": { marginRight: 0, marginLeft: 0 },
+      }}
+    ></ToolbarButton>,
+    <ToolbarButton
+      startIcon={<Settings2 size={18} />}
+      onClick={() => setColumnsPanelOpen((open) => !open)}
+    >
+      Columns
+    </ToolbarButton>,
   ];
 
   const addButton = (
@@ -148,6 +154,7 @@ export const EmailTemplatesList = () => {
     >
       <DataList
         columns={columns}
+        setColumns={setColumns}
         gridSettingsStorageKey={emailTemplateGridSettingsStorageKey}
         defaultFilterOrderColumn={defaultFilterOrderColumn}
         defaultFilterOrderDirection={defaultFilterOrderDirection}
@@ -159,6 +166,10 @@ export const EmailTemplatesList = () => {
             sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
           },
         }}
+        filterPanelOpen={filterPanelOpen}
+        setFilterPanelOpen={setFilterPanelOpen}
+        columnsPanelOpen={columnsPanelOpen}
+        setColumnsPanelOpen={setColumnsPanelOpen}
       ></DataList>
     </ModuleWrapper>
   );
