@@ -43,6 +43,7 @@ import { getWhereFilterQuery } from "@providers/query-provider";
 import { CustomFilterBar } from "@components/custom-filter";
 import { ContentSortPopup } from "@components/content-sort-popup";
 import useLocalStorage from "use-local-storage";
+import { SearchBar } from "@components/search-bar";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -57,6 +58,7 @@ type ContentListFilterSettings = {
   whereFilters: Array<{ whereField: string; whereOperator: string; whereFieldValue: string }>;
   sortField: string;
   sortDirection: "asc" | "desc";
+  searchTerm?: string;
 };
 
 const CONTENT_FILTERS_KEY = "content-list-filters";
@@ -68,7 +70,6 @@ export const ContentList = () => {
   const { Show: showErrorModal } = useErrorDetailsModal();
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
-  const [searchText, setSearchText] = useState<string>("");
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,16 +79,19 @@ export const ContentList = () => {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
 
   const [storedSettings, setStoredSettings] = useLocalStorage<ContentListFilterSettings>(
-  CONTENT_FILTERS_KEY,
+    CONTENT_FILTERS_KEY,
     {
       whereFilters: [],
       sortField: "updatedAt",
       sortDirection: "desc",
+      searchTerm: "",
     }
   );
   const [whereFilters, setWhereFilters] = useState(storedSettings.whereFilters);
   const [sortField, setSortField] = useState(storedSettings.sortField);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">(storedSettings.sortDirection);
+  const [searchTerm, setSearchTerm] = useState(storedSettings?.searchTerm ?? "");
+  const [searching, setSearching] = useState(false);
 
   // Check if preview features are available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
@@ -156,8 +160,9 @@ export const ContentList = () => {
       "filter[limit]": 20,
     };
 
-    if (searchText) {
-      filter.query = searchText;
+    if (searchTerm.trim() !== "") {
+      filter.query = searchTerm;
+      setSearching(true);
     }
 
     const whereQuery = buildWhereQuery();
@@ -185,6 +190,7 @@ export const ContentList = () => {
         if (count) totalCount = parseInt(count, 10);
       }
       setContentItemsCount(totalCount);
+      setSearching(false);
     } catch (e) {
       console.log(e);
     } finally {
@@ -216,7 +222,7 @@ export const ContentList = () => {
       initialLoadRef.current = true;
     });
     // eslint-disable-next-line
-  }, [searchText, whereFilters, sortField, sortDirection]);
+  }, [searchTerm, whereFilters, sortField, sortDirection]);
 
   // Action handlers
   const handleDeleteClick = (contentId: number) => {
@@ -254,24 +260,12 @@ export const ContentList = () => {
     setDeleteTarget(null);
   };
 
-  // Controls for leftContainerChildren
-  const leftControls = (
-    <Box display="flex" alignItems="center" gap={2}>
-      <TextField
-        size="small"
-        placeholder="Search content..."
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Search size={20} />
-            </InputAdornment>
-          ),
-        }}
-        sx={{ maxWidth: 320, flexGrow: 1, height: 40 }}
-      />
-    </Box>
+  const searchBar = (
+    <SearchBar
+      setSearchTermOnChange={setSearchTerm}
+      searchBoxLabel={"Search content..."}
+      initialValue={storedSettings?.searchTerm ?? ""}
+    ></SearchBar>
   );
 
   const sortLabel = (() => {
@@ -335,7 +329,7 @@ export const ContentList = () => {
     <ModuleWrapper
       breadcrumbs={[]}
       currentBreadcrumb={"Content"}
-      leftContainerChildren={leftControls}
+      leftContainerChildren={searchBar}
       extraActionsContainerChildren={extraActions}
       addButtonContainerChildren={
         <Button
@@ -370,6 +364,7 @@ export const ContentList = () => {
         }}
         onToggleDirection={handleSortDirectionToggle}
       />
+
       <ContentListContainer>
         {isLoading && contentItems.length === 0 ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
