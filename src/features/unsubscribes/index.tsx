@@ -60,6 +60,8 @@ export const UnsubscribesModule = () => {
         importItemsFn: client.api.unsubscribesImportCreate,
         importSchema: getSchemaDto("UnsubscribeImportDto", swaggerJson.components.schemas),
       },
+      showColumnsPanel: true,
+      showFiltersPanel: true,
     },
     viewFormProps: {
       ...formProps,

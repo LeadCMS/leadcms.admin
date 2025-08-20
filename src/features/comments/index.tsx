@@ -137,6 +137,8 @@ export const CommentsModule = () => {
         importItemsFn: client.api.commentsImportCreate,
         importSchema: getSchemaDto("CommentImportDto", swaggerJson.components.schemas),
       },
+      showColumnsPanel: true,
+      showFiltersPanel: true,
     },
     viewFormProps: {
       ...formProps,
