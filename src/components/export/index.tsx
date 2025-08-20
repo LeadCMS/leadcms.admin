@@ -39,6 +39,7 @@ export function buildExportQueryString({
   selectedRows,
   whereFilterQuery,
   basicFilterQuery,
+  searchTerm,
 }: ExportParams): {
   finalQueryString: string;
   accept: string;
@@ -48,21 +49,24 @@ export function buildExportQueryString({
   let finalQueryString = "";
 
   if (scope === "filtered" && whereFilterQuery && whereFilterQuery.startsWith("&")) {
+    if (searchTerm && searchTerm.trim() !== "") {
+      finalQueryString += `${searchTerm}`;
+    }
 
-    finalQueryString = "&" + fieldQuery;
+    finalQueryString += "&" + fieldQuery;
 
     finalQueryString += whereFilterQuery;
     if (basicFilterQuery) {
       finalQueryString += "&" + basicFilterQuery.replace(/^&/, "");
     }
-  }
-  else {
+  } else {
     let queryParts: string[] = [];
 
     if (scope === "all") {
       queryParts = [fieldQuery, ...(basicFilterQuery ? [basicFilterQuery] : [])];
     } else if (scope === "filtered") {
       queryParts = [
+        ...(searchTerm && searchTerm.trim() !== "" ? [searchTerm] : []),
         fieldQuery,
         ...(whereFilterQuery ? [whereFilterQuery] : []),
         ...(basicFilterQuery ? [basicFilterQuery] : []),
@@ -86,4 +90,3 @@ export function buildExportQueryString({
     accept,
   };
 }
-
