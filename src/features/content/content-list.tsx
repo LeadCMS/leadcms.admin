@@ -16,14 +16,22 @@ import {
   MenuItem,
   Tooltip,
   Box,
-  InputAdornment,
-  TextField,
   CircularProgress,
 } from "@mui/material";
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
 import { useEffect, useState, useRef } from "react";
-import { Plus, Search, MoreHorizontal, Edit, Copy, Trash2, ExternalLink, Filter, SortAsc, SortDesc } from "lucide-react";
+import {
+  Plus,
+  MoreHorizontal,
+  Edit,
+  Copy,
+  Trash2,
+  ExternalLink,
+  Filter,
+  SortAsc,
+  SortDesc,
+} from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
 import { ModuleWrapper } from "@components/module-wrapper";
@@ -43,7 +51,9 @@ import { getWhereFilterQuery } from "@providers/query-provider";
 import { CustomFilterBar } from "@components/custom-filter";
 import { ContentSortPopup } from "@components/content-sort-popup";
 import useLocalStorage from "use-local-storage";
+import NoRecordsDisplay from "@components/no-records-display";
 import { SearchBar } from "@components/search-bar";
+import { ToolbarButton } from "@components/tool-bar-button";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -137,7 +147,11 @@ export const ContentList = () => {
   const buildWhereQuery = () => {
     const queries = whereFilters
       .map((f, idx) => {
-        const query = getWhereFilterQuery(f.whereField || "", f.whereFieldValue || "", f.whereOperator || "");
+        const query = getWhereFilterQuery(
+          f.whereField || "",
+          f.whereFieldValue || "",
+          f.whereOperator || ""
+        );
         return query;
       })
       .filter(Boolean);
@@ -270,60 +284,47 @@ export const ContentList = () => {
 
   const sortLabel = (() => {
     switch (sortField) {
-      case "updatedAt": return "Updated At";
-      case "publishedAt": return "Published At";
-      case "createdAt": return "Created At";
-      case "author": return "Author";
-      case "title": return "Title";
-      case "type": return "Type";
-      default: return sortField;
+      case "updatedAt":
+        return "Updated At";
+      case "publishedAt":
+        return "Published At";
+      case "createdAt":
+        return "Created At";
+      case "author":
+        return "Author";
+      case "title":
+        return "Title";
+      case "type":
+        return "Type";
+      default:
+        return sortField;
     }
   })();
 
-   const extraActions = [
-    <Button
+  const extraActions = [
+    <ToolbarButton
       key="sort"
       onClick={handleSortButtonClick}
-      color="secondary"
-      variant="outlined"
+      startIcon={sortDirection === "asc" ? <SortAsc size={18} /> : <SortDesc size={18} />}
       sx={{
-        backgroundColor: (theme) => theme.palette.background.secondary,
-        border: "1px solid",
-        borderColor: "#E4E4E7",
-        borderRadius: (theme) => theme.spacing(1),
-        ml: 1,
-        px: 2,
-        py: 1,
-        minWidth: 0,
-        fontSize: "14px",
-        textTransform: "none",
-        display: "flex",
-        alignItems: "center",
         gap: 1,
       }}
-      startIcon={
-        sortDirection === "asc"
-          ? <SortAsc size={18} />
-          : <SortDesc size={18} />
-      }
     >
-      <span >Sort:</span>
-      <span >{sortLabel}</span>
-    </Button>,
-
-    <IconButton
+      <span>Sort:</span>
+      <span>{sortLabel}</span>
+    </ToolbarButton>,
+    <ToolbarButton
+      key="filter"
       onClick={() => setFilterPanelOpen(true)}
-      color="secondary"
+      startIcon={<Filter size={18} />}
       sx={{
-        backgroundColor: (theme) => theme.palette.background.secondary,
-        border: "1px solid",
-        borderColor: "#E4E4E7",
-        borderRadius: (theme) => theme.spacing(1),
+        minWidth: 0,
+        py: 2,
+        px: 2,
+        ".MuiButton-startIcon": { marginRight: 0, marginLeft: 0 },
       }}
-    >
-      <Filter size={18} />
-    </IconButton>,
-   ]
+    />,
+  ];
 
   return (
     <ModuleWrapper
@@ -336,8 +337,7 @@ export const ContentList = () => {
           variant="contained"
           to="/content/new"
           component={GhostLink}
-          startIcon={<Plus />}
-          sx={{ height: 40 }}
+          startIcon={<Plus size={18} />}
         >
           {"Add Content"}
         </Button>
@@ -352,7 +352,16 @@ export const ContentList = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         clearAllFilters={clearAllFilters}
       />
-        <ContentSortPopup
+      <NoRecordsDisplay
+        visible={
+          !searching &&
+          contentItemsCount === 0 &&
+          (searchTerm.trim() !== "" || whereFilters.length > 0)
+        }
+        message="No content found."
+      />
+
+      <ContentSortPopup
         anchorEl={sortAnchorEl}
         open={!!sortAnchorEl}
         selectedField={sortField}
