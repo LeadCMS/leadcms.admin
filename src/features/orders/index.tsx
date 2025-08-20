@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { OrderDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import {
@@ -14,14 +14,14 @@ import { GridColDef } from "@mui/x-data-grid";
 import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings } from "types";
+import { DataListSettings, ExportParams } from "types";
 import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { SearchBar } from "@components/search-bar";
 import { Button, Chip } from "@mui/material";
 import { Plus, Upload, Download, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
-import { CsvExport } from "@components/export";
+import { genericExportHandler } from "@components/export";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { ToolbarButton } from "@components/tool-bar-button";
@@ -54,12 +54,13 @@ export const Orders = () => {
     }
   };
 
-  const exportOrdersAsync = async () => {
-    const response = await client.api.ordersExportList({
-      query: dataExportQuery.current,
-    });
-
-    return response.text();
+  const handleExport = async (params: ExportParams): Promise<void> => {
+    await genericExportHandler(
+      params,
+      (finalQueryString, accept) =>
+        client.api.ordersExportList({ query: finalQueryString }, { headers: { Accept: accept } }),
+      "orders"
+    );
   };
 
   const handleImportOpen = () => {
@@ -193,9 +194,9 @@ export const Orders = () => {
       Columns
     </ToolbarButton>,
     <Fragment key={"import-action"}>
-      <Button key={"import-btn"} startIcon={<Upload />} onClick={handleImportOpen}>
+      <ToolbarButton key={"import-btn"} startIcon={<Upload size={18} />} onClick={handleImportOpen}>
         Import
-      </Button>
+      </ToolbarButton>
       {importFieldsObject && (
         <CsvImport
           isOpen={openImport}
@@ -206,22 +207,18 @@ export const Orders = () => {
         ></CsvImport>
       )}
     </Fragment>,
-    <Fragment key={"export-action"}>
-      <Button key={"export-btn"} startIcon={<Download />} onClick={handleExportOpen}>
-        Export
-      </Button>
-      {openExport && (
-        <CsvExport
-          exportAsync={exportOrdersAsync}
-          closeExport={handleExportOpen}
-          fileName={"orders"}
-        ></CsvExport>
-      )}
-    </Fragment>,
+    <ToolbarButton key={"export-btn"} startIcon={<Download size={18} />} onClick={handleExportOpen}>
+      Export
+    </ToolbarButton>,
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus />}>
+    <Button
+      variant="contained"
+      to={getAddFormRoute()}
+      component={GhostLink}
+      startIcon={<Plus size={18} />}
+    >
       Add order
     </Button>
   );
@@ -252,6 +249,9 @@ export const Orders = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
+        onExport={handleExport}
+        onExportOpen={openExport}
+        onExportClose={handleExportOpen}
       ></DataList>
     </ModuleWrapper>
   );

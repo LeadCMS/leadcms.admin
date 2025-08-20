@@ -1,5 +1,5 @@
 import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
-import { CsvExport } from "@components/export";
+import { genericExportHandler } from "@components/export";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
@@ -9,9 +9,9 @@ import { Plus, Download, Filter, Settings2 } from "lucide-react";
 import Button from "@mui/material/Button";
 import { GridColDef } from "@mui/x-data-grid";
 import { useRequestContext } from "@providers/request-provider";
-import { Fragment, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings } from "types";
+import { DataListSettings, ExportParams } from "types";
 import {
   defaultFilterOrderColumn,
   defaultFilterOrderDirection,
@@ -35,7 +35,7 @@ export const EmailTemplatesList = () => {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const dataExportQuery = useRef("");
 
-  const getContactList = async (mainQuery: string, exportQuery?: string) => {
+  const getEmailTemplatesList = async (mainQuery: string, exportQuery?: string) => {
     try {
       dataExportQuery.current = exportQuery || "";
       const result = await client.api.emailTemplatesList({
@@ -48,17 +48,22 @@ export const EmailTemplatesList = () => {
     }
   };
 
-  const exportContactsAsync = async () => {
-    const response = await client.api.contactsExportList({
-      query: dataExportQuery.current,
-    });
-
-    return response.text();
+  const handleExport = async (params: ExportParams): Promise<void> => {
+    await genericExportHandler(
+      params,
+      (finalQueryString, accept) =>
+        client.api.emailTemplatesExportList(
+          { query: finalQueryString },
+          { headers: { Accept: accept } }
+        ),
+      "email-templates"
+    );
   };
 
   const handleExportOpen = () => {
     openExport ? setOpenExport(false) : setOpenExport(true);
   };
+
   const [columns, setColumns] = useState<GridColDef<EmailTemplateDetailsDto>[]>([
     {
       field: "id",
@@ -136,10 +141,18 @@ export const EmailTemplatesList = () => {
     >
       Columns
     </ToolbarButton>,
+    <ToolbarButton key={"export-btn"} startIcon={<Download size={18} />} onClick={handleExportOpen}>
+      Export
+    </ToolbarButton>,
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus />}>
+    <Button
+      variant="contained"
+      to={getAddFormRoute()}
+      component={GhostLink}
+      startIcon={<Plus size={18} />}
+    >
       Add template
     </Button>
   );
@@ -159,7 +172,7 @@ export const EmailTemplatesList = () => {
         defaultFilterOrderColumn={defaultFilterOrderColumn}
         defaultFilterOrderDirection={defaultFilterOrderDirection}
         searchText={searchTerm}
-        getModelDataList={getContactList}
+        getModelDataList={getEmailTemplatesList}
         initialGridState={{
           columns: { columnVisibilityModel: {} },
           sorting: {
@@ -170,6 +183,9 @@ export const EmailTemplatesList = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
+        onExport={handleExport}
+        onExportOpen={openExport}
+        onExportClose={handleExportOpen}
       ></DataList>
     </ModuleWrapper>
   );

@@ -316,6 +316,7 @@ export const DataList = <TModel extends GridValidRowModel>({
         selectedRows,
         whereFilterQuery,
         basicFilterQuery,
+        searchTerm
       });
     }
   };

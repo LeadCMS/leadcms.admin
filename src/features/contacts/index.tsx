@@ -16,17 +16,16 @@ import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
-import { Fragment, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
 import { getModelByName } from "lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
-import { CsvExport } from "@components/export";
+import { genericExportHandler } from "@components/export";
 import useLocalStorage from "use-local-storage";
 import { DataListSettings, ExportParams } from "types";
-import { buildExportQueryString } from "@components/export";
-import { downloadExportFile, downloadFile } from "@components/download";
+import { ToolbarButton } from "@components/tool-bar-button";
 
 export const Contacts = () => {
   const { client } = useRequestContext();
@@ -58,17 +57,14 @@ export const Contacts = () => {
   };
 
   const handleExport = async (params: ExportParams): Promise<void> => {
-    try {
-      const { finalQueryString, accept } = buildExportQueryString(params);
-      const response = await client.api.contactsExportList(
-        { query: finalQueryString },
-        { headers: { Accept: accept } }
-      );
-
-      const blob = await response.blob();
-      downloadExportFile(blob, params.format, "contacts");
-    } catch (error) {}
+    await genericExportHandler(
+      params,
+      (finalQueryString, accept) =>
+        client.api.contactsExportList({ query: finalQueryString }, { headers: { Accept: accept } }),
+      "contacts"
+    );
   };
+
   const handleImportOpen = () => {
     !importFieldsObject && setImportFieldsObject(getModelByName(modelName));
     setOpenImport(true);
@@ -196,66 +192,28 @@ export const Contacts = () => {
   );
 
   const extraActions = [
-    <IconButton
+    <ToolbarButton
+      startIcon={<Filter size={18} />}
       onClick={() => setFilterPanelOpen(true)}
-      color="secondary"
       sx={{
-        backgroundColor: (theme) => theme.palette.background.secondary,
-        border: "1px solid",
-        borderColor: "#E4E4E7",
-        borderRadius: (theme) => theme.spacing(1),
+        minWidth: 0,
+        py: 2,
+        px: 2,
+        ".MuiButton-startIcon": { marginRight: 0, marginLeft: 0 },
       }}
-    >
-      <Filter size={18} />
-    </IconButton>,
-    <Button
-      variant="outlined"
+    ></ToolbarButton>,
+    <ToolbarButton
       startIcon={<Settings2 size={18} />}
       onClick={() => setColumnsPanelOpen((open) => !open)}
-      color="secondary"
-      sx={(theme) => ({
-        backgroundColor: theme.palette.background.secondary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-        },
-      })}
     >
       Columns
-    </Button>,
-    <Button
-      key={"import-btn"}
-      startIcon={<Upload size={18} />}
-      onClick={handleImportOpen}
-      color="secondary"
-      variant="outlined"
-      sx={(theme) => ({
-        backgroundColor: theme.palette.background.secondary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-        },
-      })}
-    >
+    </ToolbarButton>,
+    <ToolbarButton key="import-btn" startIcon={<Upload size={18} />} onClick={handleImportOpen}>
       Import
-    </Button>,
-
-    <Button
-      key={"export-btn"}
-      startIcon={<Download size={18} />}
-      onClick={handleExportOpen}
-      color="secondary"
-      variant="outlined"
-      sx={(theme) => ({
-        backgroundColor: theme.palette.background.secondary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-        },
-      })}
-    >
+    </ToolbarButton>,
+    <ToolbarButton key="export-btn" startIcon={<Download size={18} />} onClick={handleExportOpen}>
       Export
-    </Button>,
+    </ToolbarButton>,
   ];
 
   const addButton = (

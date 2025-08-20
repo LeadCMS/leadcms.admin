@@ -15,7 +15,7 @@ import { GridColDef } from "@mui/x-data-grid";
 import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings } from "types";
+import { DataListSettings, ExportParams } from "types";
 import { Fragment, useRef, useState } from "react";
 import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
@@ -23,7 +23,7 @@ import { SearchBar } from "@components/search-bar";
 import { Button } from "@mui/material";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
-import { CsvExport } from "@components/export";
+import { genericExportHandler } from "@components/export";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { ToolbarButton } from "@components/tool-bar-button";
@@ -56,12 +56,13 @@ export const Domains = () => {
     }
   };
 
-  const exportDomainsAsync = async () => {
-    const response = await client.api.domainsExportList({
-      query: dataExportQuery.current,
-    });
-
-    return response.text();
+  const handleExport = async (params: ExportParams): Promise<void> => {
+    await genericExportHandler(
+      params,
+      (finalQueryString, accept) =>
+        client.api.domainsExportList({ query: finalQueryString }, { headers: { Accept: accept } }),
+      "domains"
+    );
   };
 
   const handleImportOpen = () => {
@@ -177,9 +178,9 @@ export const Domains = () => {
       Columns
     </ToolbarButton>,
     <Fragment key={"import-action"}>
-      <Button key={"import-btn"} startIcon={<Upload />} onClick={handleImportOpen}>
+      <ToolbarButton key={"import-btn"} startIcon={<Upload size={18} />} onClick={handleImportOpen}>
         Import
-      </Button>
+      </ToolbarButton>
       {importFieldsObject && (
         <CsvImport
           isOpen={openImport}
@@ -191,21 +192,23 @@ export const Domains = () => {
       )}
     </Fragment>,
     <Fragment key={"export-action"}>
-      <Button key={"export-btn"} startIcon={<Download />} onClick={handleExportOpen}>
+      <ToolbarButton
+        key={"export-btn"}
+        startIcon={<Download size={18} />}
+        onClick={handleExportOpen}
+      >
         Export
-      </Button>
-      {openExport && (
-        <CsvExport
-          exportAsync={exportDomainsAsync}
-          closeExport={handleExportOpen}
-          fileName={"domains"}
-        ></CsvExport>
-      )}
+      </ToolbarButton>
     </Fragment>,
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus />}>
+    <Button
+      variant="contained"
+      to={getAddFormRoute()}
+      component={GhostLink}
+      startIcon={<Plus size={18} />}
+    >
       Add domain
     </Button>
   );
@@ -236,6 +239,9 @@ export const Domains = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
+        onExport={handleExport}
+        onExportOpen={openExport}
+        onExportClose={handleExportOpen}
       ></DataList>
     </ModuleWrapper>
   );
