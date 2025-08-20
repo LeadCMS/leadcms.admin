@@ -29,7 +29,7 @@ import {
   ProblemDetails,
   RequestParams,
 } from "@lib/network/swagger-client";
-import { CsvExport } from "@components/export";
+import { buildExportQueryString } from "@components/export";
 import { CsvImport } from "@components/spreadsheet-import";
 import { Result } from "react-spreadsheet-import/types/types";
 import { Download, Upload, XCircle, Save, Plus, Settings2, Filter } from "lucide-react";
@@ -37,6 +37,9 @@ import { DataManagementBlock } from "@components/data-management";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { ColumnsPanel } from "@components/custom-columns-panel";
 import { CustomFilterBar } from "@components/custom-filter";
+import { downloadExportFile } from "@components/download";
+import { ExportPopup } from "@components/export-popup";
+import { ExportParams } from "types";
 
 interface ExtraActions {
   export?: {
@@ -89,6 +92,37 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
   const handleCancelClick = () => setTriggerCancel(true);
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const handleExport = async (
+    exportScope: string,
+    fileFormat: string,
+    selectedColumns: string[]
+  ): Promise<void> => {
+    try {
+      if (!extraActions?.export?.exportItemsFn) return;
+
+      const exportPanelProps = genericDataGridRef.current?.getExportPanelProps?.();
+
+      const params: ExportParams = {
+        searchTerm: searchText,
+        scope: exportScope,
+        format: fileFormat,
+        cols: selectedColumns,
+        selectedRows: exportPanelProps?.selectedRows || [],
+        whereFilterQuery: exportPanelProps?.whereFilterQuery || "",
+        basicFilterQuery: exportPanelProps?.basicFilterQuery || "",
+      };
+
+      const { finalQueryString, accept } = buildExportQueryString(params);
+
+      const response = await extraActions.export.exportItemsFn(
+        { query: finalQueryString },
+        { headers: { Accept: accept } }
+      );
+      const blob = await response.blob();
+      downloadExportFile(blob, fileFormat, moduleName.toLowerCase());
+    } catch (err) {}
+  };
+
 
   const getGenericTable = (key: string, tableProps: GenericDataGridProps<TView>) => {
     const genericDataGrid = GenericDataGrid<TView>(
@@ -142,33 +176,30 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
           </ToolbarButton>
         )}
         {extraActions?.import?.showButton && (
-          <Button
-            key={"import-btn"}
+          <ToolbarButton
+            key="import-btn"
             disabled={!(extraActions?.import?.importItemsFn && extraActions?.import?.importSchema)}
-            onClick={() => {
-              setImportIsOpen(true);
-            }}
-            startIcon={<Upload size={22} />}
+            onClick={() => setImportIsOpen(true)}
+            startIcon={<Upload size={18} />}
           >
             Import
-          </Button>
+          </ToolbarButton>
         )}
         {extraActions?.export?.showButton && (
-          <Button
-            key={"export-btn"}
+          <ToolbarButton
+            key="export-btn"
             disabled={!extraActions?.export?.exportItemsFn}
-            onClick={() => {
-              setExportIsOpen(true);
-            }}
-            startIcon={<Download size={22} />}
+            onClick={() => setExportIsOpen(true)}
+            startIcon={<Download size={18} />}
           >
             Export
-          </Button>
+          </ToolbarButton>
         )}
       </>
     );
     const columnsPanelProps = genericDataGridRef.current?.getColumnsPanelProps();
     const filtersPanelProps = genericDataGridRef.current?.getFiltersPanelProps();
+    const exportPanelProps = genericDataGridRef.current?.getExportPanelProps();
 
     return (
       <ModuleWrapper
@@ -202,6 +233,16 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             onClose={() => setColumnsPanelOpen(false)}
           />
         )}
+        {extraActions?.export?.showButton && exportPanelProps && (
+          <ExportPopup
+            open={exportIsOpen}
+            onClose={() => setExportIsOpen(false)}
+            onExport={handleExport}
+            columns={exportPanelProps.columns}
+            selectedCount={exportPanelProps.selectedCount}
+            columnVisibilityModel={exportPanelProps.columnVisibilityModel}
+          />
+        )}
         {genericDataGrid}
         {importIsOpen && extraActions?.import?.importSchema && (
           <CsvImport
@@ -219,23 +260,6 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             }}
             object={extraActions?.import?.importSchema.properties}
             endRoute={modulePath as CoreModule}
-          />
-        )}
-        {exportIsOpen && extraActions?.export?.exportItemsFn && (
-          <CsvExport
-            exportAsync={async () => {
-              const filters =
-                genericDataGridRef.current && genericDataGridRef.current.getExportFilters();
-              if (extraActions?.export?.exportItemsFn) {
-                const response = await extraActions.export.exportItemsFn(filters || {});
-                return response?.text();
-              }
-              return "";
-            }}
-            closeExport={() => {
-              setExportIsOpen(false);
-            }}
-            fileName={moduleName}
           />
         )}
       </ModuleWrapper>

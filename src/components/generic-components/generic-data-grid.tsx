@@ -63,6 +63,14 @@ export interface GenericDataGridRef {
     removeFilter: (idx: number) => void;
     clearAllFilters: () => void;
   };
+  getExportPanelProps: () => {
+    columns: GridColDef[];
+    selectedCount: number;
+    columnVisibilityModel: GridColumnVisibilityModel;
+    whereFilterQuery: string;
+    basicFilterQuery: string | undefined;
+    selectedRows: any[];
+  };
 }
 
 export function GenericDataGrid<T extends BasicTypeForGeneric>(
@@ -83,7 +91,6 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     `data-grid-${key}`,
     {
       sortColumn: "id",
-      sortDirection: "desc",
       columnVisibilityModel: {},
       searchTerm: searchText || "",
     }
@@ -304,6 +311,14 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
       addFilter,
       removeFilter,
       clearAllFilters,
+    }),
+    getExportPanelProps: () => ({
+      columns: columns.filter((col) => col.field !== "_actions"),
+      selectedCount: selectedRows.length,
+      selectedRows,
+      columnVisibilityModel,
+      whereFilterQuery,
+      basicFilterQuery,
     }),
   }));
 
