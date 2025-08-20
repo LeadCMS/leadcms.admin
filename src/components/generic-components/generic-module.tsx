@@ -92,6 +92,8 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
   const handleCancelClick = () => setTriggerCancel(true);
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [refreshFlag, setRefreshFlag] = useState(0);
+
   const handleExport = async (
     exportScope: string,
     fileFormat: string,
@@ -123,12 +125,17 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
     } catch (err) {}
   };
 
+  const handleSaveHandled = () => {
+    setTriggerSave(false);
+    setRefreshFlag((f) => f + 1);
+  };
 
   const getGenericTable = (key: string, tableProps: GenericDataGridProps<TView>) => {
     const genericDataGrid = GenericDataGrid<TView>(
       {
         ...tableProps,
         searchText: searchText,
+        refreshFlag: refreshFlag,
       },
       genericDataGridRef
     );
@@ -278,7 +285,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         {...formProps}
         triggerSave={triggerSave}
         triggerCancel={triggerCancel}
-        onSaveHandled={() => setTriggerSave(false)}
+        onSaveHandled={handleSaveHandled}
         onCancelHandled={() => setTriggerCancel(false)}
       />
     );
@@ -313,6 +320,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         itemId={formProps.getItemId?.() ?? ""}
         successNavigationRoute={formProps.deleteOptionProps.listRoute}
         showOnlyButtons={true}
+        onDeleted={() => setRefreshFlag((f) => f + 1)}
       />
     ) : null;
 

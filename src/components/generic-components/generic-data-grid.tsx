@@ -42,6 +42,7 @@ export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
   editNavigate?: (item: T) => void;
   searchText?: string;
   initiallyShownColumns?: string[];
+  refreshFlag?: number;
 }
 
 export interface GenericDataGridRef {
@@ -82,6 +83,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     editNavigate,
     searchText,
     initiallyShownColumns,
+    refreshFlag,
   }: GenericDataGridProps<T>,
   ref: Ref<GenericDataGridRef>
 ) {
