@@ -51,7 +51,7 @@ type dataListProps<TModel extends GridValidRowModel> = {
   setColumnsPanelOpen?: (open: boolean) => void;
   onExportOpen?: boolean;
   onExportClose?: () => void;
-  exportApiCall: (finalQueryString: string, accept: string) => Promise<Response>;
+  exportApiCall?: (finalQueryString: string, accept: string) => Promise<Response>;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -325,6 +325,12 @@ export const DataList = <TModel extends GridValidRowModel>({
   };
 
   const handleExport = async (scope: string, format: string, cols: string[]) => {
+    if (!exportApiCall) {
+      setExportError("Export is not available.");
+      setExporting(false);
+      return;
+    }
+
     setExportError(null);
     setExporting(true);
 
@@ -414,16 +420,18 @@ export const DataList = <TModel extends GridValidRowModel>({
           onClose={() => setColumnsPanelOpen?.(false)}
         />
       )}
-      <ExportPopup
-        open={onExportOpen}
-        onClose={onExportClose}
-        onExport={handleExport}
-        columns={columns}
-        selectedCount={selectedRows.length}
-        columnVisibilityModel={columnVisibilityModel}
-        exporting={exporting}
-        errorMessage={exportError}
-      />
+      {exportApiCall && (
+        <ExportPopup
+          open={onExportOpen}
+          onClose={onExportClose}
+          onExport={handleExport}
+          columns={columns}
+          selectedCount={selectedRows.length}
+          columnVisibilityModel={columnVisibilityModel}
+          exporting={exporting}
+          errorMessage={exportError}
+        />
+      )}
       <DataTableGrid
         columns={columns}
         data={modelData || []}
