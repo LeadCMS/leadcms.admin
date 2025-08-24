@@ -36,7 +36,7 @@ export const UserList = () => {
     {
       field: "firstName",
       headerName: "Display",
-      minWidth: 250,
+      width: 250,
       type: "string",
       renderCell: ({ row }) => (
         <UserNameListItem>
@@ -50,26 +50,26 @@ export const UserList = () => {
     {
       field: "createdAt",
       headerName: "Created At",
-      minWidth: 180,
+      width: 180,
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
     },
     {
       field: "lastTimeLoggedIn",
       headerName: "Last Active",
-      minWidth: 180,
+      width: 180,
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
     },
     {
       field: "userName",
       headerName: "User Name",
-      minWidth: 180,
+      width: 180,
     },
     {
       field: "id",
       headerName: "id",
-      minWidth: 180,
+      width: 180,
     },
   ]);
 

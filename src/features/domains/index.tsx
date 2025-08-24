@@ -80,7 +80,7 @@ export const Domains = () => {
     {
       field: "name",
       headerName: "Name",
-      minWidth: 220,
+      width: 220,
       type: "string",
       renderCell: ({ row }) => (
         <DomainListItem>
@@ -102,25 +102,25 @@ export const Domains = () => {
     {
       field: "title",
       headerName: "Title",
-      minWidth: 120,
+      width: 120,
       type: "string",
     },
     {
       field: "description",
       headerName: "Description",
-      minWidth: 180,
+      width: 180,
       type: "string",
     },
     {
       field: "url",
       headerName: "Url",
-      minWidth: 120,
+      width: 120,
       type: "string",
     },
     {
       field: "dnsCheck",
       headerName: "Dns Check",
-      minWidth: 120,
+      width: 120,
       type: "singleSelect",
       align: "left",
       headerAlign: "left",
@@ -129,7 +129,7 @@ export const Domains = () => {
     {
       field: "free",
       headerName: "Free",
-      minWidth: 120,
+      width: 120,
       type: "singleSelect",
       align: "left",
       headerAlign: "left",
@@ -138,7 +138,7 @@ export const Domains = () => {
     {
       field: "createdAt",
       headerName: "Created At",
-      minWidth: 120,
+      width: 120,
       type: "date",
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,

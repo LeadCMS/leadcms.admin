@@ -80,13 +80,13 @@ export const Contacts = () => {
     {
       field: "prefix",
       headerName: "Prefix",
-      minWidth: 80,
+      width: 80,
       type: "string",
     },
     {
       field: "firstName",
       headerName: "Name",
-      minWidth: 250,
+      width: 250,
       type: "string",
       renderCell: ({ row }) => (
         <ContactNameListItem sx={{ paddingY: 0 }}>
@@ -103,19 +103,19 @@ export const Contacts = () => {
     {
       field: "middleName",
       headerName: "Middle Name",
-      minWidth: 120,
+      width: 120,
       type: "string",
     },
     {
       field: "lastName",
       headerName: "Last Name",
-      minWidth: 120,
+      width: 120,
       type: "string",
     },
     {
       field: "birthday",
       headerName: "Birthday",
-      minWidth: 120,
+      width: 120,
       type: "date",
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
@@ -123,47 +123,47 @@ export const Contacts = () => {
     {
       field: "jobTitle",
       headerName: "Job Title",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
     {
       field: "companyName",
       headerName: "Company Name",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
     {
       field: "department",
       headerName: "Department",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
     {
       field: "email",
       headerName: "Email",
-      minWidth: 150,
+      width: 150,
       type: "string",
     },
     {
       field: "address1",
       headerName: "Address 1",
-      minWidth: 150,
+      width: 150,
     },
     {
       field: "address2",
       headerName: "Address 2",
-      minWidth: 150,
+      width: 150,
     },
     {
       field: "phone",
       headerName: "Phone",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
     {
       field: "createdAt",
       headerName: "Created At",
-      minWidth: 100,
+      width: 100,
       type: "date",
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
@@ -171,7 +171,7 @@ export const Contacts = () => {
     {
       field: "language",
       headerName: "Language",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
   ]);

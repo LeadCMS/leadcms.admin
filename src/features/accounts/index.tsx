@@ -79,7 +79,7 @@ export const Accounts = () => {
     {
       field: "name",
       headerName: "Name",
-      minWidth: 250,
+      width: 250,
       renderCell: ({ row }) => (
         <AccountListItem>
           <ListItemAvatar>
@@ -99,19 +99,19 @@ export const Accounts = () => {
     {
       field: "state",
       headerName: "State",
-      minWidth: 120,
+      width: 120,
       type: "string",
     },
     {
       field: "cityName",
       headerName: "City",
-      minWidth: 120,
+      width: 120,
       type: "string",
     },
     {
       field: "createdAt",
       headerName: "Created At",
-      minWidth: 120,
+      width: 120,
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
       type: "date",
@@ -119,7 +119,7 @@ export const Accounts = () => {
     {
       field: "continentCode",
       headerName: "Continent Code",
-      minWidth: 120,
+      width: 120,
       type: "number",
     },
   ]);
