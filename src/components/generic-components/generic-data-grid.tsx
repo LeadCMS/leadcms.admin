@@ -172,6 +172,9 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     type: "include",
     ids: new Set(),
   });
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+    gridSettings.columnWidths ?? {}
+  );
 
   const selectedRows = Array.from(rowSelectionModel.ids);
 
@@ -199,8 +202,8 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         pageNumber,
         columnVisibilityModel,
         columnOrder,
-        columnWidths,
       });
+      setColumnWidths(columnWidths ?? {});
 
       if (columnOrder && columnOrder.length > 0) {
         setColumns?.(sortColumnsByOrder(columns, columnOrder));
@@ -348,6 +351,10 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     };
   }, [getItemsFn, searchText, filterState, refreshFlag]);
 
+  useEffect(() => {
+    saveGridStateInLocalStorage();
+  }, [columnWidths]);
+
   const handleSortChange = (sortModel: GridSortModel) => {
     if (sortModel.length > 0) {
       setFilterState((prev) => ({
@@ -389,26 +396,21 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
   };
 
   const handleColumnWidthChange = (params: GridColumnResizeParams) => {
-    setFilterState((prev) => ({
-      ...(prev ?? {}),
-      columnWidths: {
-        ...(prev?.columnWidths || {}),
-        [params.colDef.field]: params.width,
-      },
+    setColumnWidths((prev) => ({
+      ...prev,
+      [params.colDef.field]: params.width,
     }));
   };
 
   useEffect(() => {
-    if (filterState?.columnWidths && setColumns) {
+    if (setColumns) {
       setColumns(
         columns.map((col) =>
-          filterState.columnWidths![col.field] !== undefined
-            ? { ...col, width: filterState.columnWidths![col.field] }
-            : col
+          columnWidths[col.field] !== undefined ? { ...col, width: columnWidths[col.field] } : col
         )
       );
     }
-  }, [filterState?.columnWidths]);
+  }, [columnWidths]);
 
   function sortColumnsByOrder<T extends GridValidRowModel>(
     columns: GridColDef<T>[],
@@ -434,7 +436,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         pageNumber: filterState.pageNumber || 0,
         columnVisibilityModel: filterState.columnVisibilityModel || {},
         columnOrder: filterState.columnOrder || [],
-        columnWidths: filterState.columnWidths || {},
+        columnWidths,
       });
     }
   };

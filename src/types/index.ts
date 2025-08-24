@@ -56,7 +56,6 @@ export interface GridDataFilterState {
   searchTerm?: string;
   columnVisibilityModel?: GridColumnVisibilityModel | undefined;
   columnOrder?: string[];
-  columnWidths?: Record<string, number>;
 }
 
 export type GridSizeProps = {
