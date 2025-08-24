@@ -41,6 +41,7 @@ export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
   detailsNavigate?: (item: T) => void;
   editNavigate?: (item: T) => void;
   searchText?: string;
+  setSearchText?: (text: string) => void;
   initiallyShownColumns?: string[];
   refreshFlag?: number;
 }
@@ -82,6 +83,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     detailsNavigate,
     editNavigate,
     searchText,
+    setSearchText,
     initiallyShownColumns,
     refreshFlag,
   }: GenericDataGridProps<T>,
@@ -193,7 +195,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         columnWidths,
       } = gridSettings;
       setFilterState({
-        searchTerm: searchTerm,
+        searchTerm,
         filterLimit,
         skipLimit,
         sortColumn,
@@ -211,6 +213,9 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         setColumns?.(columns);
       }
 
+      if (setSearchText) {
+        setSearchText(searchTerm || "");
+      }
     } else {
       setFilterState(defaultFilterState);
     }

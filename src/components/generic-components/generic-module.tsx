@@ -161,6 +161,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         ...tableProps,
         searchText: searchText,
         refreshFlag: refreshFlag,
+        setSearchText: setSearchText,
       },
       genericDataGridRef
     );
@@ -169,7 +170,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
       <SearchBar
         setSearchTermOnChange={(value) => setSearchText(value)}
         searchBoxLabel={"Search"}
-        initialValue={""}
+        initialValue={searchText}
       />
     );
 
