@@ -16,7 +16,7 @@ import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateComm
 import { DataListContainer } from "./index.styled";
 import { DataTableGrid } from "@components/data-table";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, ExportParams, GridDataFilterState } from "types";
+import { DataListSettings, GridDataFilterState } from "types";
 import { useNotificationsService } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { CustomFilterBar } from "@components/custom-filter";
@@ -89,6 +89,10 @@ export const DataList = <TModel extends GridValidRowModel>({
     gridSettings?.columnVisibilityModel ?? {}
   );
 
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+    gridSettings?.columnWidths ?? {}
+  );
+
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
     type: "include",
     ids: new Set(),
@@ -156,8 +160,9 @@ export const DataList = <TModel extends GridValidRowModel>({
         pageNumber,
         columnVisibilityModel,
         columnOrder,
-        columnWidths,
       });
+
+      setColumnWidths(columnWidths ?? {});
 
       if (columnOrder && columnOrder.length > 0) {
         setColumns?.(sortColumnsByOrder(columns, columnOrder));
@@ -183,6 +188,10 @@ export const DataList = <TModel extends GridValidRowModel>({
   }, [searchTerm, filterState]);
 
   useEffect(() => {
+    saveGridStateInLocalStorage();
+  }, [columnWidths]);
+
+  useEffect(() => {
     if (totalRowCount === -1) {
       throw new Error("Server error: x-total-count header is not provided.");
     }
@@ -195,16 +204,14 @@ export const DataList = <TModel extends GridValidRowModel>({
   }, [modelData]);
 
   useEffect(() => {
-    if (filterState?.columnWidths && setColumns) {
+    if (setColumns) {
       setColumns(
         columns.map((col) =>
-          filterState.columnWidths![col.field] !== undefined
-            ? { ...col, width: filterState.columnWidths![col.field] }
-            : col
+          columnWidths[col.field] !== undefined ? { ...col, width: columnWidths[col.field] } : col
         )
       );
     }
-  }, [filterState?.columnWidths]);
+  }, [columnWidths]);
 
   const saveGridStateInLocalStorage = () => {
     if (filterState) {
@@ -218,9 +225,13 @@ export const DataList = <TModel extends GridValidRowModel>({
         pageNumber: filterState.pageNumber || 0,
         columnVisibilityModel: filterState.columnVisibilityModel || {},
         columnOrder: filterState.columnOrder || [],
-        columnWidths: filterState.columnWidths || {},
+        columnWidths,
       });
     }
+  };
+
+  const saveColumnWidths = (newWidths: Record<string, number>) => {
+    setColumnWidths(newWidths);
   };
 
   function sortColumnsByOrder<T>(
@@ -381,16 +392,6 @@ export const DataList = <TModel extends GridValidRowModel>({
     columns: { columnVisibilityModel: gridSettings.columnVisibilityModel || {} },
   };
 
-  const handleColumnWidthChange = (field: string, width: number) => {
-    setFilterState(prev => ({
-      ...(prev ?? {}),
-      columnWidths: {
-        ...(prev?.columnWidths || {}),
-        [field]: width,
-      },
-    }));
-  };
-
   return filterState && totalRowCount != undefined ? (
     <DataListContainer>
       <CustomFilterBar
@@ -440,12 +441,12 @@ export const DataList = <TModel extends GridValidRowModel>({
         disableEditRoute={!showEditButton}
         disableViewRoute={!showViewButton}
         columnVisibilityModel={columnVisibilityModel}
-        onColumnWidthChange={handleColumnWidthChange}
         onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
         onRowSelectionModelChange={(newRowSelectionModel) => {
           setRowSelectionModel(newRowSelectionModel);
         }}
         rowSelectionModel={rowSelectionModel}
+        saveColumnWidths={saveColumnWidths}
       />
     </DataListContainer>
   ) : null;
