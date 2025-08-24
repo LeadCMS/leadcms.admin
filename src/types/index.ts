@@ -11,12 +11,8 @@ export type DataListSettings = {
   skipLimit: number;
   sortColumn: string;
   sortOrder: string;
-  whereField?: string;
-  whereFieldValue?: string;
-  whereOperator?: string;
   pageNumber: number;
   columnVisibilityModel: GridColumnVisibilityModel | undefined;
-  filterModel?: GridFilterModel;
   whereFilters?: Array<{
     whereField: string;
     whereOperator: string;
