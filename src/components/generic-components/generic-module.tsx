@@ -84,6 +84,8 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
 }: GenericModuleProps<TView, TCreate, TUpdate>): JSX.Element {
   const [searchText, setSearchText] = useState("");
   const [exportIsOpen, setExportIsOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [importIsOpen, setImportIsOpen] = useState(false);
   const genericDataGridRef = useRef<GenericDataGridRef>(null);
   const [triggerSave, setTriggerSave] = useState(false);
@@ -101,6 +103,8 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
   ): Promise<void> => {
     try {
       if (!extraActions?.export?.exportItemsFn) return;
+      setExportError(null);
+      setExporting(true);
 
       const exportPanelProps = genericDataGridRef.current?.getExportPanelProps?.();
 
@@ -115,14 +119,35 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
       };
 
       const { finalQueryString, accept } = buildExportQueryString(params);
-
       const response = await extraActions.export.exportItemsFn(
         { query: finalQueryString },
         { headers: { Accept: accept } }
       );
+      
       const blob = await response.blob();
       downloadExportFile(blob, fileFormat, moduleName.toLowerCase());
-    } catch (err) {}
+    } catch (err) {
+      let message = "Export failed with unknown error.";
+      if (
+        err &&
+        typeof err === "object" &&
+        "statusText" in err &&
+        typeof (err as any).statusText === "string"
+      ) {
+        const statusText = (err as any).statusText;
+        const status = (err as any).status;
+        message = `Export failed (${status}): ${statusText}`;
+      }
+      console.log("export error generic module", message);
+      setExportError(message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportPopupClose = () => {
+    setExportIsOpen(false);
+    setExportError(null);
   };
 
   const handleSaveHandled = () => {
@@ -243,11 +268,13 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         {extraActions?.export?.showButton && exportPanelProps && (
           <ExportPopup
             open={exportIsOpen}
-            onClose={() => setExportIsOpen(false)}
+            onClose={handleExportPopupClose}
             onExport={handleExport}
             columns={exportPanelProps.columns}
             selectedCount={exportPanelProps.selectedCount}
             columnVisibilityModel={exportPanelProps.columnVisibilityModel}
+            exporting={exporting}
+            errorMessage={exportError}
           />
         )}
         {genericDataGrid}
