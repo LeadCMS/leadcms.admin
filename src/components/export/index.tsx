@@ -79,6 +79,7 @@ export function buildExportQueryString({
 
     if (scope === "all") {
       queryParts = [fieldQuery, ...(basicFilterQuery ? [basicFilterQuery] : [])];
+      finalQueryString = "&" + queryParts.filter(Boolean).join("&");
     } else if (scope === "filtered") {
       queryParts = [
         ...(searchTerm && searchTerm.trim() !== "" ? [searchTerm] : []),
@@ -86,6 +87,7 @@ export function buildExportQueryString({
         ...(whereFilterQuery ? [whereFilterQuery] : []),
         ...(basicFilterQuery ? [basicFilterQuery] : []),
       ];
+      finalQueryString = queryParts.filter(Boolean).join("&");
     } else if (scope === "selected") {
       const idsQuery = selectedRows.length ? `filter[ids]=${selectedRows.join(",")}` : "";
 
@@ -94,9 +96,8 @@ export function buildExportQueryString({
         ...(idsQuery ? [idsQuery] : []),
         ...(basicFilterQuery ? [basicFilterQuery] : []),
       ];
+      finalQueryString = "&" + queryParts.filter(Boolean).join("&");
     }
-
-    finalQueryString = "&" + queryParts.filter(Boolean).join("&");
   }
   const accept = format === "csv" ? "text/csv" : format === "json" ? "text/json" : "*/*";
 
