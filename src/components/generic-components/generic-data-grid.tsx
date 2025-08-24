@@ -239,7 +239,6 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
   function getFiltersQueryObject() {
     const query: Record<string, unknown> = {};
 
-    query["filter[limit]"] = filterState.filterLimit ?? defaultFilterLimit;
     query["filter[order]"] = `${filterState.sortColumn ?? "id"} ${filterState.sortOrder ?? "desc"}`;
     query["filter[skip]"] = filterState.skipLimit ?? 0;
 
