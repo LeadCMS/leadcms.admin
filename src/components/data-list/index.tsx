@@ -24,6 +24,9 @@ import { ColumnsPanel } from "@components/custom-columns-panel";
 import { ExportPopup } from "@components/export-popup";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import React from "react";
+import { buildExportQueryString } from "@components/export";
+import { getModuleNameFromUrl } from "@utils/general-helper";
+import { downloadExportFile } from "@components/download";
 
 // Define response type for API model data
 interface ModelDataResponse {
@@ -46,9 +49,9 @@ type dataListProps<TModel extends GridValidRowModel> = {
   setFilterPanelOpen?: (open: boolean) => void;
   columnsPanelOpen?: boolean;
   setColumnsPanelOpen?: (open: boolean) => void;
-  onExport?: (params: ExportParams) => Promise<void>;
   onExportOpen?: boolean;
   onExportClose?: () => void;
+  exportApiCall: (finalQueryString: string, accept: string) => Promise<Response>;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -66,9 +69,9 @@ export const DataList = <TModel extends GridValidRowModel>({
   setFilterPanelOpen,
   columnsPanelOpen,
   setColumnsPanelOpen,
-  onExport,
   onExportOpen = false,
   onExportClose = () => {},
+  exportApiCall,
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -92,6 +95,9 @@ export const DataList = <TModel extends GridValidRowModel>({
   });
 
   const selectedRows = Array.from(rowSelectionModel.ids);
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const defaultFilterState = {
     filterLimit: defaultFilterLimit,
@@ -307,17 +313,44 @@ export const DataList = <TModel extends GridValidRowModel>({
     else setTotalRowCount(-1);
   };
 
-  const handleExport = (scope: string, format: string, cols: string[]) => {
-    if (onExport) {
-      onExport({
+  const handleExport = async (scope: string, format: string, cols: string[]) => {
+    setExportError(null);
+    setExporting(true);
+
+    try {
+      const params = {
         scope,
         format,
         cols,
         selectedRows,
         whereFilterQuery,
-        basicFilterQuery,
-        searchTerm
-      });
+        basicFilterQuery: basicExportFilterQuery,
+        searchTerm,
+      };
+
+      const { finalQueryString, accept } = buildExportQueryString(params);
+      const response = await exportApiCall(finalQueryString, accept);
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const moduleName = getModuleNameFromUrl();
+      downloadExportFile(blob, format, moduleName.toLocaleLowerCase());
+      onExportClose();
+    } catch (err) {
+      let message = "Export failed with unknown error.";
+      if (
+        err &&
+        typeof err === "object" &&
+        "statusText" in err &&
+        typeof (err as any).statusText === "string"
+      ) {
+        const statusText = (err as any).statusText;
+        const status = (err as any).status;
+        message = `Export failed (${status}): ${statusText}`;
+      }
+      setExportError(message);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -387,6 +420,8 @@ export const DataList = <TModel extends GridValidRowModel>({
         columns={columns}
         selectedCount={selectedRows.length}
         columnVisibilityModel={columnVisibilityModel}
+        exporting={exporting}
+        errorMessage={exportError}
       />
       <DataTableGrid
         columns={columns}
