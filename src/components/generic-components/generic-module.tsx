@@ -123,7 +123,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         { query: finalQueryString },
         { headers: { Accept: accept } }
       );
-      
+
       const blob = await response.blob();
       downloadExportFile(blob, fileFormat, moduleName.toLowerCase());
     } catch (err) {
@@ -275,6 +275,8 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
             columnVisibilityModel={exportPanelProps.columnVisibilityModel}
             exporting={exporting}
             errorMessage={exportError}
+            hasActiveFilters={!!filtersPanelProps?.whereFilters?.length}
+            hasSearchText={!!searchText && searchText.trim() !== ""}
           />
         )}
         {genericDataGrid}

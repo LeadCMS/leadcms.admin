@@ -29,6 +29,8 @@ interface ExportPopupProps<TModel extends GridValidRowModel> {
   columnVisibilityModel?: GridColumnVisibilityModel;
   exporting?: boolean;
   errorMessage?: string | null;
+  hasActiveFilters: boolean;
+  hasSearchText: boolean;
 }
 
 export const ExportPopup = <TModel extends GridValidRowModel>({
@@ -40,6 +42,8 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
   columnVisibilityModel = {},
   exporting = false,
   errorMessage = null,
+  hasActiveFilters,
+  hasSearchText,
 }: ExportPopupProps<TModel>) => {
   const [exportScope, setExportScope] = useState("all");
   const [fileFormat, setFileFormat] = useState("csv");
@@ -67,10 +71,13 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
 
   const handleExport = () => onExport(exportScope, fileFormat, selectedColumns);
 
+  const isFilteredExportValid = hasActiveFilters || hasSearchText;
+
   const exportDisabled =
     exporting ||
     (exportScope === "selected" && selectedCount === 0) ||
-    selectedColumns.length === 0;
+    selectedColumns.length === 0 ||
+    (exportScope === "filtered" && !isFilteredExportValid);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth sx={{ borderRadius: 2, p: 2 }}>

@@ -430,6 +430,8 @@ export const DataList = <TModel extends GridValidRowModel>({
           columnVisibilityModel={columnVisibilityModel}
           exporting={exporting}
           errorMessage={exportError}
+          hasActiveFilters={!!filterState?.whereFilters?.length}
+          hasSearchText={!!(searchTerm && searchTerm.trim() !== "")}
         />
       )}
       <DataTableGrid
