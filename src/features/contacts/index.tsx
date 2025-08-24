@@ -1,4 +1,4 @@
-import { Avatar, Button, IconButton, ListItemAvatar } from "@mui/material";
+import { Avatar, Button, ListItemAvatar } from "@mui/material";
 import { ContactDetailsDto, ContactImportDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { ContactHref, ContactNameListItem, ContactNameListItemText } from "./index.styled";
@@ -22,9 +22,8 @@ import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
 import { getModelByName } from "lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
-import { genericExportHandler } from "@components/export";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, ExportParams } from "types";
+import { DataListSettings } from "types";
 import { ToolbarButton } from "@components/tool-bar-button";
 
 export const Contacts = () => {
@@ -56,14 +55,8 @@ export const Contacts = () => {
     }
   };
 
-  const handleExport = async (params: ExportParams): Promise<void> => {
-    await genericExportHandler(
-      params,
-      (finalQueryString, accept) =>
-        client.api.contactsExportList({ query: finalQueryString }, { headers: { Accept: accept } }),
-      "contacts"
-    );
-  };
+  const contactsExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>
+    client.api.contactsExportList({ query }, { headers: { Accept: accept } });
 
   const handleImportOpen = () => {
     !importFieldsObject && setImportFieldsObject(getModelByName(modelName));
@@ -263,9 +256,9 @@ export const Contacts = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
-        onExport={handleExport}
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
+        exportApiCall={contactsExportApi}
       ></DataList>
     </ModuleWrapper>
   );

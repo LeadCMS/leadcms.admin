@@ -1,5 +1,4 @@
 import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
-import { genericExportHandler } from "@components/export";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
@@ -11,7 +10,7 @@ import { GridColDef } from "@mui/x-data-grid";
 import { useRequestContext } from "@providers/request-provider";
 import { useRef, useState } from "react";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, ExportParams } from "types";
+import { DataListSettings } from "types";
 import {
   defaultFilterOrderColumn,
   defaultFilterOrderDirection,
@@ -48,17 +47,10 @@ export const EmailTemplatesList = () => {
     }
   };
 
-  const handleExport = async (params: ExportParams): Promise<void> => {
-    await genericExportHandler(
-      params,
-      (finalQueryString, accept) =>
-        client.api.emailTemplatesExportList(
-          { query: finalQueryString },
-          { headers: { Accept: accept } }
-        ),
-      "email-templates"
-    );
-  };
+  const emailTemplatesExportApi: (query: string, accept: string) => Promise<Response> = (
+    query,
+    accept
+  ) => client.api.emailTemplatesExportList({ query }, { headers: { Accept: accept } });
 
   const handleExportOpen = () => {
     openExport ? setOpenExport(false) : setOpenExport(true);
@@ -183,9 +175,9 @@ export const EmailTemplatesList = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
-        onExport={handleExport}
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
+        exportApiCall={emailTemplatesExportApi}
       ></DataList>
     </ModuleWrapper>
   );

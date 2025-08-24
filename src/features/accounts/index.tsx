@@ -19,9 +19,8 @@ import { SearchBar } from "@components/search-bar";
 import { Fragment, useRef, useState } from "react";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
-import { genericExportHandler } from "@components/export";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, ExportParams } from "types";
+import { DataListSettings } from "types";
 import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { GhostLink } from "@components/ghost-link";
@@ -55,22 +54,8 @@ export const Accounts = () => {
     }
   };
 
-  const exportAccountsAsync = async () => {
-    const response = await client.api.accountsExportList({
-      query: dataExportQuery.current,
-    });
-
-    return response.text();
-  };
-
-  const handleExport = async (params: ExportParams): Promise<void> => {
-    await genericExportHandler(
-      params,
-      (finalQueryString, accept) =>
-        client.api.accountsExportList({ query: finalQueryString }, { headers: { Accept: accept } }),
-      "accounts"
-    );
-  };
+  const accountsExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>
+    client.api.accountsExportList({ query }, { headers: { Accept: accept } });
 
   const handleImportOpen = () => {
     !importFieldsObject && setImportFieldsObject(getModelByName(modelName));
@@ -220,9 +205,9 @@ export const Accounts = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
-        onExport={handleExport}
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
+        exportApiCall={accountsExportApi}
       ></DataList>
     </ModuleWrapper>
   );

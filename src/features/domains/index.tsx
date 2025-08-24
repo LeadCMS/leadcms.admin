@@ -15,7 +15,7 @@ import { GridColDef } from "@mui/x-data-grid";
 import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, ExportParams } from "types";
+import { DataListSettings } from "types";
 import { Fragment, useRef, useState } from "react";
 import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
@@ -23,7 +23,6 @@ import { SearchBar } from "@components/search-bar";
 import { Button } from "@mui/material";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
-import { genericExportHandler } from "@components/export";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { ToolbarButton } from "@components/tool-bar-button";
@@ -56,14 +55,8 @@ export const Domains = () => {
     }
   };
 
-  const handleExport = async (params: ExportParams): Promise<void> => {
-    await genericExportHandler(
-      params,
-      (finalQueryString, accept) =>
-        client.api.domainsExportList({ query: finalQueryString }, { headers: { Accept: accept } }),
-      "domains"
-    );
-  };
+  const domainsExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>
+    client.api.domainsExportList({ query }, { headers: { Accept: accept } });
 
   const handleImportOpen = () => {
     !importFieldsObject && setImportFieldsObject(getModelByName(modelName));
@@ -239,9 +232,9 @@ export const Domains = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
-        onExport={handleExport}
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
+        exportApiCall={domainsExportApi}
       ></DataList>
     </ModuleWrapper>
   );

@@ -14,14 +14,13 @@ import { GridColDef } from "@mui/x-data-grid";
 import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, ExportParams } from "types";
+import { DataListSettings } from "types";
 import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { SearchBar } from "@components/search-bar";
 import { Button, Chip } from "@mui/material";
 import { Plus, Upload, Download, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
-import { genericExportHandler } from "@components/export";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { ToolbarButton } from "@components/tool-bar-button";
@@ -54,14 +53,8 @@ export const Orders = () => {
     }
   };
 
-  const handleExport = async (params: ExportParams): Promise<void> => {
-    await genericExportHandler(
-      params,
-      (finalQueryString, accept) =>
-        client.api.ordersExportList({ query: finalQueryString }, { headers: { Accept: accept } }),
-      "orders"
-    );
-  };
+  const ordersExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>
+    client.api.ordersExportList({ query }, { headers: { Accept: accept } });
 
   const handleImportOpen = () => {
     !importFieldsObject && setImportFieldsObject(getModelByName(modelName));
@@ -249,9 +242,9 @@ export const Orders = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
-        onExport={handleExport}
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
+        exportApiCall={ordersExportApi}
       ></DataList>
     </ModuleWrapper>
   );
