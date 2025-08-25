@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { downloadFile } from "components/download";
+import { downloadExportFile, downloadFile } from "components/download";
 import { useNotificationsService } from "@hooks";
 import { ExportParams } from "types";
 
@@ -32,6 +32,21 @@ export const CsvExport = ({ exportAsync, closeExport, fileName }: ExportPorps) =
   return <></>;
 };
 
+export async function genericExportHandler(
+  params: ExportParams,
+  exportApiCall: (finalQueryString: string, accept: string) => Promise<Response>,
+  moduleName: string
+): Promise<void> {
+  try {
+    const { finalQueryString, accept } = buildExportQueryString(params);
+    const response = await exportApiCall(finalQueryString, accept);
+    const blob = await response.blob();
+    downloadExportFile(blob, params.format, moduleName);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 export function buildExportQueryString({
   scope,
   format,
@@ -39,6 +54,7 @@ export function buildExportQueryString({
   selectedRows,
   whereFilterQuery,
   basicFilterQuery,
+  searchTerm,
 }: ExportParams): {
   finalQueryString: string;
   accept: string;
@@ -48,25 +64,30 @@ export function buildExportQueryString({
   let finalQueryString = "";
 
   if (scope === "filtered" && whereFilterQuery && whereFilterQuery.startsWith("&")) {
+    if (searchTerm && searchTerm.trim() !== "") {
+      finalQueryString += `${searchTerm}`;
+    }
 
-    finalQueryString = "&" + fieldQuery;
+    finalQueryString += "&" + fieldQuery;
 
     finalQueryString += whereFilterQuery;
     if (basicFilterQuery) {
       finalQueryString += "&" + basicFilterQuery.replace(/^&/, "");
     }
-  }
-  else {
+  } else {
     let queryParts: string[] = [];
 
     if (scope === "all") {
       queryParts = [fieldQuery, ...(basicFilterQuery ? [basicFilterQuery] : [])];
+      finalQueryString = "&" + queryParts.filter(Boolean).join("&");
     } else if (scope === "filtered") {
       queryParts = [
+        ...(searchTerm && searchTerm.trim() !== "" ? [searchTerm] : []),
         fieldQuery,
         ...(whereFilterQuery ? [whereFilterQuery] : []),
         ...(basicFilterQuery ? [basicFilterQuery] : []),
       ];
+      finalQueryString = queryParts.filter(Boolean).join("&");
     } else if (scope === "selected") {
       const idsQuery = selectedRows.length ? `filter[ids]=${selectedRows.join(",")}` : "";
 
@@ -75,9 +96,8 @@ export function buildExportQueryString({
         ...(idsQuery ? [idsQuery] : []),
         ...(basicFilterQuery ? [basicFilterQuery] : []),
       ];
+      finalQueryString = "&" + queryParts.filter(Boolean).join("&");
     }
-
-    finalQueryString = "&" + queryParts.filter(Boolean).join("&");
   }
   const accept = format === "csv" ? "text/csv" : format === "json" ? "text/json" : "*/*";
 
@@ -86,4 +106,3 @@ export function buildExportQueryString({
     accept,
   };
 }
-

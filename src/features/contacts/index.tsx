@@ -1,4 +1,4 @@
-import { Avatar, Button, IconButton, ListItemAvatar } from "@mui/material";
+import { Avatar, Button, ListItemAvatar } from "@mui/material";
 import { ContactDetailsDto, ContactImportDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { ContactHref, ContactNameListItem, ContactNameListItemText } from "./index.styled";
@@ -16,17 +16,15 @@ import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
-import { Fragment, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
 import { getModelByName } from "lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
-import { CsvExport } from "@components/export";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, ExportParams } from "types";
-import { buildExportQueryString } from "@components/export";
-import { downloadExportFile, downloadFile } from "@components/download";
+import { DataListSettings } from "types";
+import { ToolbarButton } from "@components/tool-bar-button";
 
 export const Contacts = () => {
   const { client } = useRequestContext();
@@ -57,18 +55,9 @@ export const Contacts = () => {
     }
   };
 
-  const handleExport = async (params: ExportParams): Promise<void> => {
-    try {
-      const { finalQueryString, accept } = buildExportQueryString(params);
-      const response = await client.api.contactsExportList(
-        { query: finalQueryString },
-        { headers: { Accept: accept } }
-      );
+  const contactsExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>
+    client.api.contactsExportList({ query }, { headers: { Accept: accept } });
 
-      const blob = await response.blob();
-      downloadExportFile(blob, params.format, "contacts");
-    } catch (error) {}
-  };
   const handleImportOpen = () => {
     !importFieldsObject && setImportFieldsObject(getModelByName(modelName));
     setOpenImport(true);
@@ -91,13 +80,13 @@ export const Contacts = () => {
     {
       field: "prefix",
       headerName: "Prefix",
-      minWidth: 80,
+      width: 80,
       type: "string",
     },
     {
       field: "firstName",
       headerName: "Name",
-      minWidth: 250,
+      width: 250,
       type: "string",
       renderCell: ({ row }) => (
         <ContactNameListItem sx={{ paddingY: 0 }}>
@@ -114,19 +103,19 @@ export const Contacts = () => {
     {
       field: "middleName",
       headerName: "Middle Name",
-      minWidth: 120,
+      width: 120,
       type: "string",
     },
     {
       field: "lastName",
       headerName: "Last Name",
-      minWidth: 120,
+      width: 120,
       type: "string",
     },
     {
       field: "birthday",
       headerName: "Birthday",
-      minWidth: 120,
+      width: 120,
       type: "date",
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
@@ -134,47 +123,47 @@ export const Contacts = () => {
     {
       field: "jobTitle",
       headerName: "Job Title",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
     {
       field: "companyName",
       headerName: "Company Name",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
     {
       field: "department",
       headerName: "Department",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
     {
       field: "email",
       headerName: "Email",
-      minWidth: 150,
+      width: 150,
       type: "string",
     },
     {
       field: "address1",
       headerName: "Address 1",
-      minWidth: 150,
+      width: 150,
     },
     {
       field: "address2",
       headerName: "Address 2",
-      minWidth: 150,
+      width: 150,
     },
     {
       field: "phone",
       headerName: "Phone",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
     {
       field: "createdAt",
       headerName: "Created At",
-      minWidth: 100,
+      width: 100,
       type: "date",
       valueGetter: DateValueGetter,
       valueFormatter: DateValueFormatter,
@@ -182,7 +171,7 @@ export const Contacts = () => {
     {
       field: "language",
       headerName: "Language",
-      minWidth: 100,
+      width: 100,
       type: "string",
     },
   ]);
@@ -196,66 +185,28 @@ export const Contacts = () => {
   );
 
   const extraActions = [
-    <IconButton
+    <ToolbarButton
+      startIcon={<Filter size={18} />}
       onClick={() => setFilterPanelOpen(true)}
-      color="secondary"
       sx={{
-        backgroundColor: (theme) => theme.palette.background.secondary,
-        border: "1px solid",
-        borderColor: "#E4E4E7",
-        borderRadius: (theme) => theme.spacing(1),
+        minWidth: 0,
+        py: 2,
+        px: 2,
+        ".MuiButton-startIcon": { marginRight: 0, marginLeft: 0 },
       }}
-    >
-      <Filter size={18} />
-    </IconButton>,
-    <Button
-      variant="outlined"
+    ></ToolbarButton>,
+    <ToolbarButton
       startIcon={<Settings2 size={18} />}
       onClick={() => setColumnsPanelOpen((open) => !open)}
-      color="secondary"
-      sx={(theme) => ({
-        backgroundColor: theme.palette.background.secondary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-        },
-      })}
     >
       Columns
-    </Button>,
-    <Button
-      key={"import-btn"}
-      startIcon={<Upload size={18} />}
-      onClick={handleImportOpen}
-      color="secondary"
-      variant="outlined"
-      sx={(theme) => ({
-        backgroundColor: theme.palette.background.secondary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-        },
-      })}
-    >
+    </ToolbarButton>,
+    <ToolbarButton key="import-btn" startIcon={<Upload size={18} />} onClick={handleImportOpen}>
       Import
-    </Button>,
-
-    <Button
-      key={"export-btn"}
-      startIcon={<Download size={18} />}
-      onClick={handleExportOpen}
-      color="secondary"
-      variant="outlined"
-      sx={(theme) => ({
-        backgroundColor: theme.palette.background.secondary,
-        borderColor: "#E4E4E7",
-        "&:hover": {
-          backgroundColor: theme.palette.background.primaryHover,
-        },
-      })}
-    >
+    </ToolbarButton>,
+    <ToolbarButton key="export-btn" startIcon={<Download size={18} />} onClick={handleExportOpen}>
       Export
-    </Button>,
+    </ToolbarButton>,
   ];
 
   const addButton = (
@@ -305,9 +256,9 @@ export const Contacts = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
-        onExport={handleExport}
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
+        exportApiCall={contactsExportApi}
       ></DataList>
     </ModuleWrapper>
   );

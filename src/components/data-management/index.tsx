@@ -32,6 +32,7 @@ type DataDeleteProps = {
   handleDeleteAsync: (id: number | string) => Promise<HttpResponse<void, void | ProblemDetails>>;
   showEditButton?: boolean;
   showOnlyButtons?: boolean;
+  onDeleted?: () => void;
 };
 
 type DataDeleteConfProps = {
@@ -94,6 +95,7 @@ export const DataManagementBlock = ({
   handleDeleteAsync,
   showEditButton = true,
   showOnlyButtons = false,
+  onDeleted,
 }: DataDeleteProps) => {
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
@@ -121,6 +123,9 @@ export const DataManagementBlock = ({
     try {
       setIsDeleting(true);
       await handleDeleteAsync(itemId);
+      if (onDeleted) {
+        onDeleted();
+      }
       handleNavigation(successNavigationRoute);
     } catch (error) {
       setIsDeleting(false);

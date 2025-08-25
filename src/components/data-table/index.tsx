@@ -5,6 +5,7 @@ import {
   GridSortModel,
   GridRowSelectionModel,
   GridCallbackDetails,
+  GridColumnResizeParams,
 } from "@mui/x-data-grid";
 import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { ActionButtonContainer, DataTableContainer } from "./index.styled";
@@ -14,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { getEditFormRoute, getViewFormRoute } from "lib/router";
 import { IconButton } from "@mui/material";
 import { GridDataFilterState } from "types";
+import { useEffect, useState } from "react";
 
 type DataTableProps = {
   columns: GridColDef[];
@@ -38,7 +40,8 @@ type DataTableProps = {
     details: GridCallbackDetails<any>
   ) => void;
   rowSelectionModel?: GridRowSelectionModel;
-  onColumnWidthChange?: (field: string, width: number) => void;
+  columnWidths?: Record<string, number>;
+  saveColumnWidths?: (newWidths: Record<string, number>) => void;
 };
 
 export const DataTableGrid = ({
@@ -61,7 +64,8 @@ export const DataTableGrid = ({
   onColumnVisibilityModelChange,
   onRowSelectionModelChange,
   rowSelectionModel,
-  onColumnWidthChange,
+  columnWidths,
+  saveColumnWidths,
 }: DataTableProps) => {
   const empty: readonly GridValidRowModel[] = [];
 
@@ -137,7 +141,28 @@ export const DataTableGrid = ({
     }
   };
 
-  const gridFinalizedColumns = showActionsColumn ? columns.concat(actionsColumn) : columns;
+  const [localWidths, setLocalWidths] = useState<Record<string, number>>(columnWidths ?? {});
+
+  useEffect(() => {
+    setLocalWidths(columnWidths ?? {});
+  }, [columnWidths]);
+
+  const displayedColumns = columns.map((col) =>
+    localWidths[col.field] !== undefined ? { ...col, width: localWidths[col.field] } : col
+  );
+
+  const gridFinalizedColumns = showActionsColumn
+    ? displayedColumns.concat(actionsColumn)
+    : displayedColumns;
+
+  const handleColumnWidthChange = (params: GridColumnResizeParams) => {
+    const newWidths = {
+      ...localWidths,
+      [params.colDef.field]: params.width,
+    };
+    setLocalWidths(newWidths);
+    if (saveColumnWidths) saveColumnWidths(newWidths);
+  };
 
   return (
     <DataTableContainer>
@@ -166,9 +191,7 @@ export const DataTableGrid = ({
         onColumnVisibilityModelChange={
           onColumnVisibilityModelChange ?? handleColumnVisibilityModelChange
         }
-         onColumnWidthChange={params => {
-          onColumnWidthChange?.(params.colDef.field, params.width);
-        }}
+        onColumnWidthChange={handleColumnWidthChange}
         onRowSelectionModelChange={onRowSelectionModelChange}
         rowSelectionModel={rowSelectionModel}
         initialState={initialState}

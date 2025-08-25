@@ -6,23 +6,30 @@ import {
   getGridStringOperators,
   GridColDef,
   GridColumnVisibilityModel,
-  GridFilterModel,
   GridSortModel,
   GridColType,
   GridValidRowModel,
+  GridRowSelectionModel,
+  GridColumnResizeParams,
 } from "@mui/x-data-grid";
-import { totalCountHeaderName } from "@providers/query-provider";
+import {
+  defaultFilterLimit,
+  getWhereFilterQuery,
+  totalCountHeaderName,
+} from "@providers/query-provider";
 import {
   DtoSchema,
   camelCaseToTitleCase,
   BasicTypeForGeneric,
   GenericDataGridSettings,
 } from "@components/generic-components/common";
-import { ActionButtonContainer } from "@components/data-table/index.styled";
+import { ActionButtonContainer, DataTableContainer } from "@components/data-table/index.styled";
 import { IconButton } from "@mui/material";
-import { Edit, ArrowRight } from "lucide-react";
+import { Pencil, Eye } from "lucide-react";
 import dayjs from "dayjs";
 import useLocalStorage from "use-local-storage";
+import { GridDataFilterState } from "types";
+import React from "react";
 
 export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
   key: string;
@@ -34,11 +41,38 @@ export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
   detailsNavigate?: (item: T) => void;
   editNavigate?: (item: T) => void;
   searchText?: string;
+  setSearchText?: (text: string) => void;
   initiallyShownColumns?: string[];
+  refreshFlag?: number;
 }
 
 export interface GenericDataGridRef {
-  getExportFilters: () => Record<string, unknown>;
+  getColumnsPanelProps: () => {
+    columns: GridColDef[];
+    setColumns: (cols: GridColDef[]) => void;
+    columnVisibilityModel: GridColumnVisibilityModel;
+    setColumnVisibilityModel: (model: GridColumnVisibilityModel) => void;
+    onColumnsReorder: (newColumns: GridColDef[]) => void;
+  };
+  getFiltersPanelProps: () => {
+    columns: GridColDef[];
+    whereFilters: GridDataFilterState["whereFilters"];
+    addFilter: (
+      newFilter?: { whereField?: string; whereOperator?: string; whereFieldValue?: string },
+      removeIndex?: number,
+      editIdx?: number
+    ) => void;
+    removeFilter: (idx: number) => void;
+    clearAllFilters: () => void;
+  };
+  getExportPanelProps: () => {
+    columns: GridColDef[];
+    selectedCount: number;
+    columnVisibilityModel: GridColumnVisibilityModel;
+    whereFilterQuery: string;
+    basicFilterQuery: string | undefined;
+    selectedRows: any[];
+  };
 }
 
 export function GenericDataGrid<T extends BasicTypeForGeneric>(
@@ -49,7 +83,9 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     detailsNavigate,
     editNavigate,
     searchText,
+    setSearchText,
     initiallyShownColumns,
+    refreshFlag,
   }: GenericDataGridProps<T>,
   ref: Ref<GenericDataGridRef>
 ) {
@@ -59,10 +95,22 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     `data-grid-${key}`,
     {
       sortColumn: "id",
-      sortDirection: "desc",
       columnVisibilityModel: {},
+      searchTerm: searchText || "",
     }
   );
+
+  const defaultFilterState = {
+    filterLimit: defaultFilterLimit,
+    sortColumn: gridSettings.sortColumn || "id",
+    sortOrder: gridSettings.sortOrder || "desc",
+    whereFilters: [],
+    skipLimit: 0,
+    pageNumber: 0,
+    columnVisibilityModel: gridSettings.columnVisibilityModel ?? {},
+  };
+
+  const [filterState, setFilterState] = useState<GridDataFilterState>(defaultFilterState);
 
   const actionsColumn: GridColDef = {
     field: "_actions",
@@ -78,12 +126,12 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         <ActionButtonContainer>
           {editNavigate && (
             <IconButton onClick={() => editNavigate(row)}>
-              <Edit size={23} />
+              <Pencil size={18} />
             </IconButton>
           )}
           {detailsNavigate && (
             <IconButton onClick={() => detailsNavigate(row)}>
-              <ArrowRight size={23} />
+              <Eye size={18} />
             </IconButton>
           )}
         </ActionButtonContainer>
@@ -91,70 +139,206 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     },
   };
 
-  const columns: GridColDef[] = [
-    ...Object.keys(schema.properties)
-      .filter((key) => !schema.properties[key].hide)
-      .map((key) => {
-        const column: GridColDef = {
-          field: key,
-          type: mapToGridColType(schema.properties[key].type),
-          width: 200,
-          description: schema.properties[key].description,
-          headerName: camelCaseToTitleCase(key),
-          valueFormatter:
-            schema.properties[key].format === "date-time"
-              ? (value) => {
-                  return value ? dayjs(value).format("L HH:mm") : undefined;
-                }
-              : undefined,
-          filterOperators: getGridStringOperators().filter(
-            (operator) => operator.value === "contains"
-          ),
-        };
-        return column;
-      }),
-  ].concat([actionsColumn]);
+  const [columns, setColumns] = useState<GridColDef[]>(
+    [
+      ...Object.keys(schema.properties)
+        .filter((key) => !schema.properties[key].hide)
+        .map((key) => {
+          const column: GridColDef = {
+            field: key,
+            type: mapToGridColType(schema.properties[key].type),
+            width: 200,
+            description: schema.properties[key].description,
+            headerName: camelCaseToTitleCase(key),
+            valueFormatter:
+              schema.properties[key].format === "date-time"
+                ? (value) => {
+                    return value ? dayjs(value).format("L HH:mm") : undefined;
+                  }
+                : undefined,
+            filterOperators: getGridStringOperators().filter(
+              (operator) => operator.value === "contains"
+            ),
+          };
+          return column;
+        }),
+    ].concat([actionsColumn])
+  );
 
   const [items, setItems] = useState<T[] | undefined>();
 
   const [totalItemsCount, setTotalItemsCount] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
-  const [sortColumn, setSortColumn] = useState<string>(gridSettings.sortColumn);
-  const [sortDirection, setSortDirection] = useState<string>(gridSettings.sortDirection);
-  const [whereFilters, setWhereFilters] = useState<{ [x: string]: string }>({});
+  const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set(),
+  });
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+    gridSettings.columnWidths ?? {}
+  );
 
-  const getFilters = () => {
-    const query: Record<string, unknown> = {
-      ...whereFilters,
-      "filter[limit]": pageSize,
-      "filter[order]": sortColumn ? `${sortColumn} ${sortDirection}` : undefined,
-      "filter[skip]": pageSize * pageNumber,
-    };
+  const selectedRows = Array.from(rowSelectionModel.ids);
+
+  useEffect(() => {
+    if (gridSettings) {
+      const {
+        searchTerm,
+        filterLimit,
+        skipLimit,
+        sortColumn,
+        sortOrder,
+        whereFilters,
+        pageNumber,
+        columnVisibilityModel,
+        columnOrder,
+        columnWidths,
+      } = gridSettings;
+      setFilterState({
+        searchTerm,
+        filterLimit,
+        skipLimit,
+        sortColumn,
+        sortOrder,
+        whereFilters,
+        pageNumber,
+        columnVisibilityModel,
+        columnOrder,
+      });
+      setColumnWidths(columnWidths ?? {});
+
+      if (columnOrder && columnOrder.length > 0) {
+        setColumns?.(sortColumnsByOrder(columns, columnOrder));
+      } else {
+        setColumns?.(columns);
+      }
+
+      if (setSearchText) {
+        setSearchText(searchTerm || "");
+      }
+    } else {
+      setFilterState(defaultFilterState);
+    }
+  }, []);
+
+  function getBasicFilterQueryString(filterState: GridDataFilterState): string {
+    return (
+      `filter[limit]=${filterState.filterLimit ?? defaultFilterLimit}` +
+      `&filter[order]=${filterState.sortColumn ?? "id"} ${filterState.sortOrder ?? "desc"}` +
+      `&filter[skip]=${filterState.skipLimit ?? 0}`
+    );
+  }
+
+  function getWhereFilterQueryString(filterState: GridDataFilterState): string {
+    if (filterState.whereFilters && filterState.whereFilters.length) {
+      return filterState.whereFilters
+        .map((f) =>
+          getWhereFilterQuery(f.whereField || "", f.whereFieldValue || "", f.whereOperator || "")
+        )
+        .filter(Boolean)
+        .join("");
+    }
+    return "";
+  }
+
+  function getFiltersQueryObject() {
+    const query: Record<string, unknown> = {};
+
+    query["filter[order]"] = `${filterState.sortColumn ?? "id"} ${filterState.sortOrder ?? "desc"}`;
+    query["filter[skip]"] = filterState.skipLimit ?? 0;
+
+    let whereFilterQuery = getWhereFilterQueryString(filterState);
+
+    if (whereFilterQuery) {
+      const queryString = whereFilterQuery.endsWith("&")
+        ? whereFilterQuery.slice(0, -1)
+        : whereFilterQuery;
+      queryString.split("&").forEach((pair) => {
+        const [key, value] = pair.split("=");
+        if (key && value !== undefined) {
+          query[key] = decodeURIComponent(value);
+        }
+      });
+    }
 
     if (searchText) {
       query["query"] = searchText;
     }
 
     return query;
+  }
+
+  const addFilter = (
+    newFilter?: { whereField?: string; whereOperator?: string; whereFieldValue?: string },
+    removeIndex?: number,
+    editIdx?: number
+  ) => {
+    let updatedFilters = [...(filterState.whereFilters ?? [])];
+    if (typeof removeIndex === "number") {
+      updatedFilters.splice(removeIndex, 1);
+    } else if (
+      typeof editIdx === "number" &&
+      newFilter &&
+      newFilter.whereField &&
+      newFilter.whereOperator
+    ) {
+      updatedFilters[editIdx] = newFilter as any;
+    } else if (newFilter && newFilter.whereField && newFilter.whereOperator) {
+      updatedFilters.push(newFilter as any);
+    }
+    setFilterState((prev) => ({
+      ...prev,
+      whereFilters: updatedFilters,
+    }));
   };
 
+  const removeFilter = (idx: number) => {
+    addFilter(undefined, idx);
+  };
+
+  const clearAllFilters = () => {
+    setFilterState((prev) => ({
+      ...prev,
+      whereFilters: [],
+    }));
+  };
+
+  const basicFilterQuery = getBasicFilterQueryString(filterState);
+  const whereFilterQuery = getWhereFilterQueryString(filterState);
+
   useImperativeHandle(ref, () => ({
-    getExportFilters: () => {
-      const filters = getFilters();
-      delete filters["filter[limit]"];
-      delete filters["filter[skip]"];
-      return filters;
-    },
+    getColumnsPanelProps: () => ({
+      columns,
+      setColumns,
+      columnVisibilityModel,
+      setColumnVisibilityModel: handleColumnVisibilityModelChange,
+      onColumnsReorder: handleColumnsReorder,
+    }),
+    getFiltersPanelProps: () => ({
+      columns,
+      whereFilters: filterState.whereFilters ?? [],
+      addFilter,
+      removeFilter,
+      clearAllFilters,
+    }),
+    getExportPanelProps: () => ({
+      columns: columns.filter((col) => col.field !== "_actions"),
+      selectedCount: selectedRows.length,
+      selectedRows,
+      columnVisibilityModel,
+      whereFilterQuery,
+      basicFilterQuery,
+    }),
   }));
 
   useEffect(() => {
     const abortController = new AbortController();
+    saveGridStateInLocalStorage();
 
     if (getItemsFn) {
       setBusy(async () => {
         try {
-          const { data, headers } = await getItemsFn(getFilters(), {
+          const { data, headers } = await getItemsFn(getFiltersQueryObject(), {
             signal: abortController.signal,
           });
 
@@ -169,96 +353,132 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     return () => {
       abortController.abort("canceled");
     };
-  }, [getItemsFn, pageSize, pageNumber, sortColumn, sortDirection, searchText, whereFilters]);
+  }, [getItemsFn, searchText, filterState, refreshFlag]);
+
+  useEffect(() => {
+    saveGridStateInLocalStorage();
+  }, [columnWidths]);
 
   const handleSortChange = (sortModel: GridSortModel) => {
     if (sortModel.length > 0) {
-      setSortColumn(sortModel[sortModel.length - 1].field);
-      setSortDirection(sortModel[sortModel.length - 1].sort || "asc");
+      setFilterState((prev) => ({
+        ...prev,
+        sortColumn: sortModel[sortModel.length - 1].field,
+        sortOrder: sortModel[sortModel.length - 1].sort || "asc",
+      }));
     } else {
-      setSortColumn("id");
-      setSortDirection("desc");
+      setFilterState((prev) => ({
+        ...prev,
+        sortColumn: "id",
+        sortOrder: "desc",
+      }));
     }
   };
-
-  const handleFilterChange = (filterModel: GridFilterModel) => {
-    if (filterModel.items.length === 0) {
-      return;
-    }
-
-    const newWhereFilters: { [x: string]: string } = {};
-
-    for (const item of filterModel.items) {
-      newWhereFilters[`filter[where][${item.field}][like]`] = item.value;
-    }
-
-    setWhereFilters(newWhereFilters);
-  };
-
-  const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>(
-    () => {
-      if (gridSettings.columnVisibilityModel) {
-        return gridSettings.columnVisibilityModel;
-      }
-
-      const initialValue: GridColumnVisibilityModel = {};
-
-      const availableColumns = Object.keys(schema.properties).filter(
-        (key) => !schema.properties[key].hide
-      );
-
-      for (const columnName of availableColumns) {
-        initialValue[columnName] =
-          !initiallyShownColumns ||
-          initiallyShownColumns.length === 0 ||
-          initiallyShownColumns.indexOf(columnName) > -1;
-      }
-
-      return initialValue;
-    }
-  );
-
-  useEffect(() => {
-    setGridSettings({
-      sortDirection: sortDirection,
-      sortColumn: sortColumn,
-      columnVisibilityModel: columnVisibilityModel,
-    });
-  }, [sortDirection, sortColumn, columnVisibilityModel]);
 
   const customLocaleText = {
     noRowsLabel: isBusy ? "" : "No rows",
   };
 
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>(
+    filterState.columnVisibilityModel ?? {}
+  );
+
+  const handleColumnVisibilityModelChange = (newModel: GridColumnVisibilityModel) => {
+    setColumnVisibilityModel(newModel);
+    setFilterState((prev) => ({
+      ...prev,
+      columnVisibilityModel: newModel,
+    }));
+  };
+
+  const handleColumnsReorder = (newColumns: GridColDef[]) => {
+    setColumns(newColumns);
+    setFilterState((prev) => ({
+      ...prev,
+      columnOrder: newColumns.map((col) => col.field),
+    }));
+  };
+
+  const handleColumnWidthChange = (params: GridColumnResizeParams) => {
+    setColumnWidths((prev) => ({
+      ...prev,
+      [params.colDef.field]: params.width,
+    }));
+  };
+
+  useEffect(() => {
+    if (setColumns) {
+      setColumns(
+        columns.map((col) =>
+          columnWidths[col.field] !== undefined ? { ...col, width: columnWidths[col.field] } : col
+        )
+      );
+    }
+  }, [columnWidths]);
+
+  function sortColumnsByOrder<T extends GridValidRowModel>(
+    columns: GridColDef<T>[],
+    columnOrder: string[]
+  ): GridColDef<T>[] {
+    const ordered = columnOrder
+      .map((field) => columns.find((col) => col.field === field))
+      .filter(Boolean) as GridColDef<T>[];
+
+    const missing = columns.filter((col) => !columnOrder.includes(col.field));
+    return [...ordered, ...missing];
+  }
+
+  const saveGridStateInLocalStorage = () => {
+    if (filterState) {
+      setGridSettings({
+        filterLimit: filterState.filterLimit || defaultFilterLimit,
+        skipLimit: filterState.skipLimit || 0,
+        searchTerm: searchText,
+        sortColumn: filterState.sortColumn || defaultFilterState.sortColumn,
+        sortOrder: filterState.sortOrder || defaultFilterState.sortOrder,
+        whereFilters: filterState.whereFilters || [],
+        pageNumber: filterState.pageNumber || 0,
+        columnVisibilityModel: filterState.columnVisibilityModel || {},
+        columnOrder: filterState.columnOrder || [],
+        columnWidths,
+      });
+    }
+  };
+
   return (
-    <DataGrid
-      columns={columns || []}
-      rows={items || []}
-      loading={false}
-      localeText={customLocaleText}
-      checkboxSelection={false}
-      autoHeight={false}
-      rowCount={totalItemsCount}
-      pageSizeOptions={[10, 25, 50, 100]}
-      pagination
-      paginationModel={{
-        page: pageNumber,
-        pageSize: pageSize,
-      }}
-      paginationMode="server"
-      onPaginationModelChange={(model) => {
-        setPageNumber(model.page);
-        setPageSize(model.pageSize);
-      }}
-      sortingMode="server"
-      onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}
-      filterMode="server"
-      onFilterModelChange={(newFilterModel) => handleFilterChange(newFilterModel)}
-      onColumnVisibilityModelChange={(newModel) => {
-        setColumnVisibilityModel(newModel);
-      }}
-      columnVisibilityModel={columnVisibilityModel}
-    />
+    <DataTableContainer>
+      <DataGrid
+        columns={columns || []}
+        rows={items || []}
+        loading={false}
+        localeText={customLocaleText}
+        checkboxSelection={true}
+        autoHeight={false}
+        rowCount={totalItemsCount}
+        pageSizeOptions={[10, 25, 50, 100]}
+        pagination
+        paginationModel={{
+          page: pageNumber,
+          pageSize: pageSize,
+        }}
+        paginationMode="server"
+        onPaginationModelChange={(model) => {
+          setPageNumber(model.page);
+          setPageSize(model.pageSize);
+        }}
+        disableColumnFilter={true}
+        sortingMode="server"
+        onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}
+        filterMode="server"
+        onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
+        columnVisibilityModel={columnVisibilityModel}
+        onColumnWidthChange={handleColumnWidthChange}
+        onRowSelectionModelChange={(newRowSelectionModel) => {
+          setRowSelectionModel(newRowSelectionModel);
+        }}
+        rowSelectionModel={rowSelectionModel}
+      />
+    </DataTableContainer>
   );
 }
 

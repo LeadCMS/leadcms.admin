@@ -6,6 +6,7 @@ import { domainFormBreadcrumbLinks } from "../constants";
 import { useState } from "react";
 import { Button, Box } from "@mui/material";
 import { XCircle, Save } from "lucide-react";
+import { DataManagementBlock } from "@components/data-management";
 
 const fieldSections = {
   sections: [
@@ -80,6 +81,16 @@ export const DomainForm = (
         Save
       </Button>
     </Box>
+  ) : formProps.deleteOptionProps ? (
+    <DataManagementBlock
+      header={formProps.deleteOptionProps.header}
+      description={formProps.deleteOptionProps.description}
+      entity={formProps.deleteOptionProps.entity}
+      handleDeleteAsync={(id) => formProps.deleteOptionProps!.deleteItemFn(Number(id))}
+      itemId={formProps.getItemId?.() ?? ""}
+      successNavigationRoute={formProps.deleteOptionProps.listRoute}
+      showOnlyButtons={true}
+    />
   ) : null;
 
   return (
