@@ -27,6 +27,7 @@ import { BoolView } from "./view-components/bool-view";
 import { DateTimeView } from "./view-components/datetime-view";
 import { ArrayView } from "./view-components/array-view";
 import { getSectionIcon } from "@components/icon-map";
+import { getModuleNameFromUrl } from "@utils/general-helper";
 
 export interface DtoField {
   editable: boolean;
@@ -397,13 +398,6 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
         return TextView({ ...commonProps });
     }
   };
-
-  function getModuleNameFromUrl(): string {
-    if (typeof window === "undefined") return "";
-    const path = window.location.pathname;
-    const moduleRaw = path.split("/")[1] || "";
-    return moduleRaw.charAt(0).toUpperCase() + moduleRaw.slice(1).toLowerCase();
-  }
 
   const moduleName = getModuleNameFromUrl();
   const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;

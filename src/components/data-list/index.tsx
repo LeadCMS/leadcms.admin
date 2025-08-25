@@ -16,7 +16,7 @@ import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateComm
 import { DataListContainer } from "./index.styled";
 import { DataTableGrid } from "@components/data-table";
 import useLocalStorage from "use-local-storage";
-import { DataListSettings, ExportParams, GridDataFilterState } from "types";
+import { DataListSettings, GridDataFilterState } from "types";
 import { useNotificationsService } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { CustomFilterBar } from "@components/custom-filter";
@@ -24,6 +24,9 @@ import { ColumnsPanel } from "@components/custom-columns-panel";
 import { ExportPopup } from "@components/export-popup";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import React from "react";
+import { buildExportQueryString } from "@components/export";
+import { getModuleNameFromUrl } from "@utils/general-helper";
+import { downloadExportFile } from "@components/download";
 
 // Define response type for API model data
 interface ModelDataResponse {
@@ -46,9 +49,9 @@ type dataListProps<TModel extends GridValidRowModel> = {
   setFilterPanelOpen?: (open: boolean) => void;
   columnsPanelOpen?: boolean;
   setColumnsPanelOpen?: (open: boolean) => void;
-  onExport?: (params: ExportParams) => Promise<void>;
   onExportOpen?: boolean;
   onExportClose?: () => void;
+  exportApiCall?: (finalQueryString: string, accept: string) => Promise<Response>;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -66,9 +69,9 @@ export const DataList = <TModel extends GridValidRowModel>({
   setFilterPanelOpen,
   columnsPanelOpen,
   setColumnsPanelOpen,
-  onExport,
   onExportOpen = false,
   onExportClose = () => {},
+  exportApiCall,
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -86,12 +89,19 @@ export const DataList = <TModel extends GridValidRowModel>({
     gridSettings?.columnVisibilityModel ?? {}
   );
 
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+    gridSettings?.columnWidths ?? {}
+  );
+
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
     type: "include",
     ids: new Set(),
   });
 
   const selectedRows = Array.from(rowSelectionModel.ids);
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const defaultFilterState = {
     filterLimit: defaultFilterLimit,
@@ -150,8 +160,9 @@ export const DataList = <TModel extends GridValidRowModel>({
         pageNumber,
         columnVisibilityModel,
         columnOrder,
-        columnWidths,
       });
+
+      setColumnWidths(columnWidths ?? {});
 
       if (columnOrder && columnOrder.length > 0) {
         setColumns?.(sortColumnsByOrder(columns, columnOrder));
@@ -177,6 +188,10 @@ export const DataList = <TModel extends GridValidRowModel>({
   }, [searchTerm, filterState]);
 
   useEffect(() => {
+    saveGridStateInLocalStorage();
+  }, [columnWidths]);
+
+  useEffect(() => {
     if (totalRowCount === -1) {
       throw new Error("Server error: x-total-count header is not provided.");
     }
@@ -189,16 +204,14 @@ export const DataList = <TModel extends GridValidRowModel>({
   }, [modelData]);
 
   useEffect(() => {
-    if (filterState?.columnWidths && setColumns) {
+    if (setColumns) {
       setColumns(
         columns.map((col) =>
-          filterState.columnWidths![col.field] !== undefined
-            ? { ...col, width: filterState.columnWidths![col.field] }
-            : col
+          columnWidths[col.field] !== undefined ? { ...col, width: columnWidths[col.field] } : col
         )
       );
     }
-  }, [filterState?.columnWidths]);
+  }, [columnWidths]);
 
   const saveGridStateInLocalStorage = () => {
     if (filterState) {
@@ -212,9 +225,13 @@ export const DataList = <TModel extends GridValidRowModel>({
         pageNumber: filterState.pageNumber || 0,
         columnVisibilityModel: filterState.columnVisibilityModel || {},
         columnOrder: filterState.columnOrder || [],
-        columnWidths: filterState.columnWidths || {},
+        columnWidths,
       });
     }
+  };
+
+  const saveColumnWidths = (newWidths: Record<string, number>) => {
+    setColumnWidths(newWidths);
   };
 
   function sortColumnsByOrder<T>(
@@ -307,16 +324,50 @@ export const DataList = <TModel extends GridValidRowModel>({
     else setTotalRowCount(-1);
   };
 
-  const handleExport = (scope: string, format: string, cols: string[]) => {
-    if (onExport) {
-      onExport({
+  const handleExport = async (scope: string, format: string, cols: string[]) => {
+    if (!exportApiCall) {
+      setExportError("Export is not available.");
+      setExporting(false);
+      return;
+    }
+
+    setExportError(null);
+    setExporting(true);
+
+    try {
+      const params = {
         scope,
         format,
         cols,
         selectedRows,
         whereFilterQuery,
-        basicFilterQuery,
-      });
+        basicFilterQuery: basicExportFilterQuery,
+        searchTerm,
+      };
+
+      const { finalQueryString, accept } = buildExportQueryString(params);
+      const response = await exportApiCall(finalQueryString, accept);
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const moduleName = getModuleNameFromUrl();
+      downloadExportFile(blob, format, moduleName.toLocaleLowerCase());
+      onExportClose();
+    } catch (err) {
+      let message = "Export failed with unknown error.";
+      if (
+        err &&
+        typeof err === "object" &&
+        "statusText" in err &&
+        typeof (err as any).statusText === "string"
+      ) {
+        const statusText = (err as any).statusText;
+        const status = (err as any).status;
+        message = `Export failed (${status}): ${statusText}`;
+      }
+      setExportError(message);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -347,16 +398,6 @@ export const DataList = <TModel extends GridValidRowModel>({
     columns: { columnVisibilityModel: gridSettings.columnVisibilityModel || {} },
   };
 
-  const handleColumnWidthChange = (field: string, width: number) => {
-    setFilterState(prev => ({
-      ...(prev ?? {}),
-      columnWidths: {
-        ...(prev?.columnWidths || {}),
-        [field]: width,
-      },
-    }));
-  };
-
   return filterState && totalRowCount != undefined ? (
     <DataListContainer>
       <CustomFilterBar
@@ -379,14 +420,20 @@ export const DataList = <TModel extends GridValidRowModel>({
           onClose={() => setColumnsPanelOpen?.(false)}
         />
       )}
-      <ExportPopup
-        open={onExportOpen}
-        onClose={onExportClose}
-        onExport={handleExport}
-        columns={columns}
-        selectedCount={selectedRows.length}
-        columnVisibilityModel={columnVisibilityModel}
-      />
+      {exportApiCall && (
+        <ExportPopup
+          open={onExportOpen}
+          onClose={onExportClose}
+          onExport={handleExport}
+          columns={columns}
+          selectedCount={selectedRows.length}
+          columnVisibilityModel={columnVisibilityModel}
+          exporting={exporting}
+          errorMessage={exportError}
+          hasActiveFilters={!!filterState?.whereFilters?.length}
+          hasSearchText={!!(searchTerm && searchTerm.trim() !== "")}
+        />
+      )}
       <DataTableGrid
         columns={columns}
         data={modelData || []}
@@ -404,12 +451,12 @@ export const DataList = <TModel extends GridValidRowModel>({
         disableEditRoute={!showEditButton}
         disableViewRoute={!showViewButton}
         columnVisibilityModel={columnVisibilityModel}
-        onColumnWidthChange={handleColumnWidthChange}
         onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
         onRowSelectionModelChange={(newRowSelectionModel) => {
           setRowSelectionModel(newRowSelectionModel);
         }}
         rowSelectionModel={rowSelectionModel}
+        saveColumnWidths={saveColumnWidths}
       />
     </DataListContainer>
   ) : null;

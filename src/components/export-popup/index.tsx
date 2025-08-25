@@ -6,7 +6,6 @@ import {
   DialogActions,
   Button,
   FormControl,
-  FormLabel,
   RadioGroup,
   FormControlLabel,
   Radio,
@@ -14,8 +13,9 @@ import {
   FormGroup,
   Box,
   Typography,
-  ThemeProvider,
   IconButton,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { GridColDef, GridColumnVisibilityModel, GridValidRowModel } from "@mui/x-data-grid";
 import { X } from "lucide-react";
@@ -27,6 +27,10 @@ interface ExportPopupProps<TModel extends GridValidRowModel> {
   columns: GridColDef<TModel>[];
   selectedCount: number;
   columnVisibilityModel?: GridColumnVisibilityModel;
+  exporting?: boolean;
+  errorMessage?: string | null;
+  hasActiveFilters: boolean;
+  hasSearchText: boolean;
 }
 
 export const ExportPopup = <TModel extends GridValidRowModel>({
@@ -36,17 +40,27 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
   columns,
   selectedCount,
   columnVisibilityModel = {},
+  exporting = false,
+  errorMessage = null,
+  hasActiveFilters,
+  hasSearchText,
 }: ExportPopupProps<TModel>) => {
   const [exportScope, setExportScope] = useState("all");
   const [fileFormat, setFileFormat] = useState("csv");
   const [selectedColumns, setSelectedColumns] = useState<string[]>(columns.map((c) => c.field));
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
+      setLocalError(null);
       const visible = columns.filter((col) => columnVisibilityModel[col.field] !== false);
       setSelectedColumns(visible.map((c) => c.field));
     }
   }, [open, columns, columnVisibilityModel]);
+
+  useEffect(() => {
+    setLocalError(errorMessage ?? null);
+  }, [errorMessage]);
 
   const handleColumnToggle = (field: string) => {
     setSelectedColumns((cols) => {
@@ -57,6 +71,14 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
 
   const handleExport = () => onExport(exportScope, fileFormat, selectedColumns);
 
+  const isFilteredExportValid = hasActiveFilters || hasSearchText;
+
+  const exportDisabled =
+    exporting ||
+    (exportScope === "selected" && selectedCount === 0) ||
+    selectedColumns.length === 0 ||
+    (exportScope === "filtered" && !isFilteredExportValid);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth sx={{ borderRadius: 2, p: 2 }}>
       <Box sx={{ p: 0 }}>
@@ -66,6 +88,7 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
         <IconButton
           aria-label="close"
           onClick={onClose}
+          disabled={exporting}
           sx={{
             position: "absolute",
             right: 8,
@@ -77,6 +100,11 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
         </IconButton>
       </Box>
       <DialogContent sx={{ pt: 3 }}>
+        {localError && (
+          <Alert severity="error" sx={{ mb: 4 }}>
+            {errorMessage}
+          </Alert>
+        )}
         <Box sx={{ width: "100%", mb: 3 }}>
           <FormControl component="fieldset" sx={{ mb: 0 }}>
             <Typography sx={{ mb: 1, fontWeight: 500, fontSize: "0.9rem" }}>
@@ -195,16 +223,17 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} variant="outlined">
+        <Button onClick={onClose} variant="outlined" disabled={exporting}>
           Cancel
         </Button>
         <Button
           onClick={handleExport}
           variant="contained"
           color="primary"
-          disabled={exportScope === "selected" && selectedCount === 0}
+          disabled={exportDisabled}
+          startIcon={exporting ? <CircularProgress size={16} /> : undefined}
         >
-          Export
+          {exporting ? "Exporting..." : "Export"}
         </Button>
       </DialogActions>
     </Dialog>

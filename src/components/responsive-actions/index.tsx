@@ -1,5 +1,5 @@
 import React, { useRef, useLayoutEffect, useState } from "react";
-import { IconButton, Menu, MenuItem, Box, Typography } from "@mui/material";
+import { IconButton, Menu, MenuItem, Box, Typography, useTheme } from "@mui/material";
 import { MoreHorizontal } from "lucide-react";
 import { GhostLink } from "@components/ghost-link";
 
@@ -18,6 +18,29 @@ function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
   return debounced as T;
 }
 
+const getMenuItemSx = (theme: any) => ({
+  display: "flex",
+  alignItems: "center",
+  fontSize: "14px",
+  color: theme.palette.text.primary,
+  backgroundColor: theme.palette.background.secondary,
+  "&:hover": {
+    backgroundColor: theme.palette.background.primaryHover,
+  },
+});
+
+function extractActionProps(action: React.ReactElement) {
+  let isToolbarButton = false;
+  if (typeof action.type === "function" || typeof action.type === "object") {
+    const componentType = action.type as any;
+    isToolbarButton =
+      componentType.displayName === "ToolbarButton" || componentType.name === "ToolbarButton";
+  }
+
+  const { startIcon, children, disabled, onClick } = action.props;
+  return { startIcon, children, disabled, onClick };
+}
+
 export const ResponsiveActions: React.FC<ResponsiveActionsProps> = ({ actions, gap = 16 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(actions.length);
@@ -26,6 +49,7 @@ export const ResponsiveActions: React.FC<ResponsiveActionsProps> = ({ actions, g
   const measuringRefs = useRef<Array<HTMLDivElement | null>>([]);
   const ellipsisMeasuringRef = useRef<HTMLButtonElement | null>(null);
   const ellipsisRef = useRef<HTMLButtonElement | null>(null);
+  const theme = useTheme();
 
   useLayoutEffect(() => {
     function measure() {
@@ -152,13 +176,13 @@ export const ResponsiveActions: React.FC<ResponsiveActionsProps> = ({ actions, g
               }}
             >
               {overflowActions.map((action, idx) => {
-                const { to, component, onClick, startIcon, children, ...rest } = action.props;
-                if (to) {
+                if (action.props.to) {
+                  const { to, component, startIcon, children, ...rest } = action.props;
                   return (
                     <MenuItem
                       key={idx}
                       component={component || GhostLink}
-                      to={to}
+                      to={action.props.to}
                       onClick={() => setMenuAnchor(null)}
                       sx={{
                         display: "flex",
@@ -176,25 +200,24 @@ export const ResponsiveActions: React.FC<ResponsiveActionsProps> = ({ actions, g
                     </MenuItem>
                   );
                 }
+                const { startIcon, children, disabled, onClick } = extractActionProps(action);
                 return (
                   <MenuItem
                     key={idx}
-                    onClick={() => {
+                    disabled={disabled}
+                    onClick={(e) => {
                       setMenuAnchor(null);
-                      if (onClick) onClick();
+                      if (onClick) onClick(e);
                     }}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      fontSize: "14px",
-                      color: (theme) => theme.palette.text.primary,
-                      p: 1,
-                      backgroundColor: (theme) => `${theme.palette.background.default} !important`,
-                    }}
-                    {...rest}
+                    sx={getMenuItemSx(theme)}
                   >
                     {startIcon && (
-                      <span style={{ display: "inline-flex", marginRight: 10 }}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          marginRight: 10,
+                        }}
+                      >
                         {React.cloneElement(startIcon, { size: 16 })}
                       </span>
                     )}

@@ -100,7 +100,7 @@ export const ContentSortPopup: React.FC<Props> = ({
             justifyContent: "flex-start",
           }}
         >
-          {direction === "asc" ? "Ascending" : "Descending"}
+          {direction === "asc" ? "Descending" : "Ascending"}
         </Button>
       </Stack>
     </Popover>

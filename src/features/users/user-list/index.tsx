@@ -13,7 +13,7 @@ import { SearchBar } from "@components/search-bar";
 import { UserDetailsDto } from "@lib/network/swagger-client";
 import useLocalStorage from "use-local-storage";
 import { DataListSettings } from "types";
-import { Plus, Download, Upload } from "lucide-react";
+import { Plus, Download, Upload, Settings2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Avatar, Button, ListItemAvatar } from "@mui/material";
 import { getAddFormRoute } from "@lib/router";
@@ -21,47 +21,7 @@ import { GhostLink } from "@components/ghost-link";
 import { useRequestContext } from "@providers/request-provider";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { UserNameListItem, UserNameListItemText } from "./index.styled";
-
-const columns: GridColDef<UserDetailsDto>[] = [
-  {
-    field: "firstName",
-    headerName: "Display",
-    flex: 4,
-    type: "string",
-    renderCell: ({ row }) => (
-      <UserNameListItem>
-        <ListItemAvatar>
-          <Avatar src={buildAbsoluteUrl(row.avatarUrl)}></Avatar>
-        </ListItemAvatar>
-        <UserNameListItemText primary={row.displayName || ""} secondary={row.email} />
-      </UserNameListItem>
-    ),
-  },
-  {
-    field: "createdAt",
-    headerName: "Created At",
-    flex: 2,
-    valueGetter: DateValueGetter,
-    valueFormatter: DateValueFormatter,
-  },
-  {
-    field: "lastTimeLoggedIn",
-    headerName: "Last Active",
-    flex: 2,
-    valueGetter: DateValueGetter,
-    valueFormatter: DateValueFormatter,
-  },
-  {
-    field: "userName",
-    headerName: "User Name",
-    flex: 1,
-  },
-  {
-    field: "id",
-    headerName: "id",
-    flex: 1,
-  },
-];
+import { ToolbarButton } from "@components/tool-bar-button";
 
 export const UserList = () => {
   const { client } = useRequestContext();
@@ -70,6 +30,48 @@ export const UserList = () => {
     undefined
   );
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");
+  const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
+
+  const [columns, setColumns] = useState<GridColDef<UserDetailsDto>[]>([
+    {
+      field: "firstName",
+      headerName: "Display",
+      width: 250,
+      type: "string",
+      renderCell: ({ row }) => (
+        <UserNameListItem>
+          <ListItemAvatar>
+            <Avatar src={buildAbsoluteUrl(row.avatarUrl)}></Avatar>
+          </ListItemAvatar>
+          <UserNameListItemText primary={row.displayName || ""} secondary={row.email} />
+        </UserNameListItem>
+      ),
+    },
+    {
+      field: "createdAt",
+      headerName: "Created At",
+      width: 180,
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+    },
+    {
+      field: "lastTimeLoggedIn",
+      headerName: "Last Active",
+      width: 180,
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+    },
+    {
+      field: "userName",
+      headerName: "User Name",
+      width: 180,
+    },
+    {
+      field: "id",
+      headerName: "id",
+      width: 180,
+    },
+  ]);
 
   const searchBar = (
     <SearchBar
@@ -88,21 +90,33 @@ export const UserList = () => {
       return null;
     }
   };
+
   const extraActions = [
+    <ToolbarButton
+      startIcon={<Settings2 size={18} />}
+      onClick={() => setColumnsPanelOpen((open) => !open)}
+    >
+      Columns
+    </ToolbarButton>,
     <Fragment key={"import-action"}>
-      <Button key={"import-btn"} startIcon={<Upload />} disabled>
+      <ToolbarButton key={"import-btn"} startIcon={<Upload size={18} />} disabled>
         Import
-      </Button>
+      </ToolbarButton>
     </Fragment>,
     <Fragment key={"export-action"}>
-      <Button key={"export-btn"} startIcon={<Download />} disabled>
+      <ToolbarButton key={"export-btn"} startIcon={<Download size={18} />} disabled>
         Export
-      </Button>
+      </ToolbarButton>
     </Fragment>,
   ];
 
   const addButton = (
-    <Button variant="contained" to={getAddFormRoute()} component={GhostLink} startIcon={<Plus />}>
+    <Button
+      variant="contained"
+      to={getAddFormRoute()}
+      component={GhostLink}
+      startIcon={<Plus size={18} />}
+    >
       Add user
     </Button>
   );
@@ -117,6 +131,7 @@ export const UserList = () => {
     >
       <DataList
         columns={columns}
+        setColumns={setColumns}
         gridSettingsStorageKey={UserGridStorageKey}
         defaultFilterOrderColumn={defaultFilterOrderColumn}
         defaultFilterOrderDirection={defaultFilterOrderDirection}
@@ -128,6 +143,8 @@ export const UserList = () => {
             sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
           },
         }}
+        columnsPanelOpen={columnsPanelOpen}
+        setColumnsPanelOpen={setColumnsPanelOpen}
       />
     </ModuleWrapper>
   );

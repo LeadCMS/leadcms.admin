@@ -62,6 +62,8 @@ export const LinksModule = () => {
         importItemsFn: client.api.linksImportCreate,
         importSchema: getSchemaDto("LinkImportDto", swaggerJson.components.schemas),
       },
+      showColumnsPanel: true,
+      showFiltersPanel: true,
     },
     viewFormProps: {
       ...formProps,

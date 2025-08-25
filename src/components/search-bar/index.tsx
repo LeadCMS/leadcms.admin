@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TextField, Box, InputAdornment, IconButton } from "@mui/material";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 interface SearchBoxProps {
   setSearchTermOnChange: (searchTerm: string) => void;
   searchBoxLabel: string;
@@ -12,24 +12,40 @@ export const SearchBar = ({
   searchBoxLabel,
   initialValue,
 }: SearchBoxProps) => {
+  const [searchValue, setSearchValue] = useState(initialValue || "");
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    setSearchValue(initialValue || "");
+  }, [initialValue]);
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchValue(value);
+
     if (timer) {
       clearTimeout(timer);
     }
     setTimer(
       setTimeout(() => {
-        setSearchTermOnChange(event.target.value);
+        setSearchTermOnChange(value);
       }, 800)
     );
+  };
+
+  const handleClear = () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    setSearchValue("");
+    setSearchTermOnChange("");
   };
 
   return (
     <Box>
       <TextField
         size="small"
-        defaultValue={initialValue}
+        value={searchValue}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start" sx={{ p: 0 }}>
@@ -38,6 +54,13 @@ export const SearchBar = ({
               </IconButton>
             </InputAdornment>
           ),
+          endAdornment: searchValue ? (
+            <InputAdornment position="end" sx={{ p: 0 }}>
+              <IconButton sx={{ p: 0 }} onClick={handleClear} aria-label="Clear search">
+                <X size={18} />
+              </IconButton>
+            </InputAdornment>
+          ) : null,
         }}
         placeholder={searchBoxLabel}
         onChange={handleChange}

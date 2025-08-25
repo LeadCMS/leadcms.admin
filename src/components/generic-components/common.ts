@@ -1,7 +1,7 @@
 import { BreadcrumbLink } from "../../types";
 import { dataListBreadcrumbLinks } from "../../utils/constants";
 import { CoreModule, getCoreModuleRoute } from "@lib/router";
-import { GridColumnVisibilityModel } from "@mui/x-data-grid";
+import { GridColumnVisibilityModel, GridFilterModel } from "@mui/x-data-grid";
 
 export interface DtoSourceProperty {
   $ref?: string;
@@ -72,9 +72,21 @@ export const getBreadcrumbLinks = (
 };
 
 export interface GenericDataGridSettings {
+  searchTerm?: string;
   sortColumn: string;
-  sortDirection: string;
+  sortOrder?: string;
+  filterLimit?: number;
+  skipLimit?: number;
+  pageNumber?: number;
   columnVisibilityModel: GridColumnVisibilityModel;
+  filterModel?: GridFilterModel;
+  whereFilters?: Array<{
+    whereField: string;
+    whereOperator: string;
+    whereFieldValue: string;
+  }>;
+  columnOrder?: string[];
+  columnWidths?: Record<string, number>;
 }
 
 export interface DictItem {
