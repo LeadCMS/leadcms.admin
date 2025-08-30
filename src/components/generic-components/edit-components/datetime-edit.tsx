@@ -19,7 +19,7 @@ export const DatetimeEdit = ({
         size={"small"}
         fullWidth
         variant="outlined"
-        value={dayjs(value)}
+        value={value ? dayjs(value) : null}
         onChange={(newValue) => {
           onChangeValue && onChangeValue(newValue ? newValue.toDate() : null);
         }}

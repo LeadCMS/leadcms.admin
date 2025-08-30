@@ -196,6 +196,13 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
         case "number":
           initValues[field.name] = 0;
           break;
+        case "string":
+          if (field.format === "date-time") {
+            initValues[field.name] = null;
+          } else {
+            initValues[field.name] = "";
+          }
+          break;
         default:
           initValues[field.name] = "";
           break;
