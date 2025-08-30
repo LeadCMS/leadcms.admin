@@ -13,6 +13,7 @@ import { ErrorDetailsModalProvider } from "@providers/error-details-modal-provid
 import { ConfigProvider } from "@providers/config-provider";
 import "react-toastify/dist/ReactToastify.css";
 import { Auth } from "./features/auth/auth";
+import { DynamicGenericModuleRoutes } from "@features/dynamic-module-loader";
 
 export const App = () => {
   // Define menu categories for breadcrumbs
@@ -109,6 +110,10 @@ export const App = () => {
                       >
                         <Route path={rootRoute} element={<ModuleLoader />} />
                         <Route path={`${coreModuleRoute.template}/*`} element={<ModuleLoader />} />
+                        <Route
+                          path="/modules/:moduleName/*"
+                          element={<DynamicGenericModuleRoutes />}
+                        />
                       </Route>
                     </Routes>
                   </BrowserRouter>
