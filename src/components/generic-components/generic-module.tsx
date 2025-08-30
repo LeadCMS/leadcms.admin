@@ -61,9 +61,9 @@ interface ExtraActions {
   showFiltersPanel?: boolean;
 }
 
-interface GenericModuleProps<TView extends BasicTypeForGeneric, TCreate, TUpdate> {
+export interface GenericModuleProps<TView extends BasicTypeForGeneric, TCreate, TUpdate> {
   moduleName: string;
-  modulePath: CoreModule;
+  modulePath: CoreModule | string;
   addButtonContent?: string | ReactNode | undefined;
   extraActions?: ExtraActions | undefined;
   tableProps?: GenericDataGridProps<TView>;
