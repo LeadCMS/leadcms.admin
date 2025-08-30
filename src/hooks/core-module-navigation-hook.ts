@@ -1,5 +1,5 @@
 import { CoreModule, getCoreModuleRoute } from "@lib/router";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export const useCoreModuleNavigation = () => {
   const navigate = useNavigate();
@@ -14,4 +14,18 @@ export const useCoreModuleNavigation = () => {
   };
 
   return handleNavigation;
+};
+
+export const useDynamicModuleNavigation = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  return (moduleName: string) => {
+    const toRoute = `/modules/${moduleName}`;
+    if (location.pathname === toRoute) {
+      navigate(toRoute, { replace: true });
+    } else {
+      navigate(toRoute);
+    }
+  };
 };

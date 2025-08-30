@@ -18,8 +18,8 @@ export const enum CoreModule {
   activityLogs = "activity-logs",
 }
 
-const coreModuleParser: Parser<CoreModule> = {
-  parse: (value) => value as CoreModule,
+const coreModuleParser: Parser<CoreModule | string> = {
+  parse: (value) => value,
   serialize: (moduleName) => moduleName,
 };
 
@@ -57,7 +57,8 @@ export const contactInvoicesRoute = route("invoices", {}, {});
 
 export const contactLogsRoute = route("logs", {}, {});
 
-export const getCoreModuleRoute = (moduleName: CoreModule) => coreModuleRoute({ moduleName }).$;
+export const getCoreModuleRoute = (moduleName: CoreModule | string) =>
+  coreModuleRoute({ moduleName }).$;
 
 export const getEditFormRoute = (id: number) => editFormRoute({ id: id }).$;
 
