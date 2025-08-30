@@ -1,4 +1,4 @@
-import { iconKeywordMap, defaultIcon } from "./icon-map";
+import { iconKeywordMap, defaultIcon, defaultIconKey } from "./icon-map";
 
 export function getSectionIcon(title: string) {
   if (!title) return defaultIcon;
@@ -10,4 +10,15 @@ export function getSectionIcon(title: string) {
     }
   }
   return defaultIcon;
+}
+
+export function getSectionIconKey(title: string): string {
+  if (!title) return defaultIconKey;
+  const lowerTitle = title.toLowerCase();
+  for (const { keywords, key } of iconKeywordMap) {
+    if (keywords.some((kw) => lowerTitle.includes(kw))) {
+      return key;
+    }
+  }
+  return defaultIconKey;
 }
