@@ -53,7 +53,21 @@ export const App = () => {
     const firstPath = paths[0];
     const breadcrumbs: Breadcrumb[] = [];
     let currentBreadcrumb = "";
-    if (firstPath && menuCategories[firstPath]) {
+
+    if (paths[0] === "modules" && paths[1]) {
+      const moduleName = paths[1];
+      const displayName = moduleName
+        .split("-")
+        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(" ");
+      breadcrumbs.push({
+        linkText: "DYNAMIC",
+        toRoute: `/modules/${moduleName}`,
+        isCategory: true,
+      });
+      currentBreadcrumb = displayName;
+    }
+    else if (firstPath && menuCategories[firstPath]) {
       breadcrumbs.push({
         linkText: menuCategories[firstPath].category,
         toRoute: `/${firstPath}`,
