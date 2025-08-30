@@ -12,6 +12,7 @@ export interface ContentDetails {
   slug: string;
   author: string;
   language: string;
+  translationKey?: string | null;
   allowComments: boolean;
   tags: string[];
   category: string;

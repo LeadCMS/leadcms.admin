@@ -748,6 +748,11 @@ export interface AccountImportDto {
    */
   stateCode?: string | null;
   /**
+   * Continent Code
+   * @example "ZZ"
+   */
+  continentCode?: "ZZ" | "AF" | "AN" | "AS" | "EU" | "NA" | "OC" | "SA" | null;
+  /**
    * Country Code
    * @example "ZZ"
    */
@@ -1067,6 +1072,11 @@ export interface AccountUpdateDto {
    * @example "string"
    */
   stateCode?: string | null;
+  /**
+   * Continent Code
+   * @example "ZZ"
+   */
+  continentCode?: "ZZ" | "AF" | "AN" | "AS" | "EU" | "NA" | "OC" | "SA" | null;
   /**
    * Country Code
    * @example "ZZ"
@@ -1514,6 +1524,16 @@ export interface CommentCreateBaseDto {
    * @example "string"
    */
   language?: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface CommentCreateDto {
@@ -1558,6 +1578,16 @@ export interface CommentCreateDto {
    * @example "string"
    */
   language?: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
   /**
    * Commentable Id
    * @format int32
@@ -1635,6 +1665,11 @@ export interface CommentDetailsDto {
    * @example "string"
    */
   language?: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
   content?: ContentDetailsDto;
   parent?: CommentDetailsDto;
   /**
@@ -1654,6 +1689,11 @@ export interface CommentDetailsDto {
    */
   source?: string | null;
   contact?: ContactDetailsDto;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface CommentImportDto {
@@ -1746,6 +1786,11 @@ export interface CommentImportDto {
    */
   language?: string | null;
   /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
    * Commentable Id
    * @format int32
    * @example 1
@@ -1772,6 +1817,11 @@ export interface CommentImportDto {
    * @example "string"
    */
   parentKey?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface CommentSummaryDto {
@@ -1836,6 +1886,8 @@ export interface ConfigDto {
    * @example "string"
    */
   defaultLanguage?: string;
+  /** Modules */
+  modules?: DynamicModuleDto[] | null;
 }
 
 export interface ContactCreateDto {
@@ -2188,6 +2240,11 @@ export interface ContactCreateDto {
    * @example {"key1":"value1","key2":"value2"}
    */
   socialMedia?: Record<string, string>;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
   /**
    * Unsubscribe Id
    * @format int32
@@ -2559,6 +2616,11 @@ export interface ContactDetailsDto {
    * @example {"key1":"value1","key2":"value2"}
    */
   socialMedia?: Record<string, string>;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
   /**
    * Unsubscribe Id
    * @format int32
@@ -3070,6 +3132,11 @@ export interface ContactImportDto {
    * @example 1
    */
   domainId?: number | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface ContactUpdateDto {
@@ -3423,6 +3490,11 @@ export interface ContactUpdateDto {
    */
   socialMedia?: Record<string, string>;
   /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+  /**
    * Unsubscribe Id
    * @format int32
    * @example 1
@@ -3495,6 +3567,11 @@ export interface ContentCreateDto {
    * @example "string"
    */
   language: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
   /**
    * Category
    * @example "string"
@@ -3577,6 +3654,11 @@ export interface ContentDetailsDto {
    * @example "string"
    */
   language: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
   /**
    * Category
    * @example "string"
@@ -3757,6 +3839,11 @@ export interface ContentImportDto {
    * @example "string"
    */
   language?: string | null;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
   /**
    * Category
    * @example "string"
@@ -4041,6 +4128,11 @@ export interface ContentUpdateDto {
    */
   language?: string | null;
   /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
    * Category
    * @example "string"
    */
@@ -4163,6 +4255,11 @@ export interface DealCreateDto {
    */
   userId: string;
   /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+  /**
    * Contact Ids
    * @uniqueItems true
    */
@@ -4214,6 +4311,11 @@ export interface DealDetailsDto {
    * @example "string"
    */
   userId: string;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
   /**
    * Id
    * @format int32
@@ -4418,6 +4520,11 @@ export interface DealUpdateDto {
    * @example "string"
    */
   userId?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface DnsRecord {
@@ -4513,6 +4620,11 @@ export interface DomainCreateDto {
    * @example "string"
    */
   source?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface DomainDetailsDto {
@@ -4579,6 +4691,11 @@ export interface DomainDetailsDto {
    * @example "string"
    */
   source?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
   /**
    * Id
    * @format int32
@@ -4688,6 +4805,11 @@ export interface DomainImportDto {
    * @example true
    */
   mxCheck?: boolean | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface DomainUpdateDto {
@@ -4726,6 +4848,98 @@ export interface DomainUpdateDto {
    * @example true
    */
   catchAll?: boolean | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+}
+
+export interface DtoSchema {
+  /**
+   * Type
+   * @example "string"
+   */
+  type?: string;
+  /** Properties */
+  properties?: Record<string, any>;
+  /** Required */
+  required?: string[] | null;
+}
+
+export interface DynamicApiFnDto {
+  /**
+   * Endpoint
+   * @example "string"
+   */
+  endpoint?: string;
+  /**
+   * Method
+   * @example "string"
+   */
+  method?: string;
+}
+
+export interface DynamicExtraActionsDto {
+  export?: ExportActionDto;
+  import?: ImportActionDto;
+  /**
+   * Show Columns Panel
+   * @example true
+   */
+  showColumnsPanel?: boolean | null;
+  /**
+   * Show Filters Panel
+   * @example true
+   */
+  showFiltersPanel?: boolean | null;
+}
+
+export interface DynamicFormFnsDto {
+  getItemFn?: DynamicApiFnDto;
+  createItemFn?: DynamicApiFnDto;
+  updateItemFn?: DynamicApiFnDto;
+  deleteItemFn?: DynamicApiFnDto;
+}
+
+export interface DynamicModuleDto {
+  /**
+   * Module Name
+   * @example "string"
+   */
+  moduleName?: string;
+  /**
+   * Module Path
+   * @example "string"
+   */
+  modulePath?: string;
+  /**
+   * Add Button Content
+   * @example "string"
+   */
+  addButtonContent?: string | null;
+  schemas?: DynamicSchemasDto;
+  formFns?: DynamicFormFnsDto;
+  tableProps?: DynamicTablePropsDto;
+  extraActions?: DynamicExtraActionsDto;
+}
+
+export interface DynamicSchemasDto {
+  details?: DtoSchema;
+  update?: DtoSchema;
+  create?: DtoSchema;
+}
+
+export interface DynamicTablePropsDto {
+  /**
+   * Key
+   * @example "string"
+   */
+  key?: string;
+  getItemsFn?: DynamicApiFnDto;
+  schema?: DtoSchema;
+  /** Initially Shown Columns */
+  initiallyShownColumns?: string[] | null;
 }
 
 export interface EmailGroupCreateDto {
@@ -4735,6 +4949,17 @@ export interface EmailGroupCreateDto {
    * @example "string"
    */
   name: string;
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
 }
 
 export interface EmailGroupDetailsDto {
@@ -4744,6 +4969,17 @@ export interface EmailGroupDetailsDto {
    * @example "string"
    */
   name: string;
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
   /**
    * Id
    * @format int32
@@ -4775,6 +5011,16 @@ export interface EmailGroupUpdateDto {
    * @example "string"
    */
   name?: string | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
 }
 
 export interface EmailTemplateCreateDto {
@@ -4816,6 +5062,11 @@ export interface EmailTemplateCreateDto {
    * @example "string"
    */
   language: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
   /**
    * Email Group Id
    * @format int32
@@ -4863,6 +5114,11 @@ export interface EmailTemplateDetailsDto {
    * @example "string"
    */
   language: string;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
   /**
    * Email Group Id
    * @format int32
@@ -4925,11 +5181,30 @@ export interface EmailTemplateUpdateDto {
    */
   fromName?: string | null;
   /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
    * Email Group Id
    * @format int32
    * @example 1
    */
   emailGroupId?: number | null;
+}
+
+export interface ExportActionDto {
+  /**
+   * Show Button
+   * @example true
+   */
+  showButton?: boolean | null;
+  exportItemsFn?: DynamicApiFnDto;
 }
 
 export interface FileDetailsDto {
@@ -4954,6 +5229,16 @@ export interface ForgotPasswordDto {
    * @example "string"
    */
   language?: string;
+}
+
+export interface ImportActionDto {
+  /**
+   * Show Button
+   * @example true
+   */
+  showButton?: boolean | null;
+  importSchema?: DtoSchema;
+  importItemsFn?: DynamicApiFnDto;
 }
 
 export interface ImportError {
@@ -5353,6 +5638,11 @@ export interface OrderCreateDto {
    * @example "Pending"
    */
   status?: "Pending" | "Paid" | "Cancelled" | "Refunded" | "Failed";
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface OrderDetailsDto {
@@ -5405,6 +5695,11 @@ export interface OrderDetailsDto {
    * @example "string"
    */
   source?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
   /**
    * Id
    * @format int32
@@ -5571,6 +5866,16 @@ export interface OrderImportDto {
    * @example "string"
    */
   data?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+  /**
+   * Status
+   * @example "Pending"
+   */
+  status?: "Pending" | "Paid" | "Cancelled" | "Refunded" | "Failed" | null;
 }
 
 export interface OrderItemCreateDto {
@@ -5761,11 +6066,6 @@ export interface OrderItemImportDto {
    */
   productName?: string | null;
   /**
-   * License Code
-   * @example "string"
-   */
-  licenseCode?: string | null;
-  /**
    * Unit Price
    * @format double
    * @example 1
@@ -5792,12 +6092,6 @@ export interface OrderItemUpdateDto {
    * @example "string"
    */
   productName?: string | null;
-  /**
-   * License Code
-   * @minLength 1
-   * @example "string"
-   */
-  licenseCode?: string | null;
   /**
    * Unit Price
    * @format double
@@ -5878,6 +6172,11 @@ export interface OrderUpdateDto {
    * @example "Pending"
    */
   status?: "Pending" | "Paid" | "Cancelled" | "Refunded" | "Failed" | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface ProblemDetails {
@@ -6777,7 +7076,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.64.0
+ * @version 1.2.67.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -7106,6 +7405,49 @@ export class Api<
         path: `/api/comments/${id}`,
         method: "DELETE",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
+     * @name CommentsTranslationDraftDetail
+     * @request GET:/api/comments/{id}/translation-draft/{language}
+     * @secure
+     */
+    commentsTranslationDraftDetail: (
+      id: number,
+      language: string,
+      query?: {
+        /** @default "EmptyCopy" */
+        transformer?: "EmptyCopy" | "KeepOriginal";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<CommentDetailsDto, void | ProblemDetails>({
+        path: `/api/comments/${id}/translation-draft/${language}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
+     * @name CommentsTranslationsList
+     * @request GET:/api/comments/{id}/translations
+     * @secure
+     */
+    commentsTranslationsList: (id: number, params: RequestParams = {}) =>
+      this.request<CommentDetailsDto[], void | ProblemDetails>({
+        path: `/api/comments/${id}/translations`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -7630,6 +7972,49 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentTranslationDraftDetail
+     * @request GET:/api/content/{id}/translation-draft/{language}
+     * @secure
+     */
+    contentTranslationDraftDetail: (
+      id: number,
+      language: string,
+      query?: {
+        /** @default "EmptyCopy" */
+        transformer?: "EmptyCopy" | "KeepOriginal";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentDetailsDto, void | ProblemDetails>({
+        path: `/api/content/${id}/translation-draft/${language}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentTranslationsList
+     * @request GET:/api/content/{id}/translations
+     * @secure
+     */
+    contentTranslationsList: (id: number, params: RequestParams = {}) =>
+      this.request<ContentDetailsDto[], void | ProblemDetails>({
+        path: `/api/content/${id}/translations`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -11158,6 +11543,49 @@ export class Api<
      * No description
      *
      * @tags EmailGroups
+     * @name EmailGroupsTranslationDraftDetail
+     * @request GET:/api/email-groups/{id}/translation-draft/{language}
+     * @secure
+     */
+    emailGroupsTranslationDraftDetail: (
+      id: number,
+      language: string,
+      query?: {
+        /** @default "EmptyCopy" */
+        transformer?: "EmptyCopy" | "KeepOriginal";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailGroupDetailsDto, void | ProblemDetails>({
+        path: `/api/email-groups/${id}/translation-draft/${language}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailGroups
+     * @name EmailGroupsTranslationsList
+     * @request GET:/api/email-groups/{id}/translations
+     * @secure
+     */
+    emailGroupsTranslationsList: (id: number, params: RequestParams = {}) =>
+      this.request<EmailGroupDetailsDto[], void | ProblemDetails>({
+        path: `/api/email-groups/${id}/translations`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailGroups
      * @name EmailGroupsDetail
      * @request GET:/api/email-groups/{id}
      * @secure
@@ -11297,6 +11725,49 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesTranslationDraftDetail
+     * @request GET:/api/email-templates/{id}/translation-draft/{language}
+     * @secure
+     */
+    emailTemplatesTranslationDraftDetail: (
+      id: number,
+      language: string,
+      query?: {
+        /** @default "EmptyCopy" */
+        transformer?: "EmptyCopy" | "KeepOriginal";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplateDetailsDto, void | ProblemDetails>({
+        path: `/api/email-templates/${id}/translation-draft/${language}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesTranslationsList
+     * @request GET:/api/email-templates/{id}/translations
+     * @secure
+     */
+    emailTemplatesTranslationsList: (id: number, params: RequestParams = {}) =>
+      this.request<EmailTemplateDetailsDto[], void | ProblemDetails>({
+        path: `/api/email-templates/${id}/translations`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 

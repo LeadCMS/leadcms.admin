@@ -2,6 +2,7 @@ import { Box, IconButton, useMediaQuery, useTheme } from "@mui/material";
 import { AppBarStyled, AppBarToolbar } from "./index.styled";
 import { DropdownMenu } from "./dropdown-menu";
 import { BreadCrumbNavigation } from "@components/breadcrumbs";
+import { GlobalLanguageFilter } from "@components/global-language-filter";
 import { Menu } from "lucide-react";
 import { useSidebar } from "@providers/sidebar-provider";
 
@@ -52,7 +53,8 @@ export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) =>
         >
           <BreadCrumbNavigation links={breadcrumbs} current={currentBreadcrumb} />
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <GlobalLanguageFilter />
           <DropdownMenu />
         </Box>
       </AppBarToolbar>
