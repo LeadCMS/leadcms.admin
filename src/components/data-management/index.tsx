@@ -15,7 +15,11 @@ import {
 } from "@mui/material";
 import { DeleteButtonContainer } from "./index.styled";
 import { Trash2, Edit } from "lucide-react";
-import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
+import {
+  useCoreModuleNavigation,
+  useDynamicModuleNavigation,
+  useNotificationsService,
+} from "@hooks";
 import { HttpResponse, ProblemDetails } from "@lib/network/swagger-client";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { execDeleteWithToast } from "utils/general-helper";
@@ -100,6 +104,7 @@ export const DataManagementBlock = ({
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
   const handleNavigation = useCoreModuleNavigation();
+  const handleDynamicModuleNavigation = useDynamicModuleNavigation();
   const navigate = useNavigate();
   const { moduleName } = useRouteParams(coreModuleRoute);
 
@@ -122,11 +127,13 @@ export const DataManagementBlock = ({
   const deleteRecord = async () => {
     try {
       setIsDeleting(true);
-      await handleDeleteAsync(itemId);
-      if (onDeleted) {
-        onDeleted();
+      await handleDeleteAsync(itemId!);
+      const pathSegments = window.location.pathname.split("/");
+      if (pathSegments[1] === "modules") {
+        handleDynamicModuleNavigation(successNavigationRoute);
+      } else {
+        handleNavigation(successNavigationRoute);
       }
-      handleNavigation(successNavigationRoute);
     } catch (error) {
       setIsDeleting(false);
       throw error;
@@ -134,7 +141,12 @@ export const DataManagementBlock = ({
   };
 
   const editRecord = async () => {
-    navigate(`/${moduleName}/${itemId}/edit`);
+    const pathSegments = window.location.pathname.split("/");
+    if (pathSegments[1] === "modules") {
+      navigate(`/modules/${moduleName}/${itemId}/edit`);
+    } else {
+      navigate(`/${moduleName}/${itemId}/edit`);
+    }
   };
 
   return (

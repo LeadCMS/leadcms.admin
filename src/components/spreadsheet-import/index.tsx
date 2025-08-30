@@ -3,7 +3,11 @@ import { Fragment, useState } from "react";
 import { ReactSpreadsheetImport } from "react-spreadsheet-import";
 import { Result } from "react-spreadsheet-import/types/types";
 import { StyledBackdrop } from "./index.styled";
-import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
+import {
+  useCoreModuleNavigation,
+  useDynamicModuleNavigation,
+  useNotificationsService,
+} from "@hooks";
 import { getImportFields } from "utils/import-file-helper";
 
 interface csvImportPorps {
@@ -16,6 +20,7 @@ interface csvImportPorps {
 
 export const CsvImport = ({ isOpen, onClose, onUpload, object, endRoute }: csvImportPorps) => {
   const handleNavigation = useCoreModuleNavigation();
+  const handleDynamicModuleNavigation = useDynamicModuleNavigation();
   const { notificationsService } = useNotificationsService();
   const [isUploading, setIsUploading] = useState(false);
 
@@ -37,8 +42,18 @@ export const CsvImport = ({ isOpen, onClose, onUpload, object, endRoute }: csvIm
 
   const handleSuccess = () => {
     notificationsService.success("Data import completed.");
-    handleNavigation(endRoute);
+    navigateToView();
   };
+
+  function navigateToView() {
+    const currentPath = window.location.pathname;
+    const pathSegments = currentPath.split("/");
+    if (pathSegments[1] === "modules") {
+      handleDynamicModuleNavigation(endRoute);
+    } else {
+      handleNavigation(endRoute);
+    }
+  }
 
   return (
     <Fragment key={"spreadsheet-import"}>
