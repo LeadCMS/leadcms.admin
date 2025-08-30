@@ -16,15 +16,17 @@ interface AppLayoutProps {
   currentBreadcrumb?: string;
 }
 
-type MenuItem = {
+export type MenuItem = {
   id: string;
   label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
+  icon: React.ReactNode | string;
+  entity: string;
+  route: string;
+  onClick: (navigate: (to: string) => void) => void;
   isSelected: boolean;
 };
 
-interface SidebarMenuSection {
+export interface SidebarMenuSection {
   header: string;
   items: MenuItem[];
 }
@@ -41,7 +43,11 @@ export const AppLayout = ({
   const { moduleName } = useRouteParams(coreModuleRoute);
   const { config, loading: configLoading } = useConfig();
 
-  const menuItems = buildMenuItems(config?.entities, moduleName) as SidebarMenuSection[];
+  const menuItems = buildMenuItems(
+    config?.entities,
+    moduleName,
+    config?.modules ?? undefined
+  ) as SidebarMenuSection[];
   const menuLoading = configLoading;
 
   // Pass drawer state to Sidebar and update container class
