@@ -9,10 +9,11 @@ import {
   Tooltip,
   Divider,
 } from "@mui/material";
-import { Add, Translate, ExpandMore } from "@mui/icons-material";
+import { Add, Translate, ExpandMore, Link } from "@mui/icons-material";
 import { ContentDetailsDto, LanguageDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
+import { LinkTranslationDialog } from "@components/link-translation-dialog";
 
 interface ContentLanguageSwitcherProps {
   contentId: number;
@@ -43,6 +44,9 @@ export const ContentLanguageSwitcher = ({
   const [sourceTranslations, setSourceTranslations] = useState<ContentDetailsDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkingLoading, setLinkingLoading] = useState(false);
+  const [linkingError, setLinkingError] = useState<string | null>(null);
   const { client } = useRequestContext();
   const { config } = useConfig();
 
@@ -84,6 +88,7 @@ export const ContentLanguageSwitcher = ({
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    console.log("ContentLanguageSwitcher: Menu opened");
     setAnchorEl(event.currentTarget);
   };
 
@@ -108,6 +113,70 @@ export const ContentLanguageSwitcher = ({
     return currentLangConfig?.name || currentLanguage?.toUpperCase() || "Unknown";
   };
 
+  const handleLinkTranslation = async (linkedContent: ContentDetailsDto) => {
+    try {
+      setLinkingLoading(true);
+      setLinkingError(null);
+
+      const currentContentResponse = await client.api.contentDetail(contentId);
+      const currentContent = currentContentResponse.data;
+
+      let translationKey: string;
+
+      // Check if either content has a translationKey
+      if (currentContent.translationKey) {
+        translationKey = currentContent.translationKey;
+        // Update the linked content with the existing translationKey
+        if (linkedContent.id) {
+          await client.api.contentPartialUpdate(linkedContent.id, {
+            translationKey: translationKey,
+          });
+        }
+      } else if (linkedContent.translationKey) {
+        translationKey = linkedContent.translationKey;
+        // Update the current content with the linked content's translationKey
+        await client.api.contentPartialUpdate(contentId, {
+          translationKey: translationKey,
+        });
+      } else {
+        // Neither has a translationKey, create a new draft translation to get one
+        if (linkedContent.language) {
+          const draftResponse = await client.api.contentTranslationDraftDetail(
+            contentId,
+            linkedContent.language,
+            { transformer: "EmptyCopy" }
+          );
+          if (draftResponse.data.translationKey) {
+            translationKey = draftResponse.data.translationKey;
+
+            // Update the linked content with the new translationKey
+            if (linkedContent.id) {
+              await client.api.contentPartialUpdate(linkedContent.id, {
+                translationKey: translationKey,
+              });
+            }
+          }
+        }
+      }
+
+      // Reload translations to reflect the changes
+      await loadTranslations();
+      setLinkDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to link translation:", error);
+      setLinkingError("Failed to link translation. Please try again.");
+    } finally {
+      setLinkingLoading(false);
+    }
+  };
+
+  const handleLinkDialogOpen = () => {
+    console.log("ContentLanguageSwitcher: Link Translation clicked");
+    setLinkDialogOpen(true);
+    setLinkingError(null);
+    handleMenuClose();
+  };
+
   const getAvailableLanguages = (): LanguageWithStatus[] => {
     // In translation mode, use source content's translations
     const translationsToUse = isTranslationMode ? sourceTranslations : translations;
@@ -129,13 +198,28 @@ export const ContentLanguageSwitcher = ({
 
   // Show component if we have contentId OR if we're in translation mode
   if (!contentId && !isTranslationMode) {
+    console.log("ContentLanguageSwitcher: Hidden - no contentId and not in translation mode", {
+      contentId,
+      isTranslationMode,
+    });
     return null;
   }
 
   // Hide component if there's only one language
   if (supportedLanguages.length <= 1) {
+    console.log("ContentLanguageSwitcher: Hidden - only one language", {
+      supportedLanguagesLength: supportedLanguages.length,
+    });
     return null;
   }
+
+  console.log("ContentLanguageSwitcher: Rendering", {
+    contentId,
+    isTranslationMode,
+    supportedLanguagesLength: supportedLanguages.length,
+    compact,
+    currentLanguage,
+  });
 
   // Compact mode for top-left corner
   if (compact) {
@@ -236,7 +320,32 @@ export const ContentLanguageSwitcher = ({
                 ))}
             </>
           )}
+
+          {/* Link Translation Option for Compact Mode */}
+          <Divider sx={{ my: 1 }} />
+          <MenuItem
+            onClick={handleLinkDialogOpen}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <Link sx={{ fontSize: "1rem", color: "info.main" }} />
+            <Typography variant="body2">Link Translation</Typography>
+          </MenuItem>
         </Menu>
+
+        {/* Link Translation Dialog */}
+        <LinkTranslationDialog
+          open={linkDialogOpen}
+          onClose={() => setLinkDialogOpen(false)}
+          onLink={handleLinkTranslation}
+          currentContentId={contentId}
+          currentLanguage={currentLanguage}
+          isLoading={linkingLoading}
+          error={linkingError}
+        />
       </>
     );
   }
@@ -337,7 +446,32 @@ export const ContentLanguageSwitcher = ({
               ))}
           </>
         )}
+
+        {/* Link Translation Option */}
+        <Divider sx={{ my: 1 }} />
+        <MenuItem
+          onClick={handleLinkDialogOpen}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <Link sx={{ fontSize: "1rem", color: "info.main" }} />
+          <Typography variant="body2">Link Translation</Typography>
+        </MenuItem>
       </Menu>
+
+      {/* Link Translation Dialog */}
+      <LinkTranslationDialog
+        open={linkDialogOpen}
+        onClose={() => setLinkDialogOpen(false)}
+        onLink={handleLinkTranslation}
+        currentContentId={contentId}
+        currentLanguage={currentLanguage}
+        isLoading={linkingLoading}
+        error={linkingError}
+      />
     </Box>
   );
 };
