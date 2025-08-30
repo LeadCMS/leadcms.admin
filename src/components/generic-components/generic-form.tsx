@@ -21,7 +21,7 @@ import {
 import { validate } from "@components/generic-components/edit-components/validator";
 import { ArrayEdit } from "./edit-components/array-edit";
 import { StyledDivider } from "./index.styled";
-import { useCoreModuleNavigation } from "@hooks";
+import { useCoreModuleNavigation, useDynamicModuleNavigation } from "@hooks";
 import { TextView } from "./view-components/text-view";
 import { BoolView } from "./view-components/bool-view";
 import { DateTimeView } from "./view-components/datetime-view";
@@ -112,6 +112,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
 }: GenericFormProps<TView, TCreate, TUpdate>) {
   const { setBusy, setSaving } = useModuleWrapperContext();
   const handleCoreNavigation = useCoreModuleNavigation();
+  const handleDynamicModuleNavigation = useDynamicModuleNavigation();
   const [validationResult, setValidationResult] = useState<ValidationResult>();
   const itemId = getItemId();
 
@@ -258,10 +259,21 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
   };
 
   const cancel = () => {
-    const currentPath = window.location.pathname;
-    const modulePath = currentPath.split("/")[1];
-    handleCoreNavigation(modulePath);
+    navigateToListView();
   };
+
+  function navigateToListView() {
+    const currentPath = window.location.pathname;
+    const pathSegments = currentPath.split("/");
+    let modulePath;
+    if (pathSegments[1] === "modules") {
+      modulePath = pathSegments[2];
+      handleDynamicModuleNavigation(modulePath);
+    } else {
+      modulePath = pathSegments[1];
+      handleCoreNavigation(modulePath);
+    }
+  }
 
   const isValidUpdate = (field: DtoField) => {
     if (field.type == "boolean" && (values[field.name] === true || values[field.name] === false))
