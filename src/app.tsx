@@ -11,6 +11,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { UserProvider } from "@providers/user-provider";
 import { ErrorDetailsModalProvider } from "@providers/error-details-modal-provider";
 import { ConfigProvider } from "@providers/config-provider";
+import { GlobalLanguageFilterProvider } from "@providers/global-language-filter-provider";
+import { TranslationDraftProvider } from "@providers/translation-draft-provider";
 import "react-toastify/dist/ReactToastify.css";
 import { Auth } from "./features/auth/auth";
 
@@ -85,38 +87,45 @@ export const App = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ConfigProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <RequestProvider>
-              <ToastContainer />
-              <UserProvider>
-                <ErrorDetailsModalProvider>
-                  <BrowserRouter
-                    future={{
-                      v7_startTransition: true,
-                      v7_relativeSplatPath: true,
-                    }}
-                  >
-                    <Routes>
-                      <Route path="/auth/*" element={<Auth />} />
-                      <Route
-                        path={rootRoute}
-                        element={
-                          <AppLayoutWithAutoBreadcrumbs>
-                            <Outlet />
-                          </AppLayoutWithAutoBreadcrumbs>
-                        }
+        <GlobalLanguageFilterProvider>
+          <TranslationDraftProvider>
+            <ThemeProvider>
+              <AuthProvider>
+                <RequestProvider>
+                  <ToastContainer />
+                  <UserProvider>
+                    <ErrorDetailsModalProvider>
+                      <BrowserRouter
+                        future={{
+                          v7_startTransition: true,
+                          v7_relativeSplatPath: true,
+                        }}
                       >
-                        <Route path={rootRoute} element={<ModuleLoader />} />
-                        <Route path={`${coreModuleRoute.template}/*`} element={<ModuleLoader />} />
-                      </Route>
-                    </Routes>
-                  </BrowserRouter>
-                </ErrorDetailsModalProvider>
-              </UserProvider>
-            </RequestProvider>
-          </AuthProvider>
-        </ThemeProvider>
+                        <Routes>
+                          <Route path="/auth/*" element={<Auth />} />
+                          <Route
+                            path={rootRoute}
+                            element={
+                              <AppLayoutWithAutoBreadcrumbs>
+                                <Outlet />
+                              </AppLayoutWithAutoBreadcrumbs>
+                            }
+                          >
+                            <Route path={rootRoute} element={<ModuleLoader />} />
+                            <Route
+                              path={`${coreModuleRoute.template}/*`}
+                              element={<ModuleLoader />}
+                            />
+                          </Route>
+                        </Routes>
+                      </BrowserRouter>
+                    </ErrorDetailsModalProvider>
+                  </UserProvider>
+                </RequestProvider>
+              </AuthProvider>
+            </ThemeProvider>
+          </TranslationDraftProvider>
+        </GlobalLanguageFilterProvider>
       </ConfigProvider>
     </LocalizationProvider>
   );

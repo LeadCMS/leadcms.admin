@@ -31,6 +31,7 @@ import {
   Filter,
   SortAsc,
   SortDesc,
+  Languages,
 } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
@@ -54,6 +55,8 @@ import useLocalStorage from "use-local-storage";
 import NoRecordsDisplay from "@components/no-records-display";
 import { SearchBar } from "@components/search-bar";
 import { ToolbarButton } from "@components/tool-bar-button";
+import { TranslateDialog, TranslationType } from "@components/translate-dialog";
+import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -78,6 +81,8 @@ export const ContentList = () => {
   const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
+  const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
+  const navigate = useNavigate();
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
@@ -131,10 +136,17 @@ export const ContentList = () => {
     setWhereFilters((old) => {
       if (typeof editIdx === "number" && editIdx >= 0) {
         const copy = [...old];
-        copy[editIdx] = filter as any;
+        copy[editIdx] = filter as {
+          whereField: string;
+          whereOperator: string;
+          whereFieldValue: string;
+        };
         return copy;
       }
-      return [...old, filter as any];
+      return [
+        ...old,
+        filter as { whereField: string; whereOperator: string; whereFieldValue: string },
+      ];
     });
   };
 
@@ -146,7 +158,7 @@ export const ContentList = () => {
 
   const buildWhereQuery = () => {
     const queries = whereFilters
-      .map((f, idx) => {
+      .map((f) => {
         const query = getWhereFilterQuery(
           f.whereField || "",
           f.whereFieldValue || "",
@@ -169,7 +181,7 @@ export const ContentList = () => {
   const fetchData = async () => {
     setIsLoading(true);
     const filter: Record<string, unknown> = {
-      [`filter[order]`]: `${sortField} ${sortDirection === "asc" ? "" : "desc"}`.trim(),
+      ["filter[order]"]: `${sortField} ${sortDirection === "asc" ? "" : "desc"}`.trim(),
       "filter[skip]": !initialLoadRef.current ? 0 : contentItems.length,
       "filter[limit]": 20,
     };
@@ -181,8 +193,16 @@ export const ContentList = () => {
 
     const whereQuery = buildWhereQuery();
 
-    if (whereQuery) {
-      filter.query = (filter.query || "") + whereQuery;
+    // Add global language filter if active
+    let globalLanguageQuery = "";
+    if (isLanguageFilterActive && selectedLanguage !== "all") {
+      globalLanguageQuery = getWhereFilterQuery("language", selectedLanguage, "equals");
+    }
+
+    // Combine all queries
+    const combinedQuery = [whereQuery, globalLanguageQuery].filter(Boolean).join("");
+    if (combinedQuery) {
+      filter.query = (filter.query || "") + combinedQuery;
     }
 
     try {
@@ -236,7 +256,7 @@ export const ContentList = () => {
       initialLoadRef.current = true;
     });
     // eslint-disable-next-line
-  }, [searchTerm, whereFilters, sortField, sortDirection]);
+  }, [searchTerm, whereFilters, sortField, sortDirection, selectedLanguage]);
 
   // Action handlers
   const handleDeleteClick = (contentId: number) => {
@@ -272,6 +292,16 @@ export const ContentList = () => {
   const handleDeleteCancel = () => {
     setIsDeleteDialogOpen(false);
     setDeleteTarget(null);
+  };
+
+  // Translate handler
+  const handleTranslate = async (
+    contentId: number,
+    targetLanguage: string,
+    translationType: TranslationType
+  ) => {
+    // Navigate to translation route
+    navigate(`/content/${contentId}/translate/${targetLanguage}/${translationType}`);
   };
 
   const searchBar = (
@@ -400,9 +430,11 @@ export const ContentList = () => {
                     <ItemCard
                       item={item}
                       onDelete={handleDeleteClick}
+                      onTranslate={handleTranslate}
                       hasSitePreview={hasSitePreview}
                       previewUrlTemplate={configSettings?.PreviewUrlTemplate}
                       defaultLanguage={defaultLanguage}
+                      hasMultipleLanguages={(config?.languages?.length || 0) > 1}
                       key={`content-card-${item.id}`}
                     />
                   </Grid>
@@ -438,20 +470,25 @@ export const ContentList = () => {
 interface ItemProps {
   item: ContentDetailsDto;
   onDelete: (id: number) => void;
+  onTranslate: (id: number, targetLanguage: string, translationType: TranslationType) => void;
   hasSitePreview?: boolean;
   previewUrlTemplate?: string;
   defaultLanguage?: string;
+  hasMultipleLanguages?: boolean;
 }
 
 const ItemCard = ({
   item,
   onDelete,
+  onTranslate,
   hasSitePreview,
   previewUrlTemplate,
   defaultLanguage,
+  hasMultipleLanguages = true,
 }: ItemProps) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [translateDialogOpen, setTranslateDialogOpen] = useState(false);
   const open = Boolean(anchorEl);
   const theme = useTheme();
   const { notificationsService } = useNotificationsService();
@@ -473,6 +510,16 @@ const ItemCard = ({
   const handleDuplicate = () => {
     navigate(`/content/${item.id}/duplicate`);
     setAnchorEl(null);
+  };
+
+  const handleTranslateClick = () => {
+    setTranslateDialogOpen(true);
+    setAnchorEl(null);
+  };
+
+  const handleTranslateConfirm = (targetLanguage: string, translationType: TranslationType) => {
+    onTranslate(item.id as number, targetLanguage, translationType);
+    setTranslateDialogOpen(false);
   };
 
   const handlePreview = () => {
@@ -620,6 +667,12 @@ const ItemCard = ({
               <Copy size={16} style={{ marginRight: 8 }} />
               Duplicate
             </MenuItem>
+            {hasMultipleLanguages && (
+              <MenuItem onClick={handleTranslateClick}>
+                <Languages size={16} style={{ marginRight: 8 }} />
+                Translate
+              </MenuItem>
+            )}
             <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
               <Trash2 size={16} style={{ marginRight: 8 }} />
               Delete
@@ -627,6 +680,16 @@ const ItemCard = ({
           </Menu>
         </Box>
       </CardActions>
+
+      {hasMultipleLanguages && (
+        <TranslateDialog
+          open={translateDialogOpen}
+          onClose={() => setTranslateDialogOpen(false)}
+          onTranslate={handleTranslateConfirm}
+          originalLanguage={item.language}
+          originalTitle={item.title}
+        />
+      )}
     </Card>
   );
 };
