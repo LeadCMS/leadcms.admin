@@ -23,7 +23,7 @@ import { Languages, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useConfig } from "@providers/config-provider";
 
-export type TranslationType = "EmptyCopy" | "KeepOriginal";
+export type TranslationType = "EmptyCopy" | "KeepOriginal" | "AITranslation";
 
 interface TranslateDialogProps {
   open: boolean;
@@ -50,8 +50,20 @@ export const TranslateDialog = ({
 }: TranslateDialogProps) => {
   const { config } = useConfig();
   const [targetLanguage, setTargetLanguage] = useState(preselectedLanguage || "");
-  const [translationType, setTranslationType] = useState<TranslationType>("KeepOriginal");
+  const [translationType, setTranslationType] = useState<TranslationType>("AITranslation");
   const languages = config?.languages || [];
+
+  // Check if AI assistance is available
+  const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
+
+  // Update default translation type when hasAIAssistance changes
+  useEffect(() => {
+    if (hasAIAssistance) {
+      setTranslationType("AITranslation");
+    } else {
+      setTranslationType("KeepOriginal");
+    }
+  }, [hasAIAssistance]);
 
   // Update targetLanguage when preselectedLanguage changes
   useEffect(() => {
@@ -74,14 +86,14 @@ export const TranslateDialog = ({
       onTranslate(targetLanguage, translationType);
       onClose();
       setTargetLanguage("");
-      setTranslationType("KeepOriginal");
+      setTranslationType(hasAIAssistance ? "AITranslation" : "KeepOriginal");
     }
   };
 
   const handleClose = () => {
     onClose();
     setTargetLanguage("");
-    setTranslationType("KeepOriginal");
+    setTranslationType(hasAIAssistance ? "AITranslation" : "KeepOriginal");
   };
 
   return (
@@ -173,6 +185,22 @@ export const TranslateDialog = ({
               value={translationType}
               onChange={(e) => setTranslationType(e.target.value as TranslationType)}
             >
+              {hasAIAssistance && (
+                <FormControlLabel
+                  value="AITranslation"
+                  control={<Radio />}
+                  label={
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        Translate Original with AI
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Use AI to automatically translate the content to the target language
+                      </Typography>
+                    </Box>
+                  }
+                />
+              )}
               <FormControlLabel
                 value="KeepOriginal"
                 control={<Radio />}

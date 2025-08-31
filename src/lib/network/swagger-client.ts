@@ -1888,6 +1888,8 @@ export interface ConfigDto {
   defaultLanguage?: string;
   /** Modules */
   modules?: DynamicModuleDto[] | null;
+  /** Capabilities */
+  capabilities?: string[];
 }
 
 export interface ContactCreateDto {
@@ -5231,6 +5233,54 @@ export interface ForgotPasswordDto {
   language?: string;
 }
 
+export interface GeneratedImage {
+  /**
+   * Url
+   * @example "string"
+   */
+  url?: string;
+  /**
+   * Revised Prompt
+   * @example "string"
+   */
+  revisedPrompt?: string | null;
+}
+
+export interface ImageGenerationRequest {
+  /**
+   * Prompt
+   * @example "string"
+   */
+  prompt?: string;
+  /**
+   * Size
+   * @example "string"
+   */
+  size?: string;
+  /**
+   * Quality
+   * @example "string"
+   */
+  quality?: string;
+  /**
+   * Style
+   * @example "string"
+   */
+  style?: string;
+}
+
+export interface ImageGenerationResponse {
+  /** Images */
+  images?: GeneratedImage[];
+  /**
+   * Model
+   * @example "string"
+   */
+  model?: string;
+  /** Metadata */
+  metadata?: Record<string, any>;
+}
+
 export interface ImportActionDto {
   /**
    * Show Button
@@ -6509,6 +6559,45 @@ export interface TaskExecutionDto {
   completed?: boolean;
 }
 
+export interface TextGenerationRequest {
+  /**
+   * User Prompt
+   * @example "string"
+   */
+  userPrompt?: string;
+  /**
+   * System Prompt
+   * @example "string"
+   */
+  systemPrompt?: string;
+}
+
+export interface TextGenerationResponse {
+  /**
+   * Generated Text
+   * @example "string"
+   */
+  generatedText?: string;
+  /**
+   * Model
+   * @example "string"
+   */
+  model?: string;
+  /**
+   * Tokens Used
+   * @format int32
+   * @example 1
+   */
+  tokensUsed?: number;
+  /**
+   * Finish Reason
+   * @example "string"
+   */
+  finishReason?: string;
+  /** Metadata */
+  metadata?: Record<string, any>;
+}
+
 export interface TopAccountDto {
   /**
    * Account Id
@@ -7076,7 +7165,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.67.0
+ * @version 1.2.69.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8059,6 +8148,27 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentAiTranslationDraftDetail
+     * @request GET:/api/content/{id}/ai-translation-draft/{language}
+     * @secure
+     */
+    contentAiTranslationDraftDetail: (
+      id: number,
+      language: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentDetailsDto, ProblemDetails>({
+        path: `/api/content/${id}/ai-translation-draft/${language}`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -12089,6 +12199,28 @@ export class Api<
     /**
      * No description
      *
+     * @tags AIAssistance
+     * @name AiImageGenerationCreate
+     * @request POST:/api/ai/image-generation
+     * @secure
+     */
+    aiImageGenerationCreate: (
+      data: ImageGenerationRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<ImageGenerationResponse, any>({
+        path: `/api/ai/image-generation`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Links
      * @name LinksCreate
      * @request POST:/api/links
@@ -13453,6 +13585,28 @@ export class Api<
         path: `/api/tasks/execute/${name}`,
         method: "GET",
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags AIAssistance
+     * @name AiTextGenerationCreate
+     * @request POST:/api/ai/text-generation
+     * @secure
+     */
+    aiTextGenerationCreate: (
+      data: TextGenerationRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<TextGenerationResponse, any>({
+        path: `/api/ai/text-generation`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

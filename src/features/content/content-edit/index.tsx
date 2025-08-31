@@ -84,6 +84,7 @@ import { useUserInfo } from "@providers/user-provider";
 import { TranslateDialog, TranslationType } from "@components/translate-dialog";
 import { useNavigationGuard } from "@hooks";
 import { useTranslationDraft } from "@providers/translation-draft-provider";
+import { AITranslationProgress } from "@components/ai-translation-progress";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -153,6 +154,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [createTranslationDialogOpen, setCreateTranslationDialogOpen] = useState(false);
   const [targetLanguageForTranslation, setTargetLanguageForTranslation] = useState<string>("");
   const [isCreatingTranslation, setIsCreatingTranslation] = useState(false);
+  const [aiTranslationInProgress, setAiTranslationInProgress] = useState(false);
+  const [aiTranslationTargetLanguage, setAiTranslationTargetLanguage] = useState<string>("");
   const [translationError, setTranslationError] = useState<string | null>(null);
   const [sourceContent, setSourceContent] = useState<ContentDetailsDto | null>(null);
   const [useLivePreview, setUseLivePreview] = useLocalStorage(LIVE_PREVIEW_STORAGE_KEY, true);
@@ -171,16 +174,33 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   // Navigation guard for unsaved changes in translation mode
   const isTranslationInProgress = !!(sourceId && translateToParam && !id);
-  const { guardedNavigate } = useNavigationGuard({
+  useNavigationGuard({
     when: isTranslationInProgress && wasModified && !isSaving,
     message: "You have unsaved translation changes. Are you sure you want to leave?",
   });
 
-  // Check if preview features are available from backend config
+  // Check if AI assistance is available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasLivePreview = !!configSettings?.LivePreviewUrlTemplate;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
   const defaultLanguage = config?.defaultLanguage;
+
+  // Helper function to call the appropriate translation API
+  const createTranslationDraft = async (
+    contentId: number,
+    targetLanguage: string,
+    translationType: TranslationType
+  ) => {
+    if (translationType === "AITranslation") {
+      // Use AI translation endpoint
+      return await client.api.contentAiTranslationDraftDetail(contentId, targetLanguage);
+    } else {
+      // Use traditional translation endpoint
+      return await client.api.contentTranslationDraftDetail(contentId, targetLanguage, {
+        transformer: translationType as "EmptyCopy" | "KeepOriginal",
+      });
+    }
+  };
 
   // API-based draft save (for live preview)
   const filterEmptyValues = (obj: unknown) => {
@@ -453,86 +473,122 @@ export const ContentEdit = (props: ContentEditProps) => {
           // Handle translation mode via URL parameters
           // If we have a translation type from URL, use it; otherwise show dialog
           if (translationTypeParam) {
-            // Auto-trigger translation creation
-            setIsCreatingTranslation(true);
-            try {
-              const { data } = await client.api.contentTranslationDraftDetail(
-                parseInt(sourceId),
-                translateToParam as string,
-                {
-                  transformer: translationTypeParam,
-                }
-              );
+            // Check if we already have translated content loaded to avoid double translation
+            // This happens when dialog completes translation and navigates to URL with type param
+            const hasExistingContent =
+              wasModified && formik.values.title && formik.values.title.trim() !== "";
 
-              // Load the translation data directly
-              const translatedContent: ContentDetails = {
-                ...data,
-                id: null,
-                createdAt: null,
-                updatedAt: null,
-                coverImagePending: {
-                  url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
-                  fileName: "",
-                },
-                files: [],
-              } as ContentDetails;
-              await formik.setValues(translatedContent);
-              await formik.setFieldValue("coverImagePending", translatedContent.coverImagePending);
-              setWasModified(true);
+            if (!hasExistingContent) {
+              // Only trigger translation if we don't already have content loaded
+              setIsCreatingTranslation(true);
 
-              // DON'T navigate away - keep the URL parameters for language controls to work
-              // navigate(`/content/new?type=${translationTypeParam}`, { replace: true });
-            } catch (error: unknown) {
-              console.error("Failed to create translation:", error);
+              // Show AI progress for AI translation
+              if (translationTypeParam === "AITranslation") {
+                setAiTranslationInProgress(true);
+                setAiTranslationTargetLanguage(translateToParam);
+              }
 
-              // Handle 409 Conflict - translation draft already exists
-              if ((error as { status?: number })?.status === 409) {
-                try {
-                  // Try to fetch existing translations
-                  const translationsResponse = await client.api.contentTranslationsList(
-                    parseInt(sourceId)
-                  );
-                  const existingTranslation = translationsResponse.data.find(
-                    (t) => t.language === translateToParam
-                  );
+              try {
+                // Create translation draft using the appropriate API
+                const { data } = await createTranslationDraft(
+                  parseInt(sourceId),
+                  translateToParam as string,
+                  translationTypeParam as TranslationType
+                );
 
-                  if (existingTranslation) {
-                    // Load the existing translation
-                    const translatedContent: ContentDetails = {
-                      ...existingTranslation,
-                      id: existingTranslation.id?.toString() || null,
-                      coverImagePending: {
-                        url: existingTranslation.coverImageUrl
-                          ? buildAbsoluteUrl(existingTranslation.coverImageUrl)
-                          : "",
-                        fileName: "",
-                      },
-                      files: [],
-                    } as ContentDetails;
-                    await formik.setValues(translatedContent);
-                    await formik.setFieldValue(
-                      "coverImagePending",
-                      translatedContent.coverImagePending
+                // Load the translation data directly
+                const translatedContent: ContentDetails = {
+                  ...data,
+                  id: null,
+                  createdAt: null,
+                  updatedAt: null,
+                  coverImagePending: {
+                    url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+                    fileName: "",
+                  },
+                  files: [],
+                } as ContentDetails;
+                await formik.setValues(translatedContent);
+                await formik.setFieldValue(
+                  "coverImagePending",
+                  translatedContent.coverImagePending
+                );
+                setWasModified(true);
+
+                // Hide AI progress
+                setAiTranslationInProgress(false);
+                setAiTranslationTargetLanguage("");
+
+                // DON'T navigate away - keep the URL parameters for language controls to work
+                // navigate(`/content/new?type=${translationTypeParam}`, { replace: true });
+              } catch (error: unknown) {
+                console.error("Failed to create translation:", error);
+
+                // Hide AI progress on error
+                setAiTranslationInProgress(false);
+                setAiTranslationTargetLanguage("");
+
+                // Handle 409 Conflict - translation draft already exists
+                if ((error as { status?: number })?.status === 409) {
+                  try {
+                    // Try to fetch existing translations
+                    const translationsResponse = await client.api.contentTranslationsList(
+                      parseInt(sourceId)
                     );
-                    // Don't mark as modified since we're loading existing content
-                    setWasModified(false);
-
-                    notificationsService.info(
-                      "Loaded existing translation draft for " + translateToParam.toUpperCase()
+                    const existingTranslation = translationsResponse.data.find(
+                      (t) => t.language === translateToParam
                     );
 
-                    // Update the URL to reflect the existing content
-                    navigate(`/content/${existingTranslation.id}/edit`, { replace: true });
-                    return;
+                    if (existingTranslation) {
+                      // Load the existing translation
+                      const translatedContent: ContentDetails = {
+                        ...existingTranslation,
+                        id: existingTranslation.id?.toString() || null,
+                        coverImagePending: {
+                          url: existingTranslation.coverImageUrl
+                            ? buildAbsoluteUrl(existingTranslation.coverImageUrl)
+                            : "",
+                          fileName: "",
+                        },
+                        files: [],
+                      } as ContentDetails;
+                      await formik.setValues(translatedContent);
+                      await formik.setFieldValue(
+                        "coverImagePending",
+                        translatedContent.coverImagePending
+                      );
+                      // Don't mark as modified since we're loading existing content
+                      setWasModified(false);
+
+                      notificationsService.info(
+                        "Loaded existing translation draft for " + translateToParam.toUpperCase()
+                      );
+
+                      // Update the URL to reflect the existing content
+                      navigate(`/content/${existingTranslation.id}/edit`, { replace: true });
+                      return;
+                    }
+                  } catch (fetchError) {
+                    console.error("Failed to fetch existing translations:", fetchError);
                   }
-                } catch (fetchError) {
-                  console.error("Failed to fetch existing translations:", fetchError);
+
+                  // Show user-friendly error message for conflict
+                  notificationsService.error(
+                    "A translation draft for this language already exists. " +
+                      "Please check the translations list."
+                  );
+                  // Reset the creation state and let the useEffect complete normally
+                  setIsCreatingTranslation(false);
+                  // Navigate back to source content after a brief delay to ensure state is clean
+                  setTimeout(() => {
+                    navigate(`/content/${sourceId}/edit`, { replace: true });
+                  }, 100);
+                  return;
                 }
 
-                // Show user-friendly error message for conflict
+                // For other errors, show generic error message
                 notificationsService.error(
-                  "A translation draft for this language already exists. " +
-                    "Please check the translations list."
+                  error instanceof Error ? error.message : "Failed to create translation draft"
                 );
                 // Reset the creation state and let the useEffect complete normally
                 setIsCreatingTranslation(false);
@@ -540,21 +596,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                 setTimeout(() => {
                   navigate(`/content/${sourceId}/edit`, { replace: true });
                 }, 100);
-                return;
+              } finally {
+                setIsCreatingTranslation(false);
               }
-
-              // For other errors, show generic error message
-              notificationsService.error(
-                error instanceof Error ? error.message : "Failed to create translation draft"
-              );
-              // Reset the creation state and let the useEffect complete normally
-              setIsCreatingTranslation(false);
-              // Navigate back to source content after a brief delay to ensure state is clean
-              setTimeout(() => {
-                navigate(`/content/${sourceId}/edit`, { replace: true });
-              }, 100);
-            } finally {
-              setIsCreatingTranslation(false);
             }
           } else {
             // Fetch source content
@@ -767,13 +811,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   ) => {
     if (!id) return;
     try {
-      const { data } = await client.api.contentTranslationDraftDetail(
-        parseInt(id),
-        targetLanguage,
-        {
-          transformer: translationType,
-        }
-      );
+      const { data } = await createTranslationDraft(parseInt(id), targetLanguage, translationType);
       // Set the translation draft and navigate to new content page
       setTranslationDraft(data);
       navigate("/content/new");
@@ -845,13 +883,17 @@ export const ContentEdit = (props: ContentEditProps) => {
       setIsCreatingTranslation(true);
       setTranslationError(null);
 
+      // Show AI progress for AI translation
+      if (translationType === "AITranslation") {
+        setAiTranslationInProgress(true);
+        setAiTranslationTargetLanguage(targetLanguage);
+      }
+
       try {
-        const { data } = await client.api.contentTranslationDraftDetail(
+        const { data } = await createTranslationDraft(
           parseInt(sourceId),
           targetLanguage,
-          {
-            transformer: translationType,
-          }
+          translationType
         );
 
         // Load the translation data directly
@@ -873,6 +915,10 @@ export const ContentEdit = (props: ContentEditProps) => {
         setWasModified(true);
         setCreateTranslationDialogOpen(false);
         setIsInitialLoading(false);
+
+        // Hide AI progress
+        setAiTranslationInProgress(false);
+        setAiTranslationTargetLanguage("");
 
         // Update URL to include the type parameter for future refreshes
         navigate(`/content/${sourceId}/translate/${targetLanguage}/${translationType}`, {
@@ -932,19 +978,31 @@ export const ContentEdit = (props: ContentEditProps) => {
         }
       } finally {
         setIsCreatingTranslation(false);
+        // Hide AI progress on error
+        setAiTranslationInProgress(false);
+        setAiTranslationTargetLanguage("");
       }
     } else if (id) {
       // Original flow for existing content
+      // Show AI progress for AI translation
+      if (translationType === "AITranslation") {
+        setAiTranslationInProgress(true);
+        setAiTranslationTargetLanguage(targetLanguage);
+      }
+
       try {
-        const { data } = await client.api.contentTranslationDraftDetail(
+        const { data } = await createTranslationDraft(
           parseInt(id),
           targetLanguage,
-          {
-            transformer: translationType,
-          }
+          translationType
         );
         // Set the translation draft and navigate to new content page
         setTranslationDraft(data);
+
+        // Hide AI progress on success
+        setAiTranslationInProgress(false);
+        setAiTranslationTargetLanguage("");
+
         navigate("/content/new");
       } catch (error: unknown) {
         console.error("Failed to create translation draft:", error);
@@ -981,6 +1039,10 @@ export const ContentEdit = (props: ContentEditProps) => {
             error instanceof Error ? error.message : "Failed to create translation draft"
           );
         }
+      } finally {
+        // Hide AI progress on error
+        setAiTranslationInProgress(false);
+        setAiTranslationTargetLanguage("");
       }
     }
   };
@@ -1018,7 +1080,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         actionButtons={
           <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 2 }}>
             <Box sx={{ pl: { sm: 4 } }}>
-              {!isCreateMode && !isDuplicateMode && (
+              {!isCreateMode && !isDuplicateMode && !isTranslationMode && (
                 <>
                   <Button
                     variant="outlined"
@@ -1658,6 +1720,13 @@ export const ContentEdit = (props: ContentEditProps) => {
           ) : null}
         </ContentEditContainer>
       </ModuleWrapper>
+
+      {/* AI Translation Progress Dialog */}
+      <AITranslationProgress
+        open={aiTranslationInProgress}
+        targetLanguage={aiTranslationTargetLanguage}
+        originalTitle={formik.values.title}
+      />
     </form>
   );
 };
