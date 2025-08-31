@@ -213,14 +213,6 @@ export const ContentLanguageSwitcher = ({
     return null;
   }
 
-  console.log("ContentLanguageSwitcher: Rendering", {
-    contentId,
-    isTranslationMode,
-    supportedLanguagesLength: supportedLanguages.length,
-    compact,
-    currentLanguage,
-  });
-
   // Compact mode for top-left corner
   if (compact) {
     return (

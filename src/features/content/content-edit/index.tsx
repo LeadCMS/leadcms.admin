@@ -98,6 +98,9 @@ interface ContentEditProps {
   readonly?: boolean;
 }
 
+const LIVE_PREVIEW_STORAGE_KEY = "content-live-preview-enabled";
+const METADATA_COLLAPSED_STORAGE_KEY = "content-metadata-collapsed";
+
 export const ContentEdit = (props: ContentEditProps) => {
   const { setSaving, setBusy } = useModuleWrapperContext();
   const { Show: showErrorModal } = useErrorDetailsModal();
@@ -152,11 +155,15 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [isCreatingTranslation, setIsCreatingTranslation] = useState(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
   const [sourceContent, setSourceContent] = useState<ContentDetailsDto | null>(null);
-  const [useLivePreview, setUseLivePreview] = useState(true);
+  const [useLivePreview, setUseLivePreview] = useLocalStorage(LIVE_PREVIEW_STORAGE_KEY, true);
   const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
   const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
   const [iframeKey, setIframeKey] = useState<number>(0);
-  const [isMetadataCollapsed, setIsMetadataCollapsed] = useState(!!id);
+  const [storedMetadataCollapsed, setStoredMetadataCollapsed] = useLocalStorage(
+    METADATA_COLLAPSED_STORAGE_KEY,
+    false
+  );
+  const [localMetadataCollapsed, setLocalMetadataCollapsed] = useState(false);
   const userInfo = useUserInfo();
 
   const supportsCover = contentType?.supportsCoverImage;
@@ -631,6 +638,22 @@ export const ContentEdit = (props: ContentEditProps) => {
   const isCreateMode = !id && !isDuplicateMode && !isTranslationMode;
   const shouldShowForm = isCreateMode || isDuplicateMode || isTranslationMode || !isInitialLoading;
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
+
+  // Determine if metadata should be collapsed:
+  // - For new content creation: use local state (starts expanded, doesn't persist)
+  // - For editing existing content: use localStorage preference
+  const isMetadataCollapsed = isCreateMode ? localMetadataCollapsed : storedMetadataCollapsed;
+
+  // Function to set metadata collapsed state
+  const setIsMetadataCollapsed = (collapsed: boolean) => {
+    if (isCreateMode) {
+      // For create mode, use local state (doesn't persist)
+      setLocalMetadataCollapsed(collapsed);
+    } else {
+      // For edit mode, persist to localStorage
+      setStoredMetadataCollapsed(collapsed);
+    }
+  };
 
   // Set default content type for new content when contentTypes are loaded
   useEffect(() => {
