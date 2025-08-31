@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ContentDetailsDto,
   HttpResponse,
@@ -8,6 +8,7 @@ import {
 } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
+import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { ContentEditContainer } from "../index.styled";
 import {
   Button,
@@ -25,7 +26,6 @@ import {
   Typography,
   Collapse,
   IconButton,
-  Chip,
 } from "@mui/material";
 import { useFormik, FormikHelpers } from "formik";
 import {
@@ -49,6 +49,7 @@ import useLocalStorage from "use-local-storage";
 import { RestoreDataModal } from "@components/restore-data";
 import { useDebouncedCallback } from "use-debounce";
 import { ValidateFrontmatterError } from "utils/frontmatter-validator";
+import ContentLanguageSwitcher, { LanguageHighlights } from "@components/content-language-switcher";
 import { ImageData } from "@components/file-dropdown";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
@@ -70,6 +71,7 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
+  Languages,
 } from "lucide-react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -79,6 +81,10 @@ import DialogActions from "@mui/material/DialogActions";
 import MonacoEditor from "@monaco-editor/react";
 import { openSitePreview } from "utils/preview-helper";
 import { useUserInfo } from "@providers/user-provider";
+import { TranslateDialog, TranslationType } from "@components/translate-dialog";
+import { useNavigationGuard } from "@hooks";
+import { useTranslationDraft } from "@providers/translation-draft-provider";
+import { AITranslationProgress } from "@components/ai-translation-progress";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -93,6 +99,9 @@ interface ContentEditProps {
   readonly?: boolean;
 }
 
+const LIVE_PREVIEW_STORAGE_KEY = "content-live-preview-enabled";
+const METADATA_COLLAPSED_STORAGE_KEY = "content-metadata-collapsed";
+
 export const ContentEdit = (props: ContentEditProps) => {
   const { setSaving, setBusy } = useModuleWrapperContext();
   const { Show: showErrorModal } = useErrorDetailsModal();
@@ -101,6 +110,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const handleNavigation = useCoreModuleNavigation();
   const navigate = useNavigate();
   const { config } = useConfig();
+  const { selectedLanguage } = useGlobalLanguageFilter();
   const [editorLocalStorage, setEditorLocalStorage] = useLocalStorage<ContentEditData>(
     "leadcms_editor_autosave",
     { data: [] },
@@ -109,34 +119,88 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
   );
   const { client } = networkContext;
-  const { id, sourceId } = useParams();
-  const isDuplicateMode = !!sourceId;
+  const {
+    id,
+    sourceId: routeSourceId,
+    targetLanguage: routeTargetLanguage,
+    type: routeType,
+  } = useParams();
+  const [searchParams] = useSearchParams();
+
+  // Support both route params (new) and query params (legacy) for sourceId and translation
+  const sourceId = routeSourceId || searchParams.get("sourceId");
+  const translateToParam = routeTargetLanguage || searchParams.get("translateTo");
+  const translationTypeParam =
+    (routeType as TranslationType) || (searchParams.get("type") as TranslationType | null);
+
+  const { translationDraft, clearTranslationDraft, hasTranslationDraft, setTranslationDraft } =
+    useTranslationDraft();
+  const isDuplicateMode = !!sourceId && !translateToParam;
+  const isTranslationMode = hasTranslationDraft || !!translateToParam;
   const [wasModified, setWasModified] = useState<boolean>(false);
   const [coverWasModified, setCoverWasModified] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDraftSaving, setIsDraftSaving] = useState<boolean>(false);
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!!id || !!sourceId);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(
+    !!id || !!sourceId || isTranslationMode
+  );
   const [frontmatterState, setfrontmatterState] = useState<ValidateFrontmatterError | null>(null);
   const [restoreDataState, setRestoreDataState] = useState<ContentEditRestoreState>(
     ContentEditRestoreState.Idle
   );
   const [activeTab, setActiveTab] = useState<string>("content");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [useLivePreview, setUseLivePreview] = useState(true);
+  const [translateDialogOpen, setTranslateDialogOpen] = useState(false);
+  const [createTranslationDialogOpen, setCreateTranslationDialogOpen] = useState(false);
+  const [targetLanguageForTranslation, setTargetLanguageForTranslation] = useState<string>("");
+  const [isCreatingTranslation, setIsCreatingTranslation] = useState(false);
+  const [aiTranslationInProgress, setAiTranslationInProgress] = useState(false);
+  const [aiTranslationTargetLanguage, setAiTranslationTargetLanguage] = useState<string>("");
+  const [translationError, setTranslationError] = useState<string | null>(null);
+  const [sourceContent, setSourceContent] = useState<ContentDetailsDto | null>(null);
+  const [useLivePreview, setUseLivePreview] = useLocalStorage(LIVE_PREVIEW_STORAGE_KEY, true);
   const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
   const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
   const [iframeKey, setIframeKey] = useState<number>(0);
-  const [isMetadataCollapsed, setIsMetadataCollapsed] = useState(!!id);
+  const [storedMetadataCollapsed, setStoredMetadataCollapsed] = useLocalStorage(
+    METADATA_COLLAPSED_STORAGE_KEY,
+    false
+  );
+  const [localMetadataCollapsed, setLocalMetadataCollapsed] = useState(false);
   const userInfo = useUserInfo();
 
   const supportsCover = contentType?.supportsCoverImage;
   const supportsComments = contentType?.supportsComments;
 
-  // Check if preview features are available from backend config
+  // Navigation guard for unsaved changes in translation mode
+  const isTranslationInProgress = !!(sourceId && translateToParam && !id);
+  useNavigationGuard({
+    when: isTranslationInProgress && wasModified && !isSaving,
+    message: "You have unsaved translation changes. Are you sure you want to leave?",
+  });
+
+  // Check if AI assistance is available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasLivePreview = !!configSettings?.LivePreviewUrlTemplate;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
   const defaultLanguage = config?.defaultLanguage;
+
+  // Helper function to call the appropriate translation API
+  const createTranslationDraft = async (
+    contentId: number,
+    targetLanguage: string,
+    translationType: TranslationType
+  ) => {
+    if (translationType === "AITranslation") {
+      // Use AI translation endpoint
+      return await client.api.contentAiTranslationDraftDetail(contentId, targetLanguage);
+    } else {
+      // Use traditional translation endpoint
+      return await client.api.contentTranslationDraftDetail(contentId, targetLanguage, {
+        transformer: translationType as "EmptyCopy" | "KeepOriginal",
+      });
+    }
+  };
 
   // API-based draft save (for live preview)
   const filterEmptyValues = (obj: unknown) => {
@@ -282,6 +346,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       type: "",
       author: "",
       language: "",
+      translationKey: null,
       category: "",
       tags: [],
       allowComments: false,
@@ -361,7 +426,12 @@ export const ContentEdit = (props: ContentEditProps) => {
         const localStorageSnapshot = { ...editorLocalStorage };
         switch (restoreDataState) {
           case ContentEditRestoreState.Idle: {
-            if (localStorageSnapshot.data.filter((data) => data.id === id).length > 0) {
+            // Don't show restore dialog when we're in translation mode or creating from source
+            if (
+              !hasTranslationDraft &&
+              !sourceId &&
+              localStorageSnapshot.data.filter((data) => data.id === id).length > 0
+            ) {
               setRestoreDataState(ContentEditRestoreState.Requested);
               return;
             }
@@ -399,6 +469,153 @@ export const ContentEdit = (props: ContentEditProps) => {
           } as ContentDetails;
           await formik.setValues(patched);
           await formik.setFieldValue("coverImagePending", patched.coverImagePending);
+        } else if (sourceId && translateToParam) {
+          // Handle translation mode via URL parameters
+          // If we have a translation type from URL, use it; otherwise show dialog
+          if (translationTypeParam) {
+            // Check if we already have translated content loaded to avoid double translation
+            // This happens when dialog completes translation and navigates to URL with type param
+            const hasExistingContent =
+              wasModified && formik.values.title && formik.values.title.trim() !== "";
+
+            if (!hasExistingContent) {
+              // Only trigger translation if we don't already have content loaded
+              setIsCreatingTranslation(true);
+
+              // Show AI progress for AI translation
+              if (translationTypeParam === "AITranslation") {
+                setAiTranslationInProgress(true);
+                setAiTranslationTargetLanguage(translateToParam);
+              }
+
+              try {
+                // Create translation draft using the appropriate API
+                const { data } = await createTranslationDraft(
+                  parseInt(sourceId),
+                  translateToParam as string,
+                  translationTypeParam as TranslationType
+                );
+
+                // Load the translation data directly
+                const translatedContent: ContentDetails = {
+                  ...data,
+                  id: null,
+                  createdAt: null,
+                  updatedAt: null,
+                  coverImagePending: {
+                    url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+                    fileName: "",
+                  },
+                  files: [],
+                } as ContentDetails;
+                await formik.setValues(translatedContent);
+                await formik.setFieldValue(
+                  "coverImagePending",
+                  translatedContent.coverImagePending
+                );
+                setWasModified(true);
+
+                // Hide AI progress
+                setAiTranslationInProgress(false);
+                setAiTranslationTargetLanguage("");
+
+                // DON'T navigate away - keep the URL parameters for language controls to work
+                // navigate(`/content/new?type=${translationTypeParam}`, { replace: true });
+              } catch (error: unknown) {
+                console.error("Failed to create translation:", error);
+
+                // Hide AI progress on error
+                setAiTranslationInProgress(false);
+                setAiTranslationTargetLanguage("");
+
+                // Handle 409 Conflict - translation draft already exists
+                if ((error as { status?: number })?.status === 409) {
+                  try {
+                    // Try to fetch existing translations
+                    const translationsResponse = await client.api.contentTranslationsList(
+                      parseInt(sourceId)
+                    );
+                    const existingTranslation = translationsResponse.data.find(
+                      (t) => t.language === translateToParam
+                    );
+
+                    if (existingTranslation) {
+                      // Load the existing translation
+                      const translatedContent: ContentDetails = {
+                        ...existingTranslation,
+                        id: existingTranslation.id?.toString() || null,
+                        coverImagePending: {
+                          url: existingTranslation.coverImageUrl
+                            ? buildAbsoluteUrl(existingTranslation.coverImageUrl)
+                            : "",
+                          fileName: "",
+                        },
+                        files: [],
+                      } as ContentDetails;
+                      await formik.setValues(translatedContent);
+                      await formik.setFieldValue(
+                        "coverImagePending",
+                        translatedContent.coverImagePending
+                      );
+                      // Don't mark as modified since we're loading existing content
+                      setWasModified(false);
+
+                      notificationsService.info(
+                        "Loaded existing translation draft for " + translateToParam.toUpperCase()
+                      );
+
+                      // Update the URL to reflect the existing content
+                      navigate(`/content/${existingTranslation.id}/edit`, { replace: true });
+                      return;
+                    }
+                  } catch (fetchError) {
+                    console.error("Failed to fetch existing translations:", fetchError);
+                  }
+
+                  // Show user-friendly error message for conflict
+                  notificationsService.error(
+                    "A translation draft for this language already exists. " +
+                      "Please check the translations list."
+                  );
+                  // Reset the creation state and let the useEffect complete normally
+                  setIsCreatingTranslation(false);
+                  // Navigate back to source content after a brief delay to ensure state is clean
+                  setTimeout(() => {
+                    navigate(`/content/${sourceId}/edit`, { replace: true });
+                  }, 100);
+                  return;
+                }
+
+                // For other errors, show generic error message
+                notificationsService.error(
+                  error instanceof Error ? error.message : "Failed to create translation draft"
+                );
+                // Reset the creation state and let the useEffect complete normally
+                setIsCreatingTranslation(false);
+                // Navigate back to source content after a brief delay to ensure state is clean
+                setTimeout(() => {
+                  navigate(`/content/${sourceId}/edit`, { replace: true });
+                }, 100);
+              } finally {
+                setIsCreatingTranslation(false);
+              }
+            }
+          } else {
+            // Fetch source content
+            try {
+              if (client && sourceId) {
+                // Fetch original content
+                const sourceContentResponse = await client.api.contentDetail(Number(sourceId));
+                setSourceContent(sourceContentResponse.data);
+              }
+            } catch (error) {
+              console.error("Failed to fetch source content:", error);
+            }
+
+            // Show the translation dialog to get transformer settings
+            setTargetLanguageForTranslation(translateToParam as string);
+            setCreateTranslationDialogOpen(true);
+          }
         } else if (client && sourceId) {
           // Load content for duplication
           const { data } = await client.api.contentDetail(Number(sourceId));
@@ -418,6 +635,27 @@ export const ContentEdit = (props: ContentEditProps) => {
           await formik.setValues(duplicatedContent);
           await formik.setFieldValue("coverImagePending", duplicatedContent.coverImagePending);
           setWasModified(true); // Mark as modified since it's duplicated content
+        } else if (isTranslationMode && translationDraft) {
+          // Load content for translation using context data (fallback for existing workflow)
+          const translatedContent: ContentDetails = {
+            ...translationDraft,
+            id: null,
+            createdAt: null,
+            updatedAt: null,
+            publishedAt: null,
+            coverImagePending: {
+              url: translationDraft.coverImageUrl
+                ? buildAbsoluteUrl(translationDraft.coverImageUrl)
+                : "",
+              fileName: "",
+            },
+            files: [],
+          } as ContentDetails;
+          await formik.setValues(translatedContent);
+          await formik.setFieldValue("coverImagePending", translatedContent.coverImagePending);
+          setWasModified(true); // Mark as modified since it's translated content
+          // Clear the translation draft after loading
+          clearTranslationDraft();
         }
         setIsInitialLoading(false);
       } catch (e) {
@@ -425,15 +663,41 @@ export const ContentEdit = (props: ContentEditProps) => {
         setIsInitialLoading(false);
       }
     });
-  }, [client, id, sourceId, restoreDataState]);
+  }, [
+    client,
+    id,
+    sourceId,
+    translateToParam,
+    translationTypeParam,
+    restoreDataState,
+    translationDraft,
+    hasTranslationDraft,
+  ]);
 
   useEffect(() => {
     autoSave(formik.values);
     saveDraft(formik.values);
   }, [formik.values]);
 
-  const isCreateMode = !id && !isDuplicateMode;
-  const shouldShowForm = isCreateMode || isDuplicateMode || !isInitialLoading;
+  const isCreateMode = !id && !isDuplicateMode && !isTranslationMode;
+  const shouldShowForm = isCreateMode || isDuplicateMode || isTranslationMode || !isInitialLoading;
+  const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
+
+  // Determine if metadata should be collapsed:
+  // - For new content creation: use local state (starts expanded, doesn't persist)
+  // - For editing existing content: use localStorage preference
+  const isMetadataCollapsed = isCreateMode ? localMetadataCollapsed : storedMetadataCollapsed;
+
+  // Function to set metadata collapsed state
+  const setIsMetadataCollapsed = (collapsed: boolean) => {
+    if (isCreateMode) {
+      // For create mode, use local state (doesn't persist)
+      setLocalMetadataCollapsed(collapsed);
+    } else {
+      // For edit mode, persist to localStorage
+      setStoredMetadataCollapsed(collapsed);
+    }
+  };
 
   // Set default content type for new content when contentTypes are loaded
   useEffect(() => {
@@ -442,7 +706,42 @@ export const ContentEdit = (props: ContentEditProps) => {
       const sorted = [...contentTypes].sort((a, b) => a.uid.localeCompare(b.uid));
       formik.setFieldValue("type", sorted[0].uid, false);
     }
-  }, [isCreateMode, contentTypes, formik.values.type]);
+  }, [isCreateMode, contentTypes, formik.values.type, isTranslationMode]);
+
+  // Set default language for new content based on global language filter
+  useEffect(() => {
+    if (
+      isCreateMode &&
+      config?.languages &&
+      config.languages.length > 0 &&
+      !formik.values.language
+    ) {
+      let defaultLang: string;
+
+      // If global language filter is set to a specific language, use that
+      if (selectedLanguage && selectedLanguage !== "all") {
+        defaultLang = selectedLanguage;
+      } else {
+        // If "All Languages" or no selection, use first language from config
+        defaultLang = config.languages[0].code || "";
+      }
+
+      formik.setFieldValue("language", defaultLang, false);
+    }
+  }, [
+    isCreateMode,
+    config?.languages,
+    formik.values.language,
+    selectedLanguage,
+    isTranslationMode,
+  ]);
+
+  // Set language when in translation mode
+  useEffect(() => {
+    if (translateToParam && formik.values.language !== translateToParam) {
+      formik.setFieldValue("language", translateToParam, false);
+    }
+  }, [translateToParam, formik.values.language]);
 
   // Fetch all content types once on mount or when reloading
   const reloadContentTypes = async () => {
@@ -505,6 +804,249 @@ export const ContentEdit = (props: ContentEditProps) => {
     navigate(`/content/${id}/duplicate`);
   };
 
+  // Handler for translate action
+  const handleTranslateConfirm = async (
+    targetLanguage: string,
+    translationType: TranslationType
+  ) => {
+    if (!id) return;
+    try {
+      const { data } = await createTranslationDraft(parseInt(id), targetLanguage, translationType);
+      // Set the translation draft and navigate to new content page
+      setTranslationDraft(data);
+      navigate("/content/new");
+    } catch (error: unknown) {
+      console.error("Failed to create translation draft:", error);
+
+      // Handle 409 Conflict - translation draft already exists
+      if ((error as { status?: number })?.status === 409) {
+        try {
+          // Try to fetch existing translations
+          const translationsResponse = await client.api.contentTranslationsList(parseInt(id));
+          const existingTranslation = translationsResponse.data.find(
+            (t) => t.language === targetLanguage
+          );
+
+          if (existingTranslation && existingTranslation.id) {
+            // Navigate to edit the existing translation
+            navigate(`/content/${existingTranslation.id}/edit`);
+            notificationsService.info(
+              "Opened existing translation draft for " + targetLanguage.toUpperCase()
+            );
+            return;
+          }
+        } catch (fetchError) {
+          console.error("Failed to fetch existing translations:", fetchError);
+        }
+
+        // Show user-friendly error message for conflict
+        notificationsService.error(
+          "A translation draft for this language already exists. " +
+            "Please check the translations list."
+        );
+        return;
+      }
+
+      // For other errors, show generic error message
+      notificationsService.error(
+        error instanceof Error ? error.message : "Failed to create translation draft"
+      );
+    }
+  };
+
+  // Handler for language switching within the current content
+  const handleLanguageChange = async (language: string, translationId?: number) => {
+    if (translationId) {
+      // Navigate to the existing translation edit page
+      navigate(`/content/${translationId}/edit`);
+    } else {
+      // Update the current form's language field
+      formik.setFieldValue("language", language);
+      setWasModified(true);
+    }
+  };
+
+  // Handler for creating a new translation
+  const handleCreateTranslation = async (targetLanguage: string) => {
+    if (!id) return;
+    // Navigate to translation route
+    navigate(`/content/${id}/translate/${targetLanguage}`);
+  };
+
+  // Handler for translation confirmation from dialog
+  const handleCreateTranslationConfirm = async (
+    targetLanguage: string,
+    translationType: TranslationType
+  ) => {
+    // Check if we're in URL parameter mode
+    if (sourceId && translateToParam) {
+      setIsCreatingTranslation(true);
+      setTranslationError(null);
+
+      // Show AI progress for AI translation
+      if (translationType === "AITranslation") {
+        setAiTranslationInProgress(true);
+        setAiTranslationTargetLanguage(targetLanguage);
+      }
+
+      try {
+        const { data } = await createTranslationDraft(
+          parseInt(sourceId),
+          targetLanguage,
+          translationType
+        );
+
+        // Load the translation data directly
+        const translatedContent: ContentDetails = {
+          ...data,
+          id: null,
+          createdAt: null,
+          updatedAt: null,
+          publishedAt: null,
+          coverImagePending: {
+            url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+            fileName: "",
+          },
+          files: [],
+        } as ContentDetails;
+
+        await formik.setValues(translatedContent);
+        await formik.setFieldValue("coverImagePending", translatedContent.coverImagePending);
+        setWasModified(true);
+        setCreateTranslationDialogOpen(false);
+        setIsInitialLoading(false);
+
+        // Hide AI progress
+        setAiTranslationInProgress(false);
+        setAiTranslationTargetLanguage("");
+
+        // Update URL to include the type parameter for future refreshes
+        navigate(`/content/${sourceId}/translate/${targetLanguage}/${translationType}`, {
+          replace: true,
+        });
+      } catch (error: unknown) {
+        console.error("Failed to create translation draft:", error);
+
+        // Handle 409 Conflict - translation draft already exists
+        if ((error as { status?: number })?.status === 409) {
+          try {
+            // Try to fetch existing translations
+            const translationsResponse = await client.api.contentTranslationsList(
+              parseInt(sourceId)
+            );
+            const existingTranslation = translationsResponse.data.find(
+              (t) => t.language === targetLanguage
+            );
+
+            if (existingTranslation && existingTranslation.id) {
+              // Load the existing translation
+              const translatedContent: ContentDetails = {
+                ...existingTranslation,
+                id: existingTranslation.id?.toString() || null,
+                coverImagePending: {
+                  url: existingTranslation.coverImageUrl
+                    ? buildAbsoluteUrl(existingTranslation.coverImageUrl)
+                    : "",
+                  fileName: "",
+                },
+                files: [],
+              } as ContentDetails;
+              await formik.setValues(translatedContent);
+              await formik.setFieldValue("coverImagePending", translatedContent.coverImagePending);
+              setWasModified(false); // Don't mark as modified since we're loading existing content
+              setCreateTranslationDialogOpen(false);
+              setIsInitialLoading(false);
+
+              // Navigate to edit the existing translation
+              navigate(`/content/${existingTranslation.id}/edit`, { replace: true });
+              return;
+            }
+          } catch (fetchError) {
+            console.error("Failed to fetch existing translations:", fetchError);
+          }
+
+          // Show user-friendly error message for conflict
+          setTranslationError(
+            "A translation draft for this language already exists. " +
+              "Please check the translations list."
+          );
+        } else {
+          // For other errors, show generic error message
+          const errorMessage =
+            error instanceof Error ? error.message : "Failed to create translation";
+          setTranslationError(errorMessage);
+        }
+      } finally {
+        setIsCreatingTranslation(false);
+        // Hide AI progress on error
+        setAiTranslationInProgress(false);
+        setAiTranslationTargetLanguage("");
+      }
+    } else if (id) {
+      // Original flow for existing content
+      // Show AI progress for AI translation
+      if (translationType === "AITranslation") {
+        setAiTranslationInProgress(true);
+        setAiTranslationTargetLanguage(targetLanguage);
+      }
+
+      try {
+        const { data } = await createTranslationDraft(
+          parseInt(id),
+          targetLanguage,
+          translationType
+        );
+        // Set the translation draft and navigate to new content page
+        setTranslationDraft(data);
+
+        // Hide AI progress on success
+        setAiTranslationInProgress(false);
+        setAiTranslationTargetLanguage("");
+
+        navigate("/content/new");
+      } catch (error: unknown) {
+        console.error("Failed to create translation draft:", error);
+
+        // Handle 409 Conflict - translation draft already exists
+        if ((error as { status?: number })?.status === 409) {
+          try {
+            // Try to fetch existing translations
+            const translationsResponse = await client.api.contentTranslationsList(parseInt(id));
+            const existingTranslation = translationsResponse.data.find(
+              (t) => t.language === targetLanguage
+            );
+
+            if (existingTranslation && existingTranslation.id) {
+              // Navigate to edit the existing translation
+              navigate(`/content/${existingTranslation.id}/edit`);
+              notificationsService.info(
+                "Opened existing translation draft for " + targetLanguage.toUpperCase()
+              );
+              return;
+            }
+          } catch (fetchError) {
+            console.error("Failed to fetch existing translations:", fetchError);
+          }
+
+          // Show user-friendly error message for conflict
+          notificationsService.error(
+            "A translation draft for this language already exists. " +
+              "Please check the translations list."
+          );
+        } else {
+          // For other errors, show generic error message
+          notificationsService.error(
+            error instanceof Error ? error.message : "Failed to create translation draft"
+          );
+        }
+      } finally {
+        // Hide AI progress on error
+        setAiTranslationInProgress(false);
+        setAiTranslationTargetLanguage("");
+      }
+    }
+  };
+
   // Handler for site preview
   const handleSitePreview = () => {
     const params = {
@@ -538,7 +1080,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         actionButtons={
           <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 2 }}>
             <Box sx={{ pl: { sm: 4 } }}>
-              {!isCreateMode && !isDuplicateMode && (
+              {!isCreateMode && !isDuplicateMode && !isTranslationMode && (
                 <>
                   <Button
                     variant="outlined"
@@ -553,7 +1095,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                   </Button>
                 </>
               )}
-              {!isCreateMode && !isDuplicateMode && (
+              {!isCreateMode && !isDuplicateMode && !isTranslationMode && (
                 <Button
                   variant="outlined"
                   color="primary"
@@ -561,8 +1103,21 @@ export const ContentEdit = (props: ContentEditProps) => {
                   onClick={handleDuplicate}
                   disabled={formik.isSubmitting}
                   size="medium"
+                  sx={{ mr: 2 }}
                 >
                   Duplicate
+                </Button>
+              )}
+              {hasMultipleLanguages && !isCreateMode && !isDuplicateMode && !isTranslationMode && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<Languages />}
+                  onClick={() => setTranslateDialogOpen(true)}
+                  disabled={formik.isSubmitting}
+                  size="medium"
+                >
+                  Translate
                 </Button>
               )}
               <Dialog
@@ -595,6 +1150,33 @@ export const ContentEdit = (props: ContentEditProps) => {
                   </Button>
                 </DialogActions>
               </Dialog>
+
+              {hasMultipleLanguages && (
+                <TranslateDialog
+                  open={translateDialogOpen}
+                  onClose={() => setTranslateDialogOpen(false)}
+                  onTranslate={handleTranslateConfirm}
+                  originalLanguage={formik.values.language}
+                  originalTitle={formik.values.title}
+                />
+              )}
+
+              {hasMultipleLanguages && (
+                <TranslateDialog
+                  open={createTranslationDialogOpen}
+                  onClose={() => {
+                    setCreateTranslationDialogOpen(false);
+                    setTranslationError(null);
+                  }}
+                  onTranslate={handleCreateTranslationConfirm}
+                  originalLanguage={sourceContent?.language || formik.values.language}
+                  originalTitle={sourceContent?.title || formik.values.title}
+                  preselectedLanguage={targetLanguageForTranslation}
+                  isLoading={isCreatingTranslation}
+                  error={translationError}
+                  readonly={true}
+                />
+              )}
             </Box>
             <Box sx={{ display: "flex", gap: 2, pr: { sm: 4 } }}>
               <Button
@@ -656,44 +1238,83 @@ export const ContentEdit = (props: ContentEditProps) => {
                       <Box
                         sx={{
                           display: "flex",
-                          alignItems: "center",
-                          gap: 2,
+                          flexDirection: "column",
+                          gap: 1,
                           minWidth: 0,
                           flex: 1,
                         }}
                       >
-                        <Chip
-                          label={getContentTypeDisplayName()}
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: "0.75rem", flexShrink: 0 }}
-                        />
-                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                          <Typography
-                            variant="body1"
+                        {/* Title, Description and Content Type on the same line */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            minWidth: 0,
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0, flex: 1 }}>
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                fontWeight: 500,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {formik.values.title || "Untitled"}
+                              {formik.values.description && (
+                                <Typography
+                                  component="span"
+                                  variant="body2"
+                                  sx={{
+                                    color: "text.secondary",
+                                    fontWeight: 400,
+                                    ml: 1,
+                                  }}
+                                >
+                                  - {formik.values.description}
+                                </Typography>
+                              )}
+                            </Typography>
+                          </Box>
+
+                          {/* Content Type badge on the right */}
+                          <Box
                             sx={{
-                              fontWeight: 500,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
+                              px: 1.5,
+                              py: 0.5,
+                              bgcolor: "primary.main",
+                              color: "primary.contrastText",
+                              borderRadius: 2,
+                              fontSize: "0.6875rem",
+                              fontWeight: 600,
+                              textTransform: "uppercase",
+                              letterSpacing: 0.5,
+                              flexShrink: 0,
                             }}
                           >
-                            {formik.values.title || "Untitled"}
-                            {formik.values.description && (
-                              <Typography
-                                component="span"
-                                variant="body2"
-                                sx={{
-                                  color: "text.secondary",
-                                  fontWeight: 400,
-                                  ml: 1,
-                                }}
-                              >
-                                - {formik.values.description}
-                              </Typography>
-                            )}
-                          </Typography>
+                            {getContentTypeDisplayName()}
+                          </Box>
                         </Box>
+
+                        {/* Language Highlights on the second line */}
+                        {hasMultipleLanguages &&
+                          (formik.values.id || (sourceId && translateToParam)) && (
+                            <LanguageHighlights
+                              contentId={
+                                sourceId && translateToParam
+                                  ? parseInt(sourceId)
+                                  : parseInt(formik.values.id || "0")
+                              }
+                              currentLanguage={formik.values.language || ""}
+                              onLanguageChange={handleLanguageChange}
+                              onCreateTranslation={handleCreateTranslation}
+                              sourceContentId={sourceId ? parseInt(sourceId) : undefined}
+                              isTranslationMode={Boolean(sourceId && translateToParam)}
+                            />
+                          )}
                       </Box>
                       <IconButton size="small">
                         <ChevronDown size={20} />
@@ -707,10 +1328,31 @@ export const ContentEdit = (props: ContentEditProps) => {
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "flex-end",
+                        justifyContent: "space-between",
                         mb: 2,
                       }}
                     >
+                      {/* Left side: Compact Language Switcher */}
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        {hasMultipleLanguages &&
+                          (formik.values.id || (sourceId && translateToParam)) && (
+                            <ContentLanguageSwitcher
+                              contentId={
+                                sourceId && translateToParam
+                                  ? parseInt(sourceId)
+                                  : parseInt(formik.values.id || "0")
+                              }
+                              currentLanguage={formik.values.language || ""}
+                              onLanguageChange={handleLanguageChange}
+                              onCreateTranslation={handleCreateTranslation}
+                              compact={true}
+                              sourceContentId={sourceId ? parseInt(sourceId) : undefined}
+                              isTranslationMode={Boolean(sourceId && translateToParam)}
+                            />
+                          )}
+                      </Box>
+
+                      {/* Right side: Collapse button */}
                       <IconButton
                         size="small"
                         onClick={() => setIsMetadataCollapsed(true)}
@@ -987,17 +1629,19 @@ export const ContentEdit = (props: ContentEditProps) => {
                           fullWidth
                         />
                       </Grid>
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <LanguageSelect
-                          value={formik.values.language}
-                          onChange={(val) => autoCompleteValueUpdate("language", val)}
-                          label="Language"
-                          error={formik.touched.language && Boolean(formik.errors.language)}
-                          helperText={formik.touched.language && formik.errors.language}
-                          name="language"
-                          disabled={props.readonly}
-                        />
-                      </Grid>
+                      {hasMultipleLanguages && (
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <LanguageSelect
+                            value={formik.values.language}
+                            onChange={(val) => autoCompleteValueUpdate("language", val)}
+                            label="Language"
+                            error={formik.touched.language && Boolean(formik.errors.language)}
+                            helperText={formik.touched.language && formik.errors.language}
+                            name="language"
+                            disabled={props.readonly || isTranslationMode}
+                          />
+                        </Grid>
+                      )}
                       <Grid size={{ xs: 12, sm: 4 }}>
                         <RemoteAutocomplete
                           type={RemoteValues.CATEGORIES}
@@ -1076,6 +1720,13 @@ export const ContentEdit = (props: ContentEditProps) => {
           ) : null}
         </ContentEditContainer>
       </ModuleWrapper>
+
+      {/* AI Translation Progress Dialog */}
+      <AITranslationProgress
+        open={aiTranslationInProgress}
+        targetLanguage={aiTranslationTargetLanguage}
+        originalTitle={formik.values.title}
+      />
     </form>
   );
 };

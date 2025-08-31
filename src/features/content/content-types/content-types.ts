@@ -78,6 +78,7 @@ export const generateDefaultValues = (contentUid: string): ContentDetails => {
     slug: "",
     author: "",
     language: "",
+    translationKey: null,
     allowComments: false,
     tags: [],
     category: "",

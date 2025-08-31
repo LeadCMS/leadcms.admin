@@ -26,6 +26,7 @@ export const ContentEditValidationScheme = zod.object({
   slug: zod.string(),
   author: zod.string(),
   language: zod.string(),
+  translationKey: zod.string().optional().nullable(),
   allowComments: zod.boolean().optional(),
   tags: zod.string().array().optional(),
   category: zod.string(),

@@ -1,6 +1,6 @@
 {
   "name": "leadcms.admin",
-  "version": "1.2.66-pre",
+  "version": "1.2.70-pre",
   "private": true,
   "sideEffects": false,
   "description": "React based Admin UI for LeadCMS (lightweight, extendable headless CMS for product websites)",

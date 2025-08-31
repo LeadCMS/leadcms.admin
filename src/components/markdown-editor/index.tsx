@@ -100,9 +100,8 @@ const MarkdownEditor = ({
   onFrontmatterErrorChange,
   livePreview,
   livePreviewTemplate,
-  key: editorKey,
   isMetadataCollapsed,
-}: MarkdownEditorProps & { key?: React.Key }) => {
+}: MarkdownEditorProps) => {
   const { notificationsService } = useNotificationsService();
   const [currentError, setCurrentError] = useState<string>("");
   const [currentImageCtxValue, setCurrentImageCtxValue] = useState<ImageUploadingContext | null>(
@@ -190,7 +189,6 @@ const MarkdownEditor = ({
           <input {...getInputProps()} />
           <ImageUploadingCtx.Provider value={currentImageCtxValue}>
             <MDEditor
-              key={editorKey}
               aria-disabled={isReadOnly}
               hideToolbar={isReadOnly}
               height={isMetadataCollapsed ? "calc(100vh - 325px)" : "calc(100vh - 500px)"}
@@ -204,7 +202,6 @@ const MarkdownEditor = ({
               components={{
                 preview: () => {
                   if (livePreview && livePreviewTemplate) {
-                    console.log("[MarkdownEditor] livePreview params:", contentDetails);
                     return MarkdownLiveViewerFunc({ ...contentDetails }, livePreviewTemplate);
                   }
                   return MarkdownViewerFunc(`${currentError}${strippedValue}`);
