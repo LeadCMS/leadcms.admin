@@ -380,14 +380,15 @@ export const ContentList = () => {
           >
             Add Content
           </Button>
-          <Button
-            variant="outlined"
-            onClick={handleAIDraftClick}
-            startIcon={<Sparkles size={18} />}
-            disabled={!config?.capabilities?.includes("AIAssistance")}
-          >
-            Create with AI
-          </Button>
+          {config?.capabilities?.includes("AIAssistance") && (
+            <Button
+              variant="outlined"
+              onClick={handleAIDraftClick}
+              startIcon={<Sparkles size={18} />}
+            >
+              Create with AI
+            </Button>
+          )}
         </Box>
       }
     >

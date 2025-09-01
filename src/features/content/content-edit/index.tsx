@@ -72,6 +72,7 @@ import {
   ChevronUp,
   RefreshCw,
   Languages,
+  Sparkles,
 } from "lucide-react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -87,6 +88,8 @@ import { useTranslationDraft } from "@providers/translation-draft-provider";
 import { AITranslationProgress } from "@components/ai-translation-progress";
 import { AIContentProgress } from "@components/ai-content-progress";
 import { AIDraftDialog } from "@components/ai-draft-dialog";
+import { AIEditDialog } from "@components/ai-edit-dialog";
+import { AIEditProgress } from "@components/ai-edit-progress";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -191,6 +194,12 @@ export const ContentEdit = (props: ContentEditProps) => {
     contentType: string;
     prompt: string;
   } | null>(null);
+
+  // AI Edit Dialog state
+  const [aiEditDialogOpen, setAiEditDialogOpen] = useState(false);
+  const [aiEditLoading, setAiEditLoading] = useState(false);
+  const [aiEditError, setAiEditError] = useState<string | null>(null);
+  const [aiEditInProgress, setAiEditInProgress] = useState(false);
 
   const supportsCover = contentType?.supportsCoverImage;
   const supportsComments = contentType?.supportsComments;
@@ -1244,6 +1253,113 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
   };
 
+  // Handler for AI content editing
+  const handleAIEdit = async (prompt: string) => {
+    setAiEditLoading(true);
+    setAiEditError(null);
+
+    // Close dialog and show progress
+    setAiEditDialogOpen(false);
+    setAiEditInProgress(true);
+
+    try {
+      // Prepare the current content for editing
+      const currentContent = {
+        title: formik.values.title,
+        description: formik.values.description,
+        body: formik.values.body,
+        coverImageUrl: formik.values.coverImageUrl,
+        coverImageAlt: formik.values.coverImageAlt,
+        slug: formik.values.slug,
+        type: formik.values.type,
+        author: formik.values.author,
+        language: formik.values.language,
+        translationKey: formik.values.translationKey,
+        category: formik.values.category,
+        tags: formik.values.tags,
+        allowComments: formik.values.allowComments,
+        source: undefined, // Not included in ContentDetails
+        publishedAt: formik.values.publishedAt,
+        prompt,
+      };
+
+      const { data } = await client.api.contentAiEditCreate(currentContent);
+
+      // Update the form with AI-edited content
+      const editedContent: ContentDetails = {
+        ...formik.values, // Keep existing data like id, dates, etc.
+        ...data, // Override with AI-edited content
+        coverImagePending: {
+          url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+          fileName: "",
+        },
+        files: formik.values.files, // Keep existing files
+      } as ContentDetails;
+
+      await formik.setValues(editedContent);
+      await formik.setFieldValue("coverImagePending", editedContent.coverImagePending);
+      setWasModified(true); // Mark as modified since it's AI-edited content
+
+      // Ensure dialog is closed on success
+      setAiEditDialogOpen(false);
+      setAiEditError(null);
+
+      // Show success message
+      notificationsService.success("Content edited successfully with AI!");
+    } catch (error: unknown) {
+      console.error("Failed to edit content with AI:", error);
+
+      // Extract error message from backend response
+      let errorMessage = "Failed to edit content with AI";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "object" && error !== null) {
+        // Handle different error response structures
+        const errorObj = error as Record<string, unknown>;
+
+        // Check for the specific error structure: { data: null, error: { title: "...", ... } }
+        if (errorObj.error && typeof errorObj.error === "object") {
+          const errorDetails = errorObj.error as Record<string, unknown>;
+          if (errorDetails.title && typeof errorDetails.title === "string") {
+            errorMessage = errorDetails.title;
+          } else if (errorDetails.message && typeof errorDetails.message === "string") {
+            errorMessage = errorDetails.message;
+          } else if (errorDetails.detail && typeof errorDetails.detail === "string") {
+            errorMessage = errorDetails.detail;
+          }
+        }
+        // Check direct error object properties (fallback)
+        else if (errorObj.title && typeof errorObj.title === "string") {
+          errorMessage = errorObj.title;
+        } else if (errorObj.message && typeof errorObj.message === "string") {
+          errorMessage = errorObj.message;
+        } else if (errorObj.detail && typeof errorObj.detail === "string") {
+          errorMessage = errorObj.detail;
+        }
+        // Check nested response data (existing logic)
+        else {
+          const response = errorObj.response as Record<string, unknown> | undefined;
+          const responseData = response?.data as Record<string, unknown> | undefined;
+
+          if (responseData?.message && typeof responseData.message === "string") {
+            errorMessage = responseData.message;
+          } else if (responseData?.title && typeof responseData.title === "string") {
+            errorMessage = responseData.title;
+          } else if (responseData?.detail && typeof responseData.detail === "string") {
+            errorMessage = responseData.detail;
+          }
+        }
+      }
+
+      setAiEditError(errorMessage);
+      // Reopen dialog on error so user can retry
+      setAiEditDialogOpen(true);
+    } finally {
+      setAiEditLoading(false);
+      setAiEditInProgress(false);
+    }
+  };
+
   // Helper function to get content type display name
   const getContentTypeDisplayName = () => {
     if (!contentType) return formik.values.type || "Unknown";
@@ -1295,8 +1411,21 @@ export const ContentEdit = (props: ContentEditProps) => {
                   onClick={() => setTranslateDialogOpen(true)}
                   disabled={formik.isSubmitting}
                   size="medium"
+                  sx={{ mr: 2 }}
                 >
                   Translate
+                </Button>
+              )}
+              {(config?.capabilities?.includes("AIAssistance") || false) && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<Sparkles />}
+                  onClick={() => setAiEditDialogOpen(true)}
+                  disabled={formik.isSubmitting}
+                  size="medium"
+                >
+                  Edit with AI
                 </Button>
               )}
               <Dialog
@@ -1933,6 +2062,23 @@ export const ContentEdit = (props: ContentEditProps) => {
         contentType={aiRequestedContentType}
         language={aiRequestedLanguage}
       />
+
+      {/* AI Edit Dialog */}
+      <AIEditDialog
+        open={aiEditDialogOpen}
+        onClose={() => {
+          setAiEditDialogOpen(false);
+          setAiEditError(null);
+        }}
+        onEdit={handleAIEdit}
+        isLoading={aiEditLoading}
+        error={aiEditError}
+        onErrorClear={() => setAiEditError(null)}
+        contentTitle={formik.values.title || "Untitled"}
+      />
+
+      {/* AI Edit Progress Dialog */}
+      <AIEditProgress open={aiEditInProgress} contentTitle={formik.values.title || "Untitled"} />
     </form>
   );
 };
