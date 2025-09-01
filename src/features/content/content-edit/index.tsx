@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   ContentDetailsDto,
   HttpResponse,
@@ -85,6 +85,8 @@ import { TranslateDialog, TranslationType } from "@components/translate-dialog";
 import { useNavigationGuard } from "@hooks";
 import { useTranslationDraft } from "@providers/translation-draft-provider";
 import { AITranslationProgress } from "@components/ai-translation-progress";
+import { AIContentProgress } from "@components/ai-content-progress";
+import { AIDraftDialog } from "@components/ai-draft-dialog";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -119,6 +121,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
   );
   const { client } = networkContext;
+  const location = useLocation();
   const {
     id,
     sourceId: routeSourceId,
@@ -132,6 +135,11 @@ export const ContentEdit = (props: ContentEditProps) => {
   const translateToParam = routeTargetLanguage || searchParams.get("translateTo");
   const translationTypeParam =
     (routeType as TranslationType) || (searchParams.get("type") as TranslationType | null);
+
+  // Check if this is an AI draft mode - either with content or on /ai-draft route
+  const aiGeneratedContent = location.state?.aiGeneratedContent;
+  const isAIDraftRoute = location.pathname.includes("/ai-draft");
+  const isAIDraftMode = !!aiGeneratedContent || isAIDraftRoute;
 
   const { translationDraft, clearTranslationDraft, hasTranslationDraft, setTranslationDraft } =
     useTranslationDraft();
@@ -168,6 +176,21 @@ export const ContentEdit = (props: ContentEditProps) => {
   );
   const [localMetadataCollapsed, setLocalMetadataCollapsed] = useState(false);
   const userInfo = useUserInfo();
+
+  // AI Content Progress state
+  const [aiContentInProgress, setAiContentInProgress] = useState(false);
+
+  // AI Draft Dialog state
+  const [aiDraftDialogOpen, setAiDraftDialogOpen] = useState(false);
+  const [aiDraftLoading, setAiDraftLoading] = useState(false);
+  const [aiDraftError, setAiDraftError] = useState<string | null>(null);
+  const [aiRequestedContentType, setAiRequestedContentType] = useState<string>("");
+  const [aiRequestedLanguage, setAiRequestedLanguage] = useState<string>("");
+  const [aiDraftFormValues, setAiDraftFormValues] = useState<{
+    language: string;
+    contentType: string;
+    prompt: string;
+  } | null>(null);
 
   const supportsCover = contentType?.supportsCoverImage;
   const supportsComments = contentType?.supportsComments;
@@ -656,6 +679,28 @@ export const ContentEdit = (props: ContentEditProps) => {
           setWasModified(true); // Mark as modified since it's translated content
           // Clear the translation draft after loading
           clearTranslationDraft();
+        } else if (isAIDraftMode && aiGeneratedContent) {
+          // Load AI-generated content
+          const aiContent: ContentDetails = {
+            ...aiGeneratedContent,
+            id: null,
+            createdAt: null,
+            updatedAt: null,
+            publishedAt: null,
+            coverImagePending: {
+              url: aiGeneratedContent.coverImageUrl
+                ? buildAbsoluteUrl(aiGeneratedContent.coverImageUrl)
+                : "",
+              fileName: "",
+            },
+            files: [],
+          } as ContentDetails;
+          await formik.setValues(aiContent);
+          await formik.setFieldValue("coverImagePending", aiContent.coverImagePending);
+          setWasModified(true); // Mark as modified since it's AI generated content
+
+          // Clean up the location state to prevent reloading on refresh
+          navigate("/content/ai-draft", { replace: true, state: {} });
         }
         setIsInitialLoading(false);
       } catch (e) {
@@ -679,8 +724,9 @@ export const ContentEdit = (props: ContentEditProps) => {
     saveDraft(formik.values);
   }, [formik.values]);
 
-  const isCreateMode = !id && !isDuplicateMode && !isTranslationMode;
-  const shouldShowForm = isCreateMode || isDuplicateMode || isTranslationMode || !isInitialLoading;
+  const isCreateMode = !id && !isDuplicateMode && !isTranslationMode && !isAIDraftMode;
+  const shouldShowForm =
+    isCreateMode || isDuplicateMode || isTranslationMode || isAIDraftMode || !isInitialLoading;
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
 
   // Determine if metadata should be collapsed:
@@ -764,6 +810,34 @@ export const ContentEdit = (props: ContentEditProps) => {
       setContentType(null);
     }
   }, [formik.values.type, contentTypes]);
+
+  // Handle AI draft mode - open dialog if no content is provided
+  useEffect(() => {
+    if (
+      isAIDraftRoute &&
+      !aiGeneratedContent &&
+      !aiDraftDialogOpen &&
+      !formik.values.title &&
+      !formik.values.body
+    ) {
+      setAiDraftDialogOpen(true);
+    }
+  }, [isAIDraftRoute, aiGeneratedContent, formik.values.title, formik.values.body]);
+
+  // Load content types for AI draft dialog
+  useEffect(() => {
+    const loadContentTypes = async () => {
+      if (client && isAIDraftMode) {
+        try {
+          const types = await fetchAllContentTypes(client);
+          setContentTypes(Array.isArray(types) ? types : []);
+        } catch (error) {
+          console.error("Failed to load content types:", error);
+        }
+      }
+    };
+    loadContentTypes();
+  }, [client, isAIDraftMode]);
 
   // Check for validation errors in each tab
   const hasContentErrors = Boolean(formik.errors.body);
@@ -1062,6 +1136,111 @@ export const ContentEdit = (props: ContentEditProps) => {
       notificationsService.error(
         "Cannot open site preview. Please ensure all required fields are filled."
       );
+    }
+  };
+
+  // Handler for AI draft creation
+  const handleAIDraftCreate = async (language: string, contentType: string, prompt: string) => {
+    setAiDraftLoading(true);
+    setAiDraftError(null);
+    setAiRequestedContentType(contentType);
+    setAiRequestedLanguage(language);
+
+    // Save form values in case we need to restore them on error
+    setAiDraftFormValues({ language, contentType, prompt });
+
+    // Close dialog and show progress
+    setAiDraftDialogOpen(false);
+    setAiContentInProgress(true);
+
+    try {
+      const { data } = await client.api.contentAiDraftCreate({
+        language,
+        contentType,
+        prompt,
+      });
+
+      // Set up the AI-generated content for editing
+      const aiContent: ContentDetails = {
+        ...data,
+        id: null,
+        createdAt: null,
+        updatedAt: null,
+        publishedAt: null,
+        coverImagePending: {
+          url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+          fileName: "",
+        },
+        files: [],
+      } as ContentDetails;
+
+      await formik.setValues(aiContent);
+      await formik.setFieldValue("coverImagePending", aiContent.coverImagePending);
+      setWasModified(true); // Mark as modified since it's AI-generated content
+
+      // Ensure dialog is closed on success
+      setAiDraftDialogOpen(false);
+      setAiDraftError(null);
+      setAiDraftFormValues(null); // Clear saved form values on success
+
+      // Navigate away from ai-draft route to prevent dialog from reopening
+      if (isAIDraftRoute) {
+        navigate("/content/new", { replace: true });
+      }
+
+      // Show success message
+      notificationsService.success("AI draft created successfully!");
+    } catch (error: unknown) {
+      console.error("Failed to create AI draft:", error);
+
+      // Extract error message from backend response
+      let errorMessage = "Failed to create AI draft";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "object" && error !== null) {
+        // Handle different error response structures
+        const errorObj = error as Record<string, unknown>;
+
+        // Check for the specific error structure: { data: null, error: { title: "...", ... } }
+        if (errorObj.error && typeof errorObj.error === "object") {
+          const errorDetails = errorObj.error as Record<string, unknown>;
+          if (errorDetails.title && typeof errorDetails.title === "string") {
+            errorMessage = errorDetails.title;
+          } else if (errorDetails.message && typeof errorDetails.message === "string") {
+            errorMessage = errorDetails.message;
+          } else if (errorDetails.detail && typeof errorDetails.detail === "string") {
+            errorMessage = errorDetails.detail;
+          }
+        }
+        // Check direct error object properties (fallback)
+        else if (errorObj.title && typeof errorObj.title === "string") {
+          errorMessage = errorObj.title;
+        } else if (errorObj.message && typeof errorObj.message === "string") {
+          errorMessage = errorObj.message;
+        } else if (errorObj.detail && typeof errorObj.detail === "string") {
+          errorMessage = errorObj.detail;
+        }
+        // Check nested response data (existing logic)
+        else {
+          const response = errorObj.response as Record<string, unknown> | undefined;
+          const responseData = response?.data as Record<string, unknown> | undefined;
+
+          if (responseData?.message && typeof responseData.message === "string") {
+            errorMessage = responseData.message;
+          } else if (responseData?.title && typeof responseData.title === "string") {
+            errorMessage = responseData.title;
+          } else if (responseData?.detail && typeof responseData.detail === "string") {
+            errorMessage = responseData.detail;
+          }
+        }
+      }
+
+      setAiDraftError(errorMessage);
+      // Reopen dialog on error so user can retry
+      setAiDraftDialogOpen(true);
+    } finally {
+      setAiDraftLoading(false);
+      setAiContentInProgress(false);
     }
   };
 
@@ -1726,6 +1905,33 @@ export const ContentEdit = (props: ContentEditProps) => {
         open={aiTranslationInProgress}
         targetLanguage={aiTranslationTargetLanguage}
         originalTitle={formik.values.title}
+      />
+
+      {/* AI Draft Dialog */}
+      <AIDraftDialog
+        open={aiDraftDialogOpen}
+        onClose={() => {
+          setAiDraftDialogOpen(false);
+          setAiDraftError(null);
+          setAiDraftFormValues(null); // Clear saved form values when closing
+          // Navigate back to content list only if no content has been generated
+          if (!formik.values.title && !formik.values.body) {
+            navigate("/content");
+          }
+        }}
+        onCreate={handleAIDraftCreate}
+        contentTypes={contentTypes}
+        isLoading={aiDraftLoading}
+        error={aiDraftError}
+        onErrorClear={() => setAiDraftError(null)}
+        initialValues={aiDraftFormValues || undefined}
+      />
+
+      {/* AI Content Progress Dialog */}
+      <AIContentProgress
+        open={aiContentInProgress}
+        contentType={aiRequestedContentType}
+        language={aiRequestedLanguage}
       />
     </form>
   );

@@ -3726,6 +3726,119 @@ export interface ContentDistributionItemDto {
   value?: number;
 }
 
+export interface ContentEditRequest {
+  /**
+   * Title
+   * @minLength 1
+   * @example "string"
+   */
+  title?: string | null;
+  /**
+   * Description
+   * @minLength 1
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Body
+   * @minLength 1
+   * @example "string"
+   */
+  body?: string | null;
+  /**
+   * Cover Image Url
+   * @example "string"
+   */
+  coverImageUrl?: string;
+  /**
+   * Cover Image Alt
+   * @example "string"
+   */
+  coverImageAlt?: string;
+  /**
+   * Slug
+   * @minLength 1
+   * @example "string"
+   */
+  slug?: string | null;
+  /**
+   * Type
+   * @minLength 1
+   * @example "string"
+   */
+  type?: string | null;
+  /**
+   * Author
+   * @example "string"
+   */
+  author?: string | null;
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
+   * Category
+   * @example "string"
+   */
+  category?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+  /**
+   * Allow Comments
+   * @example true
+   */
+  allowComments?: boolean | null;
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Published At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  publishedAt?: string | null;
+  /**
+   * Prompt
+   * @minLength 1
+   * @example "string"
+   */
+  prompt: string;
+}
+
+export interface ContentGenerationRequest {
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language: string;
+  /**
+   * Content Type
+   * @minLength 1
+   * @example "string"
+   */
+  contentType: string;
+  /**
+   * Prompt
+   * @minLength 1
+   * @example "string"
+   */
+  prompt: string;
+}
+
 export interface ContentGrowthPointDto {
   /**
    * Period
@@ -5249,9 +5362,10 @@ export interface GeneratedImage {
 export interface ImageGenerationRequest {
   /**
    * Prompt
+   * @minLength 1
    * @example "string"
    */
-  prompt?: string;
+  prompt: string;
   /**
    * Size
    * @example "string"
@@ -5555,6 +5669,92 @@ export interface LoginDto {
    * @example "string"
    */
   password: string;
+}
+
+export interface MdxComponentAnalysisDto {
+  /**
+   * Content Type
+   * @minLength 1
+   * @example "string"
+   */
+  contentType: string;
+  /** Components */
+  components?: MdxComponentDto[];
+  /**
+   * Total Content Analyzed
+   * @format int32
+   * @example 1
+   */
+  totalContentAnalyzed?: number;
+  /**
+   * Analyzed At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  analyzedAt?: string;
+}
+
+export interface MdxComponentDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /** Properties */
+  properties?: MdxComponentPropertyDto[];
+  /**
+   * Accepts Children
+   * @example true
+   */
+  acceptsChildren?: boolean;
+  /** Examples */
+  examples?: string[];
+  /**
+   * Usage Count
+   * @format int32
+   * @example 1
+   */
+  usageCount?: number;
+}
+
+export interface MdxComponentPropertyDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Type
+   * @example "string"
+   */
+  type?: string | null;
+  /**
+   * Is Required
+   * @example true
+   */
+  isRequired?: boolean;
+  /**
+   * Default Value
+   * @example "string"
+   */
+  defaultValue?: string | null;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /** Possible Values */
+  possibleValues?: string[];
+  /** Example Values */
+  exampleValues?: string[];
 }
 
 export interface MediaDetailsDto {
@@ -6562,9 +6762,10 @@ export interface TaskExecutionDto {
 export interface TextGenerationRequest {
   /**
    * User Prompt
+   * @minLength 1
    * @example "string"
    */
-  userPrompt?: string;
+  userPrompt: string;
   /**
    * System Prompt
    * @example "string"
@@ -7165,7 +7366,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.69.0
+ * @version 1.2.70.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8111,6 +8312,36 @@ export class Api<
      * No description
      *
      * @tags Content
+     * @name ContentMdxComponentsDetail
+     * @request GET:/api/content/mdx-components/{contentType}
+     * @secure
+     */
+    contentMdxComponentsDetail: (
+      contentType: string,
+      query?: {
+        /** @default true */
+        useCache?: boolean;
+        /**
+         * @format int32
+         * @default 1
+         */
+        maxCacheAgeHours?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<MdxComponentAnalysisDto, void | ProblemDetails>({
+        path: `/api/content/mdx-components/${contentType}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
      * @name ContentImportCreate
      * @request POST:/api/content/import
      * @secure
@@ -8148,6 +8379,50 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentAiDraftCreate
+     * @request POST:/api/content/ai-draft
+     * @secure
+     */
+    contentAiDraftCreate: (
+      data: ContentGenerationRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentDetailsDto, any>({
+        path: `/api/content/ai-draft`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentAiEditCreate
+     * @request POST:/api/content/ai-edit
+     * @secure
+     */
+    contentAiEditCreate: (
+      data: ContentEditRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentDetailsDto, any>({
+        path: `/api/content/ai-edit`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 

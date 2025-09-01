@@ -17,6 +17,7 @@ import {
   Tooltip,
   Box,
   CircularProgress,
+  ButtonGroup,
 } from "@mui/material";
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
@@ -32,6 +33,8 @@ import {
   SortAsc,
   SortDesc,
   Languages,
+  Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
@@ -258,6 +261,11 @@ export const ContentList = () => {
     // eslint-disable-next-line
   }, [searchTerm, whereFilters, sortField, sortDirection, selectedLanguage]);
 
+  // AI Draft handlers
+  const handleAIDraftClick = () => {
+    navigate("/content/ai-draft");
+  };
+
   // Action handlers
   const handleDeleteClick = (contentId: number) => {
     setDeleteTarget(contentId);
@@ -363,14 +371,24 @@ export const ContentList = () => {
       leftContainerChildren={searchBar}
       extraActionsContainerChildren={extraActions}
       addButtonContainerChildren={
-        <Button
-          variant="contained"
-          to="/content/new"
-          component={GhostLink}
-          startIcon={<Plus size={18} />}
-        >
-          {"Add Content"}
-        </Button>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            variant="contained"
+            to="/content/new"
+            component={GhostLink}
+            startIcon={<Plus size={18} />}
+          >
+            Add Content
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleAIDraftClick}
+            startIcon={<Sparkles size={18} />}
+            disabled={!config?.capabilities?.includes("AIAssistance")}
+          >
+            Create with AI
+          </Button>
+        </Box>
       }
     >
       <CustomFilterBar

@@ -11,6 +11,7 @@ export const ContentModule = () => {
       <Route path={"/:sourceId/duplicate"} element={<ContentEdit />} />
       <Route path={"/:sourceId/translate/:targetLanguage"} element={<ContentEdit />} />
       <Route path={"/:sourceId/translate/:targetLanguage/:type"} element={<ContentEdit />} />
+      <Route path={"/ai-draft"} element={<ContentEdit />} />
     </Routes>
   );
 };
