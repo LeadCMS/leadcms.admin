@@ -1,10 +1,12 @@
-import { Box, IconButton, useMediaQuery, useTheme } from "@mui/material";
+import { Box, IconButton, useMediaQuery, useTheme, Tooltip } from "@mui/material";
 import { AppBarStyled, AppBarToolbar } from "./index.styled";
 import { DropdownMenu } from "./dropdown-menu";
 import { BreadCrumbNavigation } from "@components/breadcrumbs";
 import { GlobalLanguageFilter } from "@components/global-language-filter";
-import { Menu } from "lucide-react";
+import { Menu, Settings } from "lucide-react";
 import { useSidebar } from "@providers/sidebar-provider";
+import { useNavigate } from "react-router-dom";
+import { CoreModule, getCoreModuleRoute } from "@lib/router";
 
 interface AppHeaderProps {
   breadcrumbs: { linkText: string; toRoute: string }[];
@@ -13,8 +15,13 @@ interface AppHeaderProps {
 
 export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) => {
   const { toggleMobile } = useSidebar();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  const handleSettingsClick = () => {
+    navigate(getCoreModuleRoute(CoreModule.settings));
+  };
 
   return (
     <AppBarStyled>
@@ -55,6 +62,20 @@ export const AppHeader = ({ breadcrumbs, currentBreadcrumb }: AppHeaderProps) =>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
           <GlobalLanguageFilter />
+          <Tooltip title="Settings">
+            <IconButton
+              onClick={handleSettingsClick}
+              size="small"
+              sx={{
+                color: theme.palette.text.primary,
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                },
+              }}
+            >
+              <Settings size={20} />
+            </IconButton>
+          </Tooltip>
           <DropdownMenu />
         </Box>
       </AppBarToolbar>

@@ -15,6 +15,7 @@ import {
   User,
   BookOpen,
   HelpCircle,
+  Settings,
 } from "lucide-react";
 
 export const MENU_CONFIG = [
@@ -145,6 +146,13 @@ export const MENU_CONFIG = [
         icon: <HelpCircle size={20} />,
         entity: null,
         route: getCoreModuleRoute(CoreModule.about),
+      },
+      {
+        id: "settings",
+        label: "Settings",
+        icon: <Settings size={20} />,
+        entity: null,
+        route: getCoreModuleRoute(CoreModule.settings),
       },
     ],
   },

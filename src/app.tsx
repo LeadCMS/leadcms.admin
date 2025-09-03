@@ -92,7 +92,7 @@ export const App = () => {
             <ThemeProvider>
               <AuthProvider>
                 <RequestProvider>
-                  <ToastContainer />
+                  <ToastContainer position="top-right" style={{ marginTop: "60px" }} />
                   <UserProvider>
                     <ErrorDetailsModalProvider>
                       <BrowserRouter
