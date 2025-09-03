@@ -1,6 +1,7 @@
 import { RequestContextType } from "@providers/request-provider";
 import { continentListStorageKey, countryListStorageKey } from "./constants";
 import { NotificationsService } from "@hooks";
+import { MENU_CONFIG } from "@utils/menu-config";
 
 export const getCountryList = async (context: RequestContextType) => {
   const countries = localStorage.getItem(countryListStorageKey);
@@ -138,16 +139,40 @@ export function getModuleNameFromUrl(): string {
     .join(" ");
 }
 
+export type sample_suffix = {
+  end: string;
+  rplc: string;
+};
+
 export const moduleNamePluralBasisCheck = ({
   mdl_nm,
-  check,
+  suffixes,
   omit,
 }: {
   mdl_nm: string;
-  check: string;
+  suffixes: sample_suffix[]; // passing a suffix list anyways
   omit?: boolean;
 }) => {
-  const cnd = mdl_nm.toLocaleLowerCase().lastIndexOf(check) === mdl_nm.length - check.length;
+  const mdl_sub_title = Object.values(MENU_CONFIG)
+    .map((mcnfg) => {
+      // check whether any entity_title exists within the MODULE_CONFIG
+      const mcnfg_list = mcnfg?.items;
+      const list_item = mcnfg_list?.find(
+        (mcnfg_alt) => mcnfg_alt?.label === mdl_nm && mcnfg_alt?.entity
+      );
+      return list_item?.entity ?? null;
+    })
+    .filter(Boolean);
 
-  return omit && cnd ? mdl_nm.substring(0, mdl_nm.lastIndexOf(check)) : mdl_nm;
+  if (mdl_sub_title.length < 1 && suffixes) {
+    // check with suffixes upon no entry_title found
+    const sfx = suffixes.find(({ end }) => mdl_nm.toLowerCase().endsWith(end));
+
+    if (sfx) {
+      const res = mdl_nm.substring(0, mdl_nm.length - sfx.end.length);
+      return res + sfx.rplc; // extend the shrinked string with a replacement char
+    }
+  }
+
+  return mdl_sub_title[0];
 };
