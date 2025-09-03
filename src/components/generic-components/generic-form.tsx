@@ -414,23 +414,14 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
   const moduleName = getModuleNameFromUrl();
   const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
 
-  let mdlName_without_prural_basis = moduleName;
-  const mdlName_prural_basis_for_s = moduleNamePluralBasisCheck({
-    mdl_nm: mdlName_without_prural_basis,
-    check: "s",
-    omit: true,
+  const mdlName_without_prural_basis = moduleNamePluralBasisCheck({
+    mdl_nm: moduleName,
+    suffixes: [
+      { end: "ies", rplc: "y" },
+      { end: "es", rplc: "" },
+      { end: "s", rplc: "" },
+    ],
   });
-  const mdlName_prural_basis_for_ies = moduleNamePluralBasisCheck({
-    mdl_nm: mdlName_without_prural_basis,
-    check: "ies",
-    omit: true,
-  });
-
-  if (mdlName_prural_basis_for_s) {
-    mdlName_without_prural_basis = mdlName_prural_basis_for_s;
-  } else if (mdlName_prural_basis_for_ies) {
-    mdlName_without_prural_basis = mdlName_prural_basis_for_ies;
-  }
 
   return (
     <>
