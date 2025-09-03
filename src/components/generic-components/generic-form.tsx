@@ -492,9 +492,6 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
           )}
         </CardContent>
       </Card>
-      <Card>
-        <CardContent></CardContent>
-      </Card>
     </>
   );
 }
