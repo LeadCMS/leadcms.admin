@@ -134,6 +134,20 @@ export function getModuleNameFromUrl(): string {
   return moduleRaw
     .split("-")
     .filter(Boolean)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 }
+
+export const moduleNamePluralBasisCheck = ({
+  mdl_nm,
+  check,
+  omit,
+}: {
+  mdl_nm: string;
+  check: string;
+  omit?: boolean;
+}) => {
+  const cnd = mdl_nm.toLocaleLowerCase().lastIndexOf(check) === mdl_nm.length - check.length;
+
+  return omit && cnd ? mdl_nm.substring(0, mdl_nm.lastIndexOf(check)) : mdl_nm;
+};
