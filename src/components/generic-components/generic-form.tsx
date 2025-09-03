@@ -27,7 +27,7 @@ import { BoolView } from "./view-components/bool-view";
 import { DateTimeView } from "./view-components/datetime-view";
 import { ArrayView } from "./view-components/array-view";
 import { getSectionIcon } from "@components/icon-map";
-import { getModuleNameFromUrl } from "@utils/general-helper";
+import { getModuleNameFromUrl, moduleNamePluralBasisCheck } from "@utils/general-helper";
 
 export interface DtoField {
   editable: boolean;
@@ -281,6 +281,17 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
     }
   };
 
+  const actionSet = () => {
+    switch (mode) {
+      case "create":
+        return "Add";
+      case "update":
+        return "Edit";
+      default:
+        return "Remove";
+    }
+  };
+
   const getEdit = (field: DtoField) => {
     const commonProps = {
       error: validationResult && validationResult.errors && validationResult.errors[field.name],
@@ -399,8 +410,27 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
     }
   };
 
+  const action_tag = actionSet();
   const moduleName = getModuleNameFromUrl();
   const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
+
+  let mdlName_without_prural_basis = moduleName;
+  const mdlName_prural_basis_for_s = moduleNamePluralBasisCheck({
+    mdl_nm: mdlName_without_prural_basis,
+    check: "s",
+    omit: true,
+  });
+  const mdlName_prural_basis_for_ies = moduleNamePluralBasisCheck({
+    mdl_nm: mdlName_without_prural_basis,
+    check: "ies",
+    omit: true,
+  });
+
+  if (mdlName_prural_basis_for_s) {
+    mdlName_without_prural_basis = mdlName_prural_basis_for_s;
+  } else if (mdlName_prural_basis_for_ies) {
+    mdlName_without_prural_basis = mdlName_prural_basis_for_ies;
+  }
 
   return (
     <>
@@ -472,7 +502,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
                   </Box>
                 )}
                 <Typography variant="subtitle1" fontWeight="500" color="primary.main">
-                  {`Add ${moduleName} Details`}
+                  {`${action_tag} ${mdlName_without_prural_basis} Details`}
                 </Typography>
               </Grid>
               {fieldsSet()
