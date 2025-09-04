@@ -14,6 +14,13 @@ import { useUserInfo } from "@providers/user-provider";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { useAuthState } from "@providers/auth-provider";
 import { useNavigate } from "react-router-dom";
+import { styled } from "@mui/material";
+
+export const AccountMenu = styled("ul")`
+  width: 32px;
+  height: 32px;
+  display: flex;
+`;
 
 export const DropdownMenu = () => {
   const { logout } = useAuthState();
@@ -62,6 +69,33 @@ export const DropdownMenu = () => {
         open={open}
         onClose={handleClose}
         onClick={handleClose}
+        sx={{
+          // <hr /> tag/s
+          "& .MuiDivider-root": {
+            margin: "0% !important",
+          },
+          // main <ul />
+          "& .MuiList-root": {
+            padding: "0% !important",
+          },
+          // <li /> tags
+          "& .MuiMenuItem-root": {
+            // <li /> tags between the first & last
+            padding: "8px 16px",
+
+            "&:hover": {
+              backgroundColor: "rgba(0, 0, 0, 0.05)",
+            },
+            // first <li />
+            "&:first-of-type": {
+              padding: "10px 16px 8px",
+            },
+            // last <li />
+            "&:last-of-type": {
+              padding: "8px 16px 10px",
+            },
+          },
+        }}
       >
         <MenuItem onClick={handleProfileClick} disabled={userInfo === null}>
           <Avatar
@@ -73,6 +107,12 @@ export const DropdownMenu = () => {
           Profile
         </MenuItem>
         <Divider />
+        <MenuItem onClick={logout} disabled={userInfo === null}>
+          <ListItemIcon>
+            <LogOut size={20} />
+          </ListItemIcon>
+          Logout
+        </MenuItem>
         <MenuItem onClick={logout} disabled={userInfo === null}>
           <ListItemIcon>
             <LogOut size={20} />
