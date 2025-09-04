@@ -89,7 +89,7 @@ import { openSitePreview } from "utils/preview-helper";
 import { useUserInfo } from "@providers/user-provider";
 import { TranslateDialog, TranslationType } from "@components/translate-dialog";
 import { useNavigationGuard } from "@hooks";
-import { useTranslationDraft } from "@providers/translation-draft-provider";
+
 import { AITranslationProgress } from "@components/ai-translation-progress";
 import { AIContentProgress } from "@components/ai-content-progress";
 import { AIDraftDialog } from "@components/ai-draft-dialog";
@@ -149,10 +149,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const isAIDraftRoute = location.pathname.includes("/ai-draft");
   const isAIDraftMode = !!aiGeneratedContent || isAIDraftRoute;
 
-  const { translationDraft, clearTranslationDraft, hasTranslationDraft, setTranslationDraft } =
-    useTranslationDraft();
   const isDuplicateMode = !!sourceId && !translateToParam;
-  const isTranslationMode = hasTranslationDraft || !!translateToParam;
+  const isTranslationMode = !!translateToParam;
   const [wasModified, setWasModified] = useState<boolean>(false);
   const [coverWasModified, setCoverWasModified] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -160,6 +158,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(
     !!id || !!sourceId || isTranslationMode
   );
+  const [hasPreloadedData, setHasPreloadedData] = useState<boolean>(false);
   const [frontmatterState, setfrontmatterState] = useState<ValidateFrontmatterError | null>(null);
   const [restoreDataState, setRestoreDataState] = useState<ContentEditRestoreState>(
     ContentEditRestoreState.Idle
@@ -169,6 +168,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [translateDialogOpen, setTranslateDialogOpen] = useState(false);
   const [createTranslationDialogOpen, setCreateTranslationDialogOpen] = useState(false);
   const [targetLanguageForTranslation, setTargetLanguageForTranslation] = useState<string>("");
+  const [processedTranslationUrl, setProcessedTranslationUrl] = useState<string>("");
+  const [shouldOpenTranslationDialog, setShouldOpenTranslationDialog] = useState(false);
   const [isCreatingTranslation, setIsCreatingTranslation] = useState(false);
   const [aiTranslationInProgress, setAiTranslationInProgress] = useState(false);
   const [aiTranslationTargetLanguage, setAiTranslationTargetLanguage] = useState<string>("");
@@ -206,6 +207,9 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [aiEditLoading, setAiEditLoading] = useState(false);
   const [aiEditError, setAiEditError] = useState<string | null>(null);
   const [aiEditInProgress, setAiEditInProgress] = useState(false);
+
+  // Original content for diff comparison - set once when content is loaded, only reset on save
+  const [originalContent, setOriginalContent] = useState<string>("");
 
   // Preloaded data state
   const [preloadedMdxComponents, setPreloadedMdxComponents] = useState<
@@ -360,9 +364,15 @@ export const ContentEdit = (props: ContentEditProps) => {
     } as ContentDetails;
     helpers.setValues(patched);
     await helpers.setFieldValue("coverImagePending", patched.coverImagePending);
+    // Refresh MDX editor after successful save operation
+    setRefreshKey(Date.now());
 
     setWasModified(false);
     setCoverWasModified(false);
+
+    // Reset original content to the newly saved content for future diff comparisons
+    setOriginalContent(values.body || "");
+
     const localStorageSnapshot = { ...editorLocalStorage };
     localStorageSnapshot.data = localStorageSnapshot.data.filter((data) => data.id !== id);
     setEditorLocalStorage(localStorageSnapshot);
@@ -466,57 +476,135 @@ export const ContentEdit = (props: ContentEditProps) => {
     setCoverWasModified(true);
   };
 
+  // Reset loading states when content ID or source ID changes (navigation between content)
+  useEffect(() => {
+    setHasPreloadedData(false);
+    setIsInitialLoading(true);
+    setPreloadedMdxComponents(undefined);
+    setPreloadedTranslations(undefined);
+    setOriginalContent("");
+    setTargetLanguageForTranslation("");
+    setProcessedTranslationUrl("");
+    setShouldOpenTranslationDialog(false);
+
+    // Force reset form values to empty state when navigating between different content items
+    const emptyValues = {
+      title: "",
+      description: "",
+      body: "",
+      slug: "",
+      type: "",
+      author: "",
+      language: "",
+      translationKey: null,
+      category: "",
+      tags: [],
+      allowComments: false,
+      coverImagePending: { url: "", fileName: "" },
+      coverImageAlt: "",
+      publishedAt: null,
+      id: null,
+      coverImageUrl: "",
+      createdAt: null,
+      updatedAt: null,
+      files: [],
+    };
+    formik.setValues(emptyValues, false);
+    setWasModified(false);
+    setCoverWasModified(false);
+  }, [id, sourceId]);
+
   useEffect(() => {
     setBusy(async () => {
       try {
-        // Preload essential data before rendering the page
-        let mdxComponentsData = null;
-        let translationsData = null;
-        let sourceContentData = null;
+        // Handle translation dialog state before data loading checks
+        if (sourceId && translateToParam && !id) {
+          const currentTranslationUrl = `${sourceId}/${translateToParam}${
+            translationTypeParam ? `/${translationTypeParam}` : ""
+          }`;
+          if (processedTranslationUrl !== currentTranslationUrl) {
+            setTargetLanguageForTranslation(translateToParam);
+            // Only mark to open dialog if translation type is not already specified
+            if (!translationTypeParam) {
+              setShouldOpenTranslationDialog(true);
+            }
+            setProcessedTranslationUrl(currentTranslationUrl);
+          }
+        }
 
-        // 1. Load MDX components for the content type (if editing existing content)
+        // Prevent redundant data loading, but allow translation loading
+        const isTranslationRequest = sourceId && translateToParam && !id;
+        if (!isTranslationRequest && (isInitialLoading === false || hasPreloadedData)) {
+          return;
+        }
+
+        // Preload essential data before rendering the page
+        let mdxComponentsData: MdxComponentAnalysisDto | null = null;
+        let translationsData: ContentDetailsDto[] | null = null;
+        let sourceContentData: ContentDetailsDto | null = null;
+        let contentData: ContentDetailsDto | null = null;
+
+        // 1. Load main content data first (single API call)
         if (id && client) {
           try {
             const existingContentResponse = await client.api.contentDetail(Number(id));
-            if (existingContentResponse.data.type) {
-              const mdxResponse = await client.api.contentMdxComponentsDetail(
-                existingContentResponse.data.type,
-                { useCache: true, maxCacheAgeHours: 1 }
-              );
-              mdxComponentsData = mdxResponse.data;
+            contentData = existingContentResponse.data;
+
+            // Load both MDX components and translations in parallel
+            const [mdxResponse, translationsResponse] = await Promise.all([
+              contentData.type
+                ? client.api.contentMdxComponentsDetail(contentData.type, {
+                    useCache: true,
+                    maxCacheAgeHours: 1,
+                  })
+                : Promise.resolve({ data: null }),
+              client.api.contentTranslationsList(Number(id)),
+            ]);
+
+            if (mdxResponse.data) {
+              mdxComponentsData = mdxResponse.data as MdxComponentAnalysisDto;
               setPreloadedMdxComponents(mdxComponentsData);
               console.log("Preloaded MDX components:", mdxComponentsData?.components?.length || 0);
             }
-          } catch (error) {
-            console.error("Failed to preload MDX components:", error);
-          }
-        }
 
-        // 2. Load translations for language switcher (if editing existing content)
-        if (id && client) {
-          try {
-            const translationsResponse = await client.api.contentTranslationsList(Number(id));
-            translationsData = translationsResponse.data;
+            translationsData = translationsResponse.data as ContentDetailsDto[];
             setPreloadedTranslations(translationsData);
             console.log("Preloaded translations:", translationsData?.length || 0);
           } catch (error) {
-            console.error("Failed to preload translations:", error);
+            console.error("Failed to preload content data:", error);
           }
         }
 
-        // 3. Preload source content data if in translation/duplication mode
+        // 2. Preload source content data if in translation/duplication mode
         if (sourceId && client) {
           try {
             const sourceContentResponse = await client.api.contentDetail(Number(sourceId));
             sourceContentData = sourceContentResponse.data;
 
-            // Also load MDX components for source content type
+            // Load both MDX components and translations in parallel
+            const promises = [];
+
             if (sourceContentData.type) {
-              const mdxResponse = await client.api.contentMdxComponentsDetail(
-                sourceContentData.type,
-                { useCache: true, maxCacheAgeHours: 1 }
+              promises.push(
+                client.api.contentMdxComponentsDetail(sourceContentData.type, {
+                  useCache: true,
+                  maxCacheAgeHours: 1,
+                })
               );
-              mdxComponentsData = mdxResponse.data;
+            } else {
+              promises.push(Promise.resolve({ data: null }));
+            }
+
+            if (translateToParam) {
+              promises.push(client.api.contentTranslationsList(Number(sourceId)));
+            } else {
+              promises.push(Promise.resolve({ data: [] }));
+            }
+
+            const [mdxResponse, sourceTranslationsResponse] = await Promise.all(promises);
+
+            if (mdxResponse.data) {
+              mdxComponentsData = mdxResponse.data as MdxComponentAnalysisDto;
               setPreloadedMdxComponents(mdxComponentsData);
               console.log(
                 "Preloaded MDX components for source content:",
@@ -524,12 +612,8 @@ export const ContentEdit = (props: ContentEditProps) => {
               );
             }
 
-            // Load translations for source content (for translation mode)
-            if (translateToParam) {
-              const sourceTranslationsResponse = await client.api.contentTranslationsList(
-                Number(sourceId)
-              );
-              translationsData = sourceTranslationsResponse.data;
+            if (translateToParam && sourceTranslationsResponse.data) {
+              translationsData = sourceTranslationsResponse.data as ContentDetailsDto[];
               setPreloadedTranslations(translationsData);
               console.log("Preloaded source translations:", translationsData?.length || 0);
             }
@@ -545,12 +629,12 @@ export const ContentEdit = (props: ContentEditProps) => {
           mdxComponents: mdxComponentsData?.components?.length || 0,
           translations: translationsData?.length || 0,
           sourceContent: !!sourceContentData,
+          contentData: !!contentData,
         });
         switch (restoreDataState) {
           case ContentEditRestoreState.Idle: {
             // Don't show restore dialog when we're in translation mode or creating from source
             if (
-              !hasTranslationDraft &&
               !sourceId &&
               localStorageSnapshot.data.filter((data) => data.id === id).length > 0
             ) {
@@ -568,40 +652,55 @@ export const ContentEdit = (props: ContentEditProps) => {
             break;
           }
           case ContentEditRestoreState.Accepted: {
-            const saved = localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData;
-            await formik.setValues(saved);
-            if (saved.coverImagePending.fileName.length > 0) {
-              setCoverWasModified(true);
-            }
-            setWasModified(true);
-            setIsInitialLoading(false);
-            return;
+            // We need to first load the server content to set as original, then restore the draft
+            // Don't return early here - let the normal flow continue to load server content first
+            break;
           }
         }
         if (client && id) {
-          const { data } = await client.api.contentDetail(Number(id));
+          // Use already loaded content data if available, otherwise fetch it
+          const contentDataToUse = contentData || (await client.api.contentDetail(Number(id))).data;
+
           const patched: ContentDetails = {
-            ...data,
-            id: data.id ? data.id.toString() : null,
+            ...contentDataToUse,
+            id: contentDataToUse.id ? contentDataToUse.id.toString() : null,
             coverImagePending: {
-              url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
+              url: contentDataToUse.coverImageUrl
+                ? buildAbsoluteUrl(contentDataToUse.coverImageUrl)
+                : "",
               fileName: "",
             },
             files: [],
           } as ContentDetails;
           await formik.setValues(patched);
           await formik.setFieldValue("coverImagePending", patched.coverImagePending);
+          // Refresh MDX editor after initial content loading
+          setRefreshKey(Date.now());
+
+          // Set the original content for diff comparison (only set once, until save)
+          if (!originalContent) {
+            setOriginalContent(patched.body || "");
+          }
+
+          // After setting the original content, check if we need to restore draft data
+          if (restoreDataState === ContentEditRestoreState.Accepted) {
+            const saved = localStorageSnapshot.data.filter((data) => data.id === id)[0].savedData;
+            await formik.setValues(saved);
+            // Refresh MDX editor after restoring saved draft data
+            setRefreshKey(Date.now());
+            if (saved.coverImagePending.fileName.length > 0) {
+              setCoverWasModified(true);
+            }
+            setWasModified(true);
+          }
         } else if (sourceId && translateToParam) {
           // Handle translation mode via URL parameters
           // If we have a translation type from URL, use it; otherwise show dialog
           if (translationTypeParam) {
-            // Check if we already have translated content loaded to avoid double translation
-            // This happens when dialog completes translation and navigates to URL with type param
-            const hasExistingContent =
-              wasModified && formik.values.title && formik.values.title.trim() !== "";
+            // Only trigger translation if we haven't already processed this exact URL
+            const currentTranslationUrl = `${sourceId}/${translateToParam}/${translationTypeParam}`;
 
-            if (!hasExistingContent) {
-              // Only trigger translation if we don't already have content loaded
+            if (processedTranslationUrl !== currentTranslationUrl) {
               setIsCreatingTranslation(true);
 
               // Show AI progress for AI translation
@@ -635,11 +734,23 @@ export const ContentEdit = (props: ContentEditProps) => {
                   "coverImagePending",
                   translatedContent.coverImagePending
                 );
+
+                // Set the original content for diff comparison (translation is the new baseline)
+                if (!originalContent) {
+                  setOriginalContent(translatedContent.body || "");
+                }
+
                 setWasModified(true);
+
+                // Force MDXEditor to re-render with new translated content
+                setRefreshKey(Date.now());
 
                 // Hide AI progress
                 setAiTranslationInProgress(false);
                 setAiTranslationTargetLanguage("");
+
+                // Mark this translation URL as processed
+                setProcessedTranslationUrl(currentTranslationUrl);
 
                 // DON'T navigate away - keep the URL parameters for language controls to work
                 // navigate(`/content/new?type=${translationTypeParam}`, { replace: true });
@@ -681,6 +792,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                       );
                       // Don't mark as modified since we're loading existing content
                       setWasModified(false);
+
+                      // Force MDXEditor to re-render with existing translation content
+                      setRefreshKey(Date.now());
 
                       notificationsService.info(
                         "Loaded existing translation draft for " + translateToParam.toUpperCase()
@@ -733,10 +847,6 @@ export const ContentEdit = (props: ContentEditProps) => {
             } catch (error) {
               console.error("Failed to fetch source content:", error);
             }
-
-            // Show the translation dialog to get transformer settings
-            setTargetLanguageForTranslation(translateToParam as string);
-            setCreateTranslationDialogOpen(true);
           }
         } else if (client && sourceId) {
           // Load content for duplication
@@ -756,28 +866,16 @@ export const ContentEdit = (props: ContentEditProps) => {
           } as ContentDetails;
           await formik.setValues(duplicatedContent);
           await formik.setFieldValue("coverImagePending", duplicatedContent.coverImagePending);
+
+          // Set the original content for diff comparison (duplicated content is the new baseline)
+          if (!originalContent) {
+            setOriginalContent(duplicatedContent.body || "");
+          }
+
+          // Force MDXEditor to re-render with duplicated content
+          setRefreshKey(Date.now());
+
           setWasModified(true); // Mark as modified since it's duplicated content
-        } else if (isTranslationMode && translationDraft) {
-          // Load content for translation using context data (fallback for existing workflow)
-          const translatedContent: ContentDetails = {
-            ...translationDraft,
-            id: null,
-            createdAt: null,
-            updatedAt: null,
-            publishedAt: null,
-            coverImagePending: {
-              url: translationDraft.coverImageUrl
-                ? buildAbsoluteUrl(translationDraft.coverImageUrl)
-                : "",
-              fileName: "",
-            },
-            files: [],
-          } as ContentDetails;
-          await formik.setValues(translatedContent);
-          await formik.setFieldValue("coverImagePending", translatedContent.coverImagePending);
-          setWasModified(true); // Mark as modified since it's translated content
-          // Clear the translation draft after loading
-          clearTranslationDraft();
         } else if (isAIDraftMode && aiGeneratedContent) {
           // Load AI-generated content
           const aiContent: ContentDetails = {
@@ -796,15 +894,41 @@ export const ContentEdit = (props: ContentEditProps) => {
           } as ContentDetails;
           await formik.setValues(aiContent);
           await formik.setFieldValue("coverImagePending", aiContent.coverImagePending);
+          // Refresh MDX editor after loading AI-generated content
+          setRefreshKey(Date.now());
+
+          // Set the original content for diff comparison (AI content is the new baseline)
+          if (!originalContent) {
+            setOriginalContent(aiContent.body || "");
+          }
+
           setWasModified(true); // Mark as modified since it's AI generated content
 
           // Clean up the location state to prevent reloading on refresh
           navigate("/content/ai-draft", { replace: true, state: {} });
         }
+
+        // Open translation dialog if it was deferred until data loading completed
+        // Only open if we have config loaded with multiple languages available
+        if (shouldOpenTranslationDialog && config?.languages && config.languages.length > 1) {
+          setCreateTranslationDialogOpen(true);
+          setShouldOpenTranslationDialog(false);
+        }
+
         setIsInitialLoading(false);
+        setHasPreloadedData(true);
       } catch (e) {
         console.log(e);
+
+        // Even on error, open translation dialog if it was requested
+        // Only open if we have config loaded with multiple languages available
+        if (shouldOpenTranslationDialog && config?.languages && config.languages.length > 1) {
+          setCreateTranslationDialogOpen(true);
+          setShouldOpenTranslationDialog(false);
+        }
+
         setIsInitialLoading(false);
+        setHasPreloadedData(true);
       }
     });
   }, [
@@ -814,8 +938,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     translateToParam,
     translationTypeParam,
     restoreDataState,
-    translationDraft,
-    hasTranslationDraft,
+    hasPreloadedData,
   ]);
 
   useEffect(() => {
@@ -827,6 +950,30 @@ export const ContentEdit = (props: ContentEditProps) => {
   const shouldShowForm =
     isCreateMode || isDuplicateMode || isTranslationMode || isAIDraftMode || !isInitialLoading;
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
+
+  // Handle deferred translation dialog when config becomes available after data loading
+  useEffect(() => {
+    // Only open dialog if:
+    // 1. We want to open it (shouldOpenTranslationDialog is true)
+    // 2. Data loading is complete (!isInitialLoading)
+    // 3. Config is loaded with multiple languages
+    // 4. Dialog is not already open
+    if (
+      shouldOpenTranslationDialog &&
+      !isInitialLoading &&
+      config?.languages &&
+      config.languages.length > 1 &&
+      !createTranslationDialogOpen
+    ) {
+      setCreateTranslationDialogOpen(true);
+      setShouldOpenTranslationDialog(false);
+    }
+  }, [
+    shouldOpenTranslationDialog,
+    isInitialLoading,
+    config?.languages,
+    createTranslationDialogOpen,
+  ]);
 
   // Determine if metadata should be collapsed:
   // - For new content creation: use local state (starts expanded, doesn't persist)
@@ -912,19 +1059,31 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
   }, [formik.values.type, contentTypes]);
 
-  // Preload MDX components when content type changes (for new content)
+  // Preload MDX components when content type changes (for new content only, or when no
+  // preloaded data exists)
   useEffect(() => {
     const loadMdxComponentsForContentType = async () => {
-      if (formik.values.type && client) {
-        setContentTypeLoading(true); // Start loading
-        try {
-          // Always reload components when content type changes
-          setPreloadedMdxComponents(undefined); // Clear previous components first
+      // Skip if we already have preloaded data for this content type
+      if (preloadedMdxComponents && preloadedMdxComponents.contentType === formik.values.type) {
+        setContentTypeLoading(false);
+        return;
+      }
 
-          const mdxResponse = await client.api.contentMdxComponentsDetail(
-            formik.values.type,
-            { useCache: false, maxCacheAgeHours: 1 } // Don't use cache for content type changes
-          );
+      // Skip if we're still in initial loading phase (data will be preloaded)
+      if (isInitialLoading) {
+        return;
+      }
+
+      if (formik.values.type && client) {
+        setContentTypeLoading(true);
+        try {
+          // Clear previous components first
+          setPreloadedMdxComponents(undefined);
+
+          const mdxResponse = await client.api.contentMdxComponentsDetail(formik.values.type, {
+            useCache: true,
+            maxCacheAgeHours: 1,
+          });
           setPreloadedMdxComponents(mdxResponse.data);
           console.log(
             "Loaded MDX components for content type:",
@@ -935,7 +1094,7 @@ export const ContentEdit = (props: ContentEditProps) => {
           console.error("Failed to load MDX components for content type:", error);
           setPreloadedMdxComponents(undefined);
         } finally {
-          setContentTypeLoading(false); // End loading
+          setContentTypeLoading(false);
         }
       } else {
         setPreloadedMdxComponents(undefined);
@@ -944,7 +1103,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     };
 
     loadMdxComponentsForContentType();
-  }, [formik.values.type, client]); // Removed preloadedMdxComponents dependency to always reload
+  }, [formik.values.type, client, isInitialLoading]);
 
   // Handle AI draft mode - open dialog if no content is provided
   useEffect(() => {
@@ -1019,48 +1178,8 @@ export const ContentEdit = (props: ContentEditProps) => {
     translationType: TranslationType
   ) => {
     if (!id) return;
-    try {
-      const { data } = await createTranslationDraft(parseInt(id), targetLanguage, translationType);
-      // Set the translation draft and navigate to new content page
-      setTranslationDraft(data);
-      navigate("/content/new");
-    } catch (error: unknown) {
-      console.error("Failed to create translation draft:", error);
-
-      // Handle 409 Conflict - translation draft already exists
-      if ((error as { status?: number })?.status === 409) {
-        try {
-          // Try to fetch existing translations
-          const translationsResponse = await client.api.contentTranslationsList(parseInt(id));
-          const existingTranslation = translationsResponse.data.find(
-            (t) => t.language === targetLanguage
-          );
-
-          if (existingTranslation && existingTranslation.id) {
-            // Navigate to edit the existing translation
-            navigate(`/content/${existingTranslation.id}/edit`);
-            notificationsService.info(
-              "Opened existing translation draft for " + targetLanguage.toUpperCase()
-            );
-            return;
-          }
-        } catch (fetchError) {
-          console.error("Failed to fetch existing translations:", fetchError);
-        }
-
-        // Show user-friendly error message for conflict
-        notificationsService.error(
-          "A translation draft for this language already exists. " +
-            "Please check the translations list."
-        );
-        return;
-      }
-
-      // For other errors, show generic error message
-      notificationsService.error(
-        error instanceof Error ? error.message : "Failed to create translation draft"
-      );
-    }
+    // Navigate to the translation URL and let it handle the creation
+    navigate(`/content/${id}/translate/${targetLanguage}/${translationType}`);
   };
 
   // Handler for language switching within the current content
@@ -1077,8 +1196,13 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   // Handler for creating a new translation
   const handleCreateTranslation = async (targetLanguage: string) => {
-    if (!id) return;
-    // Navigate to translation route
+    if (!id) {
+      // For new content, just change the language field
+      formik.setFieldValue("language", targetLanguage);
+      setWasModified(true);
+      return;
+    }
+    // Navigate to translation route for existing content
     navigate(`/content/${id}/translate/${targetLanguage}`);
   };
 
@@ -1125,6 +1249,9 @@ export const ContentEdit = (props: ContentEditProps) => {
         setCreateTranslationDialogOpen(false);
         setIsInitialLoading(false);
 
+        // Force MDXEditor to re-render with new translated content
+        setRefreshKey(Date.now());
+
         // Hide AI progress
         setAiTranslationInProgress(false);
         setAiTranslationTargetLanguage("");
@@ -1166,6 +1293,9 @@ export const ContentEdit = (props: ContentEditProps) => {
               setCreateTranslationDialogOpen(false);
               setIsInitialLoading(false);
 
+              // Force MDXEditor to re-render with existing translation content
+              setRefreshKey(Date.now());
+
               // Navigate to edit the existing translation
               navigate(`/content/${existingTranslation.id}/edit`, { replace: true });
               return;
@@ -1192,67 +1322,8 @@ export const ContentEdit = (props: ContentEditProps) => {
         setAiTranslationTargetLanguage("");
       }
     } else if (id) {
-      // Original flow for existing content
-      // Show AI progress for AI translation
-      if (translationType === "AITranslation") {
-        setAiTranslationInProgress(true);
-        setAiTranslationTargetLanguage(targetLanguage);
-      }
-
-      try {
-        const { data } = await createTranslationDraft(
-          parseInt(id),
-          targetLanguage,
-          translationType
-        );
-        // Set the translation draft and navigate to new content page
-        setTranslationDraft(data);
-
-        // Hide AI progress on success
-        setAiTranslationInProgress(false);
-        setAiTranslationTargetLanguage("");
-
-        navigate("/content/new");
-      } catch (error: unknown) {
-        console.error("Failed to create translation draft:", error);
-
-        // Handle 409 Conflict - translation draft already exists
-        if ((error as { status?: number })?.status === 409) {
-          try {
-            // Try to fetch existing translations
-            const translationsResponse = await client.api.contentTranslationsList(parseInt(id));
-            const existingTranslation = translationsResponse.data.find(
-              (t) => t.language === targetLanguage
-            );
-
-            if (existingTranslation && existingTranslation.id) {
-              // Navigate to edit the existing translation
-              navigate(`/content/${existingTranslation.id}/edit`);
-              notificationsService.info(
-                "Opened existing translation draft for " + targetLanguage.toUpperCase()
-              );
-              return;
-            }
-          } catch (fetchError) {
-            console.error("Failed to fetch existing translations:", fetchError);
-          }
-
-          // Show user-friendly error message for conflict
-          notificationsService.error(
-            "A translation draft for this language already exists. " +
-              "Please check the translations list."
-          );
-        } else {
-          // For other errors, show generic error message
-          notificationsService.error(
-            error instanceof Error ? error.message : "Failed to create translation draft"
-          );
-        }
-      } finally {
-        // Hide AI progress on error
-        setAiTranslationInProgress(false);
-        setAiTranslationTargetLanguage("");
-      }
+      // Navigate to translation URL and let it handle the creation
+      navigate(`/content/${id}/translate/${targetLanguage}/${translationType}`);
     }
   };
 
@@ -1311,6 +1382,8 @@ export const ContentEdit = (props: ContentEditProps) => {
 
       await formik.setValues(aiContent);
       await formik.setFieldValue("coverImagePending", aiContent.coverImagePending);
+      // Refresh MDX editor after loading AI-generated content
+      setRefreshKey(Date.now());
       setWasModified(true); // Mark as modified since it's AI-generated content
 
       // Ensure dialog is closed on success
@@ -1424,7 +1497,12 @@ export const ContentEdit = (props: ContentEditProps) => {
 
       await formik.setValues(editedContent);
       await formik.setFieldValue("coverImagePending", editedContent.coverImagePending);
+      // Refresh MDX editor after AI editing content
+      setRefreshKey(Date.now());
       setWasModified(true); // Mark as modified since it's AI-edited content
+
+      // Force MDXEditor to re-render with new content and maintain diff with original
+      setRefreshKey(Date.now());
 
       // Ensure dialog is closed on success
       setAiEditDialogOpen(false);
@@ -1478,6 +1556,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       }
 
       setAiEditError(errorMessage);
+
       // Reopen dialog on error so user can retry
       setAiEditDialogOpen(true);
     } finally {
@@ -1601,6 +1680,12 @@ export const ContentEdit = (props: ContentEditProps) => {
                   onClose={() => {
                     setCreateTranslationDialogOpen(false);
                     setTranslationError(null);
+                    setProcessedTranslationUrl(""); // Reset tracking so dialog can open again
+                    setShouldOpenTranslationDialog(false); // Reset deferred dialog flag
+                    // If we're in translation mode (from URL), redirect back to source content
+                    if (sourceId && translateToParam) {
+                      navigate(`/content/${sourceId}/edit`);
+                    }
                   }}
                   onTranslate={handleCreateTranslationConfirm}
                   originalLanguage={sourceContent?.language || formik.values.language}
@@ -1734,23 +1819,22 @@ export const ContentEdit = (props: ContentEditProps) => {
                         </Box>
 
                         {/* Language Highlights on the second line */}
-                        {hasMultipleLanguages &&
-                          (formik.values.id || (sourceId && translateToParam)) && (
-                            <LanguageHighlights
-                              contentId={
-                                sourceId && translateToParam
-                                  ? parseInt(sourceId)
-                                  : parseInt(formik.values.id || "0")
-                              }
-                              currentLanguage={formik.values.language || ""}
-                              onLanguageChange={handleLanguageChange}
-                              onCreateTranslation={handleCreateTranslation}
-                              sourceContentId={sourceId ? parseInt(sourceId) : undefined}
-                              isTranslationMode={Boolean(sourceId && translateToParam)}
-                              preloadedTranslations={preloadedTranslations}
-                              preloadedSourceTranslations={preloadedTranslations}
-                            />
-                          )}
+                        {hasMultipleLanguages && (id || (sourceId && translateToParam)) && (
+                          <LanguageHighlights
+                            contentId={
+                              sourceId && translateToParam
+                                ? parseInt(sourceId)
+                                : parseInt(id || "0")
+                            }
+                            currentLanguage={formik.values.language || ""}
+                            onLanguageChange={handleLanguageChange}
+                            onCreateTranslation={handleCreateTranslation}
+                            sourceContentId={sourceId ? parseInt(sourceId) : undefined}
+                            isTranslationMode={Boolean(sourceId && translateToParam)}
+                            preloadedTranslations={preloadedTranslations}
+                            preloadedSourceTranslations={preloadedTranslations}
+                          />
+                        )}
                       </Box>
                       <IconButton size="small">
                         <ChevronDown size={20} />
@@ -1770,22 +1854,23 @@ export const ContentEdit = (props: ContentEditProps) => {
                     >
                       {/* Left side: Compact Language Switcher */}
                       <Box sx={{ display: "flex", alignItems: "center" }}>
-                        {hasMultipleLanguages &&
-                          (formik.values.id || (sourceId && translateToParam)) && (
-                            <ContentLanguageSwitcher
-                              contentId={
-                                sourceId && translateToParam
-                                  ? parseInt(sourceId)
-                                  : parseInt(formik.values.id || "0")
-                              }
-                              currentLanguage={formik.values.language || ""}
-                              onLanguageChange={handleLanguageChange}
-                              onCreateTranslation={handleCreateTranslation}
-                              compact={true}
-                              sourceContentId={sourceId ? parseInt(sourceId) : undefined}
-                              isTranslationMode={Boolean(sourceId && translateToParam)}
-                            />
-                          )}
+                        {hasMultipleLanguages && (id || (sourceId && translateToParam)) && (
+                          <ContentLanguageSwitcher
+                            contentId={
+                              sourceId && translateToParam
+                                ? parseInt(sourceId)
+                                : parseInt(id || "0")
+                            }
+                            currentLanguage={formik.values.language || ""}
+                            onLanguageChange={handleLanguageChange}
+                            onCreateTranslation={handleCreateTranslation}
+                            compact={true}
+                            sourceContentId={sourceId ? parseInt(sourceId) : undefined}
+                            isTranslationMode={Boolean(sourceId && translateToParam)}
+                            preloadedTranslations={preloadedTranslations}
+                            preloadedSourceTranslations={preloadedTranslations}
+                          />
+                        )}
                       </Box>
 
                       {/* Right side: Collapse button */}
@@ -2057,6 +2142,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                                 livePreviewTemplate={getPreviewTemplate()}
                                 isMetadataCollapsed={isMetadataCollapsed}
                                 preloadedMdxComponents={preloadedMdxComponents}
+                                originalContentForDiff={originalContent}
                               />
                             </Box>
 

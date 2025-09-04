@@ -50,6 +50,7 @@ const MDXEditorNew = ({
   livePreviewTemplate,
   isMetadataCollapsed,
   preloadedMdxComponents,
+  originalContentForDiff,
 }: MDXEditorNewProps) => {
   const { client } = useRequestContext();
   const [currentError, setCurrentError] = useState<string>("");
@@ -76,9 +77,11 @@ const MDXEditorNew = ({
   // Store initial content for diff comparison when component mounts
   useEffect(() => {
     if (initialContent === "" && value) {
-      setInitialContent(value);
+      // Use original content for diff if provided (for AI editing), otherwise use current value
+      const diffBase = originalContentForDiff || value;
+      setInitialContent(diffBase);
     }
-  }, [value, initialContent]);
+  }, [value, initialContent, originalContentForDiff]);
 
   // Track content changes to determine when to switch to live preview
   useEffect(() => {
@@ -203,7 +206,7 @@ const MDXEditorNew = ({
                 // Enable diff/source mode plugin - start in source mode for custom components
                 diffSourcePlugin({
                   viewMode: "source",
-                  diffMarkdown: initialContent,
+                  diffMarkdown: originalContentForDiff || initialContent,
                   readOnlyDiff: false,
                 }),
                 // JSX plugin for custom components with implementations

@@ -14,4 +14,5 @@ export interface MDXEditorNewProps {
   livePreviewTemplate?: string;
   isMetadataCollapsed: boolean;
   preloadedMdxComponents?: MdxComponentAnalysisDto | null;
+  originalContentForDiff?: string;
 }

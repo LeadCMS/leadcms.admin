@@ -40,8 +40,10 @@ export const useMdxComponents = ({
   }, [preloadedData]);
 
   const fetchComponents = async (forceRefresh = false) => {
-    // Skip fetching if we have preloaded data and it's not a forced refresh
-    if (preloadedData && !forceRefresh) {
+    // Skip fetching if we have preloaded data for the same content type and it's not a
+    // forced refresh
+    if (preloadedData && preloadedData.contentType === contentType && !forceRefresh) {
+      console.log("Using preloaded MDX components for content type:", contentType);
       return;
     }
 
@@ -52,10 +54,17 @@ export const useMdxComponents = ({
       return;
     }
 
+    // Don't fetch if we already have data for this content type
+    if (data && data.contentType === contentType && !forceRefresh) {
+      console.log("Using cached MDX components for content type:", contentType);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      console.log("Fetching MDX components for content type:", contentType);
       const response = await client.api.contentMdxComponentsDetail(contentType, {
         useCache: forceRefresh ? false : useCache,
         maxCacheAgeHours,
@@ -70,24 +79,26 @@ export const useMdxComponents = ({
     }
   };
 
-  // Fetch components when contentType changes (only if no preloaded data)
+  // Fetch components when contentType changes (only if no suitable data exists)
   useEffect(() => {
+    // If we have preloaded data for the current content type, use it
+    if (preloadedData && preloadedData.contentType === contentType) {
+      setData(preloadedData);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    // If we already have data for this content type, don't fetch again
+    if (data && data.contentType === contentType) {
+      return;
+    }
+
+    // Only fetch if we don't have preloaded data
     if (!preloadedData) {
       fetchComponents();
     }
-  }, [contentType, useCache, maxCacheAgeHours, preloadedData]);
-
-  // Clear data and reload when contentType changes, even if we have preloaded data
-  useEffect(() => {
-    if (preloadedData && contentType) {
-      // Check if the preloaded data is for a different content type
-      // If so, clear it and fetch new data
-      if (preloadedData.contentType !== contentType) {
-        setData(null);
-        fetchComponents(true);
-      }
-    }
-  }, [contentType, preloadedData]);
+  }, [contentType, useCache, maxCacheAgeHours]);
 
   // Memoize the components array to prevent unnecessary re-renders
   const components = useMemo(() => {
