@@ -13,8 +13,3 @@ export interface MDXEditorNewProps {
   livePreviewTemplate?: string;
   isMetadataCollapsed: boolean;
 }
-
-export interface ImageUploadingContext {
-  currentFile: File;
-  contentDetails: ContentDetails;
-}

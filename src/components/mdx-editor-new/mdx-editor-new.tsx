@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, createContext } from "react";
+import { useCallback, useEffect, useState } from "react";
 import React from "react";
 import { Box, Grid, IconButton, Drawer, Typography, Chip } from "@mui/material";
 import { RefreshCw, Component } from "lucide-react";
@@ -32,18 +32,13 @@ import {
 } from "@mdxeditor/editor";
 import { MarkdownLiveViewerFunc } from "@components/markdown-live-viewer";
 import { MarkdownViewerFunc } from "@components/markdown-viewer";
-import { MDXEditorNewProps, ImageUploadingContext } from "./types";
+import { MDXEditorNewProps } from "./types";
 import { validateFrontmatter, ValidateFrontmatterError } from "utils/frontmatter-validator";
-import Dropzone, { Accept, FileRejection } from "react-dropzone";
-import { useNotificationsService } from "@hooks";
-import { ContentEditMaximumImageSize } from "@features/content/content-edit/validation";
 import { useRequestContext } from "@providers/request-provider";
 import { useMdxComponents } from "./hooks";
 import { MdxComponentsPanel } from "./components";
 import "@mdxeditor/editor/style.css";
 import "./styles.css";
-
-const ImageUploadingCtx = createContext<ImageUploadingContext | null>(null);
 
 const MDXEditorNew = ({
   value,
@@ -55,12 +50,8 @@ const MDXEditorNew = ({
   livePreviewTemplate,
   isMetadataCollapsed,
 }: MDXEditorNewProps) => {
-  const { notificationsService } = useNotificationsService();
   const { client } = useRequestContext();
   const [currentError, setCurrentError] = useState<string>("");
-  const [currentImageCtxValue, setCurrentImageCtxValue] = useState<ImageUploadingContext | null>(
-    null
-  );
   const [initialContent, setInitialContent] = useState<string>("");
   const [previewKey, setPreviewKey] = useState<number>(Date.now());
   const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
@@ -130,57 +121,6 @@ const MDXEditorNew = ({
     onErrorChange(null);
   }, [value, onErrorChange]);
 
-  // Handle image uploads via drag and drop
-  const onDrop = useCallback(
-    async (acceptedFiles: File[], rejections: FileRejection[]) => {
-      if (rejections.length > 0) {
-        rejections.map((rejection) => {
-          const fileName = rejection.file.name;
-          const error = rejection.errors[0].message;
-          notificationsService.error(`Failed to select image ${fileName} (${error}).`);
-        });
-      }
-      if (acceptedFiles.length !== 0) {
-        setCurrentImageCtxValue({
-          currentFile: acceptedFiles[0],
-          contentDetails,
-        });
-      }
-    },
-    [contentDetails, notificationsService]
-  );
-
-  // Handle image upload context
-  useEffect(() => {
-    if (currentImageCtxValue === null) {
-      return;
-    }
-
-    const uploadImage = async (file: File) => {
-      if (contentDetails.slug.length === 0) {
-        notificationsService.error("Specify slug first!");
-        return;
-      }
-
-      try {
-        const resp = await client.api.mediaCreate({
-          File: file,
-          ScopeUid: contentDetails.slug,
-        });
-
-        const imageMarkdown = `![alt](${resp.data.location})`;
-        // Insert at the end of current content
-        onChange(value + (value.endsWith("\n") ? "" : "\n") + imageMarkdown + "\n");
-
-        notificationsService.success(`Image ${file.name} uploaded successfully!`);
-      } catch (error) {
-        notificationsService.error(`Failed to upload image ${file.name}.`);
-      }
-    };
-
-    uploadImage(currentImageCtxValue.currentFile);
-  }, [currentImageCtxValue, contentDetails.slug, client, notificationsService, onChange, value]);
-
   // Custom image upload handler for MDXEditor
   const imageUploadHandler = useCallback(
     async (image: File): Promise<string> => {
@@ -225,245 +165,229 @@ const MDXEditorNew = ({
   };
 
   return (
-    <ImageUploadingCtx.Provider value={currentImageCtxValue}>
-      <Dropzone
-        onDrop={onDrop}
-        maxSize={ContentEditMaximumImageSize}
-        maxFiles={1}
-        accept={{ "image/*": [] } as Accept}
-        noClick
-      >
-        {({ getRootProps, getInputProps }) => (
-          <div {...getRootProps()} className="mdx-editor-container">
-            <input {...getInputProps()} />
-            <Grid container sx={{ height: editorHeight }}>
-              {/* Editor Section */}
-              <Grid
-                size={{ xs: 12, sm: livePreview ? 6 : 12 }}
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  borderRight: livePreview ? "1px solid #e0e0e0" : "none",
-                  overflow: "hidden", // Prevent container overflow
-                }}
-              >
-                <Box
-                  sx={{
-                    flex: 1,
-                    overflow: "auto", // Enable scrolling for the editor
-                    "& .mdx-editor-new": {
-                      height: "100%",
-                    },
-                    "& .mdx-editor-content": {
-                      minHeight: "100%",
-                      overflow: "auto",
-                    },
-                  }}
-                >
-                  <MDXEditor
-                    key={`editor-${isReadOnly}-${mdxComponents.length}`} // Re-render on load
-                    markdown={value}
-                    onChange={onChange}
-                    readOnly={isReadOnly}
-                    className="mdx-editor-new"
-                    plugins={[
-                      // Enable diff/source mode plugin - start in source mode for custom components
-                      diffSourcePlugin({
-                        viewMode: "source",
-                        diffMarkdown: initialContent,
-                        readOnlyDiff: false,
-                      }),
-                      // JSX plugin for custom components with implementations
-                      ...(mdxComponents.length > 0
-                        ? [
-                            jsxPlugin({
-                              jsxComponentDescriptors: mdxComponents.map((component) => ({
-                                name: component.name,
-                                kind: "flow" as const,
-                                // Removed source property to prevent automatic imports
-                                props:
-                                  component.properties?.map((prop) => ({
-                                    name: prop.name,
-                                    type: "string" as const,
-                                  })) || [],
-                                hasChildren: component.acceptsChildren || false,
-                                Editor: () => {
-                                  // Render a placeholder for the custom component
-                                  return React.createElement(
-                                    "div",
-                                    {
-                                      style: {
-                                        padding: "8px",
-                                        border: "1px dashed #ccc",
-                                        borderRadius: "4px",
-                                        backgroundColor: "#f9f9f9",
-                                        margin: "4px 0",
-                                        fontSize: "0.875rem",
-                                        color: "#666",
-                                      },
-                                    },
-                                    `<${component.name} /> component`
-                                  );
+    <div className="mdx-editor-container">
+      <Grid container sx={{ height: editorHeight }}>
+        {/* Editor Section */}
+        <Grid
+          size={{ xs: 12, sm: livePreview ? 6 : 12 }}
+          sx={{
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            borderRight: livePreview ? "1px solid #e0e0e0" : "none",
+            overflow: "hidden", // Prevent container overflow
+          }}
+        >
+          <Box
+            sx={{
+              flex: 1,
+              overflow: "auto", // Enable scrolling for the editor
+              "& .mdx-editor-new": {
+                height: "100%",
+              },
+              "& .mdx-editor-content": {
+                minHeight: "100%",
+                overflow: "auto",
+              },
+            }}
+          >
+            <MDXEditor
+              key={`editor-${isReadOnly}-${mdxComponents.length}`} // Re-render on load
+              markdown={value}
+              onChange={onChange}
+              readOnly={isReadOnly}
+              className="mdx-editor-new"
+              plugins={[
+                // Enable diff/source mode plugin - start in source mode for custom components
+                diffSourcePlugin({
+                  viewMode: "source",
+                  diffMarkdown: initialContent,
+                  readOnlyDiff: false,
+                }),
+                // JSX plugin for custom components with implementations
+                ...(mdxComponents.length > 0
+                  ? [
+                      jsxPlugin({
+                        jsxComponentDescriptors: mdxComponents.map((component) => ({
+                          name: component.name,
+                          kind: "flow" as const,
+                          // Removed source property to prevent automatic imports
+                          props:
+                            component.properties?.map((prop) => ({
+                              name: prop.name,
+                              type: "string" as const,
+                            })) || [],
+                          hasChildren: component.acceptsChildren || false,
+                          Editor: () => {
+                            // Render a placeholder for the custom component
+                            return React.createElement(
+                              "div",
+                              {
+                                style: {
+                                  padding: "8px",
+                                  border: "1px dashed #ccc",
+                                  borderRadius: "4px",
+                                  backgroundColor: "#f9f9f9",
+                                  margin: "4px 0",
+                                  fontSize: "0.875rem",
+                                  color: "#666",
                                 },
-                              })),
-                            }),
-                          ]
-                        : [jsxPlugin()]),
-                      // Core plugins
-                      headingsPlugin(),
-                      quotePlugin(),
-                      listsPlugin(),
-                      linkPlugin(),
-                      linkDialogPlugin(),
-                      imagePlugin({ imageUploadHandler }),
-                      tablePlugin(),
-                      thematicBreakPlugin(),
-                      frontmatterPlugin(),
-                      codeBlockPlugin({ defaultCodeBlockLanguage: "javascript" }),
-                      codeMirrorPlugin({
-                        codeBlockLanguages: {
-                          js: "JavaScript",
-                          ts: "TypeScript",
-                          tsx: "TypeScript React",
-                          jsx: "JavaScript React",
-                          css: "CSS",
-                          html: "HTML",
-                          json: "JSON",
-                          yaml: "YAML",
-                          markdown: "Markdown",
-                          bash: "Bash",
-                          python: "Python",
-                        },
+                              },
+                              `<${component.name} /> component`
+                            );
+                          },
+                        })),
                       }),
-                      markdownShortcutPlugin(),
-                      // Toolbar
-                      ...(isReadOnly
-                        ? []
-                        : [
-                            toolbarPlugin({
-                              toolbarContents: () => (
-                                <DiffSourceToggleWrapper>
-                                  <UndoRedo />
-                                  <Separator />
-                                  <BoldItalicUnderlineToggles />
-                                  <CodeToggle />
-                                  <Separator />
-                                  <ListsToggle />
-                                  <Separator />
-                                  <CreateLink />
-                                  <InsertImage />
-                                  <Separator />
-                                  <InsertTable />
-                                  <InsertThematicBreak />
-                                  <Separator />
-                                  {mdxComponents.length > 0 && (
-                                    <>
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => setComponentsPanelOpen(true)}
-                                        title={`Show MDX Components (${mdxComponents.length})`}
-                                        sx={{
-                                          minWidth: "auto",
-                                          padding: "4px",
-                                          color: "text.secondary",
-                                          "&:hover": {
-                                            backgroundColor: "action.hover",
-                                          },
-                                        }}
-                                      >
-                                        <Component size={16} />
-                                        <Chip
-                                          label={mdxComponents.length}
-                                          size="small"
-                                          sx={{ ml: 0.5, height: 16, fontSize: "0.75rem" }}
-                                        />
-                                      </IconButton>
-                                      <Separator />
-                                    </>
-                                  )}
-                                  <IconButton
+                    ]
+                  : [jsxPlugin()]),
+                // Core plugins
+                headingsPlugin(),
+                quotePlugin(),
+                listsPlugin(),
+                linkPlugin(),
+                linkDialogPlugin(),
+                imagePlugin({ imageUploadHandler }),
+                tablePlugin(),
+                thematicBreakPlugin(),
+                frontmatterPlugin(),
+                codeBlockPlugin({ defaultCodeBlockLanguage: "javascript" }),
+                codeMirrorPlugin({
+                  codeBlockLanguages: {
+                    js: "JavaScript",
+                    ts: "TypeScript",
+                    tsx: "TypeScript React",
+                    jsx: "JavaScript React",
+                    css: "CSS",
+                    html: "HTML",
+                    json: "JSON",
+                    yaml: "YAML",
+                    markdown: "Markdown",
+                    bash: "Bash",
+                    python: "Python",
+                  },
+                }),
+                markdownShortcutPlugin(),
+                // Toolbar
+                ...(isReadOnly
+                  ? []
+                  : [
+                      toolbarPlugin({
+                        toolbarContents: () => (
+                          <DiffSourceToggleWrapper>
+                            <UndoRedo />
+                            <Separator />
+                            <BoldItalicUnderlineToggles />
+                            <CodeToggle />
+                            <Separator />
+                            <ListsToggle />
+                            <Separator />
+                            <CreateLink />
+                            <InsertImage />
+                            <Separator />
+                            <InsertTable />
+                            <InsertThematicBreak />
+                            <Separator />
+                            {mdxComponents.length > 0 && (
+                              <>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setComponentsPanelOpen(true)}
+                                  title={`Show MDX Components (${mdxComponents.length})`}
+                                  sx={{
+                                    minWidth: "auto",
+                                    padding: "4px",
+                                    color: "text.secondary",
+                                    "&:hover": {
+                                      backgroundColor: "action.hover",
+                                    },
+                                  }}
+                                >
+                                  <Component size={16} />
+                                  <Chip
+                                    label={mdxComponents.length}
                                     size="small"
-                                    onClick={resetDiffBase}
-                                    title="Reset diff base to current content"
-                                    sx={{
-                                      minWidth: "auto",
-                                      padding: "4px",
-                                      color: "text.secondary",
-                                      "&:hover": {
-                                        backgroundColor: "action.hover",
-                                      },
-                                    }}
-                                  >
-                                    <RefreshCw size={16} />
-                                  </IconButton>
-                                </DiffSourceToggleWrapper>
-                              ),
-                            }),
-                          ]),
-                    ]}
-                    contentEditableClassName="mdx-editor-content"
-                  />
-                </Box>
-              </Grid>
+                                    sx={{ ml: 0.5, height: 16, fontSize: "0.75rem" }}
+                                  />
+                                </IconButton>
+                                <Separator />
+                              </>
+                            )}
+                            <IconButton
+                              size="small"
+                              onClick={resetDiffBase}
+                              title="Reset diff base to current content"
+                              sx={{
+                                minWidth: "auto",
+                                padding: "4px",
+                                color: "text.secondary",
+                                "&:hover": {
+                                  backgroundColor: "action.hover",
+                                },
+                              }}
+                            >
+                              <RefreshCw size={16} />
+                            </IconButton>
+                          </DiffSourceToggleWrapper>
+                        ),
+                      }),
+                    ]),
+              ]}
+              contentEditableClassName="mdx-editor-content"
+            />
+          </Box>
+        </Grid>
 
-              {/* Preview Section */}
-              {livePreview && (
-                <Grid
-                  size={{ xs: 12, sm: 6 }}
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    backgroundColor: "#fafafa",
-                  }}
-                >
-                  {/* Preview Content */}
-                  <Box
-                    sx={{
-                      flex: 1,
-                      overflow: "auto",
-                      backgroundColor: "#fff",
-                      "& iframe": {
-                        width: "100%",
-                        height: "100%",
-                        border: "none",
-                      },
-                    }}
-                  >
-                    {renderPreview()}
-                  </Box>
-                </Grid>
-              )}
-            </Grid>
-
-            {/* MDX Components Panel */}
-            <Drawer
-              anchor="right"
-              open={componentsPanelOpen}
-              onClose={() => setComponentsPanelOpen(false)}
+        {/* Preview Section */}
+        {livePreview && (
+          <Grid
+            size={{ xs: 12, sm: 6 }}
+            sx={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              backgroundColor: "#fafafa",
+            }}
+          >
+            {/* Preview Content */}
+            <Box
               sx={{
-                "& .MuiDrawer-paper": {
-                  width: 400,
-                  maxWidth: "40vw",
+                flex: 1,
+                overflow: "auto",
+                backgroundColor: "#fff",
+                "& iframe": {
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
                 },
               }}
             >
-              <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-                <Typography variant="h6">MDX Components</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Content Type: {contentDetails.type}
-                </Typography>
-              </Box>
-              <MdxComponentsPanel
-                components={mdxComponents}
-                onComponentInsert={handleComponentInsert}
-              />
-            </Drawer>
-          </div>
+              {renderPreview()}
+            </Box>
+          </Grid>
         )}
-      </Dropzone>
-    </ImageUploadingCtx.Provider>
+      </Grid>
+
+      {/* MDX Components Panel */}
+      <Drawer
+        anchor="right"
+        open={componentsPanelOpen}
+        onClose={() => setComponentsPanelOpen(false)}
+        sx={{
+          "& .MuiDrawer-paper": {
+            width: 400,
+            maxWidth: "40vw",
+          },
+        }}
+      >
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+          <Typography variant="h6">MDX Components</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Content Type: {contentDetails.type}
+          </Typography>
+        </Box>
+        <MdxComponentsPanel components={mdxComponents} onComponentInsert={handleComponentInsert} />
+      </Drawer>
+    </div>
   );
 };
 

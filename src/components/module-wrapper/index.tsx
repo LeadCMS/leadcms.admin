@@ -61,7 +61,7 @@ export const ModuleWrapper = ({
         {isBusy && (
           <>
             <LoadingIndicatorContainer />
-            <CenteredCircularProgress />
+            <CenteredCircularProgress size={40} thickness={4} />
           </>
         )}
       </ModuleContentContainer>
