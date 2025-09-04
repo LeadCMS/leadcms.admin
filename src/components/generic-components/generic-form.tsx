@@ -8,7 +8,17 @@ import {
 } from "@components/generic-components/common";
 import { useEffect, useState } from "react";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { Card, CardContent, Grid, Tab, Tabs, Typography, Box } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Grid,
+  IconButton,
+  Tab,
+  Tabs,
+  Tooltip,
+  Typography,
+  Box,
+} from "@mui/material";
 import {
   NumberEdit,
   TextEdit,
@@ -27,7 +37,11 @@ import { BoolView } from "./view-components/bool-view";
 import { DateTimeView } from "./view-components/datetime-view";
 import { ArrayView } from "./view-components/array-view";
 import { getSectionIcon } from "@components/icon-map";
-import { getModuleNameFromUrl, moduleNamePluralBasisCheck } from "@utils/general-helper";
+import {
+  getModuleNameFromUrl,
+  getToolTipPhrase,
+  moduleNamePluralBasisCheck,
+} from "@utils/general-helper";
 
 export interface DtoField {
   editable: boolean;
@@ -413,7 +427,6 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
   const action_tag = actionSet();
   const moduleName = getModuleNameFromUrl();
   const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
-
   const mdlName_without_prural_basis = moduleNamePluralBasisCheck({
     mdl_nm: moduleName,
     suffixes: [
@@ -421,6 +434,10 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
       { end: "es", rplc: "" },
       { end: "s", rplc: "" },
     ],
+  });
+  const toolTipPhrase = getToolTipPhrase({
+    action_tag: action_tag.toLowerCase(),
+    entity: mdlName_without_prural_basis,
   });
 
   return (
@@ -486,13 +503,34 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
             })
           ) : (
             <Grid container spacing={4} marginBottom={4}>
-              <Grid container size={{ xs: 12, sm: 12 }}>
+              <Grid container size={{ xs: 12, sm: 12 }} sx={{ mb: "10px" }}>
                 {SectionIcon && (
-                  <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
-                    <SectionIcon size={22} />
+                  <Box sx={{ display: "flex", color: "primary.main" }}>
+                    <Tooltip title={toolTipPhrase}>
+                      <IconButton
+                        onClick={() => null}
+                        size="small"
+                        sx={{ ml: 2 }}
+                        aria-controls="action-info"
+                        aria-haspopup="true"
+                        aria-expanded="true"
+                      >
+                        <SectionIcon size={22} />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 )}
-                <Typography variant="subtitle1" fontWeight="500" color="primary.main">
+                <Typography
+                  variant="subtitle1"
+                  fontWeight="500"
+                  color="primary.main"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    ml: "-7px",
+                  }}
+                >
                   {`${action_tag} ${mdlName_without_prural_basis} Details`}
                 </Typography>
               </Grid>
