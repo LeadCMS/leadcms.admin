@@ -1,5 +1,7 @@
 import { useMsal } from "@azure/msal-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { getCoreModuleRoute, CoreModule } from "lib/router";
 import {
   Button,
   Typography,
@@ -55,6 +57,7 @@ export const Login = () => {
   const { config, loading } = useConfig();
   const { instance } = useMsal();
   const [loginLoading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -63,6 +66,10 @@ export const Login = () => {
   } = useForm<LoginDto>({
     resolver: zodResolver(schema),
   });
+
+  const navigateToDashboard = useCallback(() => {
+    navigate(getCoreModuleRoute(CoreModule.dashboard));
+  }, [navigate]);
 
   useEffect(() => {
     if (loginError) {
@@ -101,16 +108,16 @@ export const Login = () => {
       const responseJson = await response.json();
       localStorage.setItem("token", responseJson.token);
       setLocalToken(responseJson.token);
-      window.location.replace("/");
+      navigateToDashboard();
     } catch (err: any) {
       try {
-      const errorJson = await err.json();
-      setLoginError(errorJson?.title || "Login failed. Please try again.");
-      return;
+        const errorJson = await err.json();
+        setLoginError(errorJson?.title || "Login failed. Please try again.");
+        return;
       } catch {
-      setLoginError("Login failed. Please try again.");
-      return;
-      } 
+        setLoginError("Login failed. Please try again.");
+        return;
+      }
     } finally {
       setLoading(false);
     }
