@@ -49,6 +49,7 @@ const MDXEditorNew = ({
   livePreview,
   livePreviewTemplate,
   isMetadataCollapsed,
+  preloadedMdxComponents,
 }: MDXEditorNewProps) => {
   const { client } = useRequestContext();
   const [currentError, setCurrentError] = useState<string>("");
@@ -62,6 +63,7 @@ const MDXEditorNew = ({
     contentType: contentDetails.type,
     useCache: true,
     maxCacheAgeHours: 1,
+    preloadedData: preloadedMdxComponents,
   });
 
   // Log available components for development

@@ -6,6 +6,7 @@ interface UseMdxComponentsOptions {
   contentType?: string;
   useCache?: boolean;
   maxCacheAgeHours?: number;
+  preloadedData?: MdxComponentAnalysisDto | null;
 }
 
 interface UseMdxComponentsResult {
@@ -22,13 +23,28 @@ export const useMdxComponents = ({
   contentType,
   useCache = true,
   maxCacheAgeHours = 1,
+  preloadedData,
 }: UseMdxComponentsOptions = {}): UseMdxComponentsResult => {
   const { client } = useRequestContext();
-  const [data, setData] = useState<MdxComponentAnalysisDto | null>(null);
+  const [data, setData] = useState<MdxComponentAnalysisDto | null>(preloadedData || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchComponents = async () => {
+  // Set preloaded data when it becomes available
+  useEffect(() => {
+    if (preloadedData) {
+      setData(preloadedData);
+      setLoading(false);
+      setError(null);
+    }
+  }, [preloadedData]);
+
+  const fetchComponents = async (forceRefresh = false) => {
+    // Skip fetching if we have preloaded data and it's not a forced refresh
+    if (preloadedData && !forceRefresh) {
+      return;
+    }
+
     if (!contentType || !client) {
       setData(null);
       setError(null);
@@ -41,7 +57,7 @@ export const useMdxComponents = ({
 
     try {
       const response = await client.api.contentMdxComponentsDetail(contentType, {
-        useCache,
+        useCache: forceRefresh ? false : useCache,
         maxCacheAgeHours,
       });
       setData(response.data);
@@ -54,10 +70,24 @@ export const useMdxComponents = ({
     }
   };
 
-  // Fetch components when contentType changes
+  // Fetch components when contentType changes (only if no preloaded data)
   useEffect(() => {
-    fetchComponents();
-  }, [contentType, useCache, maxCacheAgeHours]);
+    if (!preloadedData) {
+      fetchComponents();
+    }
+  }, [contentType, useCache, maxCacheAgeHours, preloadedData]);
+
+  // Clear data and reload when contentType changes, even if we have preloaded data
+  useEffect(() => {
+    if (preloadedData && contentType) {
+      // Check if the preloaded data is for a different content type
+      // If so, clear it and fetch new data
+      if (preloadedData.contentType !== contentType) {
+        setData(null);
+        fetchComponents(true);
+      }
+    }
+  }, [contentType, preloadedData]);
 
   // Memoize the components array to prevent unnecessary re-renders
   const components = useMemo(() => {
@@ -68,6 +98,6 @@ export const useMdxComponents = ({
     components,
     loading,
     error,
-    refresh: fetchComponents,
+    refresh: () => fetchComponents(true),
   };
 };

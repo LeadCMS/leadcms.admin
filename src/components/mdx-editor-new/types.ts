@@ -1,5 +1,6 @@
 import { ContentDetails } from "@features/content/content-edit/types";
 import { ValidateFrontmatterError } from "utils/frontmatter-validator";
+import { MdxComponentAnalysisDto } from "@lib/network/swagger-client";
 
 export type onFrontmatterErrorChangeFunc = (error: ValidateFrontmatterError | null) => void;
 
@@ -12,4 +13,5 @@ export interface MDXEditorNewProps {
   livePreview?: boolean;
   livePreviewTemplate?: string;
   isMetadataCollapsed: boolean;
+  preloadedMdxComponents?: MdxComponentAnalysisDto | null;
 }

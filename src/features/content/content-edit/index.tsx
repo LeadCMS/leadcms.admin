@@ -5,6 +5,7 @@ import {
   HttpResponse,
   ProblemDetails,
   ContentTypeDetailsDto,
+  MdxComponentAnalysisDto,
 } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
@@ -26,6 +27,8 @@ import {
   Typography,
   Collapse,
   IconButton,
+  Skeleton,
+  Stack,
 } from "@mui/material";
 import { useFormik, FormikHelpers } from "formik";
 import {
@@ -40,6 +43,7 @@ import {
   getContentTypeByUid,
   generateDefaultValues,
   fetchAllContentTypes,
+  idToDisplayName,
 } from "../content-types";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 // import MarkdownEditor from "@components/markdown-editor"; // For old editor
@@ -173,7 +177,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [useLivePreview, setUseLivePreview] = useLocalStorage(LIVE_PREVIEW_STORAGE_KEY, true);
   const [contentTypes, setContentTypes] = useState<ContentTypeDetailsDto[]>([]);
   const [contentType, setContentType] = useState<ContentTypeDetailsDto | null>(null);
-  const [iframeKey, setIframeKey] = useState<number>(0);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [contentTypeLoading, setContentTypeLoading] = useState<boolean>(false);
   const [storedMetadataCollapsed, setStoredMetadataCollapsed] = useLocalStorage(
     METADATA_COLLAPSED_STORAGE_KEY,
     false
@@ -201,6 +206,14 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [aiEditLoading, setAiEditLoading] = useState(false);
   const [aiEditError, setAiEditError] = useState<string | null>(null);
   const [aiEditInProgress, setAiEditInProgress] = useState(false);
+
+  // Preloaded data state
+  const [preloadedMdxComponents, setPreloadedMdxComponents] = useState<
+    MdxComponentAnalysisDto | undefined
+  >(undefined);
+  const [preloadedTranslations, setPreloadedTranslations] = useState<
+    ContentDetailsDto[] | undefined
+  >(undefined);
 
   const supportsCover = contentType?.supportsCoverImage;
   const supportsComments = contentType?.supportsComments;
@@ -456,7 +469,83 @@ export const ContentEdit = (props: ContentEditProps) => {
   useEffect(() => {
     setBusy(async () => {
       try {
+        // Preload essential data before rendering the page
+        let mdxComponentsData = null;
+        let translationsData = null;
+        let sourceContentData = null;
+
+        // 1. Load MDX components for the content type (if editing existing content)
+        if (id && client) {
+          try {
+            const existingContentResponse = await client.api.contentDetail(Number(id));
+            if (existingContentResponse.data.type) {
+              const mdxResponse = await client.api.contentMdxComponentsDetail(
+                existingContentResponse.data.type,
+                { useCache: true, maxCacheAgeHours: 1 }
+              );
+              mdxComponentsData = mdxResponse.data;
+              setPreloadedMdxComponents(mdxComponentsData);
+              console.log("Preloaded MDX components:", mdxComponentsData?.components?.length || 0);
+            }
+          } catch (error) {
+            console.error("Failed to preload MDX components:", error);
+          }
+        }
+
+        // 2. Load translations for language switcher (if editing existing content)
+        if (id && client) {
+          try {
+            const translationsResponse = await client.api.contentTranslationsList(Number(id));
+            translationsData = translationsResponse.data;
+            setPreloadedTranslations(translationsData);
+            console.log("Preloaded translations:", translationsData?.length || 0);
+          } catch (error) {
+            console.error("Failed to preload translations:", error);
+          }
+        }
+
+        // 3. Preload source content data if in translation/duplication mode
+        if (sourceId && client) {
+          try {
+            const sourceContentResponse = await client.api.contentDetail(Number(sourceId));
+            sourceContentData = sourceContentResponse.data;
+
+            // Also load MDX components for source content type
+            if (sourceContentData.type) {
+              const mdxResponse = await client.api.contentMdxComponentsDetail(
+                sourceContentData.type,
+                { useCache: true, maxCacheAgeHours: 1 }
+              );
+              mdxComponentsData = mdxResponse.data;
+              setPreloadedMdxComponents(mdxComponentsData);
+              console.log(
+                "Preloaded MDX components for source content:",
+                mdxComponentsData?.components?.length || 0
+              );
+            }
+
+            // Load translations for source content (for translation mode)
+            if (translateToParam) {
+              const sourceTranslationsResponse = await client.api.contentTranslationsList(
+                Number(sourceId)
+              );
+              translationsData = sourceTranslationsResponse.data;
+              setPreloadedTranslations(translationsData);
+              console.log("Preloaded source translations:", translationsData?.length || 0);
+            }
+          } catch (error) {
+            console.error("Failed to preload source content data:", error);
+          }
+        }
+
+        // Continue with existing loading logic
         const localStorageSnapshot = { ...editorLocalStorage };
+
+        console.log("Content Edit Page: Loading with preloaded data", {
+          mdxComponents: mdxComponentsData?.components?.length || 0,
+          translations: translationsData?.length || 0,
+          sourceContent: !!sourceContentData,
+        });
         switch (restoreDataState) {
           case ContentEditRestoreState.Idle: {
             // Don't show restore dialog when we're in translation mode or creating from source
@@ -816,10 +905,46 @@ export const ContentEdit = (props: ContentEditProps) => {
     if (formik.values.type && contentTypes.length > 0) {
       const found = contentTypes.find((t) => t.uid === formik.values.type);
       setContentType(found || null);
+      // Refresh the editor when content type changes
+      setRefreshKey(Date.now());
     } else {
       setContentType(null);
     }
   }, [formik.values.type, contentTypes]);
+
+  // Preload MDX components when content type changes (for new content)
+  useEffect(() => {
+    const loadMdxComponentsForContentType = async () => {
+      if (formik.values.type && client) {
+        setContentTypeLoading(true); // Start loading
+        try {
+          // Always reload components when content type changes
+          setPreloadedMdxComponents(undefined); // Clear previous components first
+
+          const mdxResponse = await client.api.contentMdxComponentsDetail(
+            formik.values.type,
+            { useCache: false, maxCacheAgeHours: 1 } // Don't use cache for content type changes
+          );
+          setPreloadedMdxComponents(mdxResponse.data);
+          console.log(
+            "Loaded MDX components for content type:",
+            formik.values.type,
+            mdxResponse.data?.components?.length || 0
+          );
+        } catch (error) {
+          console.error("Failed to load MDX components for content type:", error);
+          setPreloadedMdxComponents(undefined);
+        } finally {
+          setContentTypeLoading(false); // End loading
+        }
+      } else {
+        setPreloadedMdxComponents(undefined);
+        setContentTypeLoading(false);
+      }
+    };
+
+    loadMdxComponentsForContentType();
+  }, [formik.values.type, client]); // Removed preloadedMdxComponents dependency to always reload
 
   // Handle AI draft mode - open dialog if no content is provided
   useEffect(() => {
@@ -1622,6 +1747,8 @@ export const ContentEdit = (props: ContentEditProps) => {
                               onCreateTranslation={handleCreateTranslation}
                               sourceContentId={sourceId ? parseInt(sourceId) : undefined}
                               isTranslationMode={Boolean(sourceId && translateToParam)}
+                              preloadedTranslations={preloadedTranslations}
+                              preloadedSourceTranslations={preloadedTranslations}
                             />
                           )}
                       </Box>
@@ -1692,6 +1819,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                           options={[...contentTypes].sort((a, b) => a.uid.localeCompare(b.uid))}
                           onChange={(val: string) => {
                             if (val !== formik.values.type) {
+                              // Update the UI immediately for instant feedback
+                              formik.setFieldValue("type", val);
+                              // Then apply content type defaults in the background
                               setContentTypeDefaults(val);
                             }
                           }}
@@ -1814,7 +1944,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     (contentType?.format === "MDX" || contentType?.format === "MD") && (
                       <IconButton
                         aria-label="Refresh preview"
-                        onClick={() => setIframeKey(Date.now())}
+                        onClick={() => setRefreshKey(Date.now())}
                         sx={{ color: "#1976d2", mr: 1 }}
                         size="small"
                       >
@@ -1875,21 +2005,60 @@ export const ContentEdit = (props: ContentEditProps) => {
                             />
                           ) : (
                             /* New MDXEditor implementation with side-by-side live preview */
-                            <MDXEditorNew
-                              onChange={async (value) => {
-                                setWasModified(true);
-                                await formik.setFieldValue("body", value || "");
-                              }}
-                              onFrontmatterErrorChange={async (value) => {
-                                setfrontmatterState(value);
-                              }}
-                              value={formik.values.body}
-                              isReadOnly={props.readonly}
-                              contentDetails={formik.values}
-                              livePreview={useLivePreview}
-                              livePreviewTemplate={getPreviewTemplate()}
-                              isMetadataCollapsed={isMetadataCollapsed}
-                            />
+                            <Box sx={{ position: "relative" }}>
+                              {contentTypeLoading && formik.values.type && (
+                                <Box
+                                  sx={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: "rgba(255, 255, 255, 0.8)",
+                                    zIndex: 1000,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    minHeight: "400px",
+                                    backdropFilter: "blur(2px)",
+                                  }}
+                                >
+                                  <Stack gap={2} alignItems="center">
+                                    <CircularProgress size={40} />
+                                    <Typography variant="body1" color="text.primary">
+                                      Loading custom components for{" "}
+                                      {contentType?.uid
+                                        ? idToDisplayName(contentType.uid)
+                                        : "content type"}
+                                      ...
+                                    </Typography>
+                                    <Stack gap={1} sx={{ width: "300px" }}>
+                                      <Skeleton height={20} width="80%" />
+                                      <Skeleton height={200} />
+                                      <Skeleton height={20} width="60%" />
+                                    </Stack>
+                                  </Stack>
+                                </Box>
+                              )}
+                              <MDXEditorNew
+                                key={`mdx-editor-${formik.values.type}-${refreshKey}`}
+                                onChange={async (value) => {
+                                  setWasModified(true);
+                                  await formik.setFieldValue("body", value || "");
+                                }}
+                                onFrontmatterErrorChange={async (value) => {
+                                  setfrontmatterState(value);
+                                }}
+                                value={formik.values.body}
+                                isReadOnly={props.readonly}
+                                contentDetails={formik.values}
+                                livePreview={useLivePreview}
+                                livePreviewTemplate={getPreviewTemplate()}
+                                isMetadataCollapsed={isMetadataCollapsed}
+                                preloadedMdxComponents={preloadedMdxComponents}
+                              />
+                            </Box>
 
                             /* OLD EDITOR - To revert, comment out MDXEditorNew above and
                                uncomment MarkdownEditor below
