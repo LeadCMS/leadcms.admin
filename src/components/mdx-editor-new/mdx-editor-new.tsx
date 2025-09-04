@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, createContext } from "react";
-import { Box, Grid, IconButton } from "@mui/material";
-import { RefreshCw } from "lucide-react";
+import React from "react";
+import { Box, Grid, IconButton, Drawer, Typography, Chip } from "@mui/material";
+import { RefreshCw, Component } from "lucide-react";
 import {
   MDXEditor,
   headingsPlugin,
@@ -17,6 +18,7 @@ import {
   markdownShortcutPlugin,
   toolbarPlugin,
   diffSourcePlugin,
+  jsxPlugin,
   UndoRedo,
   BoldItalicUnderlineToggles,
   CodeToggle,
@@ -36,6 +38,8 @@ import Dropzone, { Accept, FileRejection } from "react-dropzone";
 import { useNotificationsService } from "@hooks";
 import { ContentEditMaximumImageSize } from "@features/content/content-edit/validation";
 import { useRequestContext } from "@providers/request-provider";
+import { useMdxComponents } from "./hooks";
+import { MdxComponentsPanel } from "./components";
 import "@mdxeditor/editor/style.css";
 import "./styles.css";
 
@@ -60,6 +64,21 @@ const MDXEditorNew = ({
   const [initialContent, setInitialContent] = useState<string>("");
   const [previewKey, setPreviewKey] = useState<number>(Date.now());
   const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
+  const [componentsPanelOpen, setComponentsPanelOpen] = useState<boolean>(false);
+
+  // Fetch custom MDX components for the current content type
+  const { components: mdxComponents } = useMdxComponents({
+    contentType: contentDetails.type,
+    useCache: true,
+    maxCacheAgeHours: 1,
+  });
+
+  // Log available components for development
+  useEffect(() => {
+    if (mdxComponents.length > 0) {
+      console.log("Available MDX components for content type:", contentDetails.type, mdxComponents);
+    }
+  }, [mdxComponents, contentDetails.type]);
 
   // Store initial content for diff comparison when component mounts
   useEffect(() => {
@@ -179,6 +198,20 @@ const MDXEditorNew = ({
     [contentDetails.slug, client]
   );
 
+  // Handle component insertion from the components panel
+  const handleComponentInsert = useCallback(
+    (componentMarkup: string) => {
+      // Insert the component at the current cursor position
+      const currentValue = value;
+      const newValue =
+        currentValue + (currentValue.endsWith("\n") ? "" : "\n") + componentMarkup + "\n";
+      onChange(newValue);
+      // Close the panel after insertion
+      setComponentsPanelOpen(false);
+    },
+    [value, onChange]
+  );
+
   const editorHeight = isMetadataCollapsed ? "calc(100vh - 325px)" : "calc(100vh - 500px)";
   const strippedValue = value.replace(/(---.*?---)/s, "");
 
@@ -229,18 +262,54 @@ const MDXEditorNew = ({
                   }}
                 >
                   <MDXEditor
-                    key={`editor-${isReadOnly}`}
+                    key={`editor-${isReadOnly}-${mdxComponents.length}`} // Re-render on load
                     markdown={value}
                     onChange={onChange}
                     readOnly={isReadOnly}
                     className="mdx-editor-new"
                     plugins={[
-                      // Enable diff/source mode plugin first
+                      // Enable diff/source mode plugin - start in source mode for custom components
                       diffSourcePlugin({
                         viewMode: "source",
                         diffMarkdown: initialContent,
                         readOnlyDiff: false,
                       }),
+                      // JSX plugin for custom components with implementations
+                      ...(mdxComponents.length > 0
+                        ? [
+                            jsxPlugin({
+                              jsxComponentDescriptors: mdxComponents.map((component) => ({
+                                name: component.name,
+                                kind: "flow" as const,
+                                // Removed source property to prevent automatic imports
+                                props:
+                                  component.properties?.map((prop) => ({
+                                    name: prop.name,
+                                    type: "string" as const,
+                                  })) || [],
+                                hasChildren: component.acceptsChildren || false,
+                                Editor: () => {
+                                  // Render a placeholder for the custom component
+                                  return React.createElement(
+                                    "div",
+                                    {
+                                      style: {
+                                        padding: "8px",
+                                        border: "1px dashed #ccc",
+                                        borderRadius: "4px",
+                                        backgroundColor: "#f9f9f9",
+                                        margin: "4px 0",
+                                        fontSize: "0.875rem",
+                                        color: "#666",
+                                      },
+                                    },
+                                    `<${component.name} /> component`
+                                  );
+                                },
+                              })),
+                            }),
+                          ]
+                        : [jsxPlugin()]),
                       // Core plugins
                       headingsPlugin(),
                       quotePlugin(),
@@ -288,6 +357,31 @@ const MDXEditorNew = ({
                                   <InsertTable />
                                   <InsertThematicBreak />
                                   <Separator />
+                                  {mdxComponents.length > 0 && (
+                                    <>
+                                      <IconButton
+                                        size="small"
+                                        onClick={() => setComponentsPanelOpen(true)}
+                                        title={`Show MDX Components (${mdxComponents.length})`}
+                                        sx={{
+                                          minWidth: "auto",
+                                          padding: "4px",
+                                          color: "text.secondary",
+                                          "&:hover": {
+                                            backgroundColor: "action.hover",
+                                          },
+                                        }}
+                                      >
+                                        <Component size={16} />
+                                        <Chip
+                                          label={mdxComponents.length}
+                                          size="small"
+                                          sx={{ ml: 0.5, height: 16, fontSize: "0.75rem" }}
+                                        />
+                                      </IconButton>
+                                      <Separator />
+                                    </>
+                                  )}
                                   <IconButton
                                     size="small"
                                     onClick={resetDiffBase}
@@ -342,6 +436,30 @@ const MDXEditorNew = ({
                 </Grid>
               )}
             </Grid>
+
+            {/* MDX Components Panel */}
+            <Drawer
+              anchor="right"
+              open={componentsPanelOpen}
+              onClose={() => setComponentsPanelOpen(false)}
+              sx={{
+                "& .MuiDrawer-paper": {
+                  width: 400,
+                  maxWidth: "40vw",
+                },
+              }}
+            >
+              <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+                <Typography variant="h6">MDX Components</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Content Type: {contentDetails.type}
+                </Typography>
+              </Box>
+              <MdxComponentsPanel
+                components={mdxComponents}
+                onComponentInsert={handleComponentInsert}
+              />
+            </Drawer>
           </div>
         )}
       </Dropzone>
@@ -349,4 +467,5 @@ const MDXEditorNew = ({
   );
 };
 
+export { MDXEditorNew };
 export default MDXEditorNew;
