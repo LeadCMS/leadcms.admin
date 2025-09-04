@@ -1,0 +1,147 @@
+/* MDX Editor Container */
+.mdx-editor-container {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Main MDX Editor Styling */
+.mdx-editor-new {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mdx-editor-new .mdx-editor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Content area with proper scrolling */
+.mdx-editor-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 400px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 16px;
+  max-height: calc(100vh - 200px);
+}
+
+/* Ensure prosemirror editor has proper scrolling */
+.mdx-editor-new .ProseMirror {
+  overflow-y: auto !important;
+  max-height: none !important;
+  min-height: 400px;
+}
+
+/* CodeMirror editor scrolling for source mode */
+.mdx-editor-new .cm-editor {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 300px) !important;
+  min-height: 400px;
+}
+
+.mdx-editor-new .cm-scroller {
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+}
+
+/* Toolbar customization */
+.mdx-editor-new [data-toolbar] {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  background-color: #fafafa;
+}
+
+/* Ensure diff/source toggle buttons are visible */
+.mdx-editor-new [data-toolbar] button[data-testid^="diff-"],
+.mdx-editor-new [data-toolbar] button[data-testid^="source-"],
+.mdx-editor-new [data-toolbar] button[aria-label*="view"],
+.mdx-editor-new [data-toolbar] button[aria-label*="diff"],
+.mdx-editor-new [data-toolbar] button[aria-label*="source"] {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Style the diff/source mode toggle buttons */
+.mdx-editor-new .mdx-diff-source-toggle-wrapper button {
+  margin-right: 8px;
+  padding: 4px 8px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mdx-editor-new .mdx-diff-source-toggle-wrapper button:hover {
+  background-color: #f5f5f5;
+}
+
+.mdx-editor-new .mdx-diff-source-toggle-wrapper button[data-active="true"] {
+  background-color: #1976d2;
+  color: white;
+}
+
+/* Error highlighting for frontmatter issues */
+.error-line {
+  border-bottom: 1px dashed red;
+}
+
+/* Override default MDX Editor styles to match application theme */
+.mdx-editor-new .mdx-editor-focus-ring {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Preview panel styling */
+.mdx-editor-preview-panel {
+  border-left: 1px solid #e0e0e0;
+  background-color: #fff;
+}
+
+.mdx-editor-preview-header {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+}
+
+.mdx-editor-preview-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.mdx-editor-preview-refresh-btn {
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #666;
+  transition: background-color 0.2s ease;
+}
+
+.mdx-editor-preview-refresh-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .mdx-editor-new {
+    min-height: 300px;
+  }
+
+  .mdx-editor-content {
+    min-height: 300px;
+    padding: 12px;
+  }
+}

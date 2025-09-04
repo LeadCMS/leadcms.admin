@@ -42,7 +42,8 @@ import {
   fetchAllContentTypes,
 } from "../content-types";
 import { toFormikValidationSchema } from "zod-formik-adapter";
-import MarkdownEditor from "@components/markdown-editor";
+// import MarkdownEditor from "@components/markdown-editor"; // For old editor
+import MDXEditorNew from "@components/mdx-editor-new";
 import FileDropdown from "@components/file-dropdown";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import useLocalStorage from "use-local-storage";
@@ -1873,6 +1874,25 @@ export const ContentEdit = (props: ContentEditProps) => {
                               }}
                             />
                           ) : (
+                            /* New MDXEditor implementation with side-by-side live preview */
+                            <MDXEditorNew
+                              onChange={async (value) => {
+                                setWasModified(true);
+                                await formik.setFieldValue("body", value || "");
+                              }}
+                              onFrontmatterErrorChange={async (value) => {
+                                setfrontmatterState(value);
+                              }}
+                              value={formik.values.body}
+                              isReadOnly={props.readonly}
+                              contentDetails={formik.values}
+                              livePreview={useLivePreview}
+                              livePreviewTemplate={getPreviewTemplate()}
+                              isMetadataCollapsed={isMetadataCollapsed}
+                            />
+
+                            /* OLD EDITOR - To revert, comment out MDXEditorNew above and
+                               uncomment MarkdownEditor below
                             <MarkdownEditor
                               onChange={async (value) => {
                                 setWasModified(true);
@@ -1889,6 +1909,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                               key={iframeKey}
                               isMetadataCollapsed={isMetadataCollapsed}
                             />
+                            */
                           )}
                         </Grid>
                       </Grid>
