@@ -2,6 +2,7 @@ import { RequestContextType } from "@providers/request-provider";
 import { continentListStorageKey, countryListStorageKey } from "./constants";
 import { NotificationsService } from "@hooks";
 import { MENU_CONFIG } from "@utils/menu-config";
+import { isUndefined } from "lodash";
 
 export const getCountryList = async (context: RequestContextType) => {
   const countries = localStorage.getItem(countryListStorageKey);
@@ -175,4 +176,26 @@ export const moduleNamePluralBasisCheck = ({
   }
 
   return mdl_sub_title[0];
+};
+
+export const getToolTipPhrase = ({
+  action_tag,
+  entity,
+}: {
+  action_tag: string;
+  entity: string | null;
+}) => {
+  let act = { _i: "", _ii: "", _iii: "", _iv: "", _v: "" };
+
+  if (action_tag == "add") {
+    act = { ...act, _i: "specify", _iii: "a new", _iv: "it to the", _v: "it to the" };
+  } else if (action_tag == "edit") {
+    act = { ...act, _i: "edit", _ii: "existing ", _iii: "the specific", _v: "update" };
+  } else if (action_tag == "delete") {
+    return `remove the ${entity} from the list`;
+  } else {
+    return `overviewing existing information of the ${entity}`;
+  }
+
+  return `${act._i} the ${act._ii}details of ${act._iii} ${entity} & ${act._iv} ${act._v} the list`;
 };
