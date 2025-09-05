@@ -91,11 +91,6 @@ const MDXEditorNew = ({
     }
   }, [value, initialContent, hasContentChanged]);
 
-  // Manual function to reset diff base (can be called when content is saved)
-  const resetDiffBase = useCallback(() => {
-    setInitialContent(value);
-  }, [value]);
-
   // Handle frontmatter validation
   const onErrorChange = useCallback(
     (error: ValidateFrontmatterError | null) => {
@@ -159,6 +154,38 @@ const MDXEditorNew = ({
 
   const editorHeight = isMetadataCollapsed ? "calc(100vh - 284px)" : "calc(100vh - 444px)";
   const strippedValue = value.replace(/(---.*?---)/s, "");
+
+  // Reusable MDX components toolbar control (button + counter + separator)
+  const MdxComponentsControl = () => {
+    if (mdxComponents.length === 0) {
+      return null;
+    }
+    return (
+      <>
+        <IconButton
+          size="small"
+          onClick={() => setComponentsPanelOpen(true)}
+          title={`Show MDX Components (${mdxComponents.length})`}
+          sx={{
+            minWidth: "auto",
+            padding: "4px",
+            color: "text.secondary",
+            "&:hover": {
+              backgroundColor: "action.hover",
+            },
+          }}
+        >
+          <Component size={16} />
+          <Chip
+            label={mdxComponents.length}
+            size="small"
+            sx={{ ml: 0.5, height: 16, fontSize: "0.75rem" }}
+          />
+        </IconButton>
+        <Separator />
+      </>
+    );
+  };
 
   // Render preview based on livePreview settings
   const renderPreview = () => {
@@ -278,7 +305,16 @@ const MDXEditorNew = ({
                   : [
                       toolbarPlugin({
                         toolbarContents: () => (
-                          <DiffSourceToggleWrapper>
+                          <DiffSourceToggleWrapper
+                            options={["rich-text", "diff", "source"]}
+                            SourceToolbar={
+                              <>
+                                <UndoRedo />
+                                <Separator />
+                                <MdxComponentsControl />
+                              </>
+                            }
+                          >
                             <UndoRedo />
                             <Separator />
                             <BoldItalicUnderlineToggles />
@@ -292,46 +328,7 @@ const MDXEditorNew = ({
                             <InsertTable />
                             <InsertThematicBreak />
                             <Separator />
-                            {mdxComponents.length > 0 && (
-                              <>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => setComponentsPanelOpen(true)}
-                                  title={`Show MDX Components (${mdxComponents.length})`}
-                                  sx={{
-                                    minWidth: "auto",
-                                    padding: "4px",
-                                    color: "text.secondary",
-                                    "&:hover": {
-                                      backgroundColor: "action.hover",
-                                    },
-                                  }}
-                                >
-                                  <Component size={16} />
-                                  <Chip
-                                    label={mdxComponents.length}
-                                    size="small"
-                                    sx={{ ml: 0.5, height: 16, fontSize: "0.75rem" }}
-                                  />
-                                </IconButton>
-                                <Separator />
-                              </>
-                            )}
-                            <IconButton
-                              size="small"
-                              onClick={resetDiffBase}
-                              title="Reset diff base to current content"
-                              sx={{
-                                minWidth: "auto",
-                                padding: "4px",
-                                color: "text.secondary",
-                                "&:hover": {
-                                  backgroundColor: "action.hover",
-                                },
-                              }}
-                            >
-                              <RefreshCw size={16} />
-                            </IconButton>
+                            <MdxComponentsControl />
                           </DiffSourceToggleWrapper>
                         ),
                       }),
