@@ -17,7 +17,6 @@ import {
   Tooltip,
   Box,
   CircularProgress,
-  ButtonGroup,
 } from "@mui/material";
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
@@ -34,7 +33,6 @@ import {
   SortDesc,
   Languages,
   Sparkles,
-  ChevronDown,
 } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
@@ -60,6 +58,7 @@ import { SearchBar } from "@components/search-bar";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { TranslateDialog, TranslationType } from "@components/translate-dialog";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
+import { ContentLanguageBadges } from "@components/content-language-badges";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -187,6 +186,8 @@ export const ContentList = () => {
       ["filter[order]"]: `${sortField} ${sortDirection === "asc" ? "" : "desc"}`.trim(),
       "filter[skip]": !initialLoadRef.current ? 0 : contentItems.length,
       "filter[limit]": 20,
+      // Include translations if multi-language
+      includeTranslations: (config?.languages?.length || 0) > 1,
     };
 
     if (searchTerm.trim() !== "") {
@@ -647,6 +648,9 @@ const ItemCard = ({
         >
           {item.description}
         </Typography>
+
+        {/* Language Badges */}
+        <ContentLanguageBadges content={item} compact={true} />
       </CardContent>
       <CardActions sx={{ justifyContent: "space-between", pl: 4, pr: 4, pt: 0, pb: 3 }}>
         <Box display="flex" alignItems="center" gap={1.5}>
