@@ -127,6 +127,13 @@ export const MENU_CONFIG = [
     header: "GENERAL",
     items: [
       {
+        id: "settings",
+        label: "Settings",
+        icon: <Settings size={20} />,
+        entity: null,
+        route: getCoreModuleRoute(CoreModule.settings),
+      },
+      {
         id: "users",
         label: "Users",
         icon: <User size={20} />,
@@ -146,13 +153,6 @@ export const MENU_CONFIG = [
         icon: <HelpCircle size={20} />,
         entity: null,
         route: getCoreModuleRoute(CoreModule.about),
-      },
-      {
-        id: "settings",
-        label: "Settings",
-        icon: <Settings size={20} />,
-        entity: null,
-        route: getCoreModuleRoute(CoreModule.settings),
       },
     ],
   },
