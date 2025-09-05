@@ -31,14 +31,14 @@ export const MainColumn = styled("div")`
   overflow: hidden;
 `;
 
-export const MainContent = styled("main")`
+export const MainContent = styled("main")<{ fullWidth?: boolean }>`
   flex: 1 1 0%;
   overflow-y: auto;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: ${({ theme }) => theme.spacing(2)};
+  padding: ${({ theme, fullWidth }) => (fullWidth ? 0 : theme.spacing(2))};
   background-color: ${({ theme }) => theme.palette.background.primary};
   box-sizing: border-box;
 `;

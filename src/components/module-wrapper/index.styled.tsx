@@ -86,7 +86,7 @@ export const LoadingIndicatorContainer = styled("div")`
   background-color: ${({ theme }) => theme.palette.grey[300]};
   opacity: 0.2;
   z-index: 998; /* Higher z-index to ensure proper layering */
-  min-height: calc(100vh - 200px);
+  min-height: calc(100vh - 144px);
 `;
 
 export const CenteredCircularProgress = styled(CircularProgress)`

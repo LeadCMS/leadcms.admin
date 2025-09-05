@@ -157,7 +157,7 @@ const MDXEditorNew = ({
     [value, onChange]
   );
 
-  const editorHeight = isMetadataCollapsed ? "calc(100vh - 325px)" : "calc(100vh - 500px)";
+  const editorHeight = isMetadataCollapsed ? "calc(100vh - 284px)" : "calc(100vh - 444px)";
   const strippedValue = value.replace(/(---.*?---)/s, "");
 
   // Render preview based on livePreview settings

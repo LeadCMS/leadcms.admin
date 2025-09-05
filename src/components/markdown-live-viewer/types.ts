@@ -1,7 +1,7 @@
 export interface MarkdownLiveViewerProps {
   params: Record<string, unknown>;
   template: string;
-  key?: React.Key; // Add key prop
+  viewerKey?: React.Key; // Renamed from key to avoid React special prop warning
 }
 
 export interface LivePreviewParams {

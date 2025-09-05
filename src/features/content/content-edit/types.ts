@@ -19,7 +19,6 @@ export interface ContentDetails {
   createdAt: string | null;
   updatedAt: string | null;
   publishedAt: string | null;
-  files: File[] | null;
 }
 
 export interface ContentEditorAutoSave {

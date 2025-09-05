@@ -3710,6 +3710,8 @@ export interface ContentDetailsDto {
   updatedAt?: string | null;
   /** Comments */
   comments?: CommentDetailsDto[] | null;
+  /** Translations */
+  translations?: Record<string, number | null>;
 }
 
 export interface ContentDistributionItemDto {
@@ -7366,7 +7368,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.70.0
+ * @version 1.2.74.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8041,6 +8043,11 @@ export class Api<
     contentList: (
       query?: {
         query?: string;
+        /**
+         * Include translation mappings in the response
+         * @default false
+         */
+        includeTranslations?: boolean;
       },
       params: RequestParams = {},
     ) =>
@@ -8080,10 +8087,21 @@ export class Api<
      * @request GET:/api/content/{id}
      * @secure
      */
-    contentDetail: (id: number, params: RequestParams = {}) =>
+    contentDetail: (
+      id: number,
+      query?: {
+        /**
+         * Include translation mappings in the response
+         * @default false
+         */
+        includeTranslations?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<ContentDetailsDto, void | ProblemDetails>({
         path: `/api/content/${id}`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,

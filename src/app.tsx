@@ -13,6 +13,7 @@ import { ErrorDetailsModalProvider } from "@providers/error-details-modal-provid
 import { ConfigProvider } from "@providers/config-provider";
 import { GlobalLanguageFilterProvider } from "@providers/global-language-filter-provider";
 import { TranslationDraftProvider } from "@providers/translation-draft-provider";
+import { LayoutProvider, useLayout } from "@providers/layout-provider";
 import "react-toastify/dist/ReactToastify.css";
 import { Auth } from "./features/auth/auth";
 
@@ -67,6 +68,7 @@ export const App = () => {
 
   function AppLayoutWithAutoBreadcrumbs({ children }: { children: React.ReactNode }) {
     const location = useLocation();
+    const { fullWidth } = useLayout();
     let propsBreadcrumbs, propsCurrentBreadcrumb;
     if (children && typeof children === "object" && "props" in children && children.props) {
       propsBreadcrumbs = children.props.breadcrumbs;
@@ -78,7 +80,11 @@ export const App = () => {
       propsCurrentBreadcrumb
     );
     return (
-      <AppLayout breadcrumbs={breadcrumbs} currentBreadcrumb={currentBreadcrumb}>
+      <AppLayout
+        breadcrumbs={breadcrumbs}
+        currentBreadcrumb={currentBreadcrumb}
+        fullWidth={fullWidth}
+      >
         {children}
       </AppLayout>
     );
@@ -89,41 +95,43 @@ export const App = () => {
       <ConfigProvider>
         <GlobalLanguageFilterProvider>
           <TranslationDraftProvider>
-            <ThemeProvider>
-              <AuthProvider>
-                <RequestProvider>
-                  <ToastContainer position="top-right" style={{ marginTop: "60px" }} />
-                  <UserProvider>
-                    <ErrorDetailsModalProvider>
-                      <BrowserRouter
-                        future={{
-                          v7_startTransition: true,
-                          v7_relativeSplatPath: true,
-                        }}
-                      >
-                        <Routes>
-                          <Route path="/auth/*" element={<Auth />} />
-                          <Route
-                            path={rootRoute}
-                            element={
-                              <AppLayoutWithAutoBreadcrumbs>
-                                <Outlet />
-                              </AppLayoutWithAutoBreadcrumbs>
-                            }
-                          >
-                            <Route path={rootRoute} element={<ModuleLoader />} />
+            <LayoutProvider>
+              <ThemeProvider>
+                <AuthProvider>
+                  <RequestProvider>
+                    <ToastContainer position="top-right" style={{ marginTop: "60px" }} />
+                    <UserProvider>
+                      <ErrorDetailsModalProvider>
+                        <BrowserRouter
+                          future={{
+                            v7_startTransition: true,
+                            v7_relativeSplatPath: true,
+                          }}
+                        >
+                          <Routes>
+                            <Route path="/auth/*" element={<Auth />} />
                             <Route
-                              path={`${coreModuleRoute.template}/*`}
-                              element={<ModuleLoader />}
-                            />
-                          </Route>
-                        </Routes>
-                      </BrowserRouter>
-                    </ErrorDetailsModalProvider>
-                  </UserProvider>
-                </RequestProvider>
-              </AuthProvider>
-            </ThemeProvider>
+                              path={rootRoute}
+                              element={
+                                <AppLayoutWithAutoBreadcrumbs>
+                                  <Outlet />
+                                </AppLayoutWithAutoBreadcrumbs>
+                              }
+                            >
+                              <Route path={rootRoute} element={<ModuleLoader />} />
+                              <Route
+                                path={`${coreModuleRoute.template}/*`}
+                                element={<ModuleLoader />}
+                              />
+                            </Route>
+                          </Routes>
+                        </BrowserRouter>
+                      </ErrorDetailsModalProvider>
+                    </UserProvider>
+                  </RequestProvider>
+                </AuthProvider>
+              </ThemeProvider>
+            </LayoutProvider>
           </TranslationDraftProvider>
         </GlobalLanguageFilterProvider>
       </ConfigProvider>
