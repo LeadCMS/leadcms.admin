@@ -1,7 +1,6 @@
 import { useMsal } from "@azure/msal-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCoreModuleRoute, CoreModule } from "lib/router";
 import {
   Button,
   Typography,
@@ -57,7 +56,6 @@ export const Login = () => {
   const { config, loading } = useConfig();
   const { instance } = useMsal();
   const [loginLoading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const {
     register,
