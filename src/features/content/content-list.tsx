@@ -17,7 +17,6 @@ import {
   Tooltip,
   Box,
   CircularProgress,
-  ButtonGroup,
 } from "@mui/material";
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 import { ContentListContainer } from "./index.styled";
