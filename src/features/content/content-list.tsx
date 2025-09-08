@@ -33,7 +33,6 @@ import {
   SortDesc,
   Languages,
   Sparkles,
-  ChevronDown,
 } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
