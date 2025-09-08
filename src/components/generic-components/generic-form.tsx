@@ -80,7 +80,7 @@ export interface GenericFormProps<TView extends BasicTypeForGeneric, TCreate, TU
   updateSchema: DtoSchema;
   createSchema: DtoSchema;
   deleteOptionProps?: DeleteOptionProps;
-  mode?: "create" | "update" | "delete" | "details";
+  mode?: "create" | "update" | "details";
   getItemId: () => number | undefined;
   onSaved?: (item: TView) => void;
 
@@ -287,8 +287,6 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
         return "Add";
       case "update":
         return "Edit";
-      case "delete":
-        return "Remove";
       default:
         return "View";
     }

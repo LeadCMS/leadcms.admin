@@ -139,11 +139,6 @@ export function getModuleNameFromUrl(): string {
     .join(" ");
 }
 
-export type sample_suffix = {
-  end: string;
-  rplc: string;
-};
-
 export const moduleNamePluralBasisCheck = ({ mdl_nm }: { mdl_nm: string }) => {
   const mdl_sub_title = Object.values(MENU_CONFIG)
     .map((mcnfg) => {
