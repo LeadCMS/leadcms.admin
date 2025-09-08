@@ -20,9 +20,6 @@ const convertSchemaToDtoSchema = (
       if (refSchema && refSchema !== schema) {
         const refDtoSchema = convertSchemaToDtoSchema(refSchema, allSchemas);
 
-        console.log(key, value);
-        console.log(refDtoSchema.type);
-
         if (refDtoSchema.type === "string") {
           dtoSchema.properties[key] = {
             hide: false,
