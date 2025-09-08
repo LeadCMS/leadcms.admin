@@ -67,10 +67,6 @@ export const Login = () => {
     resolver: zodResolver(schema),
   });
 
-  const navigateToDashboard = useCallback(() => {
-    navigate(getCoreModuleRoute(CoreModule.dashboard));
-  }, [navigate]);
-
   useEffect(() => {
     if (loginError) {
       const timer = setTimeout(() => {
@@ -108,7 +104,7 @@ export const Login = () => {
       const responseJson = await response.json();
       localStorage.setItem("token", responseJson.token);
       setLocalToken(responseJson.token);
-      navigateToDashboard();
+      window.location.replace("/dashboard");
     } catch (err: any) {
       try {
         const errorJson = await err.json();
