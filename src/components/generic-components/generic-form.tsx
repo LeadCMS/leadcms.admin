@@ -80,7 +80,7 @@ export interface GenericFormProps<TView extends BasicTypeForGeneric, TCreate, TU
   updateSchema: DtoSchema;
   createSchema: DtoSchema;
   deleteOptionProps?: DeleteOptionProps;
-  mode?: "create" | "update" | "details";
+  mode?: "create" | "update" | "delete" | "details";
   getItemId: () => number | undefined;
   onSaved?: (item: TView) => void;
 
@@ -287,8 +287,10 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
         return "Add";
       case "update":
         return "Edit";
-      default:
+      case "delete":
         return "Remove";
+      default:
+        return "View";
     }
   };
 
@@ -413,15 +415,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
   const action_tag = actionSet();
   const moduleName = getModuleNameFromUrl();
   const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
-
-  const mdlName_without_prural_basis = moduleNamePluralBasisCheck({
-    mdl_nm: moduleName,
-    suffixes: [
-      { end: "ies", rplc: "y" },
-      { end: "es", rplc: "" },
-      { end: "s", rplc: "" },
-    ],
-  });
+  const mdlName_without_prural_basis = moduleNamePluralBasisCheck({ mdl_nm: moduleName });
 
   return (
     <>
