@@ -29,10 +29,10 @@ import {
   Trash2,
   ExternalLink,
   Filter,
-  SortAsc,
-  SortDesc,
   Languages,
   Sparkles,
+  ArrowDownNarrowWide,
+  ArrowDownWideNarrow,
 } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
@@ -341,7 +341,13 @@ export const ContentList = () => {
     <ToolbarButton
       key="sort"
       onClick={handleSortButtonClick}
-      startIcon={sortDirection === "asc" ? <SortAsc size={18} /> : <SortDesc size={18} />}
+      startIcon={
+        sortDirection === "asc" ? (
+          <ArrowDownNarrowWide size={18} />
+        ) : (
+          <ArrowDownWideNarrow size={18} />
+        )
+      }
       sx={{
         gap: 1,
       }}
