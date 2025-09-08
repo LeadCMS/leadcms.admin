@@ -35,7 +35,7 @@ export const DropdownMenu = () => {
     setAnchorElement(null);
   };
 
-  const handleProfileClick = () => {
+  const handleProfileClick: () => void = () => {
     navigate("/users/me/edit");
   };
 
