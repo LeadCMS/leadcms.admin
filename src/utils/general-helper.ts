@@ -150,12 +150,11 @@ export const moduleNamePluralBasisCheck = ({
   omit,
 }: {
   mdl_nm: string;
-  suffixes: sample_suffix[]; // passing a suffix list anyways
+  suffixes: sample_suffix[];
   omit?: boolean;
 }) => {
   const mdl_sub_title = Object.values(MENU_CONFIG)
     .map((mcnfg) => {
-      // check whether any entity_title exists within the MODULE_CONFIG
       const mcnfg_list = mcnfg?.items;
       const list_item = mcnfg_list?.find(
         (mcnfg_alt) => mcnfg_alt?.label === mdl_nm && mcnfg_alt?.entity
@@ -164,14 +163,10 @@ export const moduleNamePluralBasisCheck = ({
     })
     .filter(Boolean);
 
-  if (mdl_sub_title.length < 1 && suffixes) {
-    // check with suffixes upon no entry_title found
-    const sfx = suffixes.find(({ end }) => mdl_nm.toLowerCase().endsWith(end));
+  if (mdl_sub_title[0]) {
+    const module_tag = mdl_sub_title[0]?.toString();
 
-    if (sfx) {
-      const res = mdl_nm.substring(0, mdl_nm.length - sfx.end.length);
-      return res + sfx.rplc; // extend the shrinked string with a replacement char
-    }
+    return module_tag[0].toUpperCase() + module_tag?.substring(1, module_tag.length);
   }
 
   return mdl_sub_title[0];
