@@ -144,15 +144,7 @@ export type sample_suffix = {
   rplc: string;
 };
 
-export const moduleNamePluralBasisCheck = ({
-  mdl_nm,
-  suffixes,
-  omit,
-}: {
-  mdl_nm: string;
-  suffixes: sample_suffix[];
-  omit?: boolean;
-}) => {
+export const moduleNamePluralBasisCheck = ({ mdl_nm }: { mdl_nm: string }) => {
   const mdl_sub_title = Object.values(MENU_CONFIG)
     .map((mcnfg) => {
       const mcnfg_list = mcnfg?.items;
@@ -169,5 +161,5 @@ export const moduleNamePluralBasisCheck = ({
     return module_tag[0].toUpperCase() + module_tag?.substring(1, module_tag.length);
   }
 
-  return mdl_sub_title[0];
+  return mdl_nm;
 };
