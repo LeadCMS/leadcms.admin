@@ -353,7 +353,15 @@ export const ContentEdit = (props: ContentEditProps) => {
       contentDataOps.setPreloadedMdxComponents(undefined);
       return;
     }
+
+    // Wait for content types to be loaded if they're not available yet
+    if (contentDataOps.contentTypes.length === 0) {
+      console.log(`Content types not loaded yet for type: ${typeUid}, will retry when available`);
+      return;
+    }
+
     const ct = contentDataOps.contentTypes.find((t) => t.uid === typeUid) || null;
+    console.log(`Setting content type for ${typeUid}:`, ct);
     contentDataOps.setContentType(ct);
     if (!ct) return;
 
@@ -395,6 +403,10 @@ export const ContentEdit = (props: ContentEditProps) => {
         }
 
         await setContentTypeAndMaybePreload(content.type);
+        console.log(
+          `loadForEdit completed, types: ${contentDataOps.contentTypes.length}, ` +
+            `type: ${content.type}`
+        );
       } finally {
         contentDataOps.setIsInitialLoading(false);
       }
@@ -545,7 +557,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   useEffect(() => {
     setContentTypeAndMaybePreload(contentFormOps.formik.values.type);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentFormOps.formik.values.type]);
+  }, [contentFormOps.formik.values.type, contentDataOps.contentTypes]);
 
   // Force MDX editor remount when custom components finish loading
   const [componentsVersion, setComponentsVersion] = useState(0);
