@@ -220,19 +220,7 @@ const MDXEditorNew = ({
     return uniqueComponents;
   }, [mdxComponents, value]);
 
-  // Handle component insertion from the components panel
-  const handleComponentInsert = useCallback(
-    (componentMarkup: string) => {
-      // Insert the component at the current cursor position
-      const currentValue = value;
-      const newValue =
-        currentValue + (currentValue.endsWith("\n") ? "" : "\n") + componentMarkup + "\n";
-      onChange(newValue);
-      // Close the panel after insertion
-      setComponentsPanelOpen(false);
-    },
-    [value, onChange]
-  );
+  // Insert action removed per UX update (copy-only)
 
   const editorHeight = isMetadataCollapsed ? "calc(100vh - 284px)" : "calc(100vh - 444px)";
   const strippedValue = value.replace(/(---.*?---)/s, "");
@@ -431,13 +419,23 @@ const MDXEditorNew = ({
           },
         }}
       >
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-          <Typography variant="h6">MDX Components</Typography>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: 1,
+            borderColor: "divider",
+            backgroundColor: "background.default",
+          }}
+        >
+          <Typography variant="h6">Known MDX Components</Typography>
           <Typography variant="body2" color="text.secondary">
-            Content Type: {contentDetails.type}
+            These components were detected from existing ‘{contentDetails.type}’ content.
           </Typography>
         </Box>
-        <MdxComponentsPanel components={mdxComponents} onComponentInsert={handleComponentInsert} />
+        <MdxComponentsPanel
+          components={mdxComponents}
+          onClosePanel={() => setComponentsPanelOpen(false)}
+        />
       </Drawer>
     </div>
   );

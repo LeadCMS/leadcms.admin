@@ -1,19 +1,20 @@
 import React from "react";
 import {
   Box,
-  Chip,
   Typography,
   Tooltip,
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Stack,
 } from "@mui/material";
 import { ChevronDown, Copy } from "lucide-react";
 import { MdxComponentDto, MdxComponentPropertyDto } from "@lib/network/swagger-client";
+import { MdxCodeBlock } from "./mdx-code-block";
 
 interface MdxComponentsPanelProps {
   components: MdxComponentDto[];
-  onComponentInsert?: (componentMarkup: string) => void;
+  onClosePanel?: () => void;
 }
 
 /**
@@ -135,16 +136,8 @@ const copyToClipboard = async (text: string) => {
 
 export const MdxComponentsPanel: React.FC<MdxComponentsPanelProps> = ({
   components,
-  onComponentInsert,
+  onClosePanel,
 }) => {
-  const handleCopyComponent = async (component: MdxComponentDto) => {
-    const markup = generateComponentMarkup(component);
-    await copyToClipboard(markup);
-    if (onComponentInsert) {
-      onComponentInsert(markup);
-    }
-  };
-
   if (components.length === 0) {
     return (
       <Box sx={{ p: 2, textAlign: "center", color: "text.secondary" }}>
@@ -157,97 +150,115 @@ export const MdxComponentsPanel: React.FC<MdxComponentsPanelProps> = ({
 
   return (
     <Box sx={{ p: 1 }}>
-      <Typography variant="h6" sx={{ mb: 2, px: 1 }}>
-        MDX Components ({components.length})
-      </Typography>
+      {components.map((component) => {
+        const defaultMarkup = generateComponentMarkup(component);
+        const example =
+          component.examples && component.examples.length > 0 ? component.examples[0] : undefined;
 
-      {components.map((component) => (
-        <Accordion key={component.name} sx={{ mb: 1 }}>
-          <AccordionSummary expandIcon={<ChevronDown size={16} />}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
-              <Typography variant="subtitle2">{component.name}</Typography>
-              {component.usageCount && (
-                <Chip size="small" label={component.usageCount} color="primary" />
-              )}
-              <Box sx={{ flex: 1 }} />
-              <Tooltip title="Copy component markup">
-                <Copy
-                  size={16}
-                  style={{ cursor: "pointer" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyComponent(component);
-                  }}
-                />
-              </Tooltip>
-            </Box>
-          </AccordionSummary>
+        return (
+          <Accordion key={component.name} sx={{ mb: 1 }}>
+            <AccordionSummary expandIcon={<ChevronDown size={16} />}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+                <Typography variant="subtitle2">{component.name}</Typography>
+                <Box sx={{ flex: 1 }} />
+                {!!component.usageCount && component.usageCount > 0 && (
+                  <Tooltip title="Approximate usage count across content">
+                    <Typography variant="caption" color="text.secondary">
+                      Used {component.usageCount} time(s)
+                    </Typography>
+                  </Tooltip>
+                )}
+              </Box>
+            </AccordionSummary>
 
-          <AccordionDetails>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {component.description && (
-                <Typography variant="body2" color="text.secondary">
-                  {component.description}
-                </Typography>
-              )}
-
-              {component.properties && component.properties.length > 0 && (
-                <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    Properties:
+            <AccordionDetails>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {component.description && (
+                  <Typography variant="body2" color="text.secondary">
+                    {component.description}
                   </Typography>
-                  {component.properties.map((prop) => (
-                    <Box key={prop.name} sx={{ ml: 1, mb: 1 }}>
-                      <Typography variant="body2">
-                        <strong>{prop.name}</strong>
-                        {prop.type && ` (${prop.type})`}
-                        {prop.isRequired && (
-                          <Box component="span" sx={{ color: "error.main" }}>
-                            {" "}
-                            *
-                          </Box>
+                )}
+
+                {component.properties && component.properties.length > 0 && (
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                      Properties:
+                    </Typography>
+                    {component.properties.map((prop) => (
+                      <Box key={prop.name} sx={{ ml: 1, mb: 1 }}>
+                        <Typography variant="body2">
+                          <strong>{prop.name}</strong>
+                          {prop.type && ` (${prop.type})`}
+                          {prop.isRequired && (
+                            <Box component="span" sx={{ color: "error.main" }}>
+                              {" "}
+                              *
+                            </Box>
+                          )}
+                        </Typography>
+                        {prop.description && (
+                          <Typography variant="caption" color="text.secondary">
+                            {prop.description}
+                          </Typography>
                         )}
-                      </Typography>
-                      {prop.description && (
-                        <Typography variant="caption" color="text.secondary">
-                          {prop.description}
-                        </Typography>
-                      )}
-                      {prop.exampleValues && prop.exampleValues.length > 0 && (
-                        <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                          Example: {prop.exampleValues[0]}
-                        </Typography>
-                      )}
-                    </Box>
-                  ))}
-                </Box>
-              )}
-
-              {component.examples && component.examples.length > 0 && (
-                <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    Example Usage:
-                  </Typography>
-                  <Box
-                    component="pre"
-                    sx={{
-                      backgroundColor: "grey.100",
-                      p: 1,
-                      borderRadius: 1,
-                      fontFamily: "monospace",
-                      fontSize: "0.8rem",
-                      overflow: "auto",
-                      margin: 0,
-                    }}
-                  >
-                    {component.examples[0]}
+                        {prop.exampleValues && prop.exampleValues.length > 0 && (
+                          <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                            Example: {prop.exampleValues[0]}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
                   </Box>
+                )}
+
+                {/* Default Markup (auto-generated) */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Default Markup
+                    </Typography>
+                    <Box sx={{ flex: 1 }} />
+                    <Tooltip title="Copy default markup to clipboard">
+                      <Copy
+                        size={16}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => {
+                          copyToClipboard(defaultMarkup);
+                          onClosePanel?.();
+                        }}
+                      />
+                    </Tooltip>
+                  </Stack>
+                  <MdxCodeBlock code={defaultMarkup} />
                 </Box>
-              )}
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-      ))}
+
+                {/* Example Usage (if provided) */}
+                {example && (
+                  <Box>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        Example Usage
+                      </Typography>
+                      <Box sx={{ flex: 1 }} />
+                      <Tooltip title="Copy example to clipboard">
+                        <Copy
+                          size={16}
+                          style={{ cursor: "pointer" }}
+                          onClick={() => {
+                            copyToClipboard(example);
+                            onClosePanel?.();
+                          }}
+                        />
+                      </Tooltip>
+                    </Stack>
+                    <MdxCodeBlock code={example} />
+                  </Box>
+                )}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        );
+      })}
     </Box>
   );
 };
