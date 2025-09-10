@@ -46,6 +46,7 @@ const MDXEditorNew = ({
   isReadOnly,
   contentDetails,
   onFrontmatterErrorChange,
+  onContentChangeStatus,
   livePreview,
   livePreviewTemplate,
   isMetadataCollapsed,
@@ -88,8 +89,9 @@ const MDXEditorNew = ({
     if (initialContent && value !== initialContent && !hasContentChanged) {
       setHasContentChanged(true);
       setPreviewKey(Date.now()); // Refresh only on first change
+      onContentChangeStatus?.(true); // Notify parent of content change
     }
-  }, [value, initialContent, hasContentChanged]);
+  }, [value, initialContent, hasContentChanged, onContentChangeStatus]);
 
   // Handle frontmatter validation
   const onErrorChange = useCallback(

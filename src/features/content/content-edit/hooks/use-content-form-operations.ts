@@ -36,6 +36,9 @@ export interface ContentFormOperations {
   setRefreshKey: (key: number) => void;
   frontmatterState: ValidateFrontmatterError | null;
   setFrontmatterState: (state: ValidateFrontmatterError | null) => void;
+  // Content change tracking for preview
+  hasContentChanged: boolean;
+  setHasContentChanged: (changed: boolean) => void;
   // Form helpers
   valueUpdate: (event: React.SyntheticEvent<Element, Event>) => void;
   valueUpdateGeneric: (field: string, value: unknown) => void;
@@ -62,6 +65,7 @@ export const useContentFormOperations = (
   const [originalContent, setOriginalContent] = useState<string>("");
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [frontmatterState, setFrontmatterState] = useState<ValidateFrontmatterError | null>(null);
+  const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
   const [useLivePreview, setUseLivePreview] = useLocalStorage(LIVE_PREVIEW_STORAGE_KEY, true);
 
   const { setSaving } = useModuleWrapperContext();
@@ -89,7 +93,11 @@ export const useContentFormOperations = (
   };
 
   const saveDraft = useDebouncedCallback(async (values: ContentDetails) => {
-    if (!useLivePreview || !hasLivePreview || (!wasModified && !coverWasModified)) {
+    if (
+      !useLivePreview ||
+      !hasLivePreview ||
+      (!wasModified && !coverWasModified && !hasContentChanged)
+    ) {
       return;
     }
 
@@ -109,7 +117,7 @@ export const useContentFormOperations = (
   }, 1000);
 
   const autoSave = useDebouncedCallback((value) => {
-    if (!wasModified && !coverWasModified) {
+    if (!wasModified && !coverWasModified && !hasContentChanged) {
       return;
     }
     const localStorageSnapshot = { ...editorLocalStorage };
@@ -179,7 +187,6 @@ export const useContentFormOperations = (
         url: response.data.coverImageUrl ? buildAbsoluteUrl(response.data.coverImageUrl) : "",
         fileName: "",
       },
-      files: [],
     } as ContentDetails;
 
     helpers.setValues(patched);
@@ -187,6 +194,7 @@ export const useContentFormOperations = (
     setRefreshKey(Date.now());
     setWasModified(false);
     setCoverWasModified(false);
+    setHasContentChanged(false); // Reset content changed state after save
     setOriginalContent(values.body || "");
 
     const localStorageSnapshot = { ...editorLocalStorage };
@@ -229,7 +237,6 @@ export const useContentFormOperations = (
       coverImageUrl: "",
       createdAt: null,
       updatedAt: null,
-      files: [],
     },
     onSubmit: submit,
     validateOnChange: false,
@@ -282,6 +289,8 @@ export const useContentFormOperations = (
     setRefreshKey,
     frontmatterState,
     setFrontmatterState,
+    hasContentChanged,
+    setHasContentChanged,
     valueUpdate,
     valueUpdateGeneric,
     autoCompleteValueUpdate,

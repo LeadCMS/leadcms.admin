@@ -205,7 +205,13 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   // Helper function to determine which preview template to use
   const getPreviewTemplate = () => {
-    return contentFormOps.useLivePreview
+    // Use LivePreviewUrlTemplate when content has been modified (draft version exists)
+    // Use PreviewUrlTemplate when no changes have been made within the current editing session
+    const shouldUseLivePreview =
+      contentFormOps.hasContentChanged ||
+      contentFormOps.wasModified ||
+      contentFormOps.coverWasModified;
+    return shouldUseLivePreview
       ? configSettings?.LivePreviewUrlTemplate
       : configSettings?.PreviewUrlTemplate;
   };
@@ -250,6 +256,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       contentFormOps.setRefreshKey(Date.now());
       contentFormOps.setWasModified(true);
       contentFormOps.setOriginalContent(aiContent.body || "");
+      contentFormOps.setHasContentChanged(false); // Reset since this is new content
       setAiDraftFormValues(null);
 
       if (isAIDraftRoute) {
@@ -279,6 +286,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       );
       contentFormOps.setRefreshKey(Date.now());
       contentFormOps.setWasModified(true);
+      contentFormOps.setHasContentChanged(true); // Mark as changed since AI edited the content
     } catch (error) {
       setAiEditDialogOpen(true);
     } finally {
@@ -392,6 +400,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         await contentFormOps.formik.setValues(content);
         await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
         contentFormOps.setOriginalContent(content.body || "");
+        contentFormOps.setHasContentChanged(false); // Reset since loading existing content
         contentFormOps.setRefreshKey(Date.now());
 
         // Preload translations
@@ -427,6 +436,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         await contentFormOps.formik.setValues(content);
         await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
         contentFormOps.setOriginalContent(content.body || "");
+        contentFormOps.setHasContentChanged(false); // Reset since loading content for duplication
         contentFormOps.setRefreshKey(Date.now());
         await setContentTypeAndMaybePreload(content.type);
       } finally {
@@ -470,6 +480,7 @@ export const ContentEdit = (props: ContentEditProps) => {
           translated.coverImagePending
         );
         contentFormOps.setOriginalContent(translated.body || "");
+        contentFormOps.setHasContentChanged(false); // Reset since loading translated content
         contentFormOps.setRefreshKey(Date.now());
         await setContentTypeAndMaybePreload(translated.type);
         // Ensure the create dialog is closed after success
@@ -514,6 +525,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         await contentFormOps.formik.setValues(content);
         await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
         contentFormOps.setOriginalContent(content.body || "");
+        contentFormOps.setHasContentChanged(false); // Reset since loading AI generated content
         contentFormOps.setRefreshKey(Date.now());
         await setContentTypeAndMaybePreload(content.type);
         return;
@@ -761,7 +773,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                                 newValue &&
                                 hasLivePreview &&
                                 id &&
-                                (contentFormOps.wasModified || contentFormOps.coverWasModified)
+                                (contentFormOps.wasModified ||
+                                  contentFormOps.coverWasModified ||
+                                  contentFormOps.hasContentChanged)
                               ) {
                                 // Save draft would be triggered automatically by the hook
                               }
@@ -902,6 +916,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                                 }}
                                 onFrontmatterErrorChange={async (value) => {
                                   contentFormOps.setFrontmatterState(value);
+                                }}
+                                onContentChangeStatus={(hasChanged) => {
+                                  contentFormOps.setHasContentChanged(hasChanged);
                                 }}
                                 value={contentFormOps.formik.values.body}
                                 isReadOnly={props.readonly}

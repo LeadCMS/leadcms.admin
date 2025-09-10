@@ -3,6 +3,7 @@ import { ValidateFrontmatterError } from "utils/frontmatter-validator";
 import { MdxComponentAnalysisDto } from "@lib/network/swagger-client";
 
 export type onFrontmatterErrorChangeFunc = (error: ValidateFrontmatterError | null) => void;
+export type onContentChangeStatusFunc = (hasChanged: boolean) => void;
 
 export interface MDXEditorNewProps {
   value: string;
@@ -10,6 +11,7 @@ export interface MDXEditorNewProps {
   isReadOnly: boolean | undefined;
   contentDetails: ContentDetails;
   onFrontmatterErrorChange: onFrontmatterErrorChangeFunc;
+  onContentChangeStatus?: onContentChangeStatusFunc;
   livePreview?: boolean;
   livePreviewTemplate?: string;
   isMetadataCollapsed: boolean;
