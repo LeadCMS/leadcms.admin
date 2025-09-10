@@ -17,6 +17,45 @@ interface MdxComponentsPanelProps {
 }
 
 /**
+ * Format a property value for proper JSX syntax
+ * For booleans: returns null if false (to omit the attribute), true if true (for shorthand syntax)
+ */
+const formatPropValueForJSX = (value: string, propType?: string | null): string | null | true => {
+  // If the value is already properly formatted (wrapped in quotes or braces), return as is
+  if (/^[""]/.test(value) || value.startsWith("{")) {
+    return value;
+  }
+
+  // Handle different types
+  switch (propType?.toLowerCase()) {
+    case "boolean":
+    case "bool":
+      // For boolean properties, use JSX shorthand conventions
+      if (value === "true") {
+        return true; // This will result in shorthand syntax like <Component prop />
+      } else if (value === "false") {
+        return null; // This will omit the attribute entirely
+      }
+      return value;
+    case "number":
+    case "int":
+    case "integer":
+      // Convert string number to JSX number expression
+      if (!isNaN(Number(value))) {
+        return `{${value}}`;
+      }
+      return value;
+    case "array":
+    case "object":
+      // These should already be wrapped in braces
+      return value.startsWith("{") ? value : `{${value}}`;
+    default:
+      // String values should be quoted
+      return `"${value}"`;
+  }
+};
+
+/**
  * Generate example markup for a component
  */
 const generateComponentMarkup = (component: MdxComponentDto): string => {
@@ -34,7 +73,19 @@ const generateComponentMarkup = (component: MdxComponentDto): string => {
     component.properties?.forEach((prop: MdxComponentPropertyDto) => {
       if (prop.name) {
         const exampleValue = prop.exampleValues?.[0] || getDefaultPropValue(prop);
-        markup += ` ${prop.name}=${exampleValue}`;
+        // Format the example value properly for JSX
+        const formattedValue = formatPropValueForJSX(exampleValue, prop.type);
+
+        if (formattedValue === null) {
+          // Omit boolean false properties
+          return;
+        } else if (formattedValue === true) {
+          // Use shorthand syntax for boolean true properties
+          markup += ` ${prop.name}`;
+        } else {
+          // Normal attribute with value
+          markup += ` ${prop.name}=${formattedValue}`;
+        }
       }
     });
   }
@@ -54,20 +105,20 @@ const generateComponentMarkup = (component: MdxComponentDto): string => {
 const getDefaultPropValue = (prop: MdxComponentPropertyDto): string => {
   switch (prop.type?.toLowerCase()) {
     case "string":
-      return `"${prop.name}"`;
+      return `${prop.name}`;
     case "number":
     case "int":
     case "integer":
       return "1";
     case "boolean":
     case "bool":
-      return "true";
+      return "true"; // Will be handled by formatPropValueForJSX to use shorthand syntax
     case "array":
-      return "{[]}";
+      return "[]";
     case "object":
-      return "{{}}";
+      return "{}";
     default:
-      return `"${prop.name}"`;
+      return `${prop.name}`;
   }
 };
 

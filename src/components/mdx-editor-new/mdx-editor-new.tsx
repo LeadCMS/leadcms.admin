@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import React from "react";
 import { Box, Grid, IconButton, Drawer, Typography, Chip } from "@mui/material";
-import { RefreshCw, Component } from "lucide-react";
+import { Component } from "lucide-react";
 import {
   MDXEditor,
   headingsPlugin,
@@ -138,6 +138,88 @@ const MDXEditorNew = ({
     [contentDetails.slug, client]
   );
 
+  // Create a comprehensive list of component descriptors including fallbacks for common patterns
+  const createJsxComponentDescriptors = useCallback(() => {
+    const knownComponents = mdxComponents.map((component) => ({
+      name: component.name,
+      kind: "flow" as const,
+      props:
+        component.properties?.map((prop) => ({
+          name: prop.name,
+          type: "string" as const,
+        })) || [],
+      hasChildren: component.acceptsChildren || false,
+      Editor: () => {
+        return React.createElement(
+          "div",
+          {
+            style: {
+              padding: "8px",
+              border: "1px dashed #ccc",
+              borderRadius: "4px",
+              backgroundColor: "#f9f9f9",
+              margin: "4px 0",
+              fontSize: "0.875rem",
+              color: "#666",
+            },
+          },
+          `<${component.name} /> component`
+        );
+      },
+    }));
+
+    // Extract component names from current content to add them as recognized components
+    const componentNamesFromContent = new Set<string>();
+    const jsxComponentRegex = /<([A-Z][a-zA-Z0-9]*(?:\.[A-Z][a-zA-Z0-9]*)*)/g;
+    let match;
+    while ((match = jsxComponentRegex.exec(value)) !== null) {
+      componentNamesFromContent.add(match[1]);
+    }
+
+    // Create descriptors for components found in content
+    const contentComponents = Array.from(componentNamesFromContent).map((name) => ({
+      name,
+      kind: "flow" as const,
+      hasChildren: true,
+      props: [
+        { name: "children", type: "string" as const },
+        { name: "className", type: "string" as const },
+        { name: "src", type: "string" as const },
+        { name: "alt", type: "string" as const },
+        { name: "caption", type: "string" as const },
+        { name: "captionType", type: "string" as const },
+        { name: "to", type: "string" as const },
+        { name: "withTopPadding", type: "string" as const },
+      ],
+      Editor: () => {
+        return React.createElement(
+          "div",
+          {
+            style: {
+              padding: "8px",
+              border: "1px dashed #e0e0e0",
+              borderRadius: "4px",
+              backgroundColor: "#f8f9fa",
+              margin: "4px 0",
+              fontSize: "0.875rem",
+              color: "#666",
+              fontStyle: "italic",
+            },
+          },
+          `<${name} /> custom component`
+        );
+      },
+    }));
+
+    // Combine known components with content components, avoiding duplicates
+    const uniqueComponents = [
+      ...knownComponents,
+      ...contentComponents.filter((c) => !mdxComponents.some((mc) => mc.name === c.name)),
+    ];
+
+    return uniqueComponents;
+  }, [mdxComponents, value]);
+
   // Handle component insertion from the components panel
   const handleComponentInsert = useCallback(
     (componentMarkup: string) => {
@@ -237,41 +319,9 @@ const MDXEditorNew = ({
                   readOnlyDiff: false,
                 }),
                 // JSX plugin for custom components with implementations
-                ...(mdxComponents.length > 0
-                  ? [
-                      jsxPlugin({
-                        jsxComponentDescriptors: mdxComponents.map((component) => ({
-                          name: component.name,
-                          kind: "flow" as const,
-                          // Removed source property to prevent automatic imports
-                          props:
-                            component.properties?.map((prop) => ({
-                              name: prop.name,
-                              type: "string" as const,
-                            })) || [],
-                          hasChildren: component.acceptsChildren || false,
-                          Editor: () => {
-                            // Render a placeholder for the custom component
-                            return React.createElement(
-                              "div",
-                              {
-                                style: {
-                                  padding: "8px",
-                                  border: "1px dashed #ccc",
-                                  borderRadius: "4px",
-                                  backgroundColor: "#f9f9f9",
-                                  margin: "4px 0",
-                                  fontSize: "0.875rem",
-                                  color: "#666",
-                                },
-                              },
-                              `<${component.name} /> component`
-                            );
-                          },
-                        })),
-                      }),
-                    ]
-                  : [jsxPlugin()]),
+                jsxPlugin({
+                  jsxComponentDescriptors: createJsxComponentDescriptors(),
+                }),
                 // Core plugins
                 headingsPlugin(),
                 quotePlugin(),
