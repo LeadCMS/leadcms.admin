@@ -19,7 +19,6 @@ import {
   toolbarPlugin,
   diffSourcePlugin,
   jsxPlugin,
-  UndoRedo,
   BoldItalicUnderlineToggles,
   CodeToggle,
   CreateLink,
@@ -349,14 +348,10 @@ const MDXEditorNew = ({
                             options={["rich-text", "diff", "source"]}
                             SourceToolbar={
                               <>
-                                <UndoRedo />
-                                <Separator />
                                 <MdxComponentsControl />
                               </>
                             }
                           >
-                            <UndoRedo />
-                            <Separator />
                             <BoldItalicUnderlineToggles />
                             <CodeToggle />
                             <Separator />
