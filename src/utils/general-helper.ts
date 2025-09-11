@@ -139,22 +139,22 @@ export function getModuleNameFromUrl(): string {
     .join(" ");
 }
 
-export const moduleNamePluralBasisCheck = ({ mdl_nm }: { mdl_nm: string }) => {
-  const mdl_sub_title = Object.values(MENU_CONFIG)
-    .map((mcnfg) => {
-      const mcnfg_list = mcnfg?.items;
-      const list_item = mcnfg_list?.find(
-        (mcnfg_alt) => mcnfg_alt?.label === mdl_nm && mcnfg_alt?.entity
+export const moduleNamePluralBasisCheck = ({ mdlNm }: { mdlNm: string }) => {
+  const mdlSubTitle = Object.values(MENU_CONFIG)
+    .map((eachMenuCnfg) => {
+      const cnfgList = eachMenuCnfg?.items;
+      const listItem = cnfgList?.find(
+        (singleCnfg) => singleCnfg?.label === mdlNm && singleCnfg?.entity
       );
-      return list_item?.entity ?? null;
+      return listItem?.entity ?? null;
     })
     .filter(Boolean);
 
-  if (mdl_sub_title[0]) {
-    const module_tag = mdl_sub_title[0]?.toString();
+  if (mdlSubTitle[0]) {
+    const moduleTag = mdlSubTitle[0]?.toString();
 
-    return module_tag[0].toUpperCase() + module_tag?.substring(1, module_tag.length);
+    return moduleTag[0].toUpperCase() + moduleTag?.slice(1);
   }
 
-  return mdl_nm;
+  return mdlNm;
 };
