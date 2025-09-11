@@ -41,7 +41,7 @@ const calculateLangPrefix = (contentLanguage: string, defaultLanguage?: string):
 
 const REQUIRED_KEYS = ["type", "slug", "body"];
 
-const MarkdownLiveViewer = ({ params, template, key: viewerKey }: MarkdownLiveViewerProps) => {
+const MarkdownLiveViewer = ({ params, template, viewerKey }: MarkdownLiveViewerProps) => {
   const userInfo = useUserInfo();
   const { config } = useConfig();
   const [loading, setLoading] = useState(false);
@@ -224,7 +224,7 @@ export const MarkdownLiveViewerFunc = (
   template: string,
   key?: React.Key
 ) => {
-  return <MarkdownLiveViewer params={params} template={template} key={key} />;
+  return <MarkdownLiveViewer params={params} template={template} viewerKey={key} key={key} />;
 };
 
 export default MarkdownLiveViewer;

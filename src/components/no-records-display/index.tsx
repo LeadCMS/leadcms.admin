@@ -12,12 +12,12 @@ const NoRecordsDisplay: React.FC<{ visible: boolean; message?: string }> = ({
       left: 0,
       width: "100%",
       color: (theme) => theme.palette.text.secondary,
-      fontWeight: (theme) => theme.typography.subtitle2.fontWeight,
+      fontWeight: "normal",
       textAlign: "center",
       pointerEvents: "none",
       opacity: visible ? 1 : 0,
       transition: "opacity",
-      fontSize: (theme) => theme.typography.subtitle1.fontSize,
+      fontSize: (theme) => theme.typography.body1.fontSize,
       zIndex: 10,
     }}
   >

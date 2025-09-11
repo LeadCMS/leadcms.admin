@@ -24,6 +24,9 @@ interface ContentLanguageSwitcherProps {
   // Translation mode props
   sourceContentId?: number; // When in translation mode, the original content's ID
   isTranslationMode?: boolean; // Whether we're in translation mode
+  // Preloaded data props
+  preloadedTranslations?: ContentDetailsDto[];
+  preloadedSourceTranslations?: ContentDetailsDto[];
 }
 
 interface LanguageWithStatus extends LanguageDto {
@@ -39,9 +42,15 @@ export const ContentLanguageSwitcher = ({
   compact = false,
   sourceContentId,
   isTranslationMode = false,
+  preloadedTranslations,
+  preloadedSourceTranslations,
 }: ContentLanguageSwitcherProps) => {
-  const [translations, setTranslations] = useState<ContentDetailsDto[]>([]);
-  const [sourceTranslations, setSourceTranslations] = useState<ContentDetailsDto[]>([]);
+  const [translations, setTranslations] = useState<ContentDetailsDto[]>(
+    preloadedTranslations || []
+  );
+  const [sourceTranslations, setSourceTranslations] = useState<ContentDetailsDto[]>(
+    preloadedSourceTranslations || []
+  );
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -54,13 +63,25 @@ export const ContentLanguageSwitcher = ({
   const isMenuOpen = Boolean(anchorEl);
 
   useEffect(() => {
-    if (contentId) {
+    // Use preloaded data if available, otherwise fetch
+    if (preloadedTranslations) {
+      setTranslations(preloadedTranslations);
+    } else if (contentId) {
       loadTranslations();
     }
-    if (isTranslationMode && sourceContentId) {
+
+    if (preloadedSourceTranslations) {
+      setSourceTranslations(preloadedSourceTranslations);
+    } else if (isTranslationMode && sourceContentId) {
       loadSourceTranslations();
     }
-  }, [contentId, isTranslationMode, sourceContentId]);
+  }, [
+    contentId,
+    isTranslationMode,
+    sourceContentId,
+    preloadedTranslations,
+    preloadedSourceTranslations,
+  ]);
 
   const loadTranslations = async () => {
     if (!contentId) return; // Don't load if contentId is 0 or falsy
@@ -478,9 +499,15 @@ export const LanguageHighlights = ({
   onCreateTranslation,
   sourceContentId,
   isTranslationMode = false,
+  preloadedTranslations,
+  preloadedSourceTranslations,
 }: ContentLanguageSwitcherProps) => {
-  const [translations, setTranslations] = useState<ContentDetailsDto[]>([]);
-  const [sourceTranslations, setSourceTranslations] = useState<ContentDetailsDto[]>([]);
+  const [translations, setTranslations] = useState<ContentDetailsDto[]>(
+    preloadedTranslations || []
+  );
+  const [sourceTranslations, setSourceTranslations] = useState<ContentDetailsDto[]>(
+    preloadedSourceTranslations || []
+  );
   const [loading, setLoading] = useState(false);
   const { client } = useRequestContext();
   const { config } = useConfig();
@@ -488,13 +515,25 @@ export const LanguageHighlights = ({
   const supportedLanguages = config?.languages || [];
 
   useEffect(() => {
-    if (contentId) {
+    // Use preloaded data if available, otherwise fetch
+    if (preloadedTranslations) {
+      setTranslations(preloadedTranslations);
+    } else if (contentId) {
       loadTranslations();
     }
-    if (isTranslationMode && sourceContentId) {
+
+    if (preloadedSourceTranslations) {
+      setSourceTranslations(preloadedSourceTranslations);
+    } else if (isTranslationMode && sourceContentId) {
       loadSourceTranslations();
     }
-  }, [contentId, isTranslationMode, sourceContentId]);
+  }, [
+    contentId,
+    isTranslationMode,
+    sourceContentId,
+    preloadedTranslations,
+    preloadedSourceTranslations,
+  ]);
 
   const loadTranslations = async () => {
     if (!contentId) return; // Don't load if contentId is 0 or falsy

@@ -191,7 +191,7 @@ const MarkdownEditor = ({
             <MDEditor
               aria-disabled={isReadOnly}
               hideToolbar={isReadOnly}
-              height={isMetadataCollapsed ? "calc(100vh - 325px)" : "calc(100vh - 500px)"}
+              height={isMetadataCollapsed ? "calc(100vh - 284px)" : "calc(100vh - 444px)"}
               preview={"live"}
               value={value}
               onChange={onChange}

@@ -15,6 +15,7 @@ import {
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { BreadcrumbLink } from "../../types";
 import { ResponsiveActions } from "@components/responsive-actions";
+import { useLayout } from "@providers/layout-provider";
 
 export interface ModuleWrapperProps extends PropsWithChildren {
   key?: string;
@@ -25,6 +26,7 @@ export interface ModuleWrapperProps extends PropsWithChildren {
   addButtonContainerChildren?: ReactNode | undefined;
   actionButtons?: ReactNode | undefined;
   isForm?: boolean;
+  fullWidth?: boolean;
 }
 
 export const ModuleWrapper = ({
@@ -33,16 +35,22 @@ export const ModuleWrapper = ({
   addButtonContainerChildren,
   actionButtons,
   isForm = false,
+  fullWidth: propFullWidth,
   children,
 }: ModuleWrapperProps) => {
   const { isBusy } = useModuleWrapperContext();
+  const { fullWidth: contextFullWidth } = useLayout();
+
+  // Use prop fullWidth if provided, otherwise use context fullWidth
+  const fullWidth = propFullWidth ?? contextFullWidth;
+
   const rightActions = [
     ...flattenChildren(extraActionsContainerChildren),
     addButtonContainerChildren,
   ].filter(React.isValidElement);
 
   return (
-    <ModuleContainer>
+    <ModuleContainer fullWidth={fullWidth}>
       {(leftContainerChildren || extraActionsContainerChildren || addButtonContainerChildren) && (
         <ActionsContainer>
           {leftContainerChildren && <LeftContainer>{leftContainerChildren}</LeftContainer>}
@@ -61,7 +69,7 @@ export const ModuleWrapper = ({
         {isBusy && (
           <>
             <LoadingIndicatorContainer />
-            <CenteredCircularProgress />
+            <CenteredCircularProgress size={40} thickness={4} />
           </>
         )}
       </ModuleContentContainer>

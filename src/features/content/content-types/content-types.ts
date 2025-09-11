@@ -84,8 +84,7 @@ export const generateDefaultValues = (contentUid: string): ContentDetails => {
     category: "",
     createdAt: "",
     updatedAt: "",
-    publishedAt: dayjs().toISOString(),
-    files: null,
+    publishedAt: "",
   };
 };
 

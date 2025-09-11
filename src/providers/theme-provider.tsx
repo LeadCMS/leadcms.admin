@@ -78,8 +78,15 @@ export const themeOptions: ThemeOptions = {
         },
       },
     },
+    MuiCardContent: {
+      styleOverrides: {
+        root: {
+          paddingLeft: "23px",
+        },
+      },
+    },
   },
-};
+} as ThemeOptions;
 
 const mainTheme = createTheme(themeOptions);
 

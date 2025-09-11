@@ -1,12 +1,12 @@
 import { styled } from "@mui/material";
 
-export const ModuleContainer = styled("div")`
+export const ModuleContainer = styled("div")<{ fullWidth?: boolean }>`
   display: flex;
   flex-flow: column;
   height: 100%;
   width: 100%;
   gap: ${({ theme }) => theme.spacing(6)};
-  padding: ${({ theme }) => theme.spacing(5)};
+  padding: ${({ theme, fullWidth }) => (fullWidth ? 0 : theme.spacing(5))};
 `;
 
 export const ModuleHeaderContainer = styled("div")`

@@ -41,6 +41,7 @@ export const ModuleContentContainer = styled("div")`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 500px; /* Increased to ensure proper centering */
 `;
 
 export const ScrollContainer = styled("div")`
@@ -84,7 +85,8 @@ export const LoadingIndicatorContainer = styled("div")`
   bottom: 0;
   background-color: ${({ theme }) => theme.palette.grey[300]};
   opacity: 0.2;
-  z-index: 98;
+  z-index: 998; /* Higher z-index to ensure proper layering */
+  min-height: calc(100vh - 144px);
 `;
 
 export const CenteredCircularProgress = styled(CircularProgress)`
@@ -93,7 +95,20 @@ export const CenteredCircularProgress = styled(CircularProgress)`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 99;
+  z-index: 999; /* Higher z-index to ensure it's on top */
+  color: ${({ theme }) => theme.palette.primary.main};
+
+  /* Ensure consistent size and visibility */
+  &.MuiCircularProgress-root {
+    width: 40px !important;
+    height: 40px !important;
+    pointer-events: none; /* Ensure no interaction conflicts */
+  }
+
+  /* Ensure it's always visible on top */
+  &.MuiCircularProgress-svg {
+    display: block;
+  }
 `;
 
 export const SavingIndicatorContainer = styled("div")``;

@@ -14,6 +14,7 @@ interface AppLayoutProps {
   className?: string;
   breadcrumbs?: { linkText: string; toRoute: string }[];
   currentBreadcrumb?: string;
+  fullWidth?: boolean;
 }
 
 export type MenuItem = {
@@ -36,6 +37,7 @@ export const AppLayout = ({
   className = "",
   breadcrumbs = [],
   currentBreadcrumb = "",
+  fullWidth = false,
 }: AppLayoutProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -69,7 +71,7 @@ export const AppLayout = ({
         />
         <MainColumn>
           <AppHeader breadcrumbs={breadcrumbs} currentBreadcrumb={currentBreadcrumb} />
-          <MainContent>{children}</MainContent>
+          <MainContent fullWidth={fullWidth}>{children}</MainContent>
         </MainColumn>
       </AppLayoutWrapper>
     </SidebarProvider>
