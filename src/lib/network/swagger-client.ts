@@ -4975,26 +4975,29 @@ export interface DomainUpdateDto {
 export interface DtoSchema {
   /**
    * Type
+   * @minLength 1
    * @example "string"
    */
-  type?: string;
+  type: string;
   /** Properties */
-  properties?: Record<string, any>;
+  properties: Record<string, any>;
   /** Required */
-  required?: string[] | null;
+  required: string[];
 }
 
 export interface DynamicApiFnDto {
   /**
    * Endpoint
+   * @minLength 1
    * @example "string"
    */
-  endpoint?: string;
+  endpoint: string;
   /**
    * Method
+   * @minLength 1
    * @example "string"
    */
-  method?: string;
+  method: string;
 }
 
 export interface DynamicExtraActionsDto {
@@ -5022,14 +5025,16 @@ export interface DynamicFormFnsDto {
 export interface DynamicModuleDto {
   /**
    * Module Name
+   * @minLength 1
    * @example "string"
    */
-  moduleName?: string;
+  moduleName: string;
   /**
    * Module Path
+   * @minLength 1
    * @example "string"
    */
-  modulePath?: string;
+  modulePath: string;
   /**
    * Add Button Content
    * @example "string"
@@ -5050,13 +5055,14 @@ export interface DynamicSchemasDto {
 export interface DynamicTablePropsDto {
   /**
    * Key
+   * @minLength 1
    * @example "string"
    */
-  key?: string;
-  getItemsFn?: DynamicApiFnDto;
+  key: string;
+  getItemsFn: DynamicApiFnDto;
   schema?: DtoSchema;
   /** Initially Shown Columns */
-  initiallyShownColumns?: string[] | null;
+  initiallyShownColumns?: string[];
 }
 
 export interface EmailGroupCreateDto {
@@ -5320,8 +5326,8 @@ export interface ExportActionDto {
    * Show Button
    * @example true
    */
-  showButton?: boolean | null;
-  exportItemsFn?: DynamicApiFnDto;
+  showButton: boolean;
+  exportItemsFn: DynamicApiFnDto;
 }
 
 export interface FileDetailsDto {
@@ -5402,9 +5408,9 @@ export interface ImportActionDto {
    * Show Button
    * @example true
    */
-  showButton?: boolean | null;
-  importSchema?: DtoSchema;
-  importItemsFn?: DynamicApiFnDto;
+  showButton: boolean;
+  importSchema: DtoSchema;
+  importItemsFn: DynamicApiFnDto;
 }
 
 export interface ImportError {
@@ -7368,7 +7374,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.74.0
+ * @version 1.2.77.0
  */
 export class Api<
   SecurityDataType extends unknown,
