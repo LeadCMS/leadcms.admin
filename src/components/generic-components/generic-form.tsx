@@ -410,10 +410,10 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
     }
   };
 
-  const action_tag = actionSet();
+  const actionTag = actionSet();
   const moduleName = getModuleNameFromUrl();
   const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
-  const mdlName_without_prural_basis = moduleNamePluralBasisCheck({ mdl_nm: moduleName });
+  const mdlNameWithoutPruralBasis = moduleNamePluralBasisCheck({ mdlNm: moduleName });
 
   return (
     <>
@@ -485,7 +485,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
                   </Box>
                 )}
                 <Typography variant="subtitle1" fontWeight="500" color="primary.main">
-                  {`${action_tag} ${mdlName_without_prural_basis} Details`}
+                  {`${actionTag} ${mdlNameWithoutPruralBasis} Details`}
                 </Typography>
               </Grid>
               {fieldsSet()
