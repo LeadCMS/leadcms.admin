@@ -7,9 +7,14 @@ import { useNavigate } from "react-router-dom";
 interface ContentLanguageBadgesProps {
   content: ContentDetailsDto;
   compact?: boolean;
+  shape?: "pill" | "square";
 }
 
-export const ContentLanguageBadges = ({ content, compact = false }: ContentLanguageBadgesProps) => {
+export const ContentLanguageBadges = ({
+  content,
+  compact = false,
+  shape = "pill",
+}: ContentLanguageBadgesProps) => {
   const { config } = useConfig();
   const navigate = useNavigate();
 
@@ -68,6 +73,8 @@ export const ContentLanguageBadges = ({ content, compact = false }: ContentLangu
     (lang) => !lang.translationExists && !lang.isCurrent
   );
 
+  const isSquare = shape === "square";
+
   if (compact) {
     // Compact view - show all language chips
     return (
@@ -87,6 +94,7 @@ export const ContentLanguageBadges = ({ content, compact = false }: ContentLangu
               sx={{
                 fontSize: "0.65rem",
                 height: 20,
+                borderRadius: isSquare ? 1 : undefined,
                 cursor: "pointer",
                 "&:hover": {
                   backgroundColor: lang.isCurrent ? "primary.dark" : "action.hover",
@@ -113,6 +121,7 @@ export const ContentLanguageBadges = ({ content, compact = false }: ContentLangu
               sx={{
                 fontSize: "0.65rem",
                 height: 20,
+                borderRadius: isSquare ? 1 : undefined,
                 cursor: "pointer",
                 opacity: 0.8,
                 "&:hover": {
@@ -145,6 +154,7 @@ export const ContentLanguageBadges = ({ content, compact = false }: ContentLangu
             color={lang.isCurrent ? "primary" : "default"}
             onClick={() => handleLanguageClick(lang.code || "")}
             sx={{
+              borderRadius: isSquare ? 1 : undefined,
               cursor: "pointer",
               "&:hover": {
                 backgroundColor: lang.isCurrent ? "primary.dark" : "action.hover",
@@ -165,6 +175,7 @@ export const ContentLanguageBadges = ({ content, compact = false }: ContentLangu
             color="success"
             onClick={() => handleLanguageClick(lang.code || "")}
             sx={{
+              borderRadius: isSquare ? 1 : undefined,
               cursor: "pointer",
               opacity: 0.7,
               "&:hover": {

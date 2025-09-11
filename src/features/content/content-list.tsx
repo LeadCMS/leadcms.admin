@@ -558,6 +558,21 @@ const ItemCard = ({
     setAnchorEl(null);
   };
 
+  let publishedTooltipTitle = "";
+  if (item.publishedAt) {
+    const d = new Date(item.publishedAt);
+    publishedTooltipTitle = "Published at " + d.toLocaleDateString();
+  }
+  let metaDateLabel = "Updated:";
+  let metaDateValue = "—";
+  if (item.updatedAt) {
+    metaDateLabel = "Updated:";
+    metaDateValue = new Date(item.updatedAt).toLocaleDateString();
+  } else if (item.createdAt) {
+    metaDateLabel = "Created:";
+    metaDateValue = new Date(item.createdAt).toLocaleDateString();
+  }
+
   return (
     <Card
       sx={{
@@ -599,6 +614,26 @@ const ItemCard = ({
             }}
           />
         )}
+        {/* Published/Draft status chip */}
+        <Tooltip title={publishedTooltipTitle} disableHoverListener={!item.publishedAt} arrow>
+          <Chip
+            label={item.publishedAt ? "Published" : "Draft"}
+            color={item.publishedAt ? "success" : "warning"}
+            variant="filled"
+            size="small"
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              zIndex: 2,
+              fontWeight: 700,
+              fontSize: 12,
+              height: 24,
+              borderRadius: 1,
+              boxShadow: 1,
+            }}
+          />
+        </Tooltip>
         <CardMedia
           component="img"
           image={getContentCoverImageUrl(item.coverImageUrl)}
@@ -614,15 +649,12 @@ const ItemCard = ({
         {/* Future: badges/overlays can be placed here */}
       </Box>
       <CardContent sx={{ flexGrow: 1, p: 4, pb: 3 }}>
-        <Box display="flex" alignItems="center" gap={2} mb={2.5}>
-          <Chip
-            label={item.language?.toUpperCase() || "-"}
-            size="small"
-            variant="outlined"
-            sx={{ borderRadius: 1, fontSize: 12, height: 24, fontWeight: 700 }}
-          />
+        <Box display="flex" alignItems="center" gap={1} mb={2.5}>
           <Typography variant="caption" color="text.secondary">
-            {item.createdAt && new Date(item.createdAt).toLocaleDateString()}
+            {metaDateLabel}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {metaDateValue}
           </Typography>
         </Box>
         <Typography
@@ -630,8 +662,14 @@ const ItemCard = ({
           variant="subtitle1"
           fontWeight={600}
           component="div"
-          noWrap
-          sx={{ mb: 2, lineHeight: 1.3, maxHeight: 40 }}
+          sx={{
+            mb: 2,
+            lineHeight: 1.3,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
         >
           {item.title}
         </Typography>
@@ -650,7 +688,7 @@ const ItemCard = ({
         </Typography>
 
         {/* Language Badges */}
-        <ContentLanguageBadges content={item} compact={true} />
+        <ContentLanguageBadges content={item} compact={true} shape="square" />
       </CardContent>
       <CardActions sx={{ justifyContent: "space-between", pl: 4, pr: 4, pt: 0, pb: 3 }}>
         <Box display="flex" alignItems="center" gap={1.5}>
