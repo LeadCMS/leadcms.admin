@@ -526,7 +526,7 @@ const MediaManagement = () => {
       ) : items.length === 0 ? (
         <Box textAlign="center" py={6}>
           <Typography>
-            {isSearching ? "No files found for your search." : "This folder is empty."}
+            {isSearching ? "No files found for your search" : "This folder is empty"}
           </Typography>
         </Box>
       ) : (

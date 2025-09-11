@@ -108,7 +108,6 @@ export const ContentList = () => {
   const [sortField, setSortField] = useState(storedSettings.sortField);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">(storedSettings.sortDirection);
   const [searchTerm, setSearchTerm] = useState(storedSettings?.searchTerm ?? "");
-  const [searching, setSearching] = useState(false);
 
   // Check if preview features are available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
@@ -192,7 +191,6 @@ export const ContentList = () => {
 
     if (searchTerm.trim() !== "") {
       filter.query = searchTerm;
-      setSearching(true);
     }
 
     const whereQuery = buildWhereQuery();
@@ -228,7 +226,6 @@ export const ContentList = () => {
         if (count) totalCount = parseInt(count, 10);
       }
       setContentItemsCount(totalCount);
-      setSearching(false);
     } catch (e) {
       console.log(e);
     } finally {
@@ -403,12 +400,8 @@ export const ContentList = () => {
         clearAllFilters={clearAllFilters}
       />
       <NoRecordsDisplay
-        visible={
-          !searching &&
-          contentItemsCount === 0 &&
-          (searchTerm.trim() !== "" || whereFilters.length > 0)
-        }
-        message="No content found."
+        visible={!isLoading && contentItemsCount === 0}
+        message="No content found"
       />
 
       <ContentSortPopup
