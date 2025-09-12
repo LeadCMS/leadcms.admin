@@ -71,3 +71,11 @@ export interface ExportParams {
   basicFilterQuery: string | undefined;
   searchTerm: string;
 }
+
+export type CustomStylingInstance = {
+  omitTW?: boolean;
+  cmpTag?: string;
+  cmpStyles?: string[];
+  twStyles?: string[];
+  dymStyles?: string[];
+};
