@@ -1,6 +1,7 @@
 import { RequestContextType } from "@providers/request-provider";
 import { continentListStorageKey, countryListStorageKey } from "./constants";
 import { NotificationsService } from "@hooks";
+import { CustomStylingInstance } from "types";
 
 export const getCountryList = async (context: RequestContextType) => {
   const countries = localStorage.getItem(countryListStorageKey);
@@ -134,6 +135,12 @@ export function getModuleNameFromUrl(): string {
   return moduleRaw
     .split("-")
     .filter(Boolean)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
+}
+
+export function SetComponentStyles({ styleObj }: { styleObj?: CustomStylingInstance }): string {
+  const { omitTW = false, cmpStyles = [], twStyles = [], dymStyles = [] } = styleObj ?? {};
+
+  return [...cmpStyles, ...(omitTW ? [] : twStyles), ...dymStyles].filter(Boolean).join(" ").trim();
 }
