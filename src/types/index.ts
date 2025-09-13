@@ -79,3 +79,16 @@ export type CustomStylingInstance = {
   twStyles?: string[];
   dymStyles?: string[];
 };
+
+export type LocalContainerProps = {
+  cmpID?: string;
+  children?: React.ReactNode;
+  rootElement?: "article" | "section" | "div";
+  styleObj?: CustomStylingInstance;
+  cmpFontSize?: number | 14;
+};
+
+export type CLIinstance = {
+  dir?: string;
+  cmd: string[];
+};
