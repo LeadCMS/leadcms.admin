@@ -359,6 +359,12 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     saveGridStateInLocalStorage();
   }, [columnWidths]);
 
+  useEffect(() => {
+    if (filterState.columnOrder) {
+      setColumns?.(sortColumnsByOrder(columns, filterState.columnOrder));
+    }
+  }, [filterState.columnOrder]);
+
   const handleSortChange = (sortModel: GridSortModel) => {
     if (sortModel.length > 0) {
       setFilterState((prev) => ({
