@@ -83,8 +83,6 @@ export const DataList = <TModel extends GridValidRowModel>({
   const [searchTerm, setSearchTerm] = useState("");
   const [totalRowCount, setTotalRowCount] = useState<number>();
 
-  const [filterState, setFilterState] = useState<GridDataFilterState>();
-
   const [columnVisibilityModel, setColumnVisibilityModel] = useState<Record<string, boolean>>(
     gridSettings?.columnVisibilityModel ?? {}
   );
@@ -112,6 +110,8 @@ export const DataList = <TModel extends GridValidRowModel>({
     pageNumber: 0,
     columnVisibilityModel: initialGridState?.columns?.columnVisibilityModel,
   };
+
+  const [filterState, setFilterState] = useState<GridDataFilterState>(defaultFilterState);
 
   const whereFilterQuery = filterState?.whereFilters?.length
     ? filterState.whereFilters
@@ -212,6 +212,12 @@ export const DataList = <TModel extends GridValidRowModel>({
       );
     }
   }, [columnWidths]);
+
+  useEffect(() => {
+    if (filterState && filterState.columnOrder) {
+      setColumns?.(sortColumnsByOrder(columns, filterState.columnOrder));
+    }
+  }, [filterState.columnOrder]);
 
   const saveGridStateInLocalStorage = () => {
     if (filterState) {
