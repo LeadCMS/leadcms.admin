@@ -1,4 +1,5 @@
 import { GridColumnVisibilityModel, GridFilterModel } from "@mui/x-data-grid";
+import { Theme } from "@mui/material/styles";
 
 export interface BreadcrumbLink {
   linkText: string;
@@ -80,7 +81,31 @@ export type CustomStylingInstance = {
   dymStyles?: string[];
 };
 
+export type CardContentProps = {
+  icon?: string;
+  title?: string;
+  descrp?: string;
+  tags?: {
+    label: string;
+    value: string;
+    attr: string;
+    ext?: string;
+  }[];
+  context?: {
+    label?: string;
+    value?: string;
+  }[];
+  children?: React.ReactNode;
+  hide?: boolean;
+};
+
+export type CLIinstance = {
+  dir?: string;
+  cmd: string[];
+};
+
 export type LocalContainerProps = {
+  className?: string;
   cmpID?: string;
   children?: React.ReactNode;
   rootElement?: "article" | "section" | "div";
@@ -88,7 +113,6 @@ export type LocalContainerProps = {
   cmpFontSize?: number | 14;
 };
 
-export type CLIinstance = {
-  dir?: string;
-  cmd: string[];
+export type StyledProps = LocalContainerProps & {
+  theme?: Theme;
 };
