@@ -2,7 +2,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { useRequestContext } from "@providers/request-provider";
 import { Alert, Badge } from "@mui/material";
 import { useEffect, useState } from "react";
-import { Download, Heart } from "lucide-react";
+import { Download, Heart, Coffee } from "lucide-react";
 import {
   MainContainer,
   SubContainer,
@@ -16,7 +16,7 @@ import { TabularGridContainer } from "@components/tabular-grid";
 import { TitleContainer } from "@components/title";
 import {
   LeadCMSbadges,
-  TeckStack,
+  TechStack,
   Storage,
   ExternalResources,
   CLI,
@@ -25,52 +25,84 @@ import {
 } from "./siteConfigInfo";
 
 export const AboutModule = () => {
-  const { client } = useRequestContext();
-  const [backendVersion, setBackendVersion] = useState<string | null>(null);
+  const [cardOrder, setCardOrder] = useState(Object.keys(TechStack));
+  const [systemInfoCards, setSystemInfoCards] = useState(Object.entries(TechStack));
   const selfHostedBadge = LeadCMSbadges.find((mt) => mt.label === "Self-Hosted") || null;
+  const showUpdateIndicator = Storage.server.deployment === "On-Premises" && selfHostedBadge;
 
-  useEffect(() => {
-    const getVersion = async () => {
-      const { data } = await client.api.versionList();
-      setBackendVersion(data.version || "Unknown");
-    };
-    getVersion();
-  });
+  const sleep = (ms: number) =>
+    new Promise<void>((resolve) => window.setTimeout(() => resolve(), ms));
+
+  const resetPyramidCards = async (hoveredEl: HTMLElement) => {
+    const techKeys = Object.keys(TechStack);
+    const hoveredKey = hoveredEl.classList[1].split("-")[1];
+    const hoveredIdx = techKeys.indexOf(hoveredKey);
+
+    let newOrder: string[];
+
+    if (hoveredIdx === 0) {
+      newOrder = [techKeys[1], techKeys[0], techKeys[2]];
+    } else if (hoveredIdx === 1) {
+      newOrder = [techKeys[0], techKeys[1], techKeys[2]];
+    } else {
+      newOrder = [techKeys[1], techKeys[2], techKeys[0]];
+    }
+
+    if (JSON.stringify(cardOrder) != JSON.stringify(newOrder)) {
+      await sleep(1500);
+
+      setCardOrder(newOrder);
+
+      const refinedCards: [string, typeof TechStack.site][] = newOrder.map((key) => {
+        const found = systemInfoCards.find(([k]) => k === key);
+        const data = found?.[1] ?? TechStack[key as keyof typeof TechStack];
+
+        return [key, data];
+      });
+
+      setSystemInfoCards(refinedCards);
+
+      await sleep(3000);
+    }
+  };
 
   return (
     <ModuleWrapper breadcrumbs={[]} currentBreadcrumb={"About"}>
       <MainContainer
         cmpID="about_section"
         styleObj={{
-          cmpTag: "main",
-          cmpStyles: ["container"],
+          cmpTag: "container",
+          cmpStyles: ["main-container", "about-section-container"],
         }}
         cmpFontSize={18}
       >
         <SubContainer
-          cmpID="banner"
+          cmpID="banner_area"
           styleObj={{
-            cmpTag: "sub",
-            cmpStyles: ["container"],
+            cmpTag: "container",
+            cmpStyles: [
+              "sub-container",
+              "banner-container",
+              showUpdateIndicator ? "" : "no-update-indicator",
+            ],
           }}
           cmpFontSize={16}
         >
           <TileContainer
-            cmpID="organization"
             styleObj={{
-              cmpTag: "logo",
-              cmpStyles: ["container"],
+              cmpTag: "container",
+              cmpStyles: ["logo-container"],
             }}
             cmpFontSize={16}
           >
             <img src="/images/logo.png" alt="LeadCMS.ai Logo" className="brand-logo" />
-            <h1 className="brand-name">LeadCMS.ai</h1>
-            <p className="memo">The Open-Source Sales Automation & CMS for SaaS</p>
+            <p className="brand-name">LeadCMS.ai</p>
+            <p className="brand-moto">The Open-Source Sales Automation & CMS for SaaS</p>
           </TileContainer>
           <TileContainer
             styleObj={{
-              cmpTag: "badge",
-              cmpStyles: ["container"],
+              cmpTag: "container",
+              cmpStyles: ["badge-container"],
             }}
             cmpFontSize={10}
           >
@@ -78,7 +110,7 @@ export const AboutModule = () => {
               <Badge
                 // variant={mt.variant}
                 key={`0${_key}`}
-                className={mt.attr}
+                className={`badge ${mt.attr}`}
               >
                 {mt.label}
               </Badge>
@@ -86,33 +118,36 @@ export const AboutModule = () => {
           </TileContainer>
         </SubContainer>
 
-        {Storage.server.deployment === "On-Premises" && selfHostedBadge && (
+        {showUpdateIndicator && (
           <SubContainer
             cmpID="update_indicator"
             styleObj={{
-              cmpTag: "sub",
-              cmpStyles: ["container"],
+              cmpTag: "container",
+              cmpStyles: ["sub-container", "alert-container"],
             }}
             cmpFontSize={16}
           >
-            <Alert className="alert normal">
+            <Alert className="alert-panel normal">
               <h5 className="alert-title">
-                <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <>
+                  <Download />
+                  &nbsp;
+                </>
                 <span>
-                  New version available: v
+                  New version available:
                   {
-                    TeckStack.site.segment_i.tags.find((tag) => tag.label === "latestVersion")
+                    TechStack.site.segment_i.tags.find((tag) => tag.label === "latest-version")
                       ?.value
                   }
                 </span>
               </h5>
-              <p className="alert-description">
+              <p className="alert-context">
                 Update your on-premises deployment using Docker Compose:
               </p>
               <TerminalContainer
                 styleObj={{
-                  cmpTag: "terminal",
-                  cmpStyles: ["container"],
+                  cmpTag: "container",
+                  cmpStyles: ["terminal-container"],
                 }}
                 cliObj={CLI}
               />
@@ -122,21 +157,26 @@ export const AboutModule = () => {
 
         <SubContainer
           styleObj={{
-            cmpTag: "system-detail",
-            cmpStyles: ["container"],
+            cmpTag: "container",
+            cmpStyles: [
+              "sub-container",
+              "system-details-container",
+              showUpdateIndicator ? "" : "no-update-indicator",
+            ],
           }}
         >
           <>
-            {Object.entries(TeckStack).map(([segmentKey, segment]) => (
+            {systemInfoCards.map(([segmentKey, segment]) => (
               <CardContainer
                 key={segmentKey}
                 styleObj={{
-                  cmpTag: "system-detail",
-                  cmpStyles: ["container"],
+                  cmpTag: `card card-${segmentKey}`,
+                  cmpStyles: ["system-details-card"],
                 }}
                 cHeader={segment.segment_i || null}
                 cBody={segment.segment_ii || null}
                 cFooter={segment.segment_iii || null}
+                onMouseEnter={(e) => resetPyramidCards(e.currentTarget)}
               />
             ))}
           </>
@@ -144,16 +184,17 @@ export const AboutModule = () => {
 
         <TabularGridContainer
           styleObj={{
-            cmpTag: "tab",
-            cmpStyles: ["segment"],
+            cmpTag: "tabular-segment",
+            cmpStyles: ["product-stack-segment"],
           }}
           gridObj={SystemStatus}
+          tableName={"Product-Stack"}
         />
 
         <TitleContainer
           styleObj={{
-            cmpTag: "resources",
-            cmpStyles: ["title-bar"],
+            cmpTag: "title-bar",
+            cmpStyles: ["resources-title-bar"],
           }}
           rootElementAlt={"h2"}
           context="Resources"
@@ -164,8 +205,8 @@ export const AboutModule = () => {
         <SubContainer
           cmpID="resources"
           styleObj={{
-            cmpTag: "sub",
-            cmpStyles: ["container"],
+            cmpTag: "container",
+            cmpStyles: ["sub-container", "resources-container"],
           }}
           cmpFontSize={16}
         >
@@ -174,12 +215,17 @@ export const AboutModule = () => {
               <TileContainer
                 key={linkKey}
                 styleObj={{
-                  cmpTag: "resource",
-                  cmpStyles: ["container"],
+                  cmpTag: "container",
+                  cmpStyles: ["tile-container", "resource-container"],
                 }}
                 cmpFontSize={16}
               >
-                <a href={link.url} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={link.url}
+                  target="_blank"
+                  className="resource-link"
+                  rel="noopener noreferrer"
+                >
                   <span className="icon">{link.icon}</span>
                   <h4 className="domain">{link.name}</h4>
                 </a>
@@ -190,8 +236,8 @@ export const AboutModule = () => {
 
         <TitleContainer
           styleObj={{
-            cmpTag: "contributors",
-            cmpStyles: ["title-bar"],
+            cmpTag: "title-bar",
+            cmpStyles: ["contributors-title-bar"],
           }}
           rootElementAlt={"h2"}
           context="Development Team"
@@ -201,8 +247,8 @@ export const AboutModule = () => {
 
         <SubContainer
           styleObj={{
-            cmpTag: "contributors",
-            cmpStyles: ["container"],
+            cmpTag: "container",
+            cmpStyles: ["sub-container", "contributors-container"],
           }}
         >
           <>
@@ -210,8 +256,8 @@ export const AboutModule = () => {
               <UserContainer
                 key={memberKey}
                 styleObj={{
-                  cmpTag: "contributor",
-                  cmpStyles: ["container"],
+                  cmpTag: "user-card",
+                  cmpStyles: ["contributor-user-card"],
                 }}
                 cmpFontSize={14}
                 memberObj={member}
@@ -223,13 +269,13 @@ export const AboutModule = () => {
         <TitleContainer
           cmpID="footer"
           styleObj={{
-            cmpTag: "footer",
-            cmpStyles: ["title-bar"],
+            cmpTag: "title-bar",
+            cmpStyles: ["footer-title-bar", "panel-type-title-bar"],
           }}
-          rootElementAlt={"h2"}
-          context="by our LeadCMS-Devs"
+          rootElementAlt={"p"}
+          context=""
         >
-          Made with <Heart className="h-5 w-5 text-red-500" />
+          Made with <Heart /> by our LeadCMS-Devs <Coffee />
         </TitleContainer>
       </MainContainer>
     </ModuleWrapper>

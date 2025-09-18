@@ -1,86 +1,83 @@
 import { Github, Globe, BookOpen } from "lucide-react";
 
-export const TeckStack = {
+export const TechStack = {
   site: {
     segment_i: {
+      icon: "Globe",
       title: "Website",
       descrp: "Next.js with React 18 and Tailwind CSS",
       tags: [
-        { label: "version", value: "1.2.75-pre", attr: "primary" },
-        { label: "latestVersion", value: "1.2.80", attr: "secondary" },
+        { label: "version", value: "v1.2.75-pre", attr: "primary" },
+        { label: "latest-version", value: "v1.2.80", attr: "secondary", ext: "available" },
       ],
     },
     segment_ii: {
       context: [
-        { label: "framework", value: "Next.js 15.0.4" },
-        { label: "lastUpdated", value: "2025-01-08" },
+        { label: "framework", value: "Next.js v15.0.4" },
+        { label: "last-updated", value: "2025-01-08" },
       ],
-      children: (
-        <div className="progress-bar">
-          <p className="label">System Score</p>
-          {/* <ProgressBar value={80} className="value" /> */}
-        </div>
-      ),
     },
     segment_iii: {
       context: [
-        { label: "React", value: "18.3.1" },
-        { label: "Tailwind CSS", value: "3.4.0" },
-        { label: "shadcn/ui", value: "0.9.0" },
-        { label: "Lucide Icons", value: "0.460.0" },
-        { label: "TypeScript", value: "5.6.3" },
+        { label: "React", value: "v18.3.1" },
+        { label: "Tailwind CSS", value: "v3.4.0" },
+        { label: "shadcn/ui", value: "v0.9.0" },
+        { label: "Lucide Icons", value: "v0.460.0" },
+        { label: "TypeScript", value: "v5.6.3" },
       ],
     },
   },
   admin: {
     segment_i: {
+      icon: "Layers",
       title: "Admin Portal",
       descrp: "React admin interface with Material-UI",
       tags: [
-        { label: "version", value: "1.2.75-pre", attr: "primary" },
-        { label: "latestVersion", value: "1.2.80", attr: "secondary" },
+        { label: "version", value: "v1.2.75-pre", attr: "primary" },
+        { label: "latest-Version", value: "v1.2.80", attr: "secondary", ext: "available" },
       ],
     },
     segment_ii: {
       context: [
-        { label: "framework", value: "React 18.3.0 + Webpack" },
-        { label: "lastUpdated", value: "2025-01-08" },
+        { label: "framework", value: "React v18.3.0 + Webpack" },
+        { label: "last-updated", value: "2025-01-08" },
       ],
     },
     segment_iii: {
       context: [
-        { label: "React", value: "18.3.0" },
-        { label: "Material-UI", value: "7.1.0" },
-        { label: "Chakra UI", value: "3.2.0" },
-        { label: "React Hook Form", value: "7.56.4" },
-        { label: "Monaco Editor", value: "4.7.0" },
-        { label: "TypeScript", value: "4.9.4" },
+        { label: "React", value: "v18.3.0" },
+        { label: "Material-UI", value: "v7.1.0" },
+        { label: "Chakra UI", value: "v3.2.0" },
+        { label: "React Hook Form", value: "v7.56.4" },
+        { label: "Monaco Editor", value: "v4.7.0" },
+        { label: "TypeScript", value: "v4.9.4" },
       ],
     },
   },
   backend: {
     segment_i: {
+      icon: "Server",
       title: "Backend",
       descrp: ".NET 8 API with Entity Framework",
       tags: [
-        { label: "version", value: "1.2.75-pre", attr: "primary" },
-        { label: "latestVersion", value: "1.2.80", attr: "secondary" },
+        { label: "version", value: "v1.2.75-pre", attr: "primary" },
+        { label: "latest-version", value: "v1.2.80", attr: "secondary", ext: "available" },
       ],
     },
     segment_ii: {
       context: [
-        { label: "framework", value: ".NET 8.0" },
-        { label: "lastUpdated", value: "2025-01-08" },
+        { label: "framework", value: ".NET v8.0" },
+        { label: "last-updated", value: "2025-01-08" },
       ],
     },
     segment_iii: {
       context: [
-        { label: "ASP.NET Core", value: "8.0.11" },
-        { label: "Entity Framework", value: "8.0.11" },
-        { label: "Npgsql (PostgreSQL)", value: "8.0.11" },
-        { label: "AutoMapper", value: "12.0.1" },
-        { label: "Serilog", value: "7.0.0" },
-        { label: "Swagger/OpenAPI", value: "6.5.0" },
+        { label: "ASP.NET Core", value: "v8.0.11" },
+        { label: "Entity Framework", value: "v8.0.11" },
+        { label: "NPGSQL (PostgreSQL)", value: "v8.0.11" },
+        { label: "AutoMapper", value: "v12.0.1" },
+        { label: "Serilog", value: "v7.0.0" },
+        { label: "Swagger/OpenAPI", value: "v6.5.0" },
       ],
     },
   },
@@ -110,22 +107,22 @@ export const Storage = {
 export const LeadCMSbadges = [
   {
     variant: "outline",
-    attr: "",
+    attr: "banner-transparent-green",
     label: "Stable",
   },
   {
     variant: "outline",
-    attr: "",
-    label: `v${TeckStack.site.segment_i.tags.find((tag) => tag.label === "version")?.value}`,
+    attr: "banner-transparent-blue",
+    label: `${TechStack.site.segment_i.tags.find((tag) => tag.label === "version")?.value}`,
   },
   {
     variant: "outline",
-    attr: "",
+    attr: "banner-transparent-red",
     label: "MIT License",
   },
   {
     variant: "outline",
-    attr: "",
+    attr: "banner-transparent-orange",
     label: "Self-Hosted",
   },
 ];
@@ -176,7 +173,7 @@ export const Contributors = [
   {
     name: "M Lakshan",
     role: "UX Designer",
-    avatar: "https://avatars.githubusercontent.com/u/75500772?s=64&v=4",
+    avatar: "https://avatars.githubusercontent.com/u/75500772?v=4",
     descrp: undefined,
     url: "https://github.com/M-lakshan",
   },
@@ -189,7 +186,7 @@ export const CLI = {
 
 export const SystemStatus = {
   status: {
-    identifier: "System-Status",
+    identifier: "System  Status",
     type: "Overview",
     healthProgress: 86,
     services: [
