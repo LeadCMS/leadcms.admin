@@ -139,8 +139,23 @@ export function getModuleNameFromUrl(): string {
     .join(" ");
 }
 
-export function SetComponentStyles({ styleObj }: { styleObj?: CustomStylingInstance }): string {
-  const { omitTW = false, cmpStyles = [], twStyles = [], dymStyles = [] } = styleObj ?? {};
+export function SetComponentStyles({
+  styleObj,
+  className,
+}: {
+  styleObj?: CustomStylingInstance;
+  className?: string;
+}): string {
+  const {
+    omitTW = false,
+    cmpTag = "",
+    cmpStyles = [],
+    twStyles = [],
+    dymStyles = [],
+  } = styleObj ?? {};
 
-  return [...cmpStyles, ...(omitTW ? [] : twStyles), ...dymStyles].filter(Boolean).join(" ").trim();
+  return [cmpTag, className, ...cmpStyles, ...(omitTW ? [] : twStyles), ...dymStyles]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 }
