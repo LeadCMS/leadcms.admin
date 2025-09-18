@@ -1,7 +1,62 @@
 import { styled } from "@mui/material";
-import { LocalContainerProps } from "types";
+import { StyledProps } from "types";
 import { Progress } from "./index";
+import * as GSB from "@utils/general-style-builder";
 
-const ProgressBar = styled(Progress)<LocalContainerProps>``;
+const ProgressBar = styled(Progress)<StyledProps>`
+
+  &.progress-tile-container {
+    ${GSB.DPflex("column", "center", "center", "max-content", "100%")}
+    padding: 5px 15px 25px;
+    margin: 2px;
+
+    .progress-container {
+      ${GSB.DPgrid(["repeat(2,auto)"], ["repeat(2,auto)"], "100%", "80%", "15px")}
+        border-radius: 8px;
+        padding: 15px 25px 25px;
+        justify-self: center;
+        align-self: center;
+        background: ${({ theme }) => theme.palette.customSegments.TabularGridContainer.background};
+      }
+
+      .progress-label {
+        ${GSB.DPflex("row", "center", "space-between", "max-content", "100%")}
+        padding: 0px 10px 20px;
+        grid-area: 1/1/3/3;
+        
+        .label {
+          color: ${({ theme }) => theme.palette.customSegments.ProgressContainer["85"].foreground};
+          font-size: 16px;
+        }
+        
+        .value {
+          font-size: 20px;
+          font-weight: 500;
+          letter-spacing: 1px;
+        }
+      }
+
+      .progress-bar {
+        ${GSB.DPflex("row", "center", "space-between", "12px", "100%")}
+        border-radius: 20px;
+        overflow: hidden;
+        grid-area: 2/1/3/3;
+        
+        .percentage-rating {
+          ${GSB.DPblock("inline-block", "100%", "auto")}
+          border-radius: 20px;
+          position: relative;
+          z-index: 3;
+        }
+
+        .negated-rating {
+          position: relative;
+          z-index: 2;
+          transform: translateX(-40px);
+        }
+      }
+    }
+  }
+`;
 
 export { ProgressBar };
