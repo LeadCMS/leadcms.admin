@@ -9,15 +9,16 @@ export const Title = ({
   rootElementAlt,
   children,
   context,
+  className,
   expanders,
   divisable,
 }: LocalContainerProps & {
-  rootElementAlt: "h6" | "h5" | "h4" | "h3" | "h2" | "h1";
+  rootElementAlt: "h6" | "h5" | "h4" | "h3" | "h2" | "h1" | "p";
   context: string;
   expanders?: boolean;
   divisable?: boolean;
 }) => {
-  const cmpStyles = SetComponentStyles({ styleObj });
+  const cmpStyles = SetComponentStyles({ className, styleObj });
   const RootElement: React.ElementType = rootElementAlt || "h3";
 
   return (

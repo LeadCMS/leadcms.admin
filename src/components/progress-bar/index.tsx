@@ -1,76 +1,91 @@
 export { ProgressBar } from "./index.styled";
+import { LocalContainerProps } from "types";
+import { SetComponentStyles } from "@utils/general-helper";
+import { useTheme } from "@mui/material";
 
 export const Progress = ({
   rate,
-  color = "#00FA83",
   label,
   value,
   negation,
-  negColor = "#3D7A5D",
-}: {
+  className,
+  styleObj,
+}: LocalContainerProps & {
   rate: number;
-  color?: string;
   label?: string;
   value: boolean;
   negation?: boolean;
-  negColor: string;
 }) => {
+  const cmpStyles = SetComponentStyles({ className, styleObj });
   const normalizedValue = Math.max(0, Math.min(100, rate));
+  const theme = useTheme();
+
   let valueString = "Urgent Maintenance Needed!";
-  let ratingColor = color;
-  let negationColor = negColor;
+  let param = 0;
 
   if (normalizedValue >= 85) {
     valueString = "Excellent";
+    param = 85;
   } else if (normalizedValue >= 65) {
-    valueString = "Normal";
-    ratingColor = "#FFCA01";
-    negationColor = "#FFCA01";
+    valueString = "Average";
+    param = 65;
   } else if (normalizedValue >= 35) {
-    valueString = "Attention Needed!";
-    ratingColor = "#FFCA01";
-    negationColor = "#7A563D";
+    valueString = "Normal";
+    param = 35;
+  } else if (normalizedValue >= 10) {
+    valueString = "Attention Needed !!";
+    param = 10;
   } else {
-    ratingColor = "#FA2517";
-    negationColor = "#7A403D";
+    valueString = "Potential Failure !!!";
   }
 
+  const ratingColor = theme.palette.customSegments.ProgressContainer[param.toString()].ratingClr;
+  const negationColor =
+    theme.palette.customSegments.ProgressContainer[param.toString()].negatingClr;
+  const captionColor = theme.palette.customSegments.ProgressContainer[param.toString()].captionClr;
+  const backgroundColor =
+    theme.palette.customSegments.ProgressContainer[param.toString()].background;
+  const foregroundColor =
+    theme.palette.customSegments.ProgressContainer[param.toString()].foreground;
+
   return (
-    <div className="progress-container">
-      {(value || label) && (
-        <p className="progress-label">
-          {label && <span className="label">{label}</span>}
-          {value && (
-            <span className="value" style={{ color: ratingColor }}>
-              {valueString}
-            </span>
-          )}
-        </p>
-      )}
-      <p className="progress-bar">
-        <span
-          className={`percentage-rating ${negation ? "no-right-side-radius" : ""}`}
-          style={{
-            width: `${normalizedValue}%`,
-            minWidth: `${normalizedValue}%`,
-            backgroundColor: ratingColor,
-          }}
-        >
-          &nbsp;
-        </span>
-        {negation && (
+    <div className={`progress-tile-container ${cmpStyles}`}>
+      <div className="progress-container">
+        {(value || label) && (
+          <p className="progress-label" style={{ color: foregroundColor }}>
+            {label && <span className="label">{label}</span>}
+            {value && (
+              <span className="value" style={{ color: captionColor }}>
+                {normalizedValue}%&nbsp;|&nbsp;{valueString}
+              </span>
+            )}
+          </p>
+        )}
+        <p className="progress-bar" style={{ backgroundColor: backgroundColor }}>
           <span
-            className="negated-rating"
+            className={`percentage-rating ${negation ? "no-right-side-radius" : ""}`}
             style={{
-              width: `${100 - normalizedValue}%`,
-              minWidth: `${100 - normalizedValue}%`,
-              backgroundColor: negationColor,
+              width: `${normalizedValue}%`,
+              minWidth: `${normalizedValue}%`,
+              backgroundColor: ratingColor,
             }}
           >
             &nbsp;
           </span>
-        )}
-      </p>
+          {negation && (
+            <span
+              className="negated-rating"
+              style={{
+                width: `${100 - normalizedValue}%`,
+                minWidth: `calc(${100 - normalizedValue}% + 50px)`,
+                backgroundColor: negationColor,
+              }}
+            >
+              &nbsp;
+            </span>
+          )}
+        </p>
+      </div>
     </div>
   );
 };
