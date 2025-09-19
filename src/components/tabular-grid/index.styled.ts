@@ -1,13 +1,9 @@
-import { styled, Theme } from "@mui/material";
+import { styled } from "@mui/material";
 import { StyledProps } from "types";
 import { TabularGrid } from "./index";
 import * as GSB from "@utils/general-style-builder";
 
-// ["minmax(34%,max-content)","repeat(3,minmax(22%,max-content))"],
-
-const selectedCornerRadius = "18px";
 const serviceTagSingleEdgeCornerRadius = "12px";
-const selectedTabBtnPsdElmBsize = "28px";
 
 const TabularGridContainer = styled(TabularGrid)<StyledProps>`
   &.tabular-segment {

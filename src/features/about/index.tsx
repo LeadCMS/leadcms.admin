@@ -107,11 +107,7 @@ export const AboutModule = () => {
             cmpFontSize={10}
           >
             {LeadCMSbadges.filter((mt) => mt.label !== "Self-Hosted").map((mt, _key) => (
-              <Badge
-                // variant={mt.variant}
-                key={`0${_key}`}
-                className={`badge ${mt.attr}`}
-              >
+              <Badge key={`0${_key}`} className={`badge ${mt.attr}`}>
                 {mt.label}
               </Badge>
             ))}

@@ -1,5 +1,4 @@
 import React from "react";
-// import { FaServer, FaLayerGroup, FaGlobe } from "react-icons/fa";
 import { Globe, Server, Layers, Terminal } from "lucide-react";
 import { FaArrowTrendUp } from "react-icons/fa6";
 import { LocalContainerProps, CardContentProps, CLIinstance } from "types";
@@ -17,11 +16,8 @@ export {
 
 const iconMap = {
   Terminal: Terminal,
-  // Server: FaServer,
   Server: Server,
-  // Layers: FaLayerGroup,
   Layers: Layers,
-  // Globe: FaGlobe,
   Globe: Globe,
 };
 
@@ -38,7 +34,6 @@ export const Container = ({
 
   return (
     <RootElement {...(cmpID && { id: cmpID })} {...(cmpStyles && { className: cmpStyles })}>
-      {/* <Typography sx={{ fontSize: `${cmpFontSize}px` }} /> */}
       {children}
     </RootElement>
   );

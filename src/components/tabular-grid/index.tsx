@@ -2,7 +2,6 @@ import { useState } from "react";
 import { LocalContainerProps } from "types";
 import { SetComponentStyles } from "@utils/general-helper";
 import { Root, List, Trigger, Content } from "@radix-ui/react-tabs";
-// import { FaServer, FaDatabase, FaGlobe, FaClock } from "react-icons/fa";
 import { Globe, Server, Database, Clock } from "lucide-react";
 import { TerminalContainer } from "@components/container";
 import { ProgressBar } from "@components/progress-bar";
@@ -10,13 +9,9 @@ import { ProgressBar } from "@components/progress-bar";
 export { TabularGridContainer } from "./index.styled";
 
 const iconMap = {
-  // Server: FaServer,
   Server: Server,
-  // Database: FaDatabase,
   Database: Database,
-  // Globe: FaGlobe,
   Globe: Globe,
-  // Clock: FaClock,
   Clock: Clock,
 };
 

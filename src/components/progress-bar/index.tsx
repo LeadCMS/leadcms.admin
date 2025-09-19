@@ -39,14 +39,10 @@ export const Progress = ({
     valueString = "Potential Failure !!!";
   }
 
-  const ratingColor =
-    // theme.palette.customSegments.ProgressContainer[param.toString()].ratingClr;
-    theme.palette.primary.main;
+  const ratingColor = theme.palette.primary.main;
   const negationColor =
     theme.palette.customSegments.ProgressContainer[param.toString()].negatingClr;
-  const captionColor =
-    // theme.palette.customSegments.ProgressContainer[param.toString()].captionClr;
-    theme.palette.customAlerts.complete.defaultText;
+  const captionColor = theme.palette.customAlerts.complete.defaultText;
   const backgroundColor =
     theme.palette.customSegments.ProgressContainer[param.toString()].background;
   const foregroundColor =
