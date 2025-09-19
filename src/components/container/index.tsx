@@ -1,9 +1,9 @@
 import React from "react";
-import { FaServer, FaLayerGroup, FaGlobe } from "react-icons/fa";
+// import { FaServer, FaLayerGroup, FaGlobe } from "react-icons/fa";
+import { Globe, Server, Layers, Terminal } from "lucide-react";
 import { FaArrowTrendUp } from "react-icons/fa6";
 import { LocalContainerProps, CardContentProps, CLIinstance } from "types";
 import { SetComponentStyles } from "@utils/general-helper";
-import { Trigger } from "@radix-ui/react-tabs";
 
 export {
   MainContainer,
@@ -14,6 +14,16 @@ export {
   CardContainer,
   UserContainer,
 } from "./index.styled";
+
+const iconMap = {
+  Terminal: Terminal,
+  // Server: FaServer,
+  Server: Server,
+  // Layers: FaLayerGroup,
+  Layers: Layers,
+  // Globe: FaGlobe,
+  Globe: Globe,
+};
 
 export const Container = ({
   cmpID,
@@ -34,7 +44,7 @@ export const Container = ({
   );
 };
 
-export const Terminal = ({
+export const CustomTerminal = ({
   cmpID,
   styleObj,
   cliObj,
@@ -48,7 +58,8 @@ export const Terminal = ({
         if (!Array.isArray(cliContext)) {
           return (
             <p key={cliKey} className={`directory ${cliKey.toLowerCase()}_${i + 1}`}>
-              {cliContext}
+              <Terminal />
+              &nbsp;<span>{cliContext}</span>
             </p>
           );
         } else {
@@ -60,7 +71,6 @@ export const Terminal = ({
                     <code className="comment">{comment}</code>
                     <br />
                     <code className="command">{command}</code>
-                    <br />
                   </div>
                 ))}
               </pre>
@@ -97,11 +107,6 @@ export const Card = ({
   onMouseEnter?: (e: React.MouseEvent<HTMLDivElement>) => void;
 }) => {
   const cmpStyles = SetComponentStyles({ className, styleObj });
-  const iconMap = {
-    Server: FaServer,
-    Layers: FaLayerGroup,
-    Globe: FaGlobe,
-  };
   const Icon = cHeader ? iconMap[cHeader?.icon as keyof typeof iconMap] : undefined;
 
   return (

@@ -24,15 +24,11 @@ export const Title = ({
   return (
     <RootElement {...(cmpID && { id: cmpID })} {...(cmpStyles && { className: cmpStyles })}>
       {expanders && <span className={`expander${divisable ? "border-expand" : ""}`}>&nbsp;</span>}
-      <span className={`context ${expanders ? "speard-out" : ""}`}>
-        {children ? (
-          <>
-            {children}&nbsp;{context}
-          </>
-        ) : (
-          context
-        )}
-      </span>
+      {!children ? (
+        <span className={`context ${expanders ? "speard-out" : ""}`}>{context}</span>
+      ) : (
+        <>{children}</>
+      )}
       {expanders && <span className={`expander${divisable ? "border-expand" : ""}`}>&nbsp;</span>}
     </RootElement>
   );

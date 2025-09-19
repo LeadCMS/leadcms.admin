@@ -2,7 +2,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { useRequestContext } from "@providers/request-provider";
 import { Alert, Badge } from "@mui/material";
 import { useEffect, useState } from "react";
-import { Download, Heart, Coffee } from "lucide-react";
+import { Download, Heart, Coffee, Laptop, Github } from "lucide-react";
 import {
   MainContainer,
   SubContainer,
@@ -176,7 +176,6 @@ export const AboutModule = () => {
                 cHeader={segment.segment_i || null}
                 cBody={segment.segment_ii || null}
                 cFooter={segment.segment_iii || null}
-                onMouseEnter={(e) => resetPyramidCards(e.currentTarget)}
               />
             ))}
           </>
@@ -270,12 +269,26 @@ export const AboutModule = () => {
           cmpID="footer"
           styleObj={{
             cmpTag: "title-bar",
-            cmpStyles: ["footer-title-bar", "panel-type-title-bar"],
+            cmpStyles: ["footer-title-bar"],
           }}
           rootElementAlt={"p"}
           context=""
         >
-          Made with <Heart /> by our LeadCMS-Devs <Coffee />
+          <div className="footer-panel">
+            <p className="from">
+              Made with <Heart /> by our LeadCMS-Devs <Laptop />
+            </p>
+            <div className="sub-actions">
+              <button className="sub-act-btn support">
+                <Coffee />
+                &nbsp;Support the Project
+              </button>
+              <button className="sub-act-btn review">
+                <Github />
+                &nbsp;Star us on GitHub
+              </button>
+            </div>
+          </div>
         </TitleContainer>
       </MainContainer>
     </ModuleWrapper>
