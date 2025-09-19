@@ -1,9 +1,11 @@
-import { Box, Grid, TextField, Typography, IconButton, Collapse } from "@mui/material";
+import { Box, Grid, TextField, Typography, IconButton, Collapse, Alert } from "@mui/material";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { ContentTypeDropdown } from "@features/content/content-types";
 import { LanguageHighlights } from "@components/content-language-switcher";
 import ContentLanguageSwitcher from "@components/content-language-switcher";
 import { ContentTypeDetailsDto, ContentDetailsDto } from "@lib/network/swagger-client";
+import { useConfig } from "@providers/config-provider";
+import { getContentLengthSettings } from "@utils/content-validation-helper";
 
 export interface ContentEditMetadataSectionProps {
   // Form values
@@ -71,6 +73,11 @@ export const ContentEditMetadataSection = ({
   preloadedSourceTranslations,
   getContentTypeDisplayName,
 }: ContentEditMetadataSectionProps) => {
+  const { config } = useConfig();
+  const lengthSettings = getContentLengthSettings(config);
+
+  const showLengthSettingsWarning =
+    !lengthSettings && config && !config.settings?.["Content.MinTitleLength"];
   return (
     <Box sx={{ mb: 2 }}>
       {/* Collapsed Header */}
@@ -213,6 +220,16 @@ export const ContentEditMetadataSection = ({
 
       {/* Collapsible Content */}
       <Collapse in={!isMetadataCollapsed}>
+        {showLengthSettingsWarning && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Content length validation is not configured.</strong>
+              <br />
+              Go to Settings → Content tab to configure title and description length requirements.
+            </Typography>
+          </Alert>
+        )}
+
         <Grid container spacing={2} alignItems="flex-start">
           <Grid size={{ xs: 12, sm: 8 }}>
             <TextField
@@ -220,8 +237,9 @@ export const ContentEditMetadataSection = ({
               name="title"
               value={title}
               onChange={onTitleChange}
+              onBlur={() => onBlur("title")}
               error={formTouched.title && Boolean(formErrors.title)}
-              helperText={formTouched.title && formErrors.title}
+              helperText={(formTouched.title && formErrors.title) || undefined}
               fullWidth
             />
           </Grid>
@@ -244,8 +262,9 @@ export const ContentEditMetadataSection = ({
               name="description"
               value={description}
               onChange={onDescriptionChange}
+              onBlur={() => onBlur("description")}
               error={formTouched.description && Boolean(formErrors.description)}
-              helperText={formTouched.description && formErrors.description}
+              helperText={(formTouched.description && formErrors.description) || undefined}
               multiline
               minRows={3}
               fullWidth

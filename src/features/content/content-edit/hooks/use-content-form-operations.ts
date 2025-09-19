@@ -4,6 +4,7 @@ import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService, useCoreModuleNavigation } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
+import { useConfig } from "@providers/config-provider";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
@@ -14,12 +15,17 @@ import {
   ContentEditData,
   ContentEditorAutoSave,
 } from "@features/content/content-edit/types";
-import { ContentEditValidationScheme } from "@features/content/content-edit/validation";
+import { createContentEditValidationSchema } from "@features/content/content-edit/validation";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { ContentDetailsDto, HttpResponse, ProblemDetails } from "@lib/network/swagger-client";
 import { Dayjs } from "dayjs";
 import { ValidateFrontmatterError } from "utils/frontmatter-validator";
 import { ImageData } from "@components/file-dropdown";
+import {
+  getContentLengthSettings,
+  validateTitleLength,
+  validateDescriptionLength,
+} from "@utils/content-validation-helper";
 
 export interface ContentFormOperations {
   // Form management
@@ -73,6 +79,7 @@ export const useContentFormOperations = (
   const { notificationsService } = useNotificationsService();
   const handleNavigation = useCoreModuleNavigation();
   const { client } = useRequestContext();
+  const { config } = useConfig();
 
   const [editorLocalStorage, setEditorLocalStorage] = useLocalStorage<ContentEditData>(
     "leadcms_editor_autosave",
@@ -148,6 +155,18 @@ export const useContentFormOperations = (
       throw Error("Frontmatter validation error. Check preview window for details");
     }
 
+    // Check for real-time validation errors before submitting
+    const lengthSettings = getContentLengthSettings(config);
+    const titleError = validateTitleLength(values.title, lengthSettings);
+    const descriptionError = validateDescriptionLength(values.description, lengthSettings);
+
+    if (titleError || descriptionError) {
+      const errors: string[] = [];
+      if (titleError) errors.push(`Title: ${titleError}`);
+      if (descriptionError) errors.push(`Description: ${descriptionError}`);
+      throw Error(`Content validation failed: ${errors.join("; ")}`);
+    }
+
     const trimmedSlug = values.slug ? values.slug.replace(/^\/+|\/+$/g, "") : values.slug;
 
     if (coverWasModified && values.coverImagePending && values.coverImagePending.url) {
@@ -206,18 +225,46 @@ export const useContentFormOperations = (
   };
 
   const submit = async (values: ContentDetails, helpers: FormikHelpers<ContentDetails>) => {
-    execSubmitWithToast<ContentDetails>(
-      values,
-      helpers,
-      submitFunc,
-      notificationsService,
-      showErrorModal,
-      "post"
-    );
+    try {
+      await execSubmitWithToast<ContentDetails>(
+        values,
+        helpers,
+        submitFunc,
+        notificationsService,
+        showErrorModal,
+        "content"
+      );
+    } catch (error: unknown) {
+      // Handle specific validation errors from server
+      const httpError = error as {
+        status?: number;
+        data?: { error?: { errors?: Record<string, string[]> } };
+      };
+
+      if (httpError?.status === 400 && httpError?.data?.error?.errors) {
+        const validationErrors = httpError.data.error.errors;
+
+        // Check for title and description validation errors and set them on the form
+        if (validationErrors.Title) {
+          helpers.setFieldError("title", validationErrors.Title.join(", "));
+        }
+        if (validationErrors.Description) {
+          helpers.setFieldError("description", validationErrors.Description.join(", "));
+        }
+
+        // Show a specific error message for validation failures
+        notificationsService.error(
+          "Content validation failed. Please check the title and description length requirements."
+        );
+      }
+
+      // Re-throw the error so the toast handler can still process it
+      throw error;
+    }
   };
 
   const formik = useFormik<ContentDetails>({
-    validationSchema: toFormikValidationSchema(ContentEditValidationScheme),
+    validationSchema: toFormikValidationSchema(createContentEditValidationSchema(config)),
     initialValues: {
       title: "",
       description: "",
@@ -239,7 +286,7 @@ export const useContentFormOperations = (
       updatedAt: null,
     },
     onSubmit: submit,
-    validateOnChange: false,
+    validateOnChange: false, // Disable real-time validation
     validateOnBlur: true,
   });
 
