@@ -41,9 +41,11 @@ declare module "@mui/material/styles" {
 
 declare module "@mui/material/styles" {
   interface Alert {
+    base?: string;
     main?: string;
     light?: string;
     dark?: string;
+    defaultText?: string;
     captionText?: string;
     contrastText?: string;
   }
