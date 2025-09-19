@@ -180,7 +180,7 @@ export const Contributors = [
 ];
 
 export const CLI = {
-  dir: ">_ Update Commands",
+  dir: "Update Commands",
   cmd: ["$ docker compose pull", "$ docker compose up -d"],
 };
 
@@ -188,6 +188,7 @@ export const SystemStatus = {
   status: {
     identifier: "System  Status",
     type: "Overview",
+    descrp: "Current status of all system components",
     healthProgress: 86,
     services: [
       {
@@ -222,6 +223,7 @@ export const SystemStatus = {
   },
   database: {
     identifier: "Database",
+    descrp: "Details about the PostgreSQL database/storage system",
     type: Storage.database.type,
     version: Storage.database.version,
     status: Storage.database.status,
@@ -231,6 +233,8 @@ export const SystemStatus = {
   },
   deployement: {
     identifier: "Deployement",
+    type: "Infarstructure",
+    descrp: "Details about the current deployment",
     environment: Storage.server.environment,
     deployment: Storage.server.deployment,
     region: Storage.server.region,
@@ -239,7 +243,8 @@ export const SystemStatus = {
     uptime: Storage.server.uptime,
     showDockerHelp: Storage.server.deployment === "On-Premises",
     dockerHelp: {
-      commands: [
+      dir: "Update Commands",
+      cmd: [
         {
           comment: "# Pull latest Docker images",
           command: "$ docker compose pull",

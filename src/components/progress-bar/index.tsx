@@ -39,10 +39,14 @@ export const Progress = ({
     valueString = "Potential Failure !!!";
   }
 
-  const ratingColor = theme.palette.customSegments.ProgressContainer[param.toString()].ratingClr;
+  const ratingColor =
+    // theme.palette.customSegments.ProgressContainer[param.toString()].ratingClr;
+    theme.palette.primary.main;
   const negationColor =
     theme.palette.customSegments.ProgressContainer[param.toString()].negatingClr;
-  const captionColor = theme.palette.customSegments.ProgressContainer[param.toString()].captionClr;
+  const captionColor =
+    // theme.palette.customSegments.ProgressContainer[param.toString()].captionClr;
+    theme.palette.customAlerts.complete.defaultText;
   const backgroundColor =
     theme.palette.customSegments.ProgressContainer[param.toString()].background;
   const foregroundColor =
@@ -56,7 +60,7 @@ export const Progress = ({
             {label && <span className="label">{label}</span>}
             {value && (
               <span className="value" style={{ color: captionColor }}>
-                {normalizedValue}%&nbsp;|&nbsp;{valueString}
+                {normalizedValue}%
               </span>
             )}
           </p>

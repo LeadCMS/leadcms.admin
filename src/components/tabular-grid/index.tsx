@@ -2,17 +2,22 @@ import { useState } from "react";
 import { LocalContainerProps } from "types";
 import { SetComponentStyles } from "@utils/general-helper";
 import { Root, List, Trigger, Content } from "@radix-ui/react-tabs";
-import { FaServer, FaDatabase, FaGlobe, FaClock } from "react-icons/fa";
+// import { FaServer, FaDatabase, FaGlobe, FaClock } from "react-icons/fa";
+import { Globe, Server, Database, Clock } from "lucide-react";
 import { TerminalContainer } from "@components/container";
 import { ProgressBar } from "@components/progress-bar";
 
 export { TabularGridContainer } from "./index.styled";
 
 const iconMap = {
-  Server: FaServer,
-  Database: FaDatabase,
-  Globe: FaGlobe,
-  Clock: FaClock,
+  // Server: FaServer,
+  Server: Server,
+  // Database: FaDatabase,
+  Database: Database,
+  // Globe: FaGlobe,
+  Globe: Globe,
+  // Clock: FaClock,
+  Clock: Clock,
 };
 
 export const TabularGrid = ({
@@ -115,7 +120,8 @@ export const TabularGrid = ({
         {activeTab.label === "status" && (
           <Content value="status" className="tab-content status-tab-expand">
             <>
-              {/* <h2 className="tab-title">{gridObj.status.type}</h2> */}
+              <h2 className="tab-title">{gridObj.status.type}</h2>
+              <p className="tab-descrp">{gridObj.status.descrp}</p>
               <ProgressBar
                 rate={gridObj.status.healthProgress}
                 label="Overall Health"
@@ -125,10 +131,27 @@ export const TabularGrid = ({
               <div className="detail-container">
                 {gridObj.status.services.map((service: any) => {
                   const Icon = iconMap[service.icon as keyof typeof iconMap];
+                  const healthState = gridObj.status.healthProgress;
+                  let param = 0;
+                  console.log(gridObj.status.healthProgress, gridObj.status.type);
+
+                  if (healthState >= 85) {
+                    param = 85;
+                  } else if (healthState >= 65) {
+                    param = 65;
+                  } else if (healthState >= 35) {
+                    param = 35;
+                  } else if (healthState >= 10) {
+                    param = 10;
+                  }
 
                   return (
-                    <div key={service.name} className={`service ${service.bgColor}`}>
-                      {Icon && <Icon className={`${service.statusColor}`} />}
+                    <div key={service.name} className={"service"}>
+                      {Icon && (
+                        <span className={`service-icon srvc_${param}_progress `}>
+                          <Icon className={`${service.bgColor}`} />
+                        </span>
+                      )}
                       <div className="details">
                         <p className="name">{service.name}</p>
                         <p className="descrp">{service.description}</p>
@@ -143,27 +166,36 @@ export const TabularGrid = ({
 
         {activeTab.label === "database" && (
           <Content value="database" className="tab-content database-tab-expand">
-            {/* <h2 className="tab-title">{gridObj.status.type}</h2> */}
+            <h2 className="tab-title">{gridObj.database.identifier}</h2>
+            <p className="tab-descrp">{gridObj.database.descrp}</p>
             <div className="list">
-              {Object.entries(gridObj.database).map(([infoKey, value]) => (
-                <p key={infoKey} className={"database-meta-info"}>
-                  <span>{infoKey}</span>
-                  <strong>{String(value)}</strong>
-                </p>
-              ))}
+              {Object.entries(gridObj.database).map(([infoKey, value]) => {
+                if (["identifier", "descrp"].includes(infoKey)) return null;
+
+                return (
+                  <p key={infoKey} className={"database-meta-info"}>
+                    <span>{infoKey}</span>
+                    <strong>{String(value)}</strong>
+                  </p>
+                );
+              })}
             </div>
           </Content>
         )}
 
         {activeTab.label === "deployement" && (
           <Content value="deployement" className="tab-content deployement-tab-expand">
-            {/* <h2 className="tab-title">{gridObj.status.type}</h2> */}
+            <h2 className="tab-title">{gridObj.deployement.type}</h2>
+            <p className="tab-descrp">{gridObj.deployement.descrp}</p>
             <ul className="list">
               {Object.entries(gridObj.deployement).map(([infoKey, value]) => {
-                if (infoKey === "dockerHelp") return null;
-                if (infoKey === "showDockerHelp") return null;
+                if (
+                  ["dockerHelp", "showDockerHelp", "identifier", "descrp", "type"].includes(infoKey)
+                )
+                  return null;
+
                 return (
-                  <p key={infoKey} className={"database-meta-info"}>
+                  <p key={infoKey} className={"deployement-meta-info"}>
                     <span>{infoKey}</span>
                     <strong>{String(value)}</strong>
                   </p>
@@ -180,7 +212,8 @@ export const TabularGrid = ({
                     cmpStyles: ["terminal-container", "development-terminal"],
                   }}
                   cliObj={{
-                    cmd: gridObj.deployement.dockerHelp.commands,
+                    dir: gridObj.deployement.dockerHelp.dir,
+                    cmd: gridObj.deployement.dockerHelp.cmd,
                   }}
                 />
               </div>
