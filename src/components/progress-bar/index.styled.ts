@@ -7,16 +7,15 @@ const ProgressBar = styled(Progress)<StyledProps>`
 
   &.progress-tile-container {
     ${GSB.DPflex("column", "center", "center", "max-content", "100%")}
-    padding: 5px 15px 25px;
+    padding: 5px 2px 25px;
     margin: 2px;
 
     .progress-container {
-      ${GSB.DPgrid(["repeat(2,auto)"], ["repeat(2,auto)"], "100%", "80%", "15px")}
+      ${GSB.DPgrid(["repeat(2,auto)"], ["repeat(2,auto)"], "100%", "95%", "15px")}
         border-radius: 8px;
         padding: 15px 25px 25px;
         justify-self: center;
         align-self: center;
-        background: ${({ theme }) => theme.palette.customSegments.TabularGridContainer.background};
       }
 
       .progress-label {
@@ -25,8 +24,9 @@ const ProgressBar = styled(Progress)<StyledProps>`
         grid-area: 1/1/3/3;
         
         .label {
-          color: ${({ theme }) => theme.palette.customSegments.ProgressContainer["85"].foreground};
+          color: ${({ theme }) => theme.palette.customSegments.ProgressContainer["85"].background};
           font-size: 16px;
+          font-weight: 500;
         }
         
         .value {
@@ -38,6 +38,7 @@ const ProgressBar = styled(Progress)<StyledProps>`
 
       .progress-bar {
         ${GSB.DPflex("row", "center", "space-between", "12px", "100%")}
+        color: ${({ theme }) => theme.palette.customSegments.ProgressContainer["85"].background};
         border-radius: 20px;
         overflow: hidden;
         grid-area: 2/1/3/3;
@@ -50,9 +51,7 @@ const ProgressBar = styled(Progress)<StyledProps>`
         }
 
         .negated-rating {
-          position: relative;
-          z-index: 2;
-          transform: translateX(-40px);
+          display: none;
         }
       }
     }
