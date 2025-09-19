@@ -20,9 +20,12 @@ import {
   AccordionDetails,
   Tabs,
   Tab,
+  FormControlLabel,
+  Switch,
+  FormGroup,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
-import { Save, Settings as SettingsIcon, Info, Link } from "lucide-react";
+import { Save, Info, Link, Lock, Eye, ShieldCheck, Hash, Key } from "lucide-react";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
@@ -39,6 +42,12 @@ interface SettingsFormData {
   "Content.MaxTitleLength": string;
   "Content.MinDescriptionLength": string;
   "Content.MaxDescriptionLength": string;
+  "Identity.RequireDigit": string;
+  "Identity.RequireUppercase": string;
+  "Identity.RequireLowercase": string;
+  "Identity.RequireNonAlphanumeric": string;
+  "Identity.RequiredLength": string;
+  "Identity.RequiredUniqueChars": string;
 }
 
 const availableVariables = [
@@ -61,6 +70,12 @@ const Settings = () => {
     "Content.MaxTitleLength": "",
     "Content.MinDescriptionLength": "",
     "Content.MaxDescriptionLength": "",
+    "Identity.RequireDigit": "true",
+    "Identity.RequireUppercase": "true",
+    "Identity.RequireLowercase": "true",
+    "Identity.RequireNonAlphanumeric": "true",
+    "Identity.RequiredLength": "8",
+    "Identity.RequiredUniqueChars": "1",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -90,6 +105,12 @@ const Settings = () => {
         "Content.MaxTitleLength": "",
         "Content.MinDescriptionLength": "",
         "Content.MaxDescriptionLength": "",
+        "Identity.RequireDigit": "true",
+        "Identity.RequireUppercase": "true",
+        "Identity.RequireLowercase": "true",
+        "Identity.RequireNonAlphanumeric": "true",
+        "Identity.RequiredLength": "8",
+        "Identity.RequiredUniqueChars": "1",
       };
 
       if (settings) {
@@ -106,6 +127,18 @@ const Settings = () => {
             newFormData["Content.MinDescriptionLength"] = setting.value || "";
           } else if (setting.key === "Content.MaxDescriptionLength") {
             newFormData["Content.MaxDescriptionLength"] = setting.value || "";
+          } else if (setting.key === "Identity.RequireDigit") {
+            newFormData["Identity.RequireDigit"] = setting.value || "true";
+          } else if (setting.key === "Identity.RequireUppercase") {
+            newFormData["Identity.RequireUppercase"] = setting.value || "true";
+          } else if (setting.key === "Identity.RequireLowercase") {
+            newFormData["Identity.RequireLowercase"] = setting.value || "true";
+          } else if (setting.key === "Identity.RequireNonAlphanumeric") {
+            newFormData["Identity.RequireNonAlphanumeric"] = setting.value || "true";
+          } else if (setting.key === "Identity.RequiredLength") {
+            newFormData["Identity.RequiredLength"] = setting.value || "8";
+          } else if (setting.key === "Identity.RequiredUniqueChars") {
+            newFormData["Identity.RequiredUniqueChars"] = setting.value || "1";
           }
         });
       }
@@ -139,6 +172,15 @@ const Settings = () => {
           { key: "Content.MaxTitleLength", value: formData["Content.MaxTitleLength"] },
           { key: "Content.MinDescriptionLength", value: formData["Content.MinDescriptionLength"] },
           { key: "Content.MaxDescriptionLength", value: formData["Content.MaxDescriptionLength"] },
+          { key: "Identity.RequireDigit", value: formData["Identity.RequireDigit"] },
+          { key: "Identity.RequireUppercase", value: formData["Identity.RequireUppercase"] },
+          { key: "Identity.RequireLowercase", value: formData["Identity.RequireLowercase"] },
+          {
+            key: "Identity.RequireNonAlphanumeric",
+            value: formData["Identity.RequireNonAlphanumeric"],
+          },
+          { key: "Identity.RequiredLength", value: formData["Identity.RequiredLength"] },
+          { key: "Identity.RequiredUniqueChars", value: formData["Identity.RequiredUniqueChars"] },
         ];
 
         for (const setting of settingsToSave) {
@@ -244,6 +286,7 @@ const Settings = () => {
               <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
                 <Tab label="Preview" value="preview" />
                 <Tab label="Content" value="content" />
+                <Tab label="Password Policy" value="password" />
               </Tabs>
             </Box>
 
@@ -451,6 +494,119 @@ const Settings = () => {
                       existing content. However, validation rules will be enforced the next time you
                       try to edit existing content. If the requirements are not met, you will not be
                       able to save the content unless the validation errors are fixed.
+                    </Typography>
+                  </Alert>
+                </Grid>
+              </Grid>
+            )}
+
+            {/* Password Policy Settings Tab */}
+            {activeTab === "password" && (
+              <Grid container spacing={3} marginBottom={4}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Minimum Password Length"
+                    value={formData["Identity.RequiredLength"]}
+                    onChange={handleInputChange("Identity.RequiredLength")}
+                    placeholder="8"
+                    helperText="Minimum number of characters required for passwords"
+                    variant="outlined"
+                    size="small"
+                    inputProps={{ min: 1, max: 128 }}
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Required Unique Characters"
+                    value={formData["Identity.RequiredUniqueChars"]}
+                    onChange={handleInputChange("Identity.RequiredUniqueChars")}
+                    placeholder="1"
+                    helperText="Minimum number of unique characters required"
+                    variant="outlined"
+                    size="small"
+                    inputProps={{ min: 1, max: 128 }}
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                    Character Requirements
+                  </Typography>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData["Identity.RequireDigit"] === "true"}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              "Identity.RequireDigit": e.target.checked ? "true" : "false",
+                            }))
+                          }
+                        />
+                      }
+                      label="Require at least one digit (0-9)"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData["Identity.RequireUppercase"] === "true"}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              "Identity.RequireUppercase": e.target.checked ? "true" : "false",
+                            }))
+                          }
+                        />
+                      }
+                      label="Require at least one uppercase letter (A-Z)"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData["Identity.RequireLowercase"] === "true"}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              "Identity.RequireLowercase": e.target.checked ? "true" : "false",
+                            }))
+                          }
+                        />
+                      }
+                      label="Require at least one lowercase letter (a-z)"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData["Identity.RequireNonAlphanumeric"] === "true"}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              "Identity.RequireNonAlphanumeric": e.target.checked
+                                ? "true"
+                                : "false",
+                            }))
+                          }
+                        />
+                      }
+                      label="Require at least one special character (!@#$%^&*)"
+                    />
+                  </FormGroup>
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <Alert severity="info" sx={{ mb: 3 }}>
+                    <Typography variant="body2">
+                      <strong>Password Policy Configuration:</strong>
+                      <br />
+                      These settings define the password requirements for user accounts. Changes
+                      will apply to new passwords and password resets. Existing passwords remain
+                      valid until users change them.
                     </Typography>
                   </Alert>
                 </Grid>
