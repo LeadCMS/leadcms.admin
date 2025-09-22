@@ -6,6 +6,7 @@ interface ConfigContextType {
   config: ConfigDto | null;
   loading: boolean;
   error: string | null;
+  reloadConfig: () => Promise<void>;
 }
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
@@ -16,29 +17,38 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const { client } = useRequestContext();
 
+  const loadConfig = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await client.api.configList();
+      setConfig(response.data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to fetch /api/config");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reloadConfig = async () => {
+    try {
+      setError(null);
+      const response = await client.api.configList();
+      setConfig(response.data);
+    } catch (e) {
+      // Silent reload - don't update error state to avoid disrupting the UI
+      console.warn("Failed to reload config:", e instanceof Error ? e.message : "Unknown error");
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true;
-    client.api
-      .configList()
-      .then((response) => {
-        if (isMounted) {
-          setConfig(response.data);
-          setLoading(false);
-        }
-      })
-      .catch((e) => {
-        if (isMounted) {
-          setError(e instanceof Error ? e.message : "Failed to fetch /api/config");
-          setLoading(false);
-        }
-      });
-    return () => {
-      isMounted = false;
-    };
+    loadConfig();
   }, [client]);
 
   return (
-    <ConfigContext.Provider value={{ config, loading, error }}>{children}</ConfigContext.Provider>
+    <ConfigContext.Provider value={{ config, loading, error, reloadConfig }}>
+      {children}
+    </ConfigContext.Provider>
   );
 };
 

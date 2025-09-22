@@ -34,6 +34,7 @@ import { SettingDetailsDto } from "@lib/network/swagger-client";
 import { networkErrorToStringArray } from "@utils/general-helper";
 import { settingsFormBreadcrumbLinks, settingsCurrentBreadcrumb } from "./constants";
 import { useLayout } from "@providers/layout-provider";
+import { useConfig } from "@providers/config-provider";
 
 interface SettingsFormData {
   LivePreviewUrlTemplate: string;
@@ -62,6 +63,7 @@ const Settings = () => {
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
   const { setFullWidth } = useLayout();
+  const { reloadConfig } = useConfig();
   const [activeTab, setActiveTab] = useState<string>("preview");
   const [formData, setFormData] = useState<SettingsFormData>({
     LivePreviewUrlTemplate: "",
@@ -301,6 +303,9 @@ const Settings = () => {
             value: setting.value,
           });
         }
+
+        // Reload config from /api/config to update the app with new settings
+        await reloadConfig();
       } finally {
         setSaving(false);
       }
@@ -309,18 +314,25 @@ const Settings = () => {
     notificationsService.promise(savePromise(), {
       pending: "Saving settings...",
       success: "Settings saved successfully",
-      error: (error) => {
+      error: (error: unknown) => {
         const errMessage = "Unable to save settings. An error occurred.";
         const errDetails: string[] = [];
 
-        if (error?.data?.error?.title) {
-          errDetails.push(error.data.error.title);
-        }
-        if (error?.data?.message) {
-          errDetails.push(error.data.message);
-        }
-        if (error?.data?.error?.errors) {
-          errDetails.push(...networkErrorToStringArray(error.data.error.errors));
+        if (error && typeof error === "object" && "data" in error) {
+          const errorData = error.data as unknown;
+          if (errorData && typeof errorData === "object") {
+            if ("error" in errorData && errorData.error && typeof errorData.error === "object") {
+              if ("title" in errorData.error && typeof errorData.error.title === "string") {
+                errDetails.push(errorData.error.title);
+              }
+              if ("errors" in errorData.error && errorData.error.errors) {
+                errDetails.push(...networkErrorToStringArray(errorData.error.errors));
+              }
+            }
+            if ("message" in errorData && typeof errorData.message === "string") {
+              errDetails.push(errorData.message);
+            }
+          }
         }
 
         return {
@@ -597,7 +609,7 @@ const Settings = () => {
                     label="Maximum Title Length"
                     value={formData["Content.MaxTitleLength"]}
                     onChange={handleInputChange("Content.MaxTitleLength")}
-                    placeholder="100"
+                    placeholder="60"
                     helperText={
                       validationErrors["Content.MaxTitleLength"] ||
                       "Maximum number of characters allowed for content titles"
@@ -635,7 +647,7 @@ const Settings = () => {
                     label="Maximum Description Length"
                     value={formData["Content.MaxDescriptionLength"]}
                     onChange={handleInputChange("Content.MaxDescriptionLength")}
-                    placeholder="500"
+                    placeholder="155"
                     helperText={
                       validationErrors["Content.MaxDescriptionLength"] ||
                       "Maximum number of characters allowed for content descriptions"
