@@ -5,7 +5,11 @@ import { LanguageHighlights } from "@components/content-language-switcher";
 import ContentLanguageSwitcher from "@components/content-language-switcher";
 import { ContentTypeDetailsDto, ContentDetailsDto } from "@lib/network/swagger-client";
 import { useConfig } from "@providers/config-provider";
-import { getContentLengthSettings } from "@utils/content-validation-helper";
+import {
+  getContentLengthSettings,
+  validateTitleLength,
+  validateDescriptionLength,
+} from "@utils/content-validation-helper";
 
 export interface ContentEditMetadataSectionProps {
   // Form values
@@ -32,6 +36,7 @@ export interface ContentEditMetadataSectionProps {
     type?: boolean;
   };
   onBlur: (field: string) => void;
+  onSetFieldError: (field: string, error: string | undefined) => void;
   // UI state
   isMetadataCollapsed: boolean;
   onToggleCollapsed: (collapsed: boolean) => void;
@@ -61,6 +66,7 @@ export const ContentEditMetadataSection = ({
   formErrors,
   formTouched,
   onBlur,
+  onSetFieldError,
   isMetadataCollapsed,
   onToggleCollapsed,
   hasMultipleLanguages,
@@ -75,6 +81,85 @@ export const ContentEditMetadataSection = ({
 }: ContentEditMetadataSectionProps) => {
   const { config } = useConfig();
   const lengthSettings = getContentLengthSettings(config);
+
+  // Validation info helpers
+  const getTitleValidationInfo = () => {
+    const titleTouched = formTouched.title;
+    const titleErrors = formErrors.title;
+    const titleValidationResult = validateTitleLength(title, getContentLengthSettings(config));
+
+    // Show character count when no errors, detailed errors when there are issues
+    let helperText = undefined;
+    if (titleTouched && (titleValidationResult || titleErrors)) {
+      // Show detailed error message with current length
+      helperText = titleValidationResult || titleErrors;
+    } else if (lengthSettings) {
+      // Show character counter when no errors
+      helperText = `${title.length}/${lengthSettings.maxTitleLength} characters`;
+    }
+
+    return {
+      hasError: titleTouched && !!(titleValidationResult || titleErrors),
+      helperText,
+    };
+  };
+
+  const getDescriptionValidationInfo = () => {
+    const descriptionTouched = formTouched.description;
+    const descriptionErrors = formErrors.description;
+    const descriptionValidationResult = validateDescriptionLength(
+      description,
+      getContentLengthSettings(config)
+    );
+
+    // Show character count when no errors, detailed errors when there are issues
+    let helperText = undefined;
+    if (descriptionTouched && (descriptionValidationResult || descriptionErrors)) {
+      // Show detailed error message with current length
+      helperText = descriptionValidationResult || descriptionErrors;
+    } else if (lengthSettings) {
+      // Show character counter when no errors
+      helperText = `${description.length}/${lengthSettings.maxDescriptionLength} characters`;
+    }
+
+    return {
+      hasError: descriptionTouched && !!(descriptionValidationResult || descriptionErrors),
+      helperText,
+    };
+  };
+
+  // Enhanced change handlers with real-time validation
+  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.target.value;
+
+    // Update the field value first
+    onTitleChange(event);
+
+    // Perform real-time validation
+    const validationError = validateTitleLength(newValue, lengthSettings);
+
+    // Update Formik error state in real-time
+    onSetFieldError("title", validationError || undefined);
+
+    // Mark field as touched for consistent error display
+    onBlur("title");
+  };
+
+  const handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.target.value;
+
+    // Update the field value first
+    onDescriptionChange(event);
+
+    // Perform real-time validation
+    const validationError = validateDescriptionLength(newValue, lengthSettings);
+
+    // Update Formik error state in real-time
+    onSetFieldError("description", validationError || undefined);
+
+    // Mark field as touched for consistent error display
+    onBlur("description");
+  };
 
   const showLengthSettingsWarning =
     !lengthSettings && config && !config.settings?.["Content.MinTitleLength"];
@@ -236,10 +321,10 @@ export const ContentEditMetadataSection = ({
               label="Title"
               name="title"
               value={title}
-              onChange={onTitleChange}
+              onChange={handleTitleChange}
               onBlur={() => onBlur("title")}
-              error={formTouched.title && Boolean(formErrors.title)}
-              helperText={(formTouched.title && formErrors.title) || undefined}
+              error={getTitleValidationInfo().hasError}
+              helperText={getTitleValidationInfo().helperText}
               fullWidth
             />
           </Grid>
@@ -261,10 +346,10 @@ export const ContentEditMetadataSection = ({
               label="Description"
               name="description"
               value={description}
-              onChange={onDescriptionChange}
+              onChange={handleDescriptionChange}
               onBlur={() => onBlur("description")}
-              error={formTouched.description && Boolean(formErrors.description)}
-              helperText={(formTouched.description && formErrors.description) || undefined}
+              error={getDescriptionValidationInfo().hasError}
+              helperText={getDescriptionValidationInfo().helperText}
               multiline
               minRows={3}
               fullWidth

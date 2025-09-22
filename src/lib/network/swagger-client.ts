@@ -1880,7 +1880,7 @@ export interface ConfigDto {
    * Settings
    * @example {"key1":"value1","key2":"value2"}
    */
-  settings?: Record<string, string>;
+  settings?: Record<string, string | null>;
   /**
    * Default Language
    * @example "string"
@@ -5271,6 +5271,84 @@ export interface EmailTemplateDetailsDto {
   emailGroup?: EmailGroupDetailsDto;
 }
 
+export interface EmailTemplateEditRequest {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name?: string | null;
+  /**
+   * Subject
+   * @minLength 1
+   * @example "string"
+   */
+  subject?: string | null;
+  /**
+   * Body Template
+   * @minLength 1
+   * @example "string"
+   */
+  bodyTemplate?: string | null;
+  /**
+   * From Email
+   * @format email
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  fromEmail?: string | null;
+  /**
+   * From Name
+   * @minLength 1
+   * @example "string"
+   */
+  fromName?: string | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
+   * Email Group Id
+   * @format int32
+   * @example 1
+   */
+  emailGroupId?: number | null;
+  /**
+   * Prompt
+   * @minLength 1
+   * @example "string"
+   */
+  prompt: string;
+}
+
+export interface EmailTemplateGenerationRequest {
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language: string;
+  /**
+   * Email Group Id
+   * @format int32
+   * @minLength 1
+   * @example 1
+   */
+  emailGroupId: number;
+  /**
+   * Prompt
+   * @minLength 1
+   * @example "string"
+   */
+  prompt: string;
+}
+
 export interface EmailTemplateUpdateDto {
   /**
    * Name
@@ -6628,10 +6706,9 @@ export interface SettingCreateDto {
   key: string;
   /**
    * Value
-   * @minLength 1
    * @example "string"
    */
-  value: string;
+  value?: string | null;
   /**
    * User Id
    * @example "string"
@@ -6655,7 +6732,7 @@ export interface SettingDetailsDto {
    * Value
    * @example "string"
    */
-  value?: string;
+  value?: string | null;
   /**
    * User Id
    * @example "string"
@@ -6695,10 +6772,9 @@ export interface SettingDetailsDto {
 export interface SettingUpdateDto {
   /**
    * Value
-   * @minLength 1
    * @example "string"
    */
-  value: string;
+  value?: string | null;
 }
 
 export interface SettingValueDto {
@@ -6711,7 +6787,7 @@ export interface SettingValueDto {
    * Value
    * @example "string"
    */
-  value?: string;
+  value?: string | null;
   /**
    * Is User Level
    * @example true
@@ -7050,7 +7126,7 @@ export interface UserDetailsDto {
    * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
    * @example "2023-04-18T12:00:00.0000000Z"
    */
-  lastTimeLoggedIn?: string;
+  lastTimeLoggedIn?: string | null;
   /**
    * Avatar Url
    * @example "string"
@@ -7374,7 +7450,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.77.0
+ * @version 1.2.78.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8109,6 +8185,29 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentUpdate
+     * @request PUT:/api/content/{id}
+     * @secure
+     */
+    contentUpdate: (
+      id: number,
+      data: ContentCreateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentDetailsDto, void | ProblemDetails>({
+        path: `/api/content/${id}`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -12134,6 +12233,76 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesAiTranslationDraftDetail
+     * @request GET:/api/email-templates/{id}/ai-translation-draft/{language}
+     * @secure
+     */
+    emailTemplatesAiTranslationDraftDetail: (
+      id: number,
+      language: string,
+      query?: {
+        /** @format int32 */
+        emailGroupId?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplateDetailsDto, ProblemDetails>({
+        path: `/api/email-templates/${id}/ai-translation-draft/${language}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesAiDraftCreate
+     * @request POST:/api/email-templates/ai-draft
+     * @secure
+     */
+    emailTemplatesAiDraftCreate: (
+      data: EmailTemplateGenerationRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplateDetailsDto, ProblemDetails>({
+        path: `/api/email-templates/ai-draft`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesAiEditCreate
+     * @request POST:/api/email-templates/ai-edit
+     * @secure
+     */
+    emailTemplatesAiEditCreate: (
+      data: EmailTemplateEditRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplateDetailsDto, ProblemDetails>({
+        path: `/api/email-templates/ai-edit`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 

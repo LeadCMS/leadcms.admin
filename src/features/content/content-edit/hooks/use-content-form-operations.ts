@@ -196,7 +196,7 @@ export const useContentFormOperations = (
     }
 
     if (values?.id) {
-      response = await client.api.contentPartialUpdate(Number(values.id), {
+      response = await client.api.contentUpdate(Number(values.id), {
         ...values,
         slug: trimmedSlug,
         coverImageUrl: coverUrl,

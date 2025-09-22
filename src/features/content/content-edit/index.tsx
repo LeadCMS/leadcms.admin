@@ -686,6 +686,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                     type: contentFormOps.formik.touched.type,
                   }}
                   onBlur={(field) => contentFormOps.formik.setFieldTouched(field, true)}
+                  onSetFieldError={(field, error) =>
+                    contentFormOps.formik.setFieldError(field, error)
+                  }
                   isMetadataCollapsed={isMetadataCollapsed}
                   onToggleCollapsed={setIsMetadataCollapsed}
                   hasMultipleLanguages={hasMultipleLanguages}
