@@ -7,6 +7,7 @@ import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useConfig } from "@providers/config-provider";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { execSubmitWithToast } from "utils/formik-helper";
+import { handleDraftSaveError, handleSubmitError } from "@utils/error-handler";
 import { CoreModule } from "@lib/router";
 import useLocalStorage from "use-local-storage";
 import { useDebouncedCallback } from "use-debounce";
@@ -116,8 +117,17 @@ export const useContentFormOperations = (
       } else {
         await client.api.contentDraftCreate(filteredValues);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to save draft:", error);
+
+      await handleDraftSaveError(error, {
+        formik,
+        notificationsService,
+        fieldMapping: {
+          Title: "title",
+          Description: "description",
+        },
+      });
     } finally {
       setIsDraftSaving(false);
     }
@@ -232,34 +242,26 @@ export const useContentFormOperations = (
         submitFunc,
         notificationsService,
         showErrorModal,
-        "content"
+        "content",
+        {
+          fieldMapping: {
+            Title: "title",
+            Description: "description",
+          },
+          customValidationErrorMessage:
+            "Content validation failed. Please check title and description requirements.",
+        }
       );
     } catch (error: unknown) {
-      // Handle specific validation errors from server
-      const httpError = error as {
-        status?: number;
-        data?: { error?: { errors?: Record<string, string[]> } };
-      };
-
-      if (httpError?.status === 400 && httpError?.data?.error?.errors) {
-        const validationErrors = httpError.data.error.errors;
-
-        // Check for title and description validation errors and set them on the form
-        if (validationErrors.Title) {
-          helpers.setFieldError("title", validationErrors.Title.join(", "));
-        }
-        if (validationErrors.Description) {
-          helpers.setFieldError("description", validationErrors.Description.join(", "));
-        }
-
-        // Show a specific error message for validation failures
-        notificationsService.error(
-          "Content validation failed. Please check the title and description length requirements."
-        );
-      }
-
-      // Re-throw the error so the toast handler can still process it
-      throw error;
+      await handleSubmitError(error, helpers, {
+        notificationsService,
+        fieldMapping: {
+          Title: "title",
+          Description: "description",
+        },
+        customErrorMessage:
+          "Content validation failed. Please check title and description requirements.",
+      });
     }
   };
 

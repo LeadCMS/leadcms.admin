@@ -436,7 +436,11 @@ export const ContentEdit = (props: ContentEditProps) => {
         await contentFormOps.formik.setValues(content);
         await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
         contentFormOps.setOriginalContent(content.body || "");
-        contentFormOps.setHasContentChanged(false); // Reset since loading content for duplication
+
+        // Mark as modified so Save button is enabled for duplicated content
+        contentFormOps.setWasModified(true);
+        contentFormOps.setHasContentChanged(true);
+
         contentFormOps.setRefreshKey(Date.now());
         await setContentTypeAndMaybePreload(content.type);
       } finally {

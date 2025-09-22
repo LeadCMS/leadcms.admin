@@ -666,6 +666,11 @@ const ItemCard = ({
         >
           {item.title}
         </Typography>
+
+        {/* Language Badges */}
+        <Box sx={{ mb: 2 }}>
+          <ContentLanguageBadges content={item} compact={true} shape="square" />
+        </Box>
         <Typography
           variant="body2"
           color="text.secondary"
@@ -679,9 +684,6 @@ const ItemCard = ({
         >
           {item.description}
         </Typography>
-
-        {/* Language Badges */}
-        <ContentLanguageBadges content={item} compact={true} shape="square" />
       </CardContent>
       <CardActions sx={{ justifyContent: "space-between", pl: 4, pr: 4, pt: 0, pb: 3 }}>
         <Box display="flex" alignItems="center" gap={1.5}>

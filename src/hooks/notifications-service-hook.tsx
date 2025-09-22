@@ -13,14 +13,14 @@ export interface ErrorData {
 export interface PromiseNotificationOptions {
   pending: React.ReactNode;
   success: React.ReactNode;
-  error: (data: any) => React.ReactNode | ErrorData;
+  error: (data: unknown) => React.ReactNode | ErrorData;
 }
 
 export interface NotificationsServiceSettings {
   defaultAutoClose?: number;
 }
 
-function instanceOfErrorData(object: any): object is ErrorData {
+function instanceOfErrorData(object: unknown): object is ErrorData {
   return true;
 }
 
@@ -32,8 +32,17 @@ export class NotificationsService {
   }
 
   error(msg: string | Error | unknown, options: NotificationOptions = {}) {
-    const error = msg instanceof Error ? msg.message : JSON.stringify(msg, null, 2);
-    toast.error(error, {
+    let errorMessage: string;
+
+    if (msg instanceof Error) {
+      errorMessage = msg.message;
+    } else if (typeof msg === "string") {
+      errorMessage = msg;
+    } else {
+      errorMessage = JSON.stringify(msg, null, 2);
+    }
+
+    toast.error(errorMessage, {
       autoClose: options.autoClose ?? this.defaultAutoClose,
     });
   }

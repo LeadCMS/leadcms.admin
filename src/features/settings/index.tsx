@@ -25,7 +25,7 @@ import {
   FormGroup,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
-import { Save, Info, Link, Lock, Eye, ShieldCheck, Hash, Key } from "lucide-react";
+import { Save, Info, Link } from "lucide-react";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
@@ -79,6 +79,7 @@ const Settings = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Partial<SettingsFormData>>({});
 
   // Set full width layout for settings page
   useEffect(() => {
@@ -151,11 +152,117 @@ const Settings = () => {
     }
   };
 
+  const validateField = (field: keyof SettingsFormData, value: string): string | null => {
+    switch (field) {
+      case "Content.MaxTitleLength":
+        if (value && value.trim() !== "") {
+          const numValue = parseInt(value, 10);
+          if (isNaN(numValue) || numValue < 15) {
+            return "Maximum Title Length must be at least 15 characters";
+          }
+        }
+        break;
+      case "Content.MaxDescriptionLength":
+        if (value && value.trim() !== "") {
+          const numValue = parseInt(value, 10);
+          if (isNaN(numValue) || numValue < 15) {
+            return "Maximum Description Length must be at least 15 characters";
+          }
+        }
+        break;
+      case "Content.MinTitleLength":
+        if (value && value.trim() !== "") {
+          const numValue = parseInt(value, 10);
+          if (isNaN(numValue) || numValue < 1) {
+            return "Minimum Title Length must be at least 1 character";
+          }
+        }
+        break;
+      case "Content.MinDescriptionLength":
+        if (value && value.trim() !== "") {
+          const numValue = parseInt(value, 10);
+          if (isNaN(numValue) || numValue < 1) {
+            return "Minimum Description Length must be at least 1 character";
+          }
+        }
+        break;
+      case "Identity.RequiredLength":
+        if (value && value.trim() !== "") {
+          const numValue = parseInt(value, 10);
+          if (isNaN(numValue) || numValue < 1 || numValue > 128) {
+            return "Password length must be between 1 and 128 characters";
+          }
+        }
+        break;
+      case "Identity.RequiredUniqueChars":
+        if (value && value.trim() !== "") {
+          const numValue = parseInt(value, 10);
+          if (isNaN(numValue) || numValue < 1 || numValue > 128) {
+            return "Unique characters must be between 1 and 128";
+          }
+        }
+        break;
+    }
+    return null;
+  };
+
+  const validateAllFields = (): boolean => {
+    const errors: Partial<SettingsFormData> = {};
+    let hasErrors = false;
+
+    (Object.keys(formData) as Array<keyof SettingsFormData>).forEach((field) => {
+      const error = validateField(field, formData[field]);
+      if (error) {
+        errors[field] = error;
+        hasErrors = true;
+      }
+    });
+
+    setValidationErrors(errors);
+    return !hasErrors;
+  };
+
+  const getTabsWithErrors = (): string[] => {
+    const tabsWithErrors: string[] = [];
+
+    // Content tab fields
+    const contentFields: Array<keyof SettingsFormData> = [
+      "Content.MinTitleLength",
+      "Content.MaxTitleLength",
+      "Content.MinDescriptionLength",
+      "Content.MaxDescriptionLength",
+    ];
+
+    // Password tab fields
+    const passwordFields: Array<keyof SettingsFormData> = [
+      "Identity.RequiredLength",
+      "Identity.RequiredUniqueChars",
+    ];
+
+    if (contentFields.some((field) => validationErrors[field])) {
+      tabsWithErrors.push("content");
+    }
+
+    if (passwordFields.some((field) => validationErrors[field])) {
+      tabsWithErrors.push("password");
+    }
+
+    return tabsWithErrors;
+  };
+
   const handleInputChange =
     (field: keyof SettingsFormData) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
       setFormData((prev) => ({
         ...prev,
-        [field]: event.target.value,
+        [field]: value,
+      }));
+
+      // Clear previous error and validate new value
+      const error = validateField(field, value);
+      setValidationErrors((prev) => ({
+        ...prev,
+        [field]: error || undefined,
       }));
     };
 
@@ -164,6 +271,12 @@ const Settings = () => {
       setSaving(true);
 
       try {
+        // Validate form before saving
+        const isValid = validateAllFields();
+        if (!isValid) {
+          throw new Error("Please fix the validation errors before saving.");
+        }
+
         // Save all settings
         const settingsToSave = [
           { key: "LivePreviewUrlTemplate", value: formData.LivePreviewUrlTemplate },
@@ -285,8 +398,46 @@ const Settings = () => {
             <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
               <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
                 <Tab label="Preview" value="preview" />
-                <Tab label="Content" value="content" />
-                <Tab label="Password Policy" value="password" />
+                <Tab
+                  label={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      Content
+                      {getTabsWithErrors().includes("content") && (
+                        <Box
+                          component="span"
+                          sx={{
+                            color: "error.main",
+                            fontWeight: "bold",
+                            fontSize: "1.2em",
+                          }}
+                        >
+                          *
+                        </Box>
+                      )}
+                    </Box>
+                  }
+                  value="content"
+                />
+                <Tab
+                  label={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      Password Policy
+                      {getTabsWithErrors().includes("password") && (
+                        <Box
+                          component="span"
+                          sx={{
+                            color: "error.main",
+                            fontWeight: "bold",
+                            fontSize: "1.2em",
+                          }}
+                        >
+                          *
+                        </Box>
+                      )}
+                    </Box>
+                  }
+                  value="password"
+                />
               </Tabs>
             </Box>
 
@@ -428,10 +579,14 @@ const Settings = () => {
                     value={formData["Content.MinTitleLength"]}
                     onChange={handleInputChange("Content.MinTitleLength")}
                     placeholder="10"
-                    helperText="Minimum number of characters required for content titles"
+                    helperText={
+                      validationErrors["Content.MinTitleLength"] ||
+                      "Minimum number of characters required for content titles"
+                    }
                     variant="outlined"
                     size="small"
-                    inputProps={{ min: 1 }}
+                    error={Boolean(validationErrors["Content.MinTitleLength"])}
+                    slotProps={{ htmlInput: { min: 1 } }}
                   />
                 </Grid>
 
@@ -443,10 +598,14 @@ const Settings = () => {
                     value={formData["Content.MaxTitleLength"]}
                     onChange={handleInputChange("Content.MaxTitleLength")}
                     placeholder="100"
-                    helperText="Maximum number of characters allowed for content titles"
+                    helperText={
+                      validationErrors["Content.MaxTitleLength"] ||
+                      "Maximum number of characters allowed for content titles"
+                    }
                     variant="outlined"
                     size="small"
-                    inputProps={{ min: 1 }}
+                    error={Boolean(validationErrors["Content.MaxTitleLength"])}
+                    slotProps={{ htmlInput: { min: 15 } }}
                   />
                 </Grid>
 
@@ -458,10 +617,14 @@ const Settings = () => {
                     value={formData["Content.MinDescriptionLength"]}
                     onChange={handleInputChange("Content.MinDescriptionLength")}
                     placeholder="20"
-                    helperText="Minimum number of characters required for content descriptions"
+                    helperText={
+                      validationErrors["Content.MinDescriptionLength"] ||
+                      "Minimum number of characters required for content descriptions"
+                    }
                     variant="outlined"
                     size="small"
-                    inputProps={{ min: 1 }}
+                    error={Boolean(validationErrors["Content.MinDescriptionLength"])}
+                    slotProps={{ htmlInput: { min: 1 } }}
                   />
                 </Grid>
 
@@ -473,10 +636,14 @@ const Settings = () => {
                     value={formData["Content.MaxDescriptionLength"]}
                     onChange={handleInputChange("Content.MaxDescriptionLength")}
                     placeholder="500"
-                    helperText="Maximum number of characters allowed for content descriptions"
+                    helperText={
+                      validationErrors["Content.MaxDescriptionLength"] ||
+                      "Maximum number of characters allowed for content descriptions"
+                    }
                     variant="outlined"
                     size="small"
-                    inputProps={{ min: 1 }}
+                    error={Boolean(validationErrors["Content.MaxDescriptionLength"])}
+                    slotProps={{ htmlInput: { min: 15 } }}
                   />
                 </Grid>
 
@@ -511,10 +678,14 @@ const Settings = () => {
                     value={formData["Identity.RequiredLength"]}
                     onChange={handleInputChange("Identity.RequiredLength")}
                     placeholder="8"
-                    helperText="Minimum number of characters required for passwords"
+                    helperText={
+                      validationErrors["Identity.RequiredLength"] ||
+                      "Minimum number of characters required for passwords"
+                    }
                     variant="outlined"
                     size="small"
-                    inputProps={{ min: 1, max: 128 }}
+                    error={Boolean(validationErrors["Identity.RequiredLength"])}
+                    slotProps={{ htmlInput: { min: 1, max: 128 } }}
                   />
                 </Grid>
 
@@ -526,10 +697,14 @@ const Settings = () => {
                     value={formData["Identity.RequiredUniqueChars"]}
                     onChange={handleInputChange("Identity.RequiredUniqueChars")}
                     placeholder="1"
-                    helperText="Minimum number of unique characters required"
+                    helperText={
+                      validationErrors["Identity.RequiredUniqueChars"] ||
+                      "Minimum number of unique characters required"
+                    }
                     variant="outlined"
                     size="small"
-                    inputProps={{ min: 1, max: 128 }}
+                    error={Boolean(validationErrors["Identity.RequiredUniqueChars"])}
+                    slotProps={{ htmlInput: { min: 1, max: 128 } }}
                   />
                 </Grid>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRequestContext } from "@providers/request-provider";
+import { useConfig } from "@providers/config-provider";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 import { ContentDetails } from "@features/content/content-edit/types";
 import {
@@ -8,6 +9,7 @@ import {
   MdxComponentAnalysisDto,
 } from "@lib/network/swagger-client";
 import { fetchAllContentTypes } from "@features/content/content-types";
+import { getContentLengthSettings } from "@utils/content-validation-helper";
 
 export interface ContentDataOperations {
   // Loading states
@@ -51,6 +53,26 @@ export const useContentDataOperations = (): ContentDataOperations => {
   >(undefined);
 
   const { client } = useRequestContext();
+  const { config } = useConfig();
+
+  // Helper function to safely add "... - copy" suffix while respecting max length
+  const createCopyWithSuffix = (originalText: string, maxLength: number): string => {
+    const suffix = "... - copy";
+
+    if (originalText.length + suffix.length <= maxLength) {
+      return originalText + suffix;
+    }
+
+    // If adding suffix would exceed max length, truncate the original text
+    const maxOriginalLength = maxLength - suffix.length;
+    if (maxOriginalLength <= 0) {
+      // If even the suffix is too long, just return truncated suffix
+      return suffix.substring(0, maxLength);
+    }
+
+    const truncated = originalText.substring(0, maxOriginalLength);
+    return truncated + suffix;
+  };
 
   const loadContent = async (id: string): Promise<ContentDetails> => {
     if (!client) throw new Error("Client not available");
@@ -75,10 +97,35 @@ export const useContentDataOperations = (): ContentDataOperations => {
     if (!client) throw new Error("Client not available");
 
     const { data } = await client.api.contentDetail(Number(sourceId));
+
+    // Get content length settings to validate title and description
+    const lengthSettings = getContentLengthSettings(config);
+
+    let newTitle = data.title;
+    let newDescription = data.description || "";
+
+    if (lengthSettings) {
+      // Create safe title with " - Copy" suffix
+      newTitle = createCopyWithSuffix(data.title, lengthSettings.maxTitleLength);
+
+      // Create safe description with " - Copy" suffix if description exists
+      if (data.description) {
+        newDescription = createCopyWithSuffix(
+          data.description,
+          lengthSettings.maxDescriptionLength
+        );
+      }
+    } else {
+      // Fallback if no length settings available
+      newTitle = data.title + " - Copy";
+      newDescription = (data.description || "") + (data.description ? " - Copy" : "");
+    }
+
     const duplicatedContent: ContentDetails = {
       ...data,
       id: null,
-      title: data.title + " - Copy",
+      title: newTitle,
+      description: newDescription,
       slug: data.slug + "-copy",
       createdAt: null,
       updatedAt: null,
