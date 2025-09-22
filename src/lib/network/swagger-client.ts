@@ -4089,6 +4089,12 @@ export interface ContentTypeDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
+  /**
+   * Content Count
+   * @format int32
+   * @example 1
+   */
+  contentCount?: number;
 }
 
 export interface ContentTypeImportDto {
@@ -7450,7 +7456,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.78.0
+ * @version 1.2.79.0
  */
 export class Api<
   SecurityDataType extends unknown,

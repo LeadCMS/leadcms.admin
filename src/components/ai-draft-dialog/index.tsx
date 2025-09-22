@@ -207,13 +207,25 @@ export const AIDraftDialog = ({
               }}
               disabled={isLoading}
             >
-              {contentTypes.map((type) => (
-                <MenuItem key={type.uid} value={type.uid}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <span>{idToDisplayName(type.uid)}</span>
-                  </Box>
-                </MenuItem>
-              ))}
+              {contentTypes
+                .sort((a, b) => (b.contentCount || 0) - (a.contentCount || 0))
+                .map((type) => (
+                  <MenuItem key={type.uid} value={type.uid}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <span>{idToDisplayName(type.uid)}</span>
+                      {(type.contentCount || 0) > 0 && (
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ ml: 1 }}
+                        >
+                          ({type.contentCount})
+                        </Typography>
+                      )}
+                    </Box>
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
 

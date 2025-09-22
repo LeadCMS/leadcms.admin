@@ -38,7 +38,7 @@ import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { getContentCoverImageUrl } from "@lib/network/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Chip from "@mui/material/Chip";
 import { Theme, useTheme } from "@mui/material/styles";
@@ -60,6 +60,7 @@ import { ToolbarButton } from "@components/tool-bar-button";
 import { TranslateDialog, TranslationType } from "@components/translate-dialog";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { ContentLanguageBadges } from "@components/content-language-badges";
+import { ContentTypeFilter } from "@components/content-type-filter";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -75,6 +76,7 @@ type ContentListFilterSettings = {
   sortField: string;
   sortDirection: "asc" | "desc";
   searchTerm?: string;
+  selectedContentType?: string | null;
 };
 
 const CONTENT_FILTERS_KEY = "content-list-filters";
@@ -86,6 +88,7 @@ export const ContentList = () => {
   const { Show: showErrorModal } = useErrorDetailsModal();
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
@@ -103,12 +106,19 @@ export const ContentList = () => {
       sortField: "updatedAt",
       sortDirection: "desc",
       searchTerm: "",
+      selectedContentType: null,
     }
   );
   const [whereFilters, setWhereFilters] = useState(storedSettings.whereFilters);
   const [sortField, setSortField] = useState(storedSettings.sortField);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">(storedSettings.sortDirection);
   const [searchTerm, setSearchTerm] = useState(storedSettings?.searchTerm ?? "");
+
+  // Get selectedContentType from URL params or stored settings
+  const urlContentType = searchParams.get("contentType");
+  const [selectedContentType, setSelectedContentType] = useState<string | null>(
+    urlContentType || storedSettings.selectedContentType || null
+  );
 
   // Check if preview features are available from backend config
   const configSettings = (config as ExtendedConfig)?.settings;
@@ -158,6 +168,20 @@ export const ContentList = () => {
 
   const clearAllFilters = () => setWhereFilters([]);
 
+  // Content type filter handler
+  const handleContentTypeChange = (contentType: string | null) => {
+    setSelectedContentType(contentType);
+
+    // Update URL params
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (contentType) {
+      newSearchParams.set("contentType", contentType);
+    } else {
+      newSearchParams.delete("contentType");
+    }
+    setSearchParams(newSearchParams, { replace: true });
+  };
+
   const buildWhereQuery = () => {
     const queries = whereFilters
       .map((f) => {
@@ -202,8 +226,16 @@ export const ContentList = () => {
       globalLanguageQuery = getWhereFilterQuery("language", selectedLanguage, "equals");
     }
 
+    // Add content type filter if active
+    let contentTypeQuery = "";
+    if (selectedContentType) {
+      contentTypeQuery = getWhereFilterQuery("type", selectedContentType, "equals");
+    }
+
     // Combine all queries
-    const combinedQuery = [whereQuery, globalLanguageQuery].filter(Boolean).join("");
+    const combinedQuery = [whereQuery, globalLanguageQuery, contentTypeQuery]
+      .filter(Boolean)
+      .join("");
     if (combinedQuery) {
       filter.query = (filter.query || "") + combinedQuery;
     }
@@ -239,14 +271,20 @@ export const ContentList = () => {
       whereFilters,
       sortField,
       sortDirection,
+      selectedContentType,
     });
-  }, [whereFilters, sortField, sortDirection]);
+  }, [whereFilters, sortField, sortDirection, selectedContentType, setStoredSettings]);
 
   useEffect(() => {
     setWhereFilters(storedSettings.whereFilters);
     setSortField(storedSettings.sortField);
     setSortDirection(storedSettings.sortDirection);
-  }, [storedSettings]);
+
+    // Restore selectedContentType from localStorage if not in URL
+    if (!searchParams.get("contentType") && storedSettings.selectedContentType) {
+      setSelectedContentType(storedSettings.selectedContentType);
+    }
+  }, [storedSettings, searchParams]);
 
   // Initial load and search
   useEffect(() => {
@@ -258,11 +296,31 @@ export const ContentList = () => {
       initialLoadRef.current = true;
     });
     // eslint-disable-next-line
-  }, [searchTerm, whereFilters, sortField, sortDirection, selectedLanguage]);
+  }, [searchTerm, whereFilters, sortField, sortDirection, selectedLanguage, selectedContentType]);
 
   // AI Draft handlers
   const handleAIDraftClick = () => {
-    navigate("/content/ai-draft");
+    navigate("/content/ai-draft", {
+      state: selectedContentType ? { defaultContentType: selectedContentType } : undefined,
+    });
+  };
+
+  // Clear all filters handler
+  const handleClearAllFilters = () => {
+    setSearchTerm("");
+    setWhereFilters([]);
+    setSelectedContentType(null);
+    clearAllFilters();
+
+    // Clear URL params
+    const newSearchParams = new URLSearchParams();
+    setSearchParams(newSearchParams, { replace: true });
+  };
+
+  // Get language display name
+  const getLanguageDisplayName = (languageCode: string) => {
+    const language = config?.languages?.find((lang) => lang.code === languageCode);
+    return language?.name || languageCode;
   };
 
   // Action handlers
@@ -373,7 +431,11 @@ export const ContentList = () => {
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
             variant="contained"
-            to="/content/new"
+            to={
+              selectedContentType
+                ? `/content/new?contentType=${selectedContentType}`
+                : "/content/new"
+            }
             component={GhostLink}
             startIcon={<Plus size={18} />}
           >
@@ -400,9 +462,34 @@ export const ContentList = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         clearAllFilters={clearAllFilters}
       />
+
+      {/* Content Type Filter */}
+      <Box sx={{ mb: 3 }}>
+        <ContentTypeFilter
+          selectedContentType={selectedContentType}
+          onContentTypeChange={handleContentTypeChange}
+        />
+      </Box>
       <NoRecordsDisplay
         visible={!isLoading && contentItemsCount === 0}
         message="No content found"
+        activeFilters={{
+          searchTerm: searchTerm.trim() || undefined,
+          contentType: selectedContentType || undefined,
+          customFilters:
+            whereFilters.length > 0
+              ? whereFilters.map((f) => ({
+                  field: f.whereField,
+                  operator: f.whereOperator,
+                  value: f.whereFieldValue,
+                }))
+              : undefined,
+          languageFilter: isLanguageFilterActive ? selectedLanguage : undefined,
+          languageDisplayName: isLanguageFilterActive
+            ? getLanguageDisplayName(selectedLanguage)
+            : undefined,
+        }}
+        onClearFilters={handleClearAllFilters}
       />
 
       <ContentSortPopup

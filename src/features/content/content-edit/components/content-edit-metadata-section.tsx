@@ -331,7 +331,7 @@ export const ContentEditMetadataSection = ({
           <Grid size={{ xs: 12, sm: 4 }}>
             <ContentTypeDropdown
               value={type}
-              options={[...contentTypes].sort((a, b) => a.uid.localeCompare(b.uid))}
+              options={contentTypes}
               onChange={onTypeChange}
               onAddNewType={onReloadContentTypes}
               error={formTouched.type && Boolean(formErrors.type)}

@@ -534,6 +534,19 @@ export const ContentEdit = (props: ContentEditProps) => {
         await setContentTypeAndMaybePreload(content.type);
         return;
       }
+      // Check for default content type from navigation state
+      const defaultContentType = location.state?.defaultContentType;
+      if (defaultContentType) {
+        const defaultLanguage =
+          selectedLanguage && selectedLanguage !== "all"
+            ? (selectedLanguage as string)
+            : config?.defaultLanguage || "";
+        setAiDraftFormValues({
+          language: defaultLanguage,
+          contentType: defaultContentType,
+          prompt: "",
+        });
+      }
       // Otherwise open the AI draft dialog
       setAiDraftDialogOpen(true);
     };
@@ -547,6 +560,11 @@ export const ContentEdit = (props: ContentEditProps) => {
     return config?.defaultLanguage || "";
   }, [selectedLanguage, config?.defaultLanguage]);
 
+  // Get contentType from URL search params for create mode
+  const urlContentType = useMemo(() => {
+    return searchParams.get("contentType");
+  }, [searchParams]);
+
   useEffect(() => {
     const applyCreateDefaults = async () => {
       if (!isCreateMode) return;
@@ -556,18 +574,30 @@ export const ContentEdit = (props: ContentEditProps) => {
       }
       // Type default when content types are loaded
       if (contentDataOps.contentTypes.length > 0 && !contentFormOps.formik.values.type) {
-        const first = contentDataOps.contentTypes[0]?.uid;
-        if (first) {
-          contentFormOps.formik.setFieldValue("type", first);
-          await setContentTypeAndMaybePreload(first);
+        // Use URL parameter if available and valid
+        let selectedType = null;
+        if (urlContentType) {
+          const validType = contentDataOps.contentTypes.find((t) => t.uid === urlContentType);
+          if (validType) {
+            selectedType = urlContentType;
+          }
+        }
+        // Fallback to first content type if no valid URL parameter
+        if (!selectedType) {
+          selectedType = contentDataOps.contentTypes[0]?.uid;
+        }
+
+        if (selectedType) {
+          contentFormOps.formik.setFieldValue("type", selectedType);
+          await setContentTypeAndMaybePreload(selectedType);
           // Apply type defaults for body and flags
-          await setContentTypeDefaults(first);
+          await setContentTypeDefaults(selectedType);
         }
       }
     };
     applyCreateDefaults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCreateMode, contentDataOps.contentTypes, preferredLanguage]);
+  }, [isCreateMode, contentDataOps.contentTypes, preferredLanguage, urlContentType]);
 
   // Keep content type object and MDX components in sync when 'type' changes
   useEffect(() => {

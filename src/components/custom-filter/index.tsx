@@ -13,7 +13,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 
 type CustomFilterBarProps = {
@@ -43,8 +43,6 @@ export function CustomFilterBar({
   const [operator, setOperator] = useState("contains");
   const [value, setValue] = useState("");
   const [editIdx, setEditIdx] = useState<number | null>(null);
-
-  useEffect(() => {}, [editIdx]);
 
   const operatorOptions = [
     { value: "contains", label: "Contains" },
@@ -97,7 +95,7 @@ export function CustomFilterBar({
 
   return (
     <>
-      <Box display="flex" sx={{ backgroundColor: "#fafbfd", mb: 4 }}>
+      <Box display="flex" sx={{ backgroundColor: "#fafbfd", mb: 2 }}>
         {whereFilters.map((f, idx) => (
           <Chip
             key={idx}

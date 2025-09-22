@@ -56,11 +56,23 @@ export const ContentTypeDropdown = ({
             onBlur={onBlur}
             fullWidth
           >
-            {options.map((type) => (
-              <MenuItem key={type.uid} value={type.uid}>
-                {idToDisplayName(type.uid)}
-              </MenuItem>
-            ))}
+            {options
+              .sort((a, b) => (b.contentCount || 0) - (a.contentCount || 0))
+              .map((type) => (
+                <MenuItem key={type.uid} value={type.uid}>
+                  {idToDisplayName(type.uid)}
+                  {(type.contentCount || 0) > 0 && (
+                    <Typography
+                      component="span"
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ ml: 1 }}
+                    >
+                      ({type.contentCount})
+                    </Typography>
+                  )}
+                </MenuItem>
+              ))}
             <MenuItem value="__add__" onClick={() => setDialogOpen(true)}>
               <Plus size={20} />
               Add Custom Type
