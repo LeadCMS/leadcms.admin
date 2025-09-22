@@ -1109,7 +1109,12 @@ export const ContentEdit = (props: ContentEditProps) => {
                           onChange={(newValue) =>
                             contentFormOps.handleDateChange("publishedAt", newValue)
                           }
-                          slotProps={{ textField: { fullWidth: true } }}
+                          slotProps={{
+                            textField: { fullWidth: true },
+                            actionBar: {
+                              actions: ["clear"],
+                            },
+                          }}
                         />
                       </Grid>
                     </Grid>

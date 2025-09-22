@@ -43,6 +43,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import Chip from "@mui/material/Chip";
 import { Theme, useTheme } from "@mui/material/styles";
 import { idToDisplayName } from "./content-types";
+import { getContentStatus } from "@utils/content-status-helper";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { execDeleteWithToast } from "utils/general-helper";
@@ -551,11 +552,8 @@ const ItemCard = ({
     setAnchorEl(null);
   };
 
-  let publishedTooltipTitle = "";
-  if (item.publishedAt) {
-    const d = new Date(item.publishedAt);
-    publishedTooltipTitle = "Published at " + d.toLocaleDateString();
-  }
+  const contentStatus = getContentStatus(item.publishedAt ?? null);
+  const publishedTooltipTitle = contentStatus.tooltip || "";
   let metaDateLabel = "Updated:";
   let metaDateValue = "—";
   if (item.updatedAt) {
@@ -607,11 +605,11 @@ const ItemCard = ({
             }}
           />
         )}
-        {/* Published/Draft status chip */}
-        <Tooltip title={publishedTooltipTitle} disableHoverListener={!item.publishedAt} arrow>
+        {/* Content status chip */}
+        <Tooltip title={publishedTooltipTitle} disableHoverListener={!publishedTooltipTitle} arrow>
           <Chip
-            label={item.publishedAt ? "Published" : "Draft"}
-            color={item.publishedAt ? "success" : "warning"}
+            label={contentStatus.status}
+            color={contentStatus.color}
             variant="filled"
             size="small"
             sx={{

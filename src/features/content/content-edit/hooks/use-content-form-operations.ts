@@ -308,9 +308,12 @@ export const useContentFormOperations = (
   };
 
   const handleDateChange = (field: string, newValue: Dayjs | null) => {
+    setWasModified(true);
     if (newValue && newValue.isValid()) {
-      setWasModified(true);
       formik.setFieldValue(field, newValue.toISOString());
+    } else {
+      // Handle clearing the date (when newValue is null)
+      formik.setFieldValue(field, null);
     }
   };
 
