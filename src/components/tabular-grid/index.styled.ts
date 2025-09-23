@@ -3,7 +3,7 @@ import { StyledProps } from "types";
 import { TabularGrid } from "./index";
 import * as GSB from "@utils/general-style-builder";
 
-const serviceTagSingleEdgeCornerRadius = "12px";
+const serviceTagSingleEdgeCornerRadius = "8px";
 
 const TabularGridContainer = styled(TabularGrid)<StyledProps>`
   &.tabular-segment {
@@ -19,11 +19,9 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
 
     .tab-grid {
       ${GSB.DPgrid(["max-content", "auto"], ["auto"], "100%")}
-      padding: 15px 15px 18px 16px;
-      margin: 25px 0px;
+      margin: 25px 0px 30px;
       width: 100%;
       border-radius: 26px;
-      max-width: calc(${({ theme }) => theme.mediaQueryPoints.tablet} + 33px);
 
       .table-name {
         display: none;
@@ -92,10 +90,12 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
           (theme) => theme.palette.customSegments.TabularGridContainer.primaryHover
         )}
         padding: 25px 25px 25px 18px;
+        justify-self: center;
+        width: calc(100% - 7px) !important;
 
         .tab-title {
           grid-area: 1/1/2/3;
-          transform: translateY(-10px);
+          transform: translate(13px, -7px);
         }
 
         .tab-descrp {
@@ -106,8 +106,7 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
       }
 
       .status-tab-expand {
-        ${GSB.DPgrid(["repeat(2,50%)"], ["repeat(2,auto)"], "100%")}
-        width: 100%;
+        ${GSB.DPgrid(["repeat(2,50%)"], ["repeat(2,auto)"], "")}
 
         .progress-tile-container {
           grid-area: 3/1/4/3;
@@ -116,6 +115,7 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
         .detail-container {
           ${GSB.DPgrid(["repeat(2,50%)"], ["repeat(2,auto)"], "100%", "100%", "10px")}
           grid-area: 4/1/5/3;
+          padding-bottom: 5px;
 
           .service {
             ${GSB.DPgrid(
@@ -132,7 +132,7 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
               "1px",
               "5px",
               "1px",
-              (theme) => theme.palette.customSegments.TabularGridContainer.primaryHover
+              (theme) => theme.palette.customSegments.TabularGridContainer.primary
             )}
 
             &:nth-child(odd) {
@@ -191,7 +191,7 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
               grid-area: 1/2/3/4;
 
               .name {
-                font-size: 16px;
+                font-size: 14px;
                 font-weight: 600;
                 padding: 0px 5px 2px;
                 color: ${({ theme }) =>
@@ -199,7 +199,7 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
               }
 
               .descrp {
-                font-size: 16px;
+                font-size: 14px;
                 color: ${({ theme }) =>
                   theme.palette.customSegments.TabularGridContainer.foreground};
                 text-indent: 3px;
@@ -211,7 +211,7 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
 
       .database-tab-expand,
       .deployement-tab-expand {
-        ${GSB.DPgrid(["repeat(2,50%)"], ["repeat(2,auto)"], "100%")}
+        ${GSB.DPgrid(["repeat(2,50%)"], ["repeat(2,auto)"], "")}
         width: 100%;
 
         .list {
@@ -221,12 +221,11 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
           .database-meta-info,
           .deployement-meta-info {
             ${GSB.DPflex("column", "flex-start", "flex-start", "max-content", "max-content")}
-            margin-left: 15px;
             border-radius: 10px;
             overflow: hidden;
 
             span {
-              padding: 6px 16px 3px;
+              padding: 6px 16px 3px 15px;
               color: ${({ theme }) => theme.palette.customSegments.TabularGridContainer.secondary};
             }
 
@@ -245,13 +244,12 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
         }
 
         .development-terminal-container {
-          ${GSB.DPflex("column-reverse", "flex-start", "flex-start", "max-content", "100%")}
+          ${GSB.DPflex("column-reverse", "center", "center", "max-content", "100%")}
           grid-area: 5/1/6/3;
           padding: 12px;
-          justify-self: center;
-          align-self: center;
-          margin: 15px 0px 0px 3px;
+          margin: 20px 0px 5px;
           border-radius: 8px;
+          max-width: calc(100% - 12px);
           background: ${({ theme }) => theme.palette.customSegments.TabularGridContainer.default};
           ${GSB.BoxShadow(
             "1px",
@@ -262,10 +260,8 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
           )}
 
           .sub-title {
-            ${GSB.DPblock("inline-block", "max-content", "max-content")}
-            max-width: calc(${({ theme }) => theme.mediaQueryPoints.tablet} - 100px);
-            text-indent: 30px;
-            padding: 8px 15px;
+            ${GSB.DPblock("inline-block", "max-content", "inherit")}
+            padding: 12px 7px 0px;
             font-size: 12px;
             color: ${({ theme }) => theme.palette.customSegments.TabularGridContainer.secondary};
           }
