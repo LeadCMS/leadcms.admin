@@ -258,6 +258,8 @@ const TabularGridContainer = styled(TabularGrid)<StyledProps>`
             "1px",
             (theme) => theme.palette.customSegments.CardContainer.primaryHover
           )}
+          justify-self: center;
+          transform: translateX(1px);
 
           .sub-title {
             ${GSB.DPblock("inline-block", "max-content", "inherit")}
