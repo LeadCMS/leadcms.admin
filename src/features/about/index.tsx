@@ -201,7 +201,11 @@ export const AboutModule = () => {
           cmpID="resources"
           styleObj={{
             cmpTag: "container",
-            cmpStyles: ["sub-container", "resources-container"],
+            cmpStyles: [
+              "sub-container",
+              "resources-container",
+              ExternalResources.length >= 2 ? "over-two-items" : "",
+            ],
           }}
           cmpFontSize={16}
         >
@@ -243,7 +247,11 @@ export const AboutModule = () => {
         <SubContainer
           styleObj={{
             cmpTag: "container",
-            cmpStyles: ["sub-container", "contributors-container"],
+            cmpStyles: [
+              "sub-container",
+              "contributors-container",
+              Contributors.length >= 2 ? "over-two-items" : "",
+            ],
           }}
         >
           <>
