@@ -7,20 +7,20 @@ const ProgressBar = styled(Progress)<StyledProps>`
 
   &.progress-tile-container {
     ${GSB.DPflex("column", "center", "center", "max-content", "100%")}
-    padding: 5px 2px 25px;
+    padding: 5px 0px 25px;
     margin: 2px;
 
     .progress-container {
       ${GSB.DPgrid(["repeat(2,auto)"], ["repeat(2,auto)"], "100%", "95%", "15px")}
         border-radius: 8px;
-        padding: 15px 25px 25px;
+        padding: 15px 0px 25px;
         justify-self: center;
         align-self: center;
       }
 
       .progress-label {
         ${GSB.DPflex("row", "center", "space-between", "max-content", "100%")}
-        padding: 0px 10px 20px;
+        padding: 0px 0px 20px;
         grid-area: 1/1/3/3;
         
         .label {
@@ -30,9 +30,8 @@ const ProgressBar = styled(Progress)<StyledProps>`
         }
         
         .value {
-          font-size: 20px;
+          font-size: 16px;
           font-weight: 500;
-          letter-spacing: 1px;
         }
       }
 
