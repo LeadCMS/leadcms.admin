@@ -56,7 +56,7 @@ export const Progress = ({
             {label && <span className="label">{label}</span>}
             {value && (
               <span className="value" style={{ color: captionColor }}>
-                {normalizedValue}%
+                {valueString}
               </span>
             )}
           </p>
