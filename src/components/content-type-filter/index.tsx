@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Chip, Typography, Skeleton } from "@mui/material";
+import { Box, Chip, Typography, Skeleton, Tooltip } from "@mui/material";
 import { useRequestContext } from "@providers/request-provider";
 import { fetchAllContentTypes, idToDisplayName } from "@features/content/content-types";
 import { ContentTypeDetailsDto } from "@lib/network/swagger-client";
@@ -81,50 +81,79 @@ export const ContentTypeFilter: React.FC<ContentTypeFilterProps> = ({
   };
 
   return (
-    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
-      <Typography variant="body2" color="text.secondary" sx={{ mr: 1, fontWeight: 500 }}>
-        Type:
-      </Typography>
+    <Box>
+      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mr: 1, fontWeight: 500 }}>
+          Type:
+        </Typography>
 
-      {showAllOption && (
-        <Chip
-          label="All"
-          size="small"
-          variant={selectedContentType === null ? "filled" : "outlined"}
-          color={selectedContentType === null ? "primary" : "default"}
-          onClick={() => handleChipClick(null)}
-          sx={{
-            fontSize: "0.75rem",
-            height: 28,
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              backgroundColor: selectedContentType === null ? "primary.dark" : "action.hover",
-            },
-          }}
-        />
-      )}
+        {showAllOption && (
+          <Chip
+            label="All"
+            size="small"
+            variant={selectedContentType === null ? "filled" : "outlined"}
+            color={selectedContentType === null ? "primary" : "default"}
+            onClick={() => handleChipClick(null)}
+            sx={{
+              fontSize: "0.75rem",
+              height: 28,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                backgroundColor: selectedContentType === null ? "primary.dark" : "action.hover",
+              },
+            }}
+          />
+        )}
 
-      {contentTypes.map((contentType) => (
-        <Chip
-          key={contentType.uid}
-          label={`${idToDisplayName(contentType.uid)} (${contentType.contentCount || 0})`}
-          size="small"
-          variant={selectedContentType === contentType.uid ? "filled" : "outlined"}
-          color={selectedContentType === contentType.uid ? "primary" : "default"}
-          onClick={() => handleChipClick(contentType.uid)}
-          sx={{
-            fontSize: "0.75rem",
-            height: 28,
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              backgroundColor:
-                selectedContentType === contentType.uid ? "primary.dark" : "action.hover",
-            },
-          }}
-        />
-      ))}
+        {contentTypes.map((contentType) => (
+          <Chip
+            key={contentType.uid}
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <span>{idToDisplayName(contentType.uid)}</span>
+                <Tooltip
+                  title={`Total records in system: ${
+                    contentType.contentCount || 0
+                  } (regardless of current filters)`}
+                  arrow
+                  placement="top"
+                >
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: "0.65rem",
+                      fontWeight: 600,
+                      color: "text.secondary",
+                      backgroundColor: "rgba(0, 0, 0, 0.06)",
+                      borderRadius: "4px",
+                      px: 0.5,
+                      py: 0.1,
+                      cursor: "help",
+                    }}
+                  >
+                    {contentType.contentCount || 0}
+                  </Box>
+                </Tooltip>
+              </Box>
+            }
+            size="small"
+            variant={selectedContentType === contentType.uid ? "filled" : "outlined"}
+            color={selectedContentType === contentType.uid ? "primary" : "default"}
+            onClick={() => handleChipClick(contentType.uid)}
+            sx={{
+              fontSize: "0.75rem",
+              height: 28,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                backgroundColor:
+                  selectedContentType === contentType.uid ? "primary.dark" : "action.hover",
+              },
+            }}
+          />
+        ))}
+      </Box>
     </Box>
   );
 };
