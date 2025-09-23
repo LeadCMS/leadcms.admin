@@ -7,6 +7,11 @@ import { TranslationType } from "@components/translate-dialog";
 import { useRequestContext } from "@providers/request-provider";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { useLayout } from "@providers/layout-provider";
+import {
+  getContentLengthSettings,
+  validateTitleLength,
+  validateDescriptionLength,
+} from "@utils/content-validation-helper";
 
 // Import our custom hooks
 import {
@@ -48,7 +53,7 @@ import { RefreshCw, ExternalLink } from "lucide-react";
 
 // Import existing components and utilities
 import { ContentEditContainer } from "../index.styled";
-import { ContentEditRestoreState } from "./types";
+import { ContentEditRestoreState, ContentDetails } from "./types";
 import { generateDefaultValues, idToDisplayName } from "../content-types";
 import MDXEditorNew from "@components/mdx-editor-new";
 import FileDropdown from "@components/file-dropdown";
@@ -251,12 +256,13 @@ export const ContentEdit = (props: ContentEditProps) => {
 
     try {
       const aiContent = await aiContentOps.createAIDraft(language, contentType, prompt);
-      await contentFormOps.formik.setValues(aiContent);
-      await contentFormOps.formik.setFieldValue("coverImagePending", aiContent.coverImagePending);
-      contentFormOps.setRefreshKey(Date.now());
-      contentFormOps.setWasModified(true);
-      contentFormOps.setOriginalContent(aiContent.body || "");
-      contentFormOps.setHasContentChanged(false); // Reset since this is new content
+
+      await loadContentIntoForm(aiContent, {
+        markAsModified: true,
+        resetContentChanged: true,
+        triggerValidation: true,
+      });
+
       setAiDraftFormValues(null);
 
       if (isAIDraftRoute) {
@@ -279,14 +285,13 @@ export const ContentEdit = (props: ContentEditProps) => {
 
     try {
       const editedContent = await aiContentOps.editWithAI(contentFormOps.formik.values, prompt);
-      await contentFormOps.formik.setValues(editedContent);
-      await contentFormOps.formik.setFieldValue(
-        "coverImagePending",
-        editedContent.coverImagePending
-      );
-      contentFormOps.setRefreshKey(Date.now());
-      contentFormOps.setWasModified(true);
-      contentFormOps.setHasContentChanged(true); // Mark as changed since AI edited the content
+
+      await loadContentIntoForm(editedContent, {
+        markAsModified: true,
+        markContentChanged: true,
+        triggerValidation: true,
+        setOriginalContent: false, // Preserve original content during AI edits
+      });
     } catch (error) {
       setAiEditDialogOpen(true);
     } finally {
@@ -354,6 +359,76 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
   };
 
+  // Unified function to handle content loading with proper validation
+  const loadContentIntoForm = async (
+    content: ContentDetails,
+    options: {
+      markAsModified?: boolean;
+      markContentChanged?: boolean;
+      triggerValidation?: boolean;
+      resetContentChanged?: boolean;
+      setOriginalContent?: boolean;
+    } = {}
+  ) => {
+    const {
+      markAsModified = false,
+      markContentChanged = false,
+      triggerValidation = true,
+      resetContentChanged = false,
+      setOriginalContent = true,
+    } = options;
+
+    // Set form values
+    await contentFormOps.formik.setValues(content);
+    await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
+
+    // Set content state - only set original content if specified (preserve during AI edits)
+    if (setOriginalContent) {
+      contentFormOps.setOriginalContent(content.body || "");
+    }
+    contentFormOps.setRefreshKey(Date.now());
+
+    // Set modification flags
+    if (markAsModified) {
+      contentFormOps.setWasModified(true);
+    }
+    if (markContentChanged) {
+      contentFormOps.setHasContentChanged(true);
+    }
+    if (resetContentChanged) {
+      contentFormOps.setHasContentChanged(false);
+    }
+
+    // Setup content type
+    await setContentTypeAndMaybePreload(content.type);
+
+    // Trigger validation if requested
+    if (triggerValidation) {
+      // Wait for React state updates to complete
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Use direct validation instead of formik's validateForm to avoid timing issues
+      const lengthSettings = getContentLengthSettings(config);
+
+      // Check for validation errors using the content we're loading (not formik state)
+      if (content.title) {
+        const titleError = validateTitleLength(content.title, lengthSettings);
+        if (titleError) {
+          await contentFormOps.formik.setFieldTouched("title", true);
+          await contentFormOps.formik.setFieldError("title", titleError);
+        }
+      }
+
+      if (content.description) {
+        const descriptionError = validateDescriptionLength(content.description, lengthSettings);
+        if (descriptionError) {
+          await contentFormOps.formik.setFieldTouched("description", true);
+          await contentFormOps.formik.setFieldError("description", descriptionError);
+        }
+      }
+    }
+  };
+
   // Helper to set content type object and optionally preload MDX components
   const setContentTypeAndMaybePreload = async (typeUid?: string) => {
     if (!typeUid) {
@@ -397,11 +472,12 @@ export const ContentEdit = (props: ContentEditProps) => {
       contentDataOps.setIsInitialLoading(true);
       try {
         const content = await contentDataOps.loadContent(id);
-        await contentFormOps.formik.setValues(content);
-        await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
-        contentFormOps.setOriginalContent(content.body || "");
-        contentFormOps.setHasContentChanged(false); // Reset since loading existing content
-        contentFormOps.setRefreshKey(Date.now());
+
+        await loadContentIntoForm(content, {
+          markAsModified: false,
+          resetContentChanged: true,
+          triggerValidation: true,
+        });
 
         // Preload translations
         try {
@@ -411,7 +487,6 @@ export const ContentEdit = (props: ContentEditProps) => {
           contentDataOps.setPreloadedTranslations(undefined);
         }
 
-        await setContentTypeAndMaybePreload(content.type);
         console.log(
           `loadForEdit completed, types: ${contentDataOps.contentTypes.length}, ` +
             `type: ${content.type}`
@@ -433,16 +508,12 @@ export const ContentEdit = (props: ContentEditProps) => {
         const content = await contentDataOps.loadContentForDuplication(sourceId);
         // Ensure duplicate is not linked to original
         content.translationKey = null;
-        await contentFormOps.formik.setValues(content);
-        await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
-        contentFormOps.setOriginalContent(content.body || "");
 
-        // Mark as modified so Save button is enabled for duplicated content
-        contentFormOps.setWasModified(true);
-        contentFormOps.setHasContentChanged(true);
-
-        contentFormOps.setRefreshKey(Date.now());
-        await setContentTypeAndMaybePreload(content.type);
+        await loadContentIntoForm(content, {
+          markAsModified: true,
+          markContentChanged: true,
+          triggerValidation: true,
+        });
       } finally {
         contentDataOps.setIsInitialLoading(false);
       }
@@ -478,15 +549,13 @@ export const ContentEdit = (props: ContentEditProps) => {
           translateToParam,
           translationTypeParam
         );
-        await contentFormOps.formik.setValues(translated);
-        await contentFormOps.formik.setFieldValue(
-          "coverImagePending",
-          translated.coverImagePending
-        );
-        contentFormOps.setOriginalContent(translated.body || "");
-        contentFormOps.setHasContentChanged(false); // Reset since loading translated content
-        contentFormOps.setRefreshKey(Date.now());
-        await setContentTypeAndMaybePreload(translated.type);
+
+        await loadContentIntoForm(translated, {
+          markAsModified: true,
+          markContentChanged: true,
+          triggerValidation: true,
+        });
+
         // Ensure the create dialog is closed after success
         setCreateTranslationDialogOpen(false);
       } catch (error) {
@@ -526,12 +595,13 @@ export const ContentEdit = (props: ContentEditProps) => {
       const aiData = location.state?.aiGeneratedContent;
       if (aiData) {
         const content = await contentDataOps.loadAIGeneratedContent(aiData);
-        await contentFormOps.formik.setValues(content);
-        await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
-        contentFormOps.setOriginalContent(content.body || "");
-        contentFormOps.setHasContentChanged(false); // Reset since loading AI generated content
-        contentFormOps.setRefreshKey(Date.now());
-        await setContentTypeAndMaybePreload(content.type);
+
+        await loadContentIntoForm(content, {
+          markAsModified: false,
+          resetContentChanged: true,
+          triggerValidation: true,
+        });
+
         return;
       }
       // Check for default content type from navigation state
