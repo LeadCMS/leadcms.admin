@@ -182,7 +182,7 @@ export const TabularGrid = ({
           <Content value="deployement" className="tab-content deployement-tab-expand">
             <h2 className="tab-title">{gridObj.deployement.type}</h2>
             <p className="tab-descrp">{gridObj.deployement.descrp}</p>
-            <ul className="list">
+            <div className="list">
               {Object.entries(gridObj.deployement).map(([infoKey, value]) => {
                 if (
                   ["dockerHelp", "showDockerHelp", "identifier", "descrp", "type"].includes(infoKey)
@@ -196,11 +196,11 @@ export const TabularGrid = ({
                   </p>
                 );
               })}
-            </ul>
+            </div>
 
             {gridObj.deployement.showDockerHelp && (
               <div className="sub-tab-content development-terminal-container">
-                <p className="sub-title">{gridObj.deployement.dockerHelp.helpText}</p>
+                <span className="sub-title">{gridObj.deployement.dockerHelp.helpText}</span>
                 <TerminalContainer
                   styleObj={{
                     cmpTag: "container",
