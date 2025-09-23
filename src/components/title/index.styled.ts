@@ -3,6 +3,8 @@ import { StyledProps } from "types";
 import { Title } from "./index";
 import * as GSB from "@utils/general-style-builder";
 
+const subActBtnBorderRadius = "8px";
+
 const TitleContainer = styled(Title)<StyledProps>`
   &.title-bar {
     ${GSB.DPflex("row", "center", "flex-start", "max-content", "100%")}
@@ -13,12 +15,12 @@ const TitleContainer = styled(Title)<StyledProps>`
     ${GSB.DPflex("row", "center", "center", "max-content", "100%")}
 
     .footer-panel {
-      ${GSB.DPflex("row", "center", "space-between", "max-content", "90%")}
+      ${GSB.DPflex("column", "center", "space-between", "max-content", "100%")}
       min-width: max-content;
       font-size: 16px;
       margin-top: 50px;
       padding: 20px 25px;
-      border-radius: 15px;
+      border-radius: 12px;
       background: ${({ theme }) => theme.palette.customSegments.TileContainer.primary};
 
       .context {
@@ -41,6 +43,7 @@ const TitleContainer = styled(Title)<StyledProps>`
 
       .sub-actions {
         ${GSB.DPflex("row", "center", "space-between", "max-content", "max-content")}
+        margin-top: 8px;
 
         .sub-act-btn {
           ${GSB.DPblock("inline-block", "max-content", "max-content")}
@@ -57,8 +60,8 @@ const TitleContainer = styled(Title)<StyledProps>`
         }
 
         .sub-act-btn.support {
-          border-top-left-radius: 10px;
-          border-bottom-left-radius: 10px;
+          border-top-left-radius: ${subActBtnBorderRadius};
+          border-bottom-left-radius: ${subActBtnBorderRadius};
           background: ${({ theme }) => theme.palette.customAlerts.normal.base};
           color: ${({ theme }) => theme.palette.customAlerts.normal.defaultText};
 
@@ -67,12 +70,13 @@ const TitleContainer = styled(Title)<StyledProps>`
             background: ${({ theme }) => theme.palette.customSegments.UserContainer.tertiary};
             color: ${({ theme }) => theme.palette.background.default};
             margin-right: 5px;
+            font-weight: 500;
           }
         }
 
         .sub-act-btn.review {
-          border-top-right-radius: 10px;
-          border-bottom-right-radius: 10px;
+          border-top-right-radius: ${subActBtnBorderRadius};
+          border-bottom-right-radius: ${subActBtnBorderRadius};
           background: ${({ theme }) => theme.palette.customAlerts.normal.defaultText};
           color: ${({ theme }) => theme.palette.background.default};
 
@@ -89,6 +93,12 @@ const TitleContainer = styled(Title)<StyledProps>`
             margin-left: 5px;
           }
         }
+      }
+    }
+
+    @media (min-width: ${({ theme }) => theme.mediaQueryPoints.laptop}) {
+      .footer-panel {
+        flex-direction: row !important;
       }
     }
   }
