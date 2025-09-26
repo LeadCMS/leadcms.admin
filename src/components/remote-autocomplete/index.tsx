@@ -16,6 +16,8 @@ export function RemoteAutocomplete({
   type,
   error,
   helperText,
+  contentType,
+  language,
 }: RemoteAutoCompleteProps) {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
@@ -29,10 +31,26 @@ export function RemoteAutocomplete({
     try {
       switch (type) {
         case RemoteValues.TAGS:
-          response = await client.api.contentTagsList();
+          if (contentType) {
+            // Use content-type-specific endpoint with language filtering
+            response = await client.api.contentTagsDetail(contentType, {
+              language: language,
+            });
+          } else {
+            // Fallback to general endpoint
+            response = await client.api.contentTagsList();
+          }
           break;
         case RemoteValues.CATEGORIES:
-          response = await client.api.contentCategoriesList();
+          if (contentType) {
+            // Use content-type-specific endpoint with language filtering
+            response = await client.api.contentCategoriesDetail(contentType, {
+              language: language,
+            });
+          } else {
+            // Fallback to general endpoint
+            response = await client.api.contentCategoriesList();
+          }
           break;
       }
     } catch (e) {
@@ -51,6 +69,12 @@ export function RemoteAutocomplete({
       requestData();
     }
   }, [isOpen]);
+
+  // Reset loaded state when contentType or language changes to trigger reload
+  useEffect(() => {
+    setIsLoaded(false);
+    setOptions([]);
+  }, [contentType, language]);
 
   return (
     <Autocomplete

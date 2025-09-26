@@ -1175,6 +1175,8 @@ export const ContentEdit = (props: ContentEditProps) => {
                           freeSolo
                           multiple={false}
                           limit={1}
+                          contentType={contentFormOps.formik.values.type}
+                          language={contentFormOps.formik.values.language}
                         />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
@@ -1196,6 +1198,8 @@ export const ContentEdit = (props: ContentEditProps) => {
                           freeSolo
                           multiple
                           limit={3}
+                          contentType={contentFormOps.formik.values.type}
+                          language={contentFormOps.formik.values.language}
                         />
                       </Grid>
                       {contentDataOps.contentType?.supportsComments && (

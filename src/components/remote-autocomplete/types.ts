@@ -11,6 +11,8 @@ export interface RemoteAutoCompleteProps {
   helperText: string | string[] | false | undefined;
   onChange: (event: React.SyntheticEvent<Element, Event>, value: string | string[] | null) => void;
   type: RemoteValues;
+  contentType?: string;
+  language?: string;
 }
 
 export enum RemoteValues {
