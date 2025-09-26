@@ -1,5 +1,4 @@
 import { ContentDetails } from "../content-edit/types";
-import dayjs from "dayjs";
 import { ContentTypeDetailsDto, ContentTypeCreateDto } from "../../../lib/network/swagger-client";
 
 export type ContentFormat = "MD" | "MDX" | "HTML" | "JSON" | "YAML" | "Plain Text";
@@ -65,7 +64,7 @@ export const addContentType = async (
 };
 
 // Generate default values for a content type (from API list)
-export const generateDefaultValues = (contentUid: string): ContentDetails => {
+export const generateDefaultValues = (contentUid: string, authorName?: string): ContentDetails => {
   return {
     id: null,
     type: contentUid,
@@ -76,7 +75,7 @@ export const generateDefaultValues = (contentUid: string): ContentDetails => {
     coverImagePending: { fileName: "", url: "" },
     coverImageAlt: "",
     slug: "",
-    author: "",
+    author: authorName || "",
     language: "",
     translationKey: null,
     allowComments: false,

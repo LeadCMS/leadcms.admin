@@ -30,9 +30,7 @@ import {
   DiffSourceToggleWrapper,
 } from "@mdxeditor/editor";
 import { MarkdownLiveViewerFunc } from "@components/markdown-live-viewer";
-import { MarkdownViewerFunc } from "@components/markdown-viewer";
 import { MDXEditorNewProps } from "./types";
-import { validateFrontmatter, ValidateFrontmatterError } from "utils/frontmatter-validator";
 import { useRequestContext } from "@providers/request-provider";
 import { useMdxComponents } from "./hooks";
 import { MdxComponentsPanel } from "./components";
@@ -44,7 +42,6 @@ const MDXEditorNew = ({
   onChange,
   isReadOnly,
   contentDetails,
-  onFrontmatterErrorChange,
   onContentChangeStatus,
   livePreview,
   livePreviewTemplate,
@@ -53,7 +50,6 @@ const MDXEditorNew = ({
   originalContentForDiff,
 }: MDXEditorNewProps) => {
   const { client } = useRequestContext();
-  const [currentError, setCurrentError] = useState<string>("");
   const [initialContent, setInitialContent] = useState<string>("");
   const [previewKey, setPreviewKey] = useState<number>(Date.now());
   const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
@@ -91,36 +87,6 @@ const MDXEditorNew = ({
       onContentChangeStatus?.(true); // Notify parent of content change
     }
   }, [value, initialContent, hasContentChanged, onContentChangeStatus]);
-
-  // Handle frontmatter validation
-  const onErrorChange = useCallback(
-    (error: ValidateFrontmatterError | null) => {
-      error !== null
-        ? setCurrentError(`Frontmatter Error \n (${error.errorMessage})\n`)
-        : setCurrentError("");
-      onFrontmatterErrorChange(error);
-    },
-    [onFrontmatterErrorChange]
-  );
-
-  useEffect(() => {
-    const validationResult = validateFrontmatter(value);
-
-    if (validationResult !== true) {
-      // If the error is only about missing frontmatter, do not show error
-      if (
-        validationResult &&
-        typeof validationResult === "object" &&
-        validationResult.errorMessage === "Frontmatter doesn't exists"
-      ) {
-        onErrorChange(null);
-        return;
-      }
-      onErrorChange(validationResult);
-      return;
-    }
-    onErrorChange(null);
-  }, [value, onErrorChange]);
 
   // Custom image upload handler for MDXEditor
   const imageUploadHandler = useCallback(
@@ -224,7 +190,6 @@ const MDXEditorNew = ({
   // Insert action removed per UX update (copy-only)
 
   const editorHeight = isMetadataCollapsed ? "calc(100vh - 284px)" : "calc(100vh - 444px)";
-  const strippedValue = value.replace(/(---.*?---)/s, "");
 
   // Reusable MDX components toolbar control (button + counter + separator)
   const MdxComponentsControl = () => {
@@ -258,26 +223,31 @@ const MDXEditorNew = ({
     );
   };
 
-  // Render preview based on livePreview settings
+  // Render preview for live preview mode only
   const renderPreview = () => {
     if (livePreview && livePreviewTemplate) {
       // Use stable preview key - only changes on first edit or manual refresh
       return MarkdownLiveViewerFunc({ ...contentDetails }, livePreviewTemplate, previewKey);
     }
-    return MarkdownViewerFunc(`${currentError}${strippedValue}`);
+    return null;
   };
 
   return (
     <div className="mdx-editor-container">
       <Grid container sx={{ height: editorHeight }}>
-        {/* Editor Section */}
+        {/* Editor Section - Full width when no preview available, half width when enabled */}
         <Grid
-          size={{ xs: 12, sm: livePreview ? 6 : 12 }}
+          size={{
+            xs: 12, // Full width on mobile
+            md: livePreview && livePreviewTemplate ? 6 : 12, // Half/full width on medium+ screens
+            lg: livePreview && livePreviewTemplate ? 6 : 12, // Same behavior on large screens
+            xl: livePreview && livePreviewTemplate ? 6 : 12, // Same behavior on extra large
+          }}
           sx={{
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            borderRight: livePreview ? "1px solid #e0e0e0" : "none",
+            borderRight: livePreview && livePreviewTemplate ? "1px solid #e0e0e0" : "none",
             overflow: "hidden", // Prevent container overflow
           }}
         >
@@ -285,12 +255,18 @@ const MDXEditorNew = ({
             sx={{
               flex: 1,
               overflow: "auto", // Enable scrolling for the editor
+              width: "100%", // Ensure full width utilization
               "& .mdx-editor-new": {
                 height: "100%",
+                width: "100%",
               },
               "& .mdx-editor-content": {
                 minHeight: "100%",
                 overflow: "auto",
+                width: "100%",
+              },
+              "& .mdx-editor": {
+                width: "100%",
               },
             }}
           >
@@ -375,9 +351,9 @@ const MDXEditorNew = ({
         </Grid>
 
         {/* Preview Section */}
-        {livePreview && (
+        {livePreview && livePreviewTemplate && (
           <Grid
-            size={{ xs: 12, sm: 6 }}
+            size={{ xs: 12, md: 6, lg: 6, xl: 6 }}
             sx={{
               height: "100%",
               display: "flex",

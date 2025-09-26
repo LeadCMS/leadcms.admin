@@ -227,7 +227,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     if (!contentType) return;
 
     const currentValues = { ...contentFormOps.formik.values };
-    const defaults = generateDefaultValues(contentTypeId);
+    const defaults = generateDefaultValues(contentTypeId, userInfo?.details?.displayName || "");
     const currentContentType = contentDataOps.contentTypes.find(
       (t) => t.uid === currentValues.type
     );
@@ -237,6 +237,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       ...currentValues,
       type: contentTypeId,
       body: shouldResetBody ? defaults.body : currentValues.body,
+      author: currentValues.author || defaults.author, // Only set if not already set
       allowComments:
         currentValues.allowComments !== undefined
           ? currentValues.allowComments
@@ -642,6 +643,10 @@ export const ContentEdit = (props: ContentEditProps) => {
       if (!contentFormOps.formik.values.language && preferredLanguage) {
         contentFormOps.formik.setFieldValue("language", preferredLanguage);
       }
+      // Author default - use current user's display name if not set
+      if (!contentFormOps.formik.values.author && userInfo?.details?.displayName) {
+        contentFormOps.formik.setFieldValue("author", userInfo.details.displayName);
+      }
       // Type default when content types are loaded
       if (contentDataOps.contentTypes.length > 0 && !contentFormOps.formik.values.type) {
         // Use URL parameter if available and valid
@@ -1020,9 +1025,6 @@ export const ContentEdit = (props: ContentEditProps) => {
                                 onChange={async (value) => {
                                   contentFormOps.setWasModified(true);
                                   await contentFormOps.formik.setFieldValue("body", value || "");
-                                }}
-                                onFrontmatterErrorChange={async (value) => {
-                                  contentFormOps.setFrontmatterState(value);
                                 }}
                                 onContentChangeStatus={(hasChanged) => {
                                   contentFormOps.setHasContentChanged(hasChanged);
