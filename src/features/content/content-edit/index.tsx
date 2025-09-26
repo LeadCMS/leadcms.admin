@@ -22,7 +22,11 @@ import {
 } from "./hooks";
 
 // Import components
-import { ContentEditActionButtons, ContentEditMetadataSection } from "./components";
+import {
+  ContentEditActionButtons,
+  ContentEditMetadataSection,
+  ContentChangeLog,
+} from "./components";
 import { UnifiedAIProgress } from "@components/unified-ai-progress";
 import { AIDraftDialog } from "@components/ai-draft-dialog";
 import { AIEditDialog } from "@components/ai-edit-dialog";
@@ -866,6 +870,19 @@ export const ContentEdit = (props: ContentEditProps) => {
                         },
                       }}
                     />
+                    {!isCreateMode && id && (
+                      <Tab
+                        label="Change Log"
+                        value="changelog"
+                        sx={{
+                          color: "inherit",
+                          fontWeight: 400,
+                          "&.Mui-selected": {
+                            color: "primary.main",
+                          },
+                        }}
+                      />
+                    )}
                   </Tabs>
                   <Box sx={{ flex: 1 }} />
 
@@ -1223,6 +1240,13 @@ export const ContentEdit = (props: ContentEditProps) => {
                         />
                       </Grid>
                     </Grid>
+                  )}
+
+                  {activeTab === "changelog" && !isCreateMode && id && (
+                    <ContentChangeLog
+                      contentId={id}
+                      contentType={contentFormOps.formik.values.type}
+                    />
                   )}
                 </Box>
               </CardContent>

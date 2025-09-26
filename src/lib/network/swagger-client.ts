@@ -4284,6 +4284,64 @@ export interface ContentUpdateDto {
   publishedAt?: string | null;
 }
 
+export interface ContentUpdateDtoChangeLogDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Object Type
+   * @example "string"
+   */
+  objectType?: string;
+  /**
+   * Object Id
+   * @format int32
+   * @example 1
+   */
+  objectId?: number;
+  /**
+   * Entity State
+   * @example "Detached"
+   */
+  entityState?: "Detached" | "Unchanged" | "Deleted" | "Modified" | "Added";
+  data?: ContentUpdateDto;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Created By Id
+   * @example "string"
+   */
+  createdById?: string | null;
+  /**
+   * Updated By Id
+   * @example "string"
+   */
+  updatedById?: string | null;
+  /**
+   * Created By
+   * @example "string"
+   */
+  createdBy?: string | null;
+  /**
+   * Updated By
+   * @example "string"
+   */
+  updatedBy?: string | null;
+}
+
 export interface CrmMetricsDto {
   /**
    * Total Contacts
@@ -7456,7 +7514,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.79.0
+ * @version 1.2.80.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8432,6 +8490,33 @@ export class Api<
       this.request<ContentDetailsDto[], void | ProblemDetails>({
         path: `/api/content/${id}/translations`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentChangeLogList
+     * @request GET:/api/content/{id}/change-log
+     * @secure
+     */
+    contentChangeLogList: (
+      id: number,
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        ContentUpdateDtoChangeLogDetailsDto[],
+        void | ProblemDetails
+      >({
+        path: `/api/content/${id}/change-log`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
