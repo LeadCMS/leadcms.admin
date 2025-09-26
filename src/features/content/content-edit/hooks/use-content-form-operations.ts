@@ -16,11 +16,20 @@ import {
   ContentEditData,
   ContentEditorAutoSave,
 } from "@features/content/content-edit/types";
-import { createContentEditValidationSchema } from "@features/content/content-edit/validation";
+import {
+  createContentEditValidationSchema,
+  createContentEditValidationSchemaWithSyntax,
+} from "@features/content/content-edit/validation";
 import { toFormikValidationSchema } from "zod-formik-adapter";
-import { ContentDetailsDto, HttpResponse, ProblemDetails } from "@lib/network/swagger-client";
+import {
+  ContentDetailsDto,
+  HttpResponse,
+  ProblemDetails,
+  ContentTypeDetailsDto,
+} from "@lib/network/swagger-client";
 import { Dayjs } from "dayjs";
 import { ValidateFrontmatterError } from "utils/frontmatter-validator";
+import { validateContentSyntax } from "@utils/syntax-validators";
 import { ImageData } from "@components/file-dropdown";
 import {
   getContentLengthSettings,
@@ -63,7 +72,8 @@ const LIVE_PREVIEW_STORAGE_KEY = "content-live-preview-enabled";
 
 export const useContentFormOperations = (
   id?: string | null,
-  hasLivePreview?: boolean
+  hasLivePreview?: boolean,
+  contentTypes?: ContentTypeDetailsDto[]
 ): ContentFormOperations => {
   const [wasModified, setWasModified] = useState<boolean>(false);
   const [coverWasModified, setCoverWasModified] = useState<boolean>(false);
@@ -107,6 +117,32 @@ export const useContentFormOperations = (
       (!wasModified && !coverWasModified && !hasContentChanged)
     ) {
       return;
+    }
+
+    // Check syntax validation before saving draft
+    if (contentTypes && contentTypes.length > 0) {
+      const contentType = contentTypes.find((ct) => ct.uid === values.type);
+      if (contentType?.format && values.body?.trim()) {
+        try {
+          const syntaxResult = validateContentSyntax(values.body, contentType.format);
+
+          // Handle both sync and async validation results
+          const resolvedResult =
+            syntaxResult instanceof Promise ? await syntaxResult : syntaxResult;
+
+          if (!resolvedResult.isValid) {
+            // Don't save draft if syntax is invalid, but also don't show error toast
+            console.log("Skipping draft save due to syntax error:", resolvedResult.error?.message);
+            setIsDraftSaving(false);
+            return;
+          }
+        } catch (error) {
+          // Validation error - skip draft save
+          console.log("Syntax validation failed:", error);
+          setIsDraftSaving(false);
+          return;
+        }
+      }
     }
 
     try {
@@ -266,7 +302,11 @@ export const useContentFormOperations = (
   };
 
   const formik = useFormik<ContentDetails>({
-    validationSchema: toFormikValidationSchema(createContentEditValidationSchema(config)),
+    validationSchema: toFormikValidationSchema(
+      contentTypes && contentTypes.length > 0
+        ? createContentEditValidationSchemaWithSyntax(config, contentTypes)
+        : createContentEditValidationSchema(config)
+    ),
     initialValues: {
       title: "",
       description: "",

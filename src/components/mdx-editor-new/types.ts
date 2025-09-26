@@ -14,4 +14,5 @@ export interface MDXEditorNewProps {
   isMetadataCollapsed: boolean;
   preloadedMdxComponents?: MdxComponentAnalysisDto | null;
   originalContentForDiff?: string;
+  contentFormat?: string; // Add content format for syntax validation
 }

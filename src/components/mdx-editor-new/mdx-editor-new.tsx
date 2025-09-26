@@ -29,7 +29,7 @@ import {
   Separator,
   DiffSourceToggleWrapper,
 } from "@mdxeditor/editor";
-import { MarkdownLiveViewerFunc } from "@components/markdown-live-viewer";
+import SyntaxValidationPreview from "@components/syntax-validation-preview";
 import { MDXEditorNewProps } from "./types";
 import { useRequestContext } from "@providers/request-provider";
 import { useMdxComponents } from "./hooks";
@@ -48,6 +48,7 @@ const MDXEditorNew = ({
   isMetadataCollapsed,
   preloadedMdxComponents,
   originalContentForDiff,
+  contentFormat,
 }: MDXEditorNewProps) => {
   const { client } = useRequestContext();
   const [initialContent, setInitialContent] = useState<string>("");
@@ -225,9 +226,16 @@ const MDXEditorNew = ({
 
   // Render preview for live preview mode only
   const renderPreview = () => {
-    if (livePreview && livePreviewTemplate) {
-      // Use stable preview key - only changes on first edit or manual refresh
-      return MarkdownLiveViewerFunc({ ...contentDetails }, livePreviewTemplate, previewKey);
+    if (livePreview) {
+      // Use syntax validation preview that can show errors or regular preview
+      return (
+        <SyntaxValidationPreview
+          params={{ ...contentDetails }}
+          template={livePreviewTemplate}
+          viewerKey={previewKey}
+          contentFormat={contentFormat}
+        />
+      );
     }
     return null;
   };
@@ -239,15 +247,15 @@ const MDXEditorNew = ({
         <Grid
           size={{
             xs: 12, // Full width on mobile
-            md: livePreview && livePreviewTemplate ? 6 : 12, // Half/full width on medium+ screens
-            lg: livePreview && livePreviewTemplate ? 6 : 12, // Same behavior on large screens
-            xl: livePreview && livePreviewTemplate ? 6 : 12, // Same behavior on extra large
+            md: livePreview ? 6 : 12, // Half/full width on medium+ screens
+            lg: livePreview ? 6 : 12, // Same behavior on large screens
+            xl: livePreview ? 6 : 12, // Same behavior on extra large
           }}
           sx={{
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            borderRight: livePreview && livePreviewTemplate ? "1px solid #e0e0e0" : "none",
+            borderRight: livePreview ? "1px solid #e0e0e0" : "none",
             overflow: "hidden", // Prevent container overflow
           }}
         >
@@ -351,7 +359,7 @@ const MDXEditorNew = ({
         </Grid>
 
         {/* Preview Section */}
-        {livePreview && livePreviewTemplate && (
+        {livePreview && (
           <Grid
             size={{ xs: 12, md: 6, lg: 6, xl: 6 }}
             sx={{

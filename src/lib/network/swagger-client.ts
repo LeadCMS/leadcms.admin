@@ -7514,7 +7514,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.80.0
+ * @version 1.2.81.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8344,6 +8344,54 @@ export class Api<
       this.request<string[], void | ProblemDetails>({
         path: `/api/content/categories`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentCategoriesDetail
+     * @request GET:/api/content/categories/{contentType}
+     * @secure
+     */
+    contentCategoriesDetail: (
+      contentType: string,
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/content/categories/${contentType}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentTagsDetail
+     * @request GET:/api/content/tags/{contentType}
+     * @secure
+     */
+    contentTagsDetail: (
+      contentType: string,
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/content/tags/${contentType}`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,

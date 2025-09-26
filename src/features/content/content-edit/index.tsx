@@ -60,6 +60,7 @@ import { ContentEditContainer } from "../index.styled";
 import { ContentEditRestoreState, ContentDetails } from "./types";
 import { generateDefaultValues, idToDisplayName } from "../content-types";
 import MDXEditorNew from "@components/mdx-editor-new";
+import ValidationStatusBubble from "@components/validation-status-bubble";
 import FileDropdown from "@components/file-dropdown";
 import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
@@ -175,8 +176,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
 
-  const contentFormOps = useContentFormOperations(id, hasLivePreview);
   const contentDataOps = useContentDataOperations();
+  const contentFormOps = useContentFormOperations(id, hasLivePreview, contentDataOps.contentTypes);
   const aiContentOps = useAIContentOperations();
   const translationOps = useTranslationOperations();
 
@@ -981,24 +982,33 @@ export const ContentEdit = (props: ContentEditProps) => {
                               </Stack>
                             </Box>
                           ) : isCodeEditor ? (
-                            <MonacoEditor
-                              height={
-                                isMetadataCollapsed ? "calc(100vh - 283px)" : "calc(100vh - 500px)"
-                              }
-                              defaultLanguage={monacoLanguage}
-                              value={contentFormOps.formik.values.body}
-                              onChange={async (value) => {
-                                contentFormOps.setWasModified(true);
-                                await contentFormOps.formik.setFieldValue("body", value || "");
-                              }}
-                              options={{
-                                readOnly: !!props.readonly,
-                                minimap: { enabled: false },
-                                lineNumbers: "on",
-                                scrollBeyondLastLine: false,
-                                wordWrap: "on",
-                              }}
-                            />
+                            <Box sx={{ position: "relative" }}>
+                              <MonacoEditor
+                                height={
+                                  isMetadataCollapsed
+                                    ? "calc(100vh - 283px)"
+                                    : "calc(100vh - 500px)"
+                                }
+                                defaultLanguage={monacoLanguage}
+                                value={contentFormOps.formik.values.body}
+                                onChange={async (value) => {
+                                  contentFormOps.setWasModified(true);
+                                  await contentFormOps.formik.setFieldValue("body", value || "");
+                                }}
+                                options={{
+                                  readOnly: !!props.readonly,
+                                  minimap: { enabled: false },
+                                  lineNumbers: "on",
+                                  scrollBeyondLastLine: false,
+                                  wordWrap: "on",
+                                }}
+                              />
+                              <ValidationStatusBubble
+                                content={contentFormOps.formik.values.body}
+                                format={resolvedFormat}
+                                enabled={!props.readonly}
+                              />
+                            </Box>
                           ) : (
                             <Box sx={{ position: "relative" }}>
                               {contentDataOps.contentTypeLoading &&
@@ -1054,7 +1064,16 @@ export const ContentEdit = (props: ContentEditProps) => {
                                 isMetadataCollapsed={isMetadataCollapsed}
                                 preloadedMdxComponents={contentDataOps.preloadedMdxComponents}
                                 originalContentForDiff={contentFormOps.originalContent}
+                                contentFormat={resolvedFormat}
                               />
+                              {/* Show validation bubble when live preview not available/enabled */}
+                              {(!hasLivePreview || !contentFormOps.useLivePreview) && (
+                                <ValidationStatusBubble
+                                  content={contentFormOps.formik.values.body}
+                                  format={resolvedFormat}
+                                  enabled={!props.readonly}
+                                />
+                              )}
                             </Box>
                           )}
                         </Grid>

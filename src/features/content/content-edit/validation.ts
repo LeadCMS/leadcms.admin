@@ -5,6 +5,7 @@ import {
   ConfigDto,
 } from "../../../lib/network/swagger-client";
 import { getContentLengthSettings } from "@utils/content-validation-helper";
+import { validateContentSyntax } from "@utils/syntax-validators";
 
 // Define ContentApi interface locally (not from swagger-client)
 export interface ContentApi {
@@ -80,5 +81,45 @@ export const createContentEditValidationSchema = (config: ConfigDto | null) => {
     allowComments: zod.boolean().optional(),
     tags: zod.string().array().optional(),
     category: zod.string(),
+  });
+};
+
+// Enhanced validation schema that includes syntax validation
+export const createContentEditValidationSchemaWithSyntax = (
+  config: ConfigDto | null,
+  contentTypes: ContentTypeDetailsDto[]
+) => {
+  const baseSchema = createContentEditValidationSchema(config);
+
+  return baseSchema.superRefine((data, ctx) => {
+    const contentType = contentTypes.find((ct) => ct.uid === data.type);
+
+    if (!contentType?.format || !data.body?.trim()) {
+      return; // Skip validation if no format or empty content
+    }
+
+    try {
+      const result = validateContentSyntax(data.body, contentType.format);
+
+      // For async results (MDX), we can't handle them in Zod superRefine
+      // So we skip async validation here and rely on real-time validation in UI
+      if (result instanceof Promise) {
+        // Skip async validation in form schema - handled by UI components
+        return;
+      }
+
+      // Handle sync validation results (JSON, YAML, etc.)
+      if (!result.isValid && result.error) {
+        const lineInfo = result.error.line ? ` (line ${result.error.line})` : "";
+        ctx.addIssue({
+          code: zod.ZodIssueCode.custom,
+          path: ["body"],
+          message: `Syntax error${lineInfo}: ${result.error.message}`,
+        });
+      }
+    } catch (error) {
+      // If validation throws, skip it - handled by UI components
+      console.log("Skipping sync validation due to error:", error);
+    }
   });
 };
