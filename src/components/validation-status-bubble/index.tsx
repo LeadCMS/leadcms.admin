@@ -2,6 +2,8 @@ import React from "react";
 import { Box, Tooltip, Paper, Typography, Alert } from "@mui/material";
 import { AlertCircle, CheckCircle, Clock, Code, AlertTriangle } from "lucide-react";
 import { useSyntaxValidation } from "@hooks";
+import { useConfig } from "@providers/config-provider";
+import { isRealtimeSyntaxValidationEnabled } from "@utils/config-helpers";
 
 interface ValidationStatusBubbleProps {
   content: string;
@@ -14,14 +16,15 @@ const ValidationStatusBubble: React.FC<ValidationStatusBubbleProps> = ({
   format,
   enabled = true,
 }) => {
+  const { config } = useConfig();
   const validation = useSyntaxValidation({
     content,
     format,
-    enabled,
+    enabled: enabled && isRealtimeSyntaxValidationEnabled(config),
     debounceMs: 500,
   });
 
-  if (!enabled || !content.trim()) {
+  if (!enabled || !content.trim() || !isRealtimeSyntaxValidationEnabled(config)) {
     return null;
   }
 

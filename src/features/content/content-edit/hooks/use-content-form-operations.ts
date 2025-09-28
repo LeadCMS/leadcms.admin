@@ -30,6 +30,7 @@ import {
 import { Dayjs } from "dayjs";
 import { ValidateFrontmatterError } from "utils/frontmatter-validator";
 import { validateContentSyntax } from "@utils/syntax-validators";
+import { isRealtimeSyntaxValidationEnabled } from "@utils/config-helpers";
 import { ImageData } from "@components/file-dropdown";
 import {
   getContentLengthSettings,
@@ -119,8 +120,8 @@ export const useContentFormOperations = (
       return;
     }
 
-    // Check syntax validation before saving draft
-    if (contentTypes && contentTypes.length > 0) {
+    // Check syntax validation before saving draft (only if realtime validation is enabled)
+    if (contentTypes && contentTypes.length > 0 && isRealtimeSyntaxValidationEnabled(config)) {
       const contentType = contentTypes.find((ct) => ct.uid === values.type);
       if (contentType?.format && values.body?.trim()) {
         try {

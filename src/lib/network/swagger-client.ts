@@ -6833,6 +6833,81 @@ export interface SettingDetailsDto {
   isUserLevel?: boolean;
 }
 
+export interface SettingImportDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number | null;
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string | null;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+  /**
+   * Created By Ip
+   * @example "string"
+   */
+  createdByIp?: string | null;
+  /**
+   * Created By Id
+   * @example "string"
+   */
+  createdById?: string | null;
+  /**
+   * Created By User Agent
+   * @example "string"
+   */
+  createdByUserAgent?: string | null;
+  /**
+   * Updated By Ip
+   * @example "string"
+   */
+  updatedByIp?: string | null;
+  /**
+   * Updated By Id
+   * @example "string"
+   */
+  updatedById?: string | null;
+  /**
+   * Updated By User Agent
+   * @example "string"
+   */
+  updatedByUserAgent?: string | null;
+  /**
+   * Key
+   * @minLength 1
+   * @maxLength 255
+   * @example "string"
+   */
+  key: string;
+  /**
+   * Value
+   * @example "string"
+   */
+  value?: string | null;
+  /**
+   * User Id
+   * @example "string"
+   */
+  userId?: string | null;
+}
+
 export interface SettingUpdateDto {
   /**
    * Value
@@ -7514,7 +7589,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.81.0
+ * @version 1.2.82.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -13873,6 +13948,28 @@ export class Api<
         path: `/api/settings/user/overrides`,
         method: "GET",
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsImportCreate
+     * @request POST:/api/settings/import
+     * @secure
+     */
+    settingsImportCreate: (
+      data: SettingImportDto[],
+      params: RequestParams = {},
+    ) =>
+      this.request<ImportResult, void | ProblemDetails>({
+        path: `/api/settings/import`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

@@ -2,6 +2,8 @@ import React from "react";
 import { Chip, Tooltip } from "@mui/material";
 import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { useSyntaxValidation } from "@hooks";
+import { useConfig } from "@providers/config-provider";
+import { isRealtimeSyntaxValidationEnabled } from "@utils/config-helpers";
 
 interface SyntaxValidationIndicatorProps {
   content: string;
@@ -14,14 +16,15 @@ const SyntaxValidationIndicator: React.FC<SyntaxValidationIndicatorProps> = ({
   format,
   enabled = true,
 }) => {
+  const { config } = useConfig();
   const validation = useSyntaxValidation({
     content,
     format,
-    enabled,
+    enabled: enabled && isRealtimeSyntaxValidationEnabled(config),
     debounceMs: 500, // Longer debounce for indicator
   });
 
-  if (!enabled || !content.trim()) {
+  if (!enabled || !content.trim() || !isRealtimeSyntaxValidationEnabled(config)) {
     return null;
   }
 

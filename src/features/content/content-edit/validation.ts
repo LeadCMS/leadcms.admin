@@ -6,6 +6,7 @@ import {
 } from "../../../lib/network/swagger-client";
 import { getContentLengthSettings } from "@utils/content-validation-helper";
 import { validateContentSyntax } from "@utils/syntax-validators";
+import { isRealtimeSyntaxValidationEnabled } from "@utils/config-helpers";
 
 // Define ContentApi interface locally (not from swagger-client)
 export interface ContentApi {
@@ -94,8 +95,8 @@ export const createContentEditValidationSchemaWithSyntax = (
   return baseSchema.superRefine((data, ctx) => {
     const contentType = contentTypes.find((ct) => ct.uid === data.type);
 
-    if (!contentType?.format || !data.body?.trim()) {
-      return; // Skip validation if no format or empty content
+    if (!contentType?.format || !data.body?.trim() || !isRealtimeSyntaxValidationEnabled(config)) {
+      return; // Skip validation if no format or empty content or validation is disabled
     }
 
     try {

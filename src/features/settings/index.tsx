@@ -43,6 +43,7 @@ interface SettingsFormData {
   "Content.MaxTitleLength": string;
   "Content.MinDescriptionLength": string;
   "Content.MaxDescriptionLength": string;
+  "Content.EnableRealtimeSyntaxValidation": string;
   "Identity.RequireDigit": string;
   "Identity.RequireUppercase": string;
   "Identity.RequireLowercase": string;
@@ -72,6 +73,7 @@ const Settings = () => {
     "Content.MaxTitleLength": "",
     "Content.MinDescriptionLength": "",
     "Content.MaxDescriptionLength": "",
+    "Content.EnableRealtimeSyntaxValidation": "true",
     "Identity.RequireDigit": "true",
     "Identity.RequireUppercase": "true",
     "Identity.RequireLowercase": "true",
@@ -108,6 +110,7 @@ const Settings = () => {
         "Content.MaxTitleLength": "",
         "Content.MinDescriptionLength": "",
         "Content.MaxDescriptionLength": "",
+        "Content.EnableRealtimeSyntaxValidation": "true",
         "Identity.RequireDigit": "true",
         "Identity.RequireUppercase": "true",
         "Identity.RequireLowercase": "true",
@@ -130,6 +133,8 @@ const Settings = () => {
             newFormData["Content.MinDescriptionLength"] = setting.value || "";
           } else if (setting.key === "Content.MaxDescriptionLength") {
             newFormData["Content.MaxDescriptionLength"] = setting.value || "";
+          } else if (setting.key === "Content.EnableRealtimeSyntaxValidation") {
+            newFormData["Content.EnableRealtimeSyntaxValidation"] = setting.value || "true";
           } else if (setting.key === "Identity.RequireDigit") {
             newFormData["Identity.RequireDigit"] = setting.value || "true";
           } else if (setting.key === "Identity.RequireUppercase") {
@@ -233,6 +238,7 @@ const Settings = () => {
       "Content.MaxTitleLength",
       "Content.MinDescriptionLength",
       "Content.MaxDescriptionLength",
+      "Content.EnableRealtimeSyntaxValidation",
     ];
 
     // Password tab fields
@@ -279,7 +285,7 @@ const Settings = () => {
           throw new Error("Please fix the validation errors before saving.");
         }
 
-        // Save all settings
+        // Save all settings using batch import
         const settingsToSave = [
           { key: "LivePreviewUrlTemplate", value: formData.LivePreviewUrlTemplate },
           { key: "PreviewUrlTemplate", value: formData.PreviewUrlTemplate },
@@ -287,6 +293,10 @@ const Settings = () => {
           { key: "Content.MaxTitleLength", value: formData["Content.MaxTitleLength"] },
           { key: "Content.MinDescriptionLength", value: formData["Content.MinDescriptionLength"] },
           { key: "Content.MaxDescriptionLength", value: formData["Content.MaxDescriptionLength"] },
+          {
+            key: "Content.EnableRealtimeSyntaxValidation",
+            value: formData["Content.EnableRealtimeSyntaxValidation"],
+          },
           { key: "Identity.RequireDigit", value: formData["Identity.RequireDigit"] },
           { key: "Identity.RequireUppercase", value: formData["Identity.RequireUppercase"] },
           { key: "Identity.RequireLowercase", value: formData["Identity.RequireLowercase"] },
@@ -298,10 +308,15 @@ const Settings = () => {
           { key: "Identity.RequiredUniqueChars", value: formData["Identity.RequiredUniqueChars"] },
         ];
 
-        for (const setting of settingsToSave) {
-          await client.api.settingsSystemUpdate(setting.key, {
-            value: setting.value,
-          });
+        // Use the batch import endpoint to save all settings at once
+        const importResult = await client.api.settingsImportCreate(settingsToSave);
+
+        // Check if there were any failures
+        if (importResult.data.failed && importResult.data.failed > 0) {
+          const errorMessages =
+            importResult.data.errors?.map((err) => err.message).join(", ") ||
+            "Some settings failed to save";
+          throw new Error(`Failed to save ${importResult.data.failed} settings: ${errorMessages}`);
         }
 
         // Reload config from /api/config to update the app with new settings
@@ -657,6 +672,41 @@ const Settings = () => {
                     error={Boolean(validationErrors["Content.MaxDescriptionLength"])}
                     slotProps={{ htmlInput: { min: 15 } }}
                   />
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <Box sx={{ py: 2, borderTop: 1, borderColor: "divider" }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                      Content Editor Settings
+                    </Typography>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData["Content.EnableRealtimeSyntaxValidation"] === "true"}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              "Content.EnableRealtimeSyntaxValidation": e.target.checked
+                                ? "true"
+                                : "false",
+                            });
+                          }}
+                          color="primary"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body1">Enable Realtime Syntax Validation</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            When enabled, MDX, JSON, and YAML content will be validated in real-time
+                            as users type. This helps catch syntax errors early and avoid sending
+                            invalid draft content to the backend and preview server.
+                          </Typography>
+                        </Box>
+                      }
+                      sx={{ alignItems: "flex-start" }}
+                    />
+                  </Box>
                 </Grid>
 
                 <Grid size={{ xs: 12 }}>

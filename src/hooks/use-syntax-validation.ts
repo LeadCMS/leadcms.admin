@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { validateContentSyntax, SyntaxValidationResult } from "@utils/syntax-validators";
+import { useConfig } from "@providers/config-provider";
+import { isRealtimeSyntaxValidationEnabled } from "@utils/config-helpers";
 
 interface UseSyntaxValidationOptions {
   content: string;
@@ -22,13 +24,14 @@ export const useSyntaxValidation = ({
   enabled = true,
   debounceMs = 300,
 }: UseSyntaxValidationOptions): UseSyntaxValidationResult => {
+  const { config } = useConfig();
   const [validationResult, setValidationResult] = useState<SyntaxValidationResult>({
     isValid: true,
   });
   const [isValidating, setIsValidating] = useState(false);
 
   const validateContent = useCallback(async () => {
-    if (!enabled || !content.trim()) {
+    if (!enabled || !content.trim() || !isRealtimeSyntaxValidationEnabled(config)) {
       setValidationResult({ isValid: true });
       setIsValidating(false);
       return;
@@ -58,7 +61,7 @@ export const useSyntaxValidation = ({
     } finally {
       setIsValidating(false);
     }
-  }, [content, format, enabled]);
+  }, [content, format, enabled, config]);
 
   // Debounced validation effect
   useEffect(() => {
@@ -88,14 +91,15 @@ export const useSyntaxValidationFormik = ({
   content,
   format,
   enabled = true,
-}: Omit<UseSyntaxValidationOptions, "debounceMs">) => {
-  const validation = useSyntaxValidation({ content, format, enabled, debounceMs: 100 });
+}: Omit<UseSyntaxValidationOptions, "debounceMs">): UseSyntaxValidationResult => {
+  const { config } = useConfig();
 
-  return {
-    ...validation,
-    // Generate a Formik-compatible error message
-    error: validation.isValid ? undefined : validation.error?.message || "Syntax error",
-    // Helper to check if should prevent save
-    shouldPreventSave: !validation.isValid && !validation.isValidating,
-  };
+  const validation = useSyntaxValidation({
+    content,
+    format,
+    enabled: enabled && isRealtimeSyntaxValidationEnabled(config),
+    debounceMs: 0, // No debounce for form validation - we want immediate feedback
+  });
+
+  return validation;
 };

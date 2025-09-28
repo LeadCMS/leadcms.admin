@@ -7,6 +7,8 @@ import {
   SyntaxValidationError,
 } from "@utils/syntax-validators";
 import { MarkdownLiveViewerFunc } from "@components/markdown-live-viewer";
+import { useConfig } from "@providers/config-provider";
+import { isRealtimeSyntaxValidationEnabled } from "@utils/config-helpers";
 
 interface SyntaxValidationPreviewProps {
   params: Record<string, unknown>;
@@ -93,13 +95,14 @@ const SyntaxValidationPreview: React.FC<SyntaxValidationPreviewProps> = ({
   viewerKey,
   contentFormat,
 }) => {
+  const { config } = useConfig();
   const [validationResult, setValidationResult] = useState<SyntaxValidationResult>({
     isValid: true,
   });
   const [isValidating, setIsValidating] = useState(false);
 
   const body = params.body as string;
-  const shouldValidate = body?.trim() && contentFormat;
+  const shouldValidate = body?.trim() && contentFormat && isRealtimeSyntaxValidationEnabled(config);
 
   useEffect(() => {
     if (!shouldValidate) {
@@ -136,7 +139,7 @@ const SyntaxValidationPreview: React.FC<SyntaxValidationPreviewProps> = ({
     };
 
     validateAsync();
-  }, [body, contentFormat, shouldValidate]);
+  }, [body, contentFormat, shouldValidate, config]);
 
   // Show loading state during validation
   if (isValidating) {
