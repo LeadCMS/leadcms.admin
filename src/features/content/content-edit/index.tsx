@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";
 import { useUserInfo } from "@providers/user-provider";
-import { useNavigationGuard } from "@hooks";
+import { useNavigationGuard, usePublicationDialogPreference } from "@hooks";
 import { TranslationType } from "@components/translate-dialog";
 import { useRequestContext } from "@providers/request-provider";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
@@ -12,6 +12,7 @@ import {
   validateTitleLength,
   validateDescriptionLength,
 } from "@utils/content-validation-helper";
+import { shouldShowPublicationDialog } from "@utils/publication-helper";
 
 // Import our custom hooks
 import {
@@ -31,6 +32,7 @@ import { UnifiedAIProgress } from "@components/unified-ai-progress";
 import { AIDraftDialog } from "@components/ai-draft-dialog";
 import { AIEditDialog } from "@components/ai-edit-dialog";
 import { TranslateDialog } from "@components/translate-dialog";
+import { PublicationStatusDialog, PublicationStatus } from "@components/publication-status-dialog";
 import { RestoreDataModal } from "@components/restore-data";
 import { ModuleWrapper } from "@components/module-wrapper";
 
@@ -143,6 +145,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [createTranslationDialogOpen, setCreateTranslationDialogOpen] = useState(false);
   const [aiDraftDialogOpen, setAiDraftDialogOpen] = useState(false);
   const [aiEditDialogOpen, setAiEditDialogOpen] = useState(false);
+  const [publicationStatusDialogOpen, setPublicationStatusDialogOpen] = useState(false);
 
   // AI Progress states
   const [aiProgressOpen, setAiProgressOpen] = useState(false);
@@ -180,6 +183,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const contentFormOps = useContentFormOperations(id, hasLivePreview, contentDataOps.contentTypes);
   const aiContentOps = useAIContentOperations();
   const translationOps = useTranslationOperations();
+  const publicationDialogPreference = usePublicationDialogPreference();
 
   // Determine if metadata should be collapsed
   const isMetadataCollapsed = isCreateMode ? localMetadataCollapsed : storedMetadataCollapsed;
@@ -363,6 +367,46 @@ export const ContentEdit = (props: ContentEditProps) => {
     if (!success) {
       // notificationsService.error is available in the hook
     }
+  };
+
+  // Publication status dialog handlers
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // Check if we should show the publication dialog
+    const publicationInfo = shouldShowPublicationDialog(contentFormOps.formik.values.publishedAt);
+
+    if (publicationInfo.shouldShowDialog && publicationDialogPreference.shouldShowDialog()) {
+      // Store the pending submit data and show dialog
+      contentFormOps.setPendingSubmitData({
+        values: contentFormOps.formik.values,
+        helpers: contentFormOps.formik,
+      });
+      setPublicationStatusDialogOpen(true);
+    } else {
+      // Submit directly
+      contentFormOps.formik.handleSubmit(e);
+    }
+  };
+
+  const handlePublicationStatusConfirm = async (
+    status: PublicationStatus,
+    publishedAt: string | null,
+    dontShowAgain: boolean
+  ) => {
+    setPublicationStatusDialogOpen(false);
+
+    if (dontShowAgain) {
+      publicationDialogPreference.setDontShowAgain();
+    }
+
+    // Complete the pending submit with the new publishedAt value
+    await contentFormOps.completePendingSubmit(publishedAt);
+  };
+
+  const handlePublicationStatusClose = () => {
+    setPublicationStatusDialogOpen(false);
+    contentFormOps.setPendingSubmitData(null);
   };
 
   // Unified function to handle content loading with proper validation
@@ -732,7 +776,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   );
 
   return (
-    <form onSubmit={contentFormOps.formik.handleSubmit}>
+    <form onSubmit={handleFormSubmit}>
       <ModuleWrapper
         breadcrumbs={[]}
         currentBreadcrumb={contentFormOps.formik.values.title}
@@ -1309,6 +1353,15 @@ export const ContentEdit = (props: ContentEditProps) => {
         isLoading={aiContentOps.isLoading}
         error={aiContentOps.error}
         onErrorClear={aiContentOps.clearError}
+        contentTitle={contentFormOps.formik.values.title || "Untitled"}
+      />
+
+      {/* Publication Status Dialog */}
+      <PublicationStatusDialog
+        open={publicationStatusDialogOpen}
+        onClose={handlePublicationStatusClose}
+        onConfirm={handlePublicationStatusConfirm}
+        currentPublishedAt={contentFormOps.formik.values.publishedAt}
         contentTitle={contentFormOps.formik.values.title || "Untitled"}
       />
 

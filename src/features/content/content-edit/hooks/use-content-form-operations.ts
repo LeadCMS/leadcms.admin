@@ -56,6 +56,12 @@ export interface ContentFormOperations {
   // Content change tracking for preview
   hasContentChanged: boolean;
   setHasContentChanged: (changed: boolean) => void;
+  // Publication dialog support
+  pendingSubmitData: { values: ContentDetails; helpers: FormikHelpers<ContentDetails> } | null;
+  setPendingSubmitData: (
+    data: { values: ContentDetails; helpers: FormikHelpers<ContentDetails> } | null
+  ) => void;
+  completePendingSubmit: (publishedAt: string | null) => Promise<void>;
   // Form helpers
   valueUpdate: (event: React.SyntheticEvent<Element, Event>) => void;
   valueUpdateGeneric: (field: string, value: unknown) => void;
@@ -85,6 +91,10 @@ export const useContentFormOperations = (
   const [frontmatterState, setFrontmatterState] = useState<ValidateFrontmatterError | null>(null);
   const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
   const [useLivePreview, setUseLivePreview] = useLocalStorage(LIVE_PREVIEW_STORAGE_KEY, true);
+  const [pendingSubmitData, setPendingSubmitData] = useState<{
+    values: ContentDetails;
+    helpers: FormikHelpers<ContentDetails>;
+  } | null>(null);
 
   const { setSaving } = useModuleWrapperContext();
   const { Show: showErrorModal } = useErrorDetailsModal();
@@ -192,6 +202,19 @@ export const useContentFormOperations = (
         await new Promise<void>((resolve) => setTimeout(() => resolve(), 3000));
       });
   }, 3000);
+
+  // Function to complete a pending submit with updated publishedAt
+  const completePendingSubmit = async (publishedAt: string | null) => {
+    if (!pendingSubmitData) return;
+
+    const { values, helpers } = pendingSubmitData;
+    const updatedValues = { ...values, publishedAt };
+
+    // Clear pending data before submit to avoid loops
+    setPendingSubmitData(null);
+
+    await submitFunc(updatedValues, helpers);
+  };
 
   const submitFunc = async (values: ContentDetails, helpers: FormikHelpers<ContentDetails>) => {
     let response: HttpResponse<ContentDetailsDto, void | ProblemDetails>;
@@ -392,5 +415,8 @@ export const useContentFormOperations = (
     isDraftSaving,
     useLivePreview,
     setUseLivePreview,
+    pendingSubmitData,
+    setPendingSubmitData,
+    completePendingSubmit,
   };
 };
