@@ -226,7 +226,7 @@ const MDXEditorNew = ({
 
   // Render preview for live preview mode only
   const renderPreview = () => {
-    if (livePreview) {
+    if (livePreview && livePreviewTemplate) {
       // Use syntax validation preview that can show errors or regular preview
       return (
         <SyntaxValidationPreview
@@ -240,6 +240,9 @@ const MDXEditorNew = ({
     return null;
   };
 
+  // Check if preview should be shown (live preview enabled AND template available)
+  const shouldShowPreview = livePreview && livePreviewTemplate;
+
   return (
     <div className="mdx-editor-container">
       <Grid container sx={{ height: editorHeight }}>
@@ -247,15 +250,15 @@ const MDXEditorNew = ({
         <Grid
           size={{
             xs: 12, // Full width on mobile
-            md: livePreview ? 6 : 12, // Half/full width on medium+ screens
-            lg: livePreview ? 6 : 12, // Same behavior on large screens
-            xl: livePreview ? 6 : 12, // Same behavior on extra large
+            md: shouldShowPreview ? 6 : 12, // Half/full width on medium+ screens
+            lg: shouldShowPreview ? 6 : 12, // Same behavior on large screens
+            xl: shouldShowPreview ? 6 : 12, // Same behavior on extra large
           }}
           sx={{
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            borderRight: livePreview ? "1px solid #e0e0e0" : "none",
+            borderRight: shouldShowPreview ? "1px solid #e0e0e0" : "none",
             overflow: "hidden", // Prevent container overflow
           }}
         >
@@ -358,8 +361,8 @@ const MDXEditorNew = ({
           </Box>
         </Grid>
 
-        {/* Preview Section */}
-        {livePreview && (
+        {/* Preview Section - Only show when both live preview is enabled AND template exists */}
+        {shouldShowPreview && (
           <Grid
             size={{ xs: 12, md: 6, lg: 6, xl: 6 }}
             sx={{

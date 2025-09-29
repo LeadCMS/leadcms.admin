@@ -9,12 +9,14 @@ interface ValidationStatusBubbleProps {
   content: string;
   format: string;
   enabled?: boolean;
+  previewPaneVisible?: boolean; // Whether the preview pane is currently visible
 }
 
 const ValidationStatusBubble: React.FC<ValidationStatusBubbleProps> = ({
   content,
   format,
   enabled = true,
+  previewPaneVisible = false,
 }) => {
   const { config } = useConfig();
   const validation = useSyntaxValidation({
@@ -104,7 +106,7 @@ const ValidationStatusBubble: React.FC<ValidationStatusBubbleProps> = ({
           sx={{
             position: "absolute",
             bottom: 16,
-            right: 16,
+            right: previewPaneVisible ? "calc(50% + 24px)" : 16, // Avoid preview pane
             zIndex: 1000,
             borderRadius: "8px",
             overflow: "hidden",
@@ -147,7 +149,7 @@ const ValidationStatusBubble: React.FC<ValidationStatusBubbleProps> = ({
           sx={{
             position: "absolute",
             bottom: 16,
-            right: 16,
+            right: previewPaneVisible ? "calc(50% + 24px)" : 16, // Avoid preview pane
             zIndex: 1000,
             borderRadius: "8px",
             overflow: "hidden",
@@ -183,7 +185,7 @@ const ValidationStatusBubble: React.FC<ValidationStatusBubbleProps> = ({
         sx={{
           position: "absolute",
           bottom: 16,
-          right: 16,
+          right: previewPaneVisible ? "calc(50% + 24px)" : 16, // Avoid preview pane
           zIndex: 1000,
           borderRadius: "8px",
           overflow: "hidden",

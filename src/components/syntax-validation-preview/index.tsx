@@ -175,25 +175,8 @@ const SyntaxValidationPreview: React.FC<SyntaxValidationPreviewProps> = ({
     return MarkdownLiveViewerFunc(params, template, viewerKey);
   }
 
-  // No template available
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        backgroundColor: "#f5f5f5",
-        border: "1px solid #e0e0e0",
-        borderRadius: 1,
-      }}
-    >
-      <Typography variant="caption" sx={{ color: "text.disabled", textAlign: "center" }}>
-        Preview template not configured
-      </Typography>
-    </Box>
-  );
+  // No template available - return null so parent can handle layout properly
+  return null;
 };
 
 export default SyntaxValidationPreview;

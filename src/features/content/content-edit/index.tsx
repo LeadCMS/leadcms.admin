@@ -176,6 +176,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasLivePreview = !!configSettings?.LivePreviewUrlTemplate;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
+  // Right preview pane should only be visible when BOTH templates are configured
+  const canShowLivePreviewPane = hasLivePreview && hasSitePreview;
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
 
@@ -932,40 +934,42 @@ export const ContentEdit = (props: ContentEditProps) => {
                   <Box sx={{ flex: 1 }} />
 
                   {/* Live Preview Toggle */}
-                  {hasLivePreview && (resolvedFormat === "MDX" || resolvedFormat === "MD") && (
-                    <FormControlLabel
-                      control={
-                        contentFormOps.isDraftSaving ? (
-                          <CircularProgress size={16} sx={{ mr: 1 }} />
-                        ) : (
-                          <Switch
-                            checked={contentFormOps.useLivePreview}
-                            onChange={(e) => {
-                              const newValue = e.target.checked;
-                              contentFormOps.setUseLivePreview(newValue);
-                              if (
-                                newValue &&
-                                hasLivePreview &&
-                                id &&
-                                (contentFormOps.wasModified ||
-                                  contentFormOps.coverWasModified ||
-                                  contentFormOps.hasContentChanged)
-                              ) {
-                                // Save draft would be triggered automatically by the hook
-                              }
-                            }}
-                            size="small"
-                          />
-                        )
-                      }
-                      label={
-                        <Typography variant="body2" component="span">
-                          {contentFormOps.isDraftSaving ? "Saving Draft..." : "Live Preview"}
-                        </Typography>
-                      }
-                      sx={{ mr: 2 }}
-                    />
-                  )}
+                  {hasLivePreview &&
+                    hasSitePreview &&
+                    (resolvedFormat === "MDX" || resolvedFormat === "MD") && (
+                      <FormControlLabel
+                        control={
+                          contentFormOps.isDraftSaving ? (
+                            <CircularProgress size={16} sx={{ mr: 1 }} />
+                          ) : (
+                            <Switch
+                              checked={contentFormOps.useLivePreview}
+                              onChange={(e) => {
+                                const newValue = e.target.checked;
+                                contentFormOps.setUseLivePreview(newValue);
+                                if (
+                                  newValue &&
+                                  hasLivePreview &&
+                                  id &&
+                                  (contentFormOps.wasModified ||
+                                    contentFormOps.coverWasModified ||
+                                    contentFormOps.hasContentChanged)
+                                ) {
+                                  // Save draft would be triggered automatically by the hook
+                                }
+                              }}
+                              size="small"
+                            />
+                          )
+                        }
+                        label={
+                          <Typography variant="body2" component="span">
+                            {contentFormOps.isDraftSaving ? "Saving Draft..." : "Live Preview"}
+                          </Typography>
+                        }
+                        sx={{ mr: 2 }}
+                      />
+                    )}
 
                   {/* Manual refresh button */}
                   {hasLivePreview &&
@@ -1051,6 +1055,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                                 content={contentFormOps.formik.values.body}
                                 format={resolvedFormat}
                                 enabled={!props.readonly}
+                                previewPaneVisible={false} // No preview for basic editor
                               />
                             </Box>
                           ) : (
@@ -1103,19 +1108,28 @@ export const ContentEdit = (props: ContentEditProps) => {
                                 value={contentFormOps.formik.values.body}
                                 isReadOnly={props.readonly}
                                 contentDetails={contentFormOps.formik.values}
-                                livePreview={contentFormOps.useLivePreview}
+                                livePreview={
+                                  contentFormOps.useLivePreview && canShowLivePreviewPane
+                                }
                                 livePreviewTemplate={getPreviewTemplate()}
                                 isMetadataCollapsed={isMetadataCollapsed}
                                 preloadedMdxComponents={contentDataOps.preloadedMdxComponents}
                                 originalContentForDiff={contentFormOps.originalContent}
                                 contentFormat={resolvedFormat}
                               />
-                              {/* Show validation bubble when live preview not available/enabled */}
-                              {(!hasLivePreview || !contentFormOps.useLivePreview) && (
+                              {/* Show validation bubble when preview pane is not visible */}
+                              {(!canShowLivePreviewPane ||
+                                !contentFormOps.useLivePreview ||
+                                !getPreviewTemplate()) && (
                                 <ValidationStatusBubble
                                   content={contentFormOps.formik.values.body}
                                   format={resolvedFormat}
                                   enabled={!props.readonly}
+                                  previewPaneVisible={
+                                    canShowLivePreviewPane &&
+                                    contentFormOps.useLivePreview &&
+                                    !!getPreviewTemplate()
+                                  }
                                 />
                               )}
                             </Box>

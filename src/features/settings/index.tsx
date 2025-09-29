@@ -470,21 +470,8 @@ const Settings = () => {
 
             {/* Preview Settings Tab */}
             {activeTab === "preview" && (
-              <>
+              <Box sx={{ mt: "20px" }}>
                 <Grid container spacing={3} marginBottom={4}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      fullWidth
-                      label="Live Preview URL Template"
-                      value={formData.LivePreviewUrlTemplate}
-                      onChange={handleInputChange("LivePreviewUrlTemplate")}
-                      placeholder="https://preview.leadcms.ai/{lang+slug}-{userId}/"
-                      helperText="URL template used for live preview functionality while editing"
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
@@ -493,6 +480,19 @@ const Settings = () => {
                       onChange={handleInputChange("PreviewUrlTemplate")}
                       placeholder="https://leadcms.ai/{lang+slug}/"
                       helperText="URL template used for general content preview"
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Live Preview URL Template"
+                      value={formData.LivePreviewUrlTemplate}
+                      onChange={handleInputChange("LivePreviewUrlTemplate")}
+                      placeholder="https://preview.leadcms.ai/{lang+slug}-{userId}/"
+                      helperText="URL template used for live preview functionality while editing"
                       variant="outlined"
                       size="small"
                     />
@@ -566,20 +566,6 @@ const Settings = () => {
                           variant="subtitle1"
                           sx={{ display: "flex", alignItems: "center", mb: 1 }}
                         >
-                          <Box component="span">Live Preview URL Template</Box>
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          This template is used when content editors want to see a live preview of
-                          their changes while editing. It typically includes user-specific variables
-                          to provide personalized preview URLs that can show draft content or
-                          work-in-progress changes.
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                        >
                           <Box component="span">Preview URL Template</Box>
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -589,265 +575,285 @@ const Settings = () => {
                           review processes.
                         </Typography>
                       </Box>
+                      <Box>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                        >
+                          <Box component="span">Live Preview URL Template</Box>
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          This template is used when content editors want to see a live preview of
+                          their changes while editing. It typically includes user-specific variables
+                          to provide personalized preview URLs that can show draft content or
+                          work-in-progress changes.
+                        </Typography>
+                      </Box>
                     </Stack>
                   </CardContent>
                 </Card>
-              </>
+              </Box>
             )}
 
             {/* Content Settings Tab */}
             {activeTab === "content" && (
-              <Grid container spacing={3} marginBottom={4}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Minimum Title Length"
-                    value={formData["Content.MinTitleLength"]}
-                    onChange={handleInputChange("Content.MinTitleLength")}
-                    placeholder="10"
-                    helperText={
-                      validationErrors["Content.MinTitleLength"] ||
-                      "Minimum number of characters required for content titles"
-                    }
-                    variant="outlined"
-                    size="small"
-                    error={Boolean(validationErrors["Content.MinTitleLength"])}
-                    slotProps={{ htmlInput: { min: 1 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Maximum Title Length"
-                    value={formData["Content.MaxTitleLength"]}
-                    onChange={handleInputChange("Content.MaxTitleLength")}
-                    placeholder="60"
-                    helperText={
-                      validationErrors["Content.MaxTitleLength"] ||
-                      "Maximum number of characters allowed for content titles"
-                    }
-                    variant="outlined"
-                    size="small"
-                    error={Boolean(validationErrors["Content.MaxTitleLength"])}
-                    slotProps={{ htmlInput: { min: 15 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Minimum Description Length"
-                    value={formData["Content.MinDescriptionLength"]}
-                    onChange={handleInputChange("Content.MinDescriptionLength")}
-                    placeholder="20"
-                    helperText={
-                      validationErrors["Content.MinDescriptionLength"] ||
-                      "Minimum number of characters required for content descriptions"
-                    }
-                    variant="outlined"
-                    size="small"
-                    error={Boolean(validationErrors["Content.MinDescriptionLength"])}
-                    slotProps={{ htmlInput: { min: 1 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Maximum Description Length"
-                    value={formData["Content.MaxDescriptionLength"]}
-                    onChange={handleInputChange("Content.MaxDescriptionLength")}
-                    placeholder="155"
-                    helperText={
-                      validationErrors["Content.MaxDescriptionLength"] ||
-                      "Maximum number of characters allowed for content descriptions"
-                    }
-                    variant="outlined"
-                    size="small"
-                    error={Boolean(validationErrors["Content.MaxDescriptionLength"])}
-                    slotProps={{ htmlInput: { min: 15 } }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                  <Box sx={{ py: 2, borderTop: 1, borderColor: "divider" }}>
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                      Content Editor Settings
-                    </Typography>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData["Content.EnableRealtimeSyntaxValidation"] === "true"}
-                          onChange={(e) => {
-                            setFormData({
-                              ...formData,
-                              "Content.EnableRealtimeSyntaxValidation": e.target.checked
-                                ? "true"
-                                : "false",
-                            });
-                          }}
-                          color="primary"
-                        />
+              <Box sx={{ mt: "20px" }}>
+                <Grid container spacing={3} marginBottom={4}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Minimum Title Length"
+                      value={formData["Content.MinTitleLength"]}
+                      onChange={handleInputChange("Content.MinTitleLength")}
+                      placeholder="10"
+                      helperText={
+                        validationErrors["Content.MinTitleLength"] ||
+                        "Minimum number of characters required for content titles"
                       }
-                      label={
-                        <Box>
-                          <Typography variant="body1">Enable Realtime Syntax Validation</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            When enabled, MDX, JSON, and YAML content will be validated in real-time
-                            as users type. This helps catch syntax errors early and avoid sending
-                            invalid draft content to the backend and preview server.
-                          </Typography>
-                        </Box>
-                      }
-                      sx={{ alignItems: "flex-start" }}
+                      variant="outlined"
+                      size="small"
+                      error={Boolean(validationErrors["Content.MinTitleLength"])}
+                      slotProps={{ htmlInput: { min: 1 } }}
                     />
-                  </Box>
-                </Grid>
+                  </Grid>
 
-                <Grid size={{ xs: 12 }}>
-                  <Alert severity="info">
-                    <Typography variant="body2">
-                      <strong>Content Length Validation:</strong>
-                      <br />
-                      These settings enforce validation rules when creating or editing content. Both
-                      title and description must meet the specified length requirements.
-                      <br />
-                      <br />
-                      <strong>Important:</strong> For existing content records, adjusting these
-                      settings will not automatically increase or decrease the actual length of the
-                      existing content. However, validation rules will be enforced the next time you
-                      try to edit existing content. If the requirements are not met, you will not be
-                      able to save the content unless the validation errors are fixed.
-                    </Typography>
-                  </Alert>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Maximum Title Length"
+                      value={formData["Content.MaxTitleLength"]}
+                      onChange={handleInputChange("Content.MaxTitleLength")}
+                      placeholder="60"
+                      helperText={
+                        validationErrors["Content.MaxTitleLength"] ||
+                        "Maximum number of characters allowed for content titles"
+                      }
+                      variant="outlined"
+                      size="small"
+                      error={Boolean(validationErrors["Content.MaxTitleLength"])}
+                      slotProps={{ htmlInput: { min: 15 } }}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Minimum Description Length"
+                      value={formData["Content.MinDescriptionLength"]}
+                      onChange={handleInputChange("Content.MinDescriptionLength")}
+                      placeholder="20"
+                      helperText={
+                        validationErrors["Content.MinDescriptionLength"] ||
+                        "Minimum number of characters required for content descriptions"
+                      }
+                      variant="outlined"
+                      size="small"
+                      error={Boolean(validationErrors["Content.MinDescriptionLength"])}
+                      slotProps={{ htmlInput: { min: 1 } }}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Maximum Description Length"
+                      value={formData["Content.MaxDescriptionLength"]}
+                      onChange={handleInputChange("Content.MaxDescriptionLength")}
+                      placeholder="155"
+                      helperText={
+                        validationErrors["Content.MaxDescriptionLength"] ||
+                        "Maximum number of characters allowed for content descriptions"
+                      }
+                      variant="outlined"
+                      size="small"
+                      error={Boolean(validationErrors["Content.MaxDescriptionLength"])}
+                      slotProps={{ htmlInput: { min: 15 } }}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <Box sx={{ py: 2, borderTop: 1, borderColor: "divider" }}>
+                      <Typography variant="h6" sx={{ mb: 2 }}>
+                        Content Editor Settings
+                      </Typography>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData["Content.EnableRealtimeSyntaxValidation"] === "true"}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                "Content.EnableRealtimeSyntaxValidation": e.target.checked
+                                  ? "true"
+                                  : "false",
+                              });
+                            }}
+                            color="primary"
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body1">
+                              Enable Realtime Syntax Validation
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              When enabled, MDX, JSON, and YAML content will be validated in
+                              real-time as users type. This helps catch syntax errors early and
+                              avoid sending invalid draft content to the backend and preview server.
+                            </Typography>
+                          </Box>
+                        }
+                        sx={{ alignItems: "flex-start" }}
+                      />
+                    </Box>
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <Alert severity="info">
+                      <Typography variant="body2">
+                        <strong>Content Length Validation:</strong>
+                        <br />
+                        These settings enforce validation rules when creating or editing content.
+                        Both title and description must meet the specified length requirements.
+                        <br />
+                        <br />
+                        <strong>Important:</strong> For existing content records, adjusting these
+                        settings will not automatically increase or decrease the actual length of
+                        the existing content. However, validation rules will be enforced the next
+                        time you try to edit existing content. If the requirements are not met, you
+                        will not be able to save the content unless the validation errors are fixed.
+                      </Typography>
+                    </Alert>
+                  </Grid>
                 </Grid>
-              </Grid>
+              </Box>
             )}
 
             {/* Password Policy Settings Tab */}
             {activeTab === "password" && (
-              <Grid container spacing={3} marginBottom={4}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Minimum Password Length"
-                    value={formData["Identity.RequiredLength"]}
-                    onChange={handleInputChange("Identity.RequiredLength")}
-                    placeholder="8"
-                    helperText={
-                      validationErrors["Identity.RequiredLength"] ||
-                      "Minimum number of characters required for passwords"
-                    }
-                    variant="outlined"
-                    size="small"
-                    error={Boolean(validationErrors["Identity.RequiredLength"])}
-                    slotProps={{ htmlInput: { min: 1, max: 128 } }}
-                  />
-                </Grid>
+              <Box sx={{ mt: "20px" }}>
+                <Grid container spacing={3} marginBottom={4}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Minimum Password Length"
+                      value={formData["Identity.RequiredLength"]}
+                      onChange={handleInputChange("Identity.RequiredLength")}
+                      placeholder="8"
+                      helperText={
+                        validationErrors["Identity.RequiredLength"] ||
+                        "Minimum number of characters required for passwords"
+                      }
+                      variant="outlined"
+                      size="small"
+                      error={Boolean(validationErrors["Identity.RequiredLength"])}
+                      slotProps={{ htmlInput: { min: 1, max: 128 } }}
+                    />
+                  </Grid>
 
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Required Unique Characters"
-                    value={formData["Identity.RequiredUniqueChars"]}
-                    onChange={handleInputChange("Identity.RequiredUniqueChars")}
-                    placeholder="1"
-                    helperText={
-                      validationErrors["Identity.RequiredUniqueChars"] ||
-                      "Minimum number of unique characters required"
-                    }
-                    variant="outlined"
-                    size="small"
-                    error={Boolean(validationErrors["Identity.RequiredUniqueChars"])}
-                    slotProps={{ htmlInput: { min: 1, max: 128 } }}
-                  />
-                </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Required Unique Characters"
+                      value={formData["Identity.RequiredUniqueChars"]}
+                      onChange={handleInputChange("Identity.RequiredUniqueChars")}
+                      placeholder="1"
+                      helperText={
+                        validationErrors["Identity.RequiredUniqueChars"] ||
+                        "Minimum number of unique characters required"
+                      }
+                      variant="outlined"
+                      size="small"
+                      error={Boolean(validationErrors["Identity.RequiredUniqueChars"])}
+                      slotProps={{ htmlInput: { min: 1, max: 128 } }}
+                    />
+                  </Grid>
 
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                    Character Requirements
-                  </Typography>
-                  <FormGroup>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData["Identity.RequireDigit"] === "true"}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              "Identity.RequireDigit": e.target.checked ? "true" : "false",
-                            }))
-                          }
-                        />
-                      }
-                      label="Require at least one digit (0-9)"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData["Identity.RequireUppercase"] === "true"}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              "Identity.RequireUppercase": e.target.checked ? "true" : "false",
-                            }))
-                          }
-                        />
-                      }
-                      label="Require at least one uppercase letter (A-Z)"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData["Identity.RequireLowercase"] === "true"}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              "Identity.RequireLowercase": e.target.checked ? "true" : "false",
-                            }))
-                          }
-                        />
-                      }
-                      label="Require at least one lowercase letter (a-z)"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={formData["Identity.RequireNonAlphanumeric"] === "true"}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              "Identity.RequireNonAlphanumeric": e.target.checked
-                                ? "true"
-                                : "false",
-                            }))
-                          }
-                        />
-                      }
-                      label="Require at least one special character (!@#$%^&*)"
-                    />
-                  </FormGroup>
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                  <Alert severity="info" sx={{ mb: 3 }}>
-                    <Typography variant="body2">
-                      <strong>Password Policy Configuration:</strong>
-                      <br />
-                      These settings define the password requirements for user accounts. Changes
-                      will apply to new passwords and password resets. Existing passwords remain
-                      valid until users change them.
+                  <Grid size={{ xs: 12 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                      Character Requirements
                     </Typography>
-                  </Alert>
+                    <FormGroup>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData["Identity.RequireDigit"] === "true"}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                "Identity.RequireDigit": e.target.checked ? "true" : "false",
+                              }))
+                            }
+                          />
+                        }
+                        label="Require at least one digit (0-9)"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData["Identity.RequireUppercase"] === "true"}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                "Identity.RequireUppercase": e.target.checked ? "true" : "false",
+                              }))
+                            }
+                          />
+                        }
+                        label="Require at least one uppercase letter (A-Z)"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData["Identity.RequireLowercase"] === "true"}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                "Identity.RequireLowercase": e.target.checked ? "true" : "false",
+                              }))
+                            }
+                          />
+                        }
+                        label="Require at least one lowercase letter (a-z)"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData["Identity.RequireNonAlphanumeric"] === "true"}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                "Identity.RequireNonAlphanumeric": e.target.checked
+                                  ? "true"
+                                  : "false",
+                              }))
+                            }
+                          />
+                        }
+                        label="Require at least one special character (!@#$%^&*)"
+                      />
+                    </FormGroup>
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                      <Typography variant="body2">
+                        <strong>Password Policy Configuration:</strong>
+                        <br />
+                        These settings define the password requirements for user accounts. Changes
+                        will apply to new passwords and password resets. Existing passwords remain
+                        valid until users change them.
+                      </Typography>
+                    </Alert>
+                  </Grid>
                 </Grid>
-              </Grid>
+              </Box>
             )}
           </CardContent>
         </Card>
