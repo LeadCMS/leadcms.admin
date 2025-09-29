@@ -570,11 +570,11 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
                       </Box>
                     </TableCell>
                     <TableCell>
-                      {entry.createdBy || entry.updatedBy ? (
+                      {entry.updatedBy || entry.createdBy ? (
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                           <User size={12} />
                           <Typography variant="body2">
-                            {entry.createdBy || entry.updatedBy}
+                            {entry.updatedBy || entry.createdBy}
                           </Typography>
                         </Box>
                       ) : (
@@ -607,9 +607,9 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
                         {index < entries.length - 1 && (
                           <Tooltip
                             title={`Compare with ${entries[index + 1].formattedDate}${
-                              entries[index + 1].createdBy || entries[index + 1].updatedBy
+                              entries[index + 1].updatedBy || entries[index + 1].createdBy
                                 ? ` by ${
-                                    entries[index + 1].createdBy || entries[index + 1].updatedBy
+                                    entries[index + 1].updatedBy || entries[index + 1].createdBy
                                   }`
                                 : ""
                             }`}
@@ -659,14 +659,14 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
                   </Typography>
                 </Grid>
 
-                {(selectedEntry.createdBy || selectedEntry.updatedBy) && (
+                {(selectedEntry.updatedBy || selectedEntry.createdBy) && (
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                       <User size={16} />
                       <Typography variant="subtitle2">Modified By</Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                      {selectedEntry.createdBy || selectedEntry.updatedBy}
+                      {selectedEntry.updatedBy || selectedEntry.createdBy}
                     </Typography>
                   </Grid>
                 )}
@@ -723,11 +723,11 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
                           size="small"
                         />
                       </Box>
-                      {(compareFromEntry.createdBy || compareFromEntry.updatedBy) && (
+                      {(compareFromEntry.updatedBy || compareFromEntry.createdBy) && (
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                           <User size={12} />
                           <Typography variant="caption" color="text.secondary">
-                            {compareFromEntry.createdBy || compareFromEntry.updatedBy}
+                            {compareFromEntry.updatedBy || compareFromEntry.createdBy}
                           </Typography>
                         </Box>
                       )}
@@ -752,11 +752,11 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
                           size="small"
                         />
                       </Box>
-                      {(compareToEntry.createdBy || compareToEntry.updatedBy) && (
+                      {(compareToEntry.updatedBy || compareToEntry.createdBy) && (
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                           <User size={12} />
                           <Typography variant="caption" color="text.secondary">
-                            {compareToEntry.createdBy || compareToEntry.updatedBy}
+                            {compareToEntry.updatedBy || compareToEntry.createdBy}
                           </Typography>
                         </Box>
                       )}
