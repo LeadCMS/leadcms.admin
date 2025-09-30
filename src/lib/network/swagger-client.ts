@@ -7589,7 +7589,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.82.0
+ * @version 1.2.83.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -13256,6 +13256,29 @@ export class Api<
       this.request<void, ProblemDetails>({
         path: `/api/media/${pathToFile}`,
         method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaSyncList
+     * @request GET:/api/media/sync
+     * @secure
+     */
+    mediaSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/media/sync`,
+        method: "GET",
+        query: query,
         secure: true,
         ...params,
       }),
