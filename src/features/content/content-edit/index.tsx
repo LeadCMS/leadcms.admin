@@ -60,7 +60,7 @@ import { RefreshCw, ExternalLink } from "lucide-react";
 // Import existing components and utilities
 import { ContentEditContainer } from "../index.styled";
 import { ContentEditRestoreState, ContentDetails } from "./types";
-import { generateDefaultValues, idToDisplayName } from "../content-types";
+import { generateDefaultValues, idToDisplayName, ContentFormat } from "../content-types";
 import MDXEditorNew from "@components/mdx-editor-new";
 import ValidationStatusBubble from "@components/validation-status-bubble";
 import FileDropdown from "@components/file-dropdown";
@@ -71,6 +71,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import MonacoEditor from "@monaco-editor/react";
 import { openSitePreview } from "utils/preview-helper";
+
 import useLocalStorage from "use-local-storage";
 
 // Extended config interface to handle settings not in the swagger definition
@@ -1115,7 +1116,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                                 isMetadataCollapsed={isMetadataCollapsed}
                                 preloadedMdxComponents={contentDataOps.preloadedMdxComponents}
                                 originalContentForDiff={contentFormOps.originalContent}
-                                contentFormat={resolvedFormat}
+                                contentFormat={resolvedFormat as ContentFormat}
                               />
                               {/* Show validation bubble when preview pane is not visible */}
                               {(!canShowLivePreviewPane ||

@@ -23,3 +23,23 @@ export const isRealtimeSyntaxValidationEnabled = (config: ConfigDto | null): boo
   // Parse the string value as boolean
   return setting.toLowerCase() === "true";
 };
+
+/**
+ * Check if code editor line numbers are enabled
+ * Defaults to true if the setting is not present (backward compatibility)
+ */
+export const isCodeEditorLineNumbersEnabled = (config: ConfigDto | null): boolean => {
+  if (!config?.settings) {
+    return true; // Default to enabled if no config or settings
+  }
+
+  const setting = config.settings["Content.EnableCodeEditorLineNumbers"];
+
+  // If setting is not present, default to true (enabled)
+  if (setting === null || setting === undefined) {
+    return true;
+  }
+
+  // Parse the string value as boolean
+  return setting.toLowerCase() === "true";
+};

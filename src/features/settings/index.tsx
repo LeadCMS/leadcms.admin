@@ -44,6 +44,7 @@ interface SettingsFormData {
   "Content.MinDescriptionLength": string;
   "Content.MaxDescriptionLength": string;
   "Content.EnableRealtimeSyntaxValidation": string;
+  "Content.EnableCodeEditorLineNumbers": string;
   "Identity.RequireDigit": string;
   "Identity.RequireUppercase": string;
   "Identity.RequireLowercase": string;
@@ -74,6 +75,7 @@ const Settings = () => {
     "Content.MinDescriptionLength": "",
     "Content.MaxDescriptionLength": "",
     "Content.EnableRealtimeSyntaxValidation": "true",
+    "Content.EnableCodeEditorLineNumbers": "true",
     "Identity.RequireDigit": "true",
     "Identity.RequireUppercase": "true",
     "Identity.RequireLowercase": "true",
@@ -111,6 +113,7 @@ const Settings = () => {
         "Content.MinDescriptionLength": "",
         "Content.MaxDescriptionLength": "",
         "Content.EnableRealtimeSyntaxValidation": "true",
+        "Content.EnableCodeEditorLineNumbers": "true",
         "Identity.RequireDigit": "true",
         "Identity.RequireUppercase": "true",
         "Identity.RequireLowercase": "true",
@@ -135,6 +138,8 @@ const Settings = () => {
             newFormData["Content.MaxDescriptionLength"] = setting.value || "";
           } else if (setting.key === "Content.EnableRealtimeSyntaxValidation") {
             newFormData["Content.EnableRealtimeSyntaxValidation"] = setting.value || "true";
+          } else if (setting.key === "Content.EnableCodeEditorLineNumbers") {
+            newFormData["Content.EnableCodeEditorLineNumbers"] = setting.value || "true";
           } else if (setting.key === "Identity.RequireDigit") {
             newFormData["Identity.RequireDigit"] = setting.value || "true";
           } else if (setting.key === "Identity.RequireUppercase") {
@@ -239,6 +244,7 @@ const Settings = () => {
       "Content.MinDescriptionLength",
       "Content.MaxDescriptionLength",
       "Content.EnableRealtimeSyntaxValidation",
+      "Content.EnableCodeEditorLineNumbers",
     ];
 
     // Password tab fields
@@ -296,6 +302,10 @@ const Settings = () => {
           {
             key: "Content.EnableRealtimeSyntaxValidation",
             value: formData["Content.EnableRealtimeSyntaxValidation"],
+          },
+          {
+            key: "Content.EnableCodeEditorLineNumbers",
+            value: formData["Content.EnableCodeEditorLineNumbers"],
           },
           { key: "Identity.RequireDigit", value: formData["Identity.RequireDigit"] },
           { key: "Identity.RequireUppercase", value: formData["Identity.RequireUppercase"] },
@@ -704,6 +714,35 @@ const Settings = () => {
                               When enabled, MDX, JSON, and YAML content will be validated in
                               real-time as users type. This helps catch syntax errors early and
                               avoid sending invalid draft content to the backend and preview server.
+                            </Typography>
+                          </Box>
+                        }
+                        sx={{ alignItems: "flex-start" }}
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData["Content.EnableCodeEditorLineNumbers"] === "true"}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                "Content.EnableCodeEditorLineNumbers": e.target.checked
+                                  ? "true"
+                                  : "false",
+                              });
+                            }}
+                            color="primary"
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body1">
+                              Show Line Numbers in Code Editors
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              When enabled, line numbers will be displayed in MDX source mode and
+                              code block editors. This can help with debugging and code navigation
+                              but may take up additional screen space.
                             </Typography>
                           </Box>
                         }

@@ -34,6 +34,9 @@ import { MDXEditorNewProps } from "./types";
 import { useRequestContext } from "@providers/request-provider";
 import { useMdxComponents } from "./hooks";
 import { MdxComponentsPanel } from "./components";
+import { buildSourceModeExtensions, buildCodeBlockExtensions } from "./codemirror-extensions";
+import { useConfig } from "@providers/config-provider";
+import { isCodeEditorLineNumbersEnabled } from "@utils/config-helpers";
 import "@mdxeditor/editor/style.css";
 import "./styles.css";
 
@@ -51,6 +54,7 @@ const MDXEditorNew = ({
   contentFormat,
 }: MDXEditorNewProps) => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const [initialContent, setInitialContent] = useState<string>("");
   const [previewKey, setPreviewKey] = useState<number>(Date.now());
   const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
@@ -259,6 +263,7 @@ const MDXEditorNew = ({
             display: "flex",
             flexDirection: "column",
             borderRight: shouldShowPreview ? "1px solid #e0e0e0" : "none",
+            borderLeft: !isCodeEditorLineNumbersEnabled(config) ? "1px solid #e0e0e0" : "none",
             overflow: "hidden", // Prevent container overflow
           }}
         >
@@ -293,6 +298,8 @@ const MDXEditorNew = ({
                   viewMode: "source",
                   diffMarkdown: originalContentForDiff || initialContent,
                   readOnlyDiff: false,
+                  // Use custom extensions that conditionally include line numbers
+                  codeMirrorExtensions: buildSourceModeExtensions(config),
                 }),
                 // JSX plugin for custom components with implementations
                 jsxPlugin({
@@ -323,6 +330,8 @@ const MDXEditorNew = ({
                     bash: "Bash",
                     python: "Python",
                   },
+                  // Use custom extensions that conditionally include line numbers
+                  codeMirrorExtensions: buildCodeBlockExtensions(config),
                 }),
                 markdownShortcutPlugin(),
                 // Toolbar
