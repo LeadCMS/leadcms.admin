@@ -1,5 +1,5 @@
 import { ErrorDetailsModal } from "@components/error-details";
-import Box from "@mui/material/Box";
+import { ErrorDetailsDisplay } from "@components/error-details-display";
 import { memo, PropsWithChildren, createContext, useState, useContext } from "react";
 
 interface ErrorDetailsModalContextData {
@@ -9,31 +9,18 @@ interface ErrorDetailsModalContextData {
 const ErrorDetailsModalContext = createContext<ErrorDetailsModalContextData | null>(null);
 
 const constructErrorBody = (error: string | string[]) => {
-  return (
-    <Box>
-      {typeof error === "string"
-        ? error
-        : (error as string[]).map((val, idx) => (
-            <Box
-              key={idx}
-              component="span"
-              sx={{
-                display: "block",
-                p: 1,
-                m: 1,
-                bgcolor: (theme) => (theme.palette.mode === "dark" ? "#101010" : "#fff"),
-                color: (theme) => (theme.palette.mode === "dark" ? "grey.300" : "grey.800"),
-                border: "1px solid",
-                borderColor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.300"),
-                borderRadius: 2,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {val}
-            </Box>
-          ))}
-    </Box>
-  );
+  if (typeof error === "string") {
+    return <ErrorDetailsDisplay message={error} />;
+  }
+
+  // If array has only one item, show it as the main message
+  if (error.length === 1) {
+    return <ErrorDetailsDisplay message={error[0]} />;
+  }
+
+  // If multiple items, first is the message, rest are details
+  const [message, ...details] = error;
+  return <ErrorDetailsDisplay message={message} details={details} />;
 };
 
 export const ErrorDetailsModalProvider = memo(function ErrorDetailsModalProvider({

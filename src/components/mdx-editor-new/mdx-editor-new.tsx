@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import React from "react";
 import { Box, Grid, IconButton, Drawer, Typography, Chip } from "@mui/material";
 import { Component } from "lucide-react";
@@ -35,8 +35,13 @@ import { useRequestContext } from "@providers/request-provider";
 import { useMdxComponents } from "./hooks";
 import { MdxComponentsPanel } from "./components";
 import { buildSourceModeExtensions, buildCodeBlockExtensions } from "./codemirror-extensions";
+import type { ImageUploadCallbacks, ImageUploadError } from "./codemirror-extensions";
 import { useConfig } from "@providers/config-provider";
 import { isCodeEditorLineNumbersEnabled } from "@utils/config-helpers";
+import { useNotificationsService } from "@hooks";
+import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
+import { parseApiError } from "@utils/api-error-parser";
+import { toast } from "react-toastify";
 import "@mdxeditor/editor/style.css";
 import "./styles.css";
 
@@ -55,10 +60,16 @@ const MDXEditorNew = ({
 }: MDXEditorNewProps) => {
   const { client } = useRequestContext();
   const { config } = useConfig();
+  const { notificationsService } = useNotificationsService();
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const [initialContent, setInitialContent] = useState<string>("");
   const [previewKey, setPreviewKey] = useState<number>(Date.now());
   const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
   const [componentsPanelOpen, setComponentsPanelOpen] = useState<boolean>(false);
+  // Track currently uploading image files by name
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
+  const [pendingChanges, setPendingChanges] = useState<boolean>(false);
 
   // Fetch custom MDX components for the current content type
   const { components: mdxComponents } = useMdxComponents({
@@ -93,6 +104,17 @@ const MDXEditorNew = ({
     }
   }, [value, initialContent, hasContentChanged, onContentChangeStatus]);
 
+  // Enhanced onChange handler that prevents updates during image uploads
+  const handleContentChange = useCallback(
+    (newValue: string) => {
+      // Don't trigger onChange if we have pending image uploads
+      if (!pendingChanges) {
+        onChange(newValue);
+      }
+    },
+    [onChange, pendingChanges]
+  );
+
   // Custom image upload handler for MDXEditor
   const imageUploadHandler = useCallback(
     async (image: File): Promise<string> => {
@@ -108,6 +130,105 @@ const MDXEditorNew = ({
       return resp.data.location || "";
     },
     [contentDetails.slug, client]
+  );
+
+  // Drag & drop image upload handler with error handling
+  const dragDropImageUploadHandler = useCallback(
+    async (image: File): Promise<string> => {
+      if (contentDetails.slug.length === 0) {
+        throw new Error("Please save the content first to enable image uploads");
+      }
+
+      try {
+        const resp = await client.api.mediaCreate({
+          File: image,
+          ScopeUid: contentDetails.slug,
+        });
+
+        if (!resp.data.location) {
+          throw new Error("Upload completed but no location returned");
+        }
+
+        return resp.data.location;
+      } catch (error) {
+        // Parse API error using utility
+        const parsedError = parseApiError(error, "Failed to upload image. Please try again.");
+
+        // Create detailed error object
+        const detailedError = new Error(parsedError.message) as Error & { details?: string[] };
+        detailedError.details = parsedError.details;
+        throw detailedError;
+      }
+    },
+    [contentDetails.slug, client]
+  );
+
+  // Upload callbacks for drag & drop
+  const uploadCallbacks: ImageUploadCallbacks = useMemo(
+    () => ({
+      onBeforePlaceholder: () => {
+        // Set pending changes BEFORE any content modification
+        setPendingChanges(true);
+      },
+      onUploadStart: (file: File) => {
+        setUploadingImages((prev) => new Set(prev).add(file.name));
+      },
+      onUploadSuccess: (file: File) => {
+        setUploadingImages((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(file.name);
+          return newSet;
+        });
+
+        notificationsService.success(`Image "${file.name}" uploaded successfully`);
+      },
+      onUploadError: (error: ImageUploadError) => {
+        setUploadingImages((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(error.file.name);
+          return newSet;
+        });
+
+        // Show error notification with option to view details
+        const baseErrorMessage = `Failed to upload "${error.file.name}"`;
+        const errorDetails = [error.message];
+
+        // Add additional details if available
+        if (error.details && error.details.length > 0) {
+          errorDetails.push(...error.details);
+        }
+
+        // Always show clickable error if we have validation details
+        if (error.details && error.details.length > 0) {
+          // Show clickable error with details
+          notificationsService.errorWithContent(
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                toast.dismiss();
+                showErrorModal(errorDetails);
+              }}
+            >
+              {baseErrorMessage} - Click for details
+            </div>,
+            { closeOnClick: false }
+          );
+        } else {
+          // If only basic error, show it directly
+          notificationsService.error(`${baseErrorMessage}: ${error.message}`);
+        }
+      },
+      onAllUploadsComplete: (hadSuccess: boolean, finalContent: string) => {
+        // Re-enable draft updates
+        setPendingChanges(false);
+
+        // If at least one upload succeeded, trigger draft update with the final content
+        if (hadSuccess) {
+          onChange(finalContent);
+        }
+      },
+    }),
+    [notificationsService, showErrorModal, onChange]
   );
 
   // Create a comprehensive list of component descriptors including fallbacks for common patterns
@@ -289,7 +410,7 @@ const MDXEditorNew = ({
             <MDXEditor
               key={`editor-${isReadOnly}-${mdxComponents.length}`} // Re-render on load
               markdown={value}
-              onChange={onChange}
+              onChange={handleContentChange}
               readOnly={isReadOnly}
               className="mdx-editor-new"
               plugins={[
@@ -298,8 +419,12 @@ const MDXEditorNew = ({
                   viewMode: "source",
                   diffMarkdown: originalContentForDiff || initialContent,
                   readOnlyDiff: false,
-                  // Use custom extensions that conditionally include line numbers
-                  codeMirrorExtensions: buildSourceModeExtensions(config),
+                  // Use custom extensions with line numbers and drag & drop support
+                  codeMirrorExtensions: buildSourceModeExtensions(
+                    config,
+                    isReadOnly ? undefined : dragDropImageUploadHandler,
+                    isReadOnly ? undefined : uploadCallbacks
+                  ),
                 }),
                 // JSX plugin for custom components with implementations
                 jsxPlugin({
@@ -311,7 +436,16 @@ const MDXEditorNew = ({
                 listsPlugin(),
                 linkPlugin(),
                 linkDialogPlugin(),
-                imagePlugin({ imageUploadHandler }),
+                imagePlugin({
+                  imageUploadHandler,
+                  imagePreviewHandler: async (imageSource: string) => {
+                    // Transform relative API URLs to full URLs with CORE_API prefix
+                    if (imageSource.startsWith("/api")) {
+                      return new URL(imageSource, process.env.CORE_API).href;
+                    }
+                    return imageSource;
+                  },
+                }),
                 tablePlugin(),
                 thematicBreakPlugin(),
                 frontmatterPlugin(),
