@@ -8476,6 +8476,47 @@ export class Api<
      * No description
      *
      * @tags Content
+     * @name ContentAuthorsList
+     * @request GET:/api/content/authors
+     * @secure
+     */
+    contentAuthorsList: (params: RequestParams = {}) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/content/authors`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentAuthorsDetail
+     * @request GET:/api/content/authors/{contentType}
+     * @secure
+     */
+    contentAuthorsDetail: (
+      contentType: string,
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/content/authors/${contentType}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
      * @name ContentCommentsList
      * @request GET:/api/content/{id}/comments
      * @secure

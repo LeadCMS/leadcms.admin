@@ -52,6 +52,17 @@ export function RemoteAutocomplete({
             response = await client.api.contentCategoriesList();
           }
           break;
+        case RemoteValues.AUTHORS:
+          if (contentType) {
+            // Use content-type-specific endpoint with language filtering
+            response = await client.api.contentAuthorsDetail(contentType, {
+              language: language,
+            });
+          } else {
+            // Fallback to general endpoint
+            response = await client.api.contentAuthorsList();
+          }
+          break;
       }
     } catch (e) {
       const error = e as ProblemDetails;
