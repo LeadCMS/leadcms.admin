@@ -23,6 +23,9 @@ import {
   Typography,
   CircularProgress,
   SelectChangeEvent,
+  Grid,
+  Divider,
+  Stack,
 } from "@mui/material";
 import {
   MessageSquare,
@@ -118,6 +121,9 @@ export const CommentsList: React.FC = () => {
   const [commentStatus, setCommentStatus] = useState<
     "NotApproved" | "Approved" | "Spam" | "Answer"
   >("Approved");
+  const [commentAnswerStatus, setCommentAnswerStatus] = useState<
+    "Unanswered" | "Answered" | "Closed" | null
+  >(null);
   const [commentLanguage, setCommentLanguage] = useState("");
 
   // Filtering and pagination
@@ -135,7 +141,14 @@ export const CommentsList: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
-  const [statusChangeLoadingId, setStatusChangeLoadingId] = useState<number | null>(null);
+  const [statusChangeLoading, setStatusChangeLoading] = useState<{
+    commentId: number;
+    action: string;
+  } | null>(null);
+  const [answerStatusChangeLoading, setAnswerStatusChangeLoading] = useState<{
+    commentId: number;
+    action: string;
+  } | null>(null);
 
   // Filter columns definition
   const commentFilterColumns: GridColDef[] = [
@@ -410,6 +423,7 @@ export const CommentsList: React.FC = () => {
     setCommentAuthorName(comment.authorName || "");
     setCommentAuthorEmail(comment.authorEmail || "");
     setCommentStatus(comment.status || "NotApproved");
+    setCommentAnswerStatus(comment.answerStatus || null);
     setCommentLanguage(comment.language || config?.defaultLanguage || "en-US");
     setDialogMode("edit");
   };
@@ -422,13 +436,18 @@ export const CommentsList: React.FC = () => {
     try {
       if (dialogMode === "edit") {
         if (!selectedComment?.id) return;
-        await client.api.commentsPartialUpdate(selectedComment.id, {
+        const updateData: Record<string, unknown> = {
           body: commentBody,
           authorName: commentAuthorName,
           authorEmail: commentAuthorEmail,
           status: commentStatus,
           language: commentLanguage,
-        });
+        };
+        if (commentAnswerStatus) {
+          updateData.answerStatus = commentAnswerStatus;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await client.api.commentsPartialUpdate(selectedComment.id, updateData as any);
         notificationsService.success("Comment updated successfully");
 
         // Fetch the updated comment and refresh it in the list
@@ -473,6 +492,7 @@ export const CommentsList: React.FC = () => {
       setCommentAuthorName("");
       setCommentAuthorEmail("");
       setCommentStatus("Approved");
+      setCommentAnswerStatus(null);
       setCommentLanguage("");
     } catch (error) {
       notificationsService.error(
@@ -487,9 +507,15 @@ export const CommentsList: React.FC = () => {
   const handleReplyClick = (comment: EnhancedCommentDto) => {
     setSelectedComment(comment);
     setCommentBody("");
-    setCommentAuthorName(userInfo?.details?.userName || userInfo?.details?.email || "");
+    setCommentAuthorName(
+      userInfo?.details?.displayName ||
+        userInfo?.details?.userName ||
+        userInfo?.details?.email ||
+        ""
+    );
     setCommentAuthorEmail(userInfo?.details?.email || "");
     setCommentStatus("Approved");
+    setCommentAnswerStatus(null);
     setCommentLanguage(comment.language || config?.defaultLanguage || "en-US");
     setDialogMode("reply");
   };
@@ -523,7 +549,7 @@ export const CommentsList: React.FC = () => {
     commentId: number,
     newStatus: "NotApproved" | "Approved" | "Spam" | "Answer"
   ) => {
-    setStatusChangeLoadingId(commentId);
+    setStatusChangeLoading({ commentId, action: newStatus });
     try {
       const response = await client.api.commentsPartialUpdate(commentId, {
         status: newStatus,
@@ -540,7 +566,35 @@ export const CommentsList: React.FC = () => {
       console.error("Error changing status:", error);
       notificationsService.error("Failed to change comment status");
     } finally {
-      setStatusChangeLoadingId(null);
+      setStatusChangeLoading(null);
+    }
+  };
+
+  // Handle answer status change
+  const handleAnswerStatusChange = async (
+    commentId: number,
+    newAnswerStatus: "Unanswered" | "Answered" | "Closed"
+  ) => {
+    setAnswerStatusChangeLoading({ commentId, action: newAnswerStatus });
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await client.api.commentsPartialUpdate(commentId, {
+        answerStatus: newAnswerStatus,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+
+      // Update the comment in local state
+      if (response.data) {
+        setComments((prevComments) =>
+          prevComments.map((c) => (c.id === commentId ? { ...c, ...response.data } : c))
+        );
+        notificationsService.success(`Answer status changed to ${newAnswerStatus}`);
+      }
+    } catch (error) {
+      console.error("Error changing answer status:", error);
+      notificationsService.error("Failed to change answer status");
+    } finally {
+      setAnswerStatusChangeLoading(null);
     }
   };
 
@@ -650,83 +704,131 @@ export const CommentsList: React.FC = () => {
     const statusInfo = getStatusInfo(comment.status);
 
     return (
-      <Card key={comment.id} sx={{ mb: 2 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Box display="flex" alignItems="flex-start" gap={2}>
-            <Checkbox
-              checked={selectedRows.includes(comment.id?.toString() || "")}
-              onChange={() => toggleRowSelection(comment.id?.toString() || "")}
-              size="small"
-            />
+      <Card
+        key={comment.id}
+        sx={{
+          mb: 2,
+          transition: "box-shadow 0.3s ease-in-out",
+          "&:hover": { boxShadow: 3 },
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Grid container spacing={2}>
+            {/* Checkbox and Avatar */}
+            <Grid size={{ xs: "auto" }}>
+              <Checkbox
+                checked={selectedRows.includes(comment.id?.toString() || "")}
+                onChange={() => toggleRowSelection(comment.id?.toString() || "")}
+                size="small"
+                sx={{ p: 0, mt: 0.5 }}
+              />
+            </Grid>
+            <Grid size={{ xs: "auto" }}>
+              <Avatar
+                src={comment.avatarUrl}
+                alt={comment.authorName || ""}
+                sx={{ width: 48, height: 48 }}
+              >
+                {comment.authorName?.charAt(0)?.toUpperCase()}
+              </Avatar>
+            </Grid>
 
-            <Avatar
-              src={comment.avatarUrl}
-              alt={comment.authorName || ""}
-              sx={{ width: 40, height: 40 }}
-            >
-              {comment.authorName?.charAt(0)?.toUpperCase()}
-            </Avatar>
+            {/* Main Content */}
+            <Grid size={{ xs: 12, sm: "grow" }}>
+              {/* Header with author info and metadata */}
+              <Box mb={2}>
+                <Grid container spacing={1} alignItems="center" mb={1}>
+                  <Grid size={{ xs: 12, md: "grow" }}>
+                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                      {comment.authorName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {comment.authorEmail}
+                    </Typography>
+                  </Grid>
 
-            <Box flex={1} minWidth={0}>
-              {/* Header */}
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-                <Box>
-                  <Typography variant="subtitle2" component="span">
-                    {comment.authorName}
+                  {/* Status badges and metadata */}
+                  <Grid size={{ xs: 12, md: "auto" }}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      flexWrap="wrap"
+                      justifyContent={{ xs: "flex-start", md: "flex-end" }}
+                      sx={{ gap: 1 }}
+                    >
+                      {comment.language && (
+                        <Chip
+                          label={comment.language.toUpperCase()}
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                          sx={{ fontSize: "0.75rem", fontWeight: 600 }}
+                        />
+                      )}
+                      <Chip
+                        label={statusInfo.label}
+                        color={statusInfo.color}
+                        size="small"
+                        icon={<statusInfo.icon size={14} />}
+                        sx={{ fontWeight: 500 }}
+                      />
+                      {comment.answerStatus && (
+                        <Chip
+                          label={comment.answerStatus}
+                          size="small"
+                          variant="outlined"
+                          color={
+                            comment.answerStatus === "Answered"
+                              ? "success"
+                              : comment.answerStatus === "Closed"
+                              ? "default"
+                              : "warning"
+                          }
+                          sx={{ fontSize: "0.75rem", fontWeight: 500 }}
+                        />
+                      )}
+                    </Stack>
+                  </Grid>
+                </Grid>
+
+                {/* Content reference and timestamp */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: 1,
+                    alignItems: { xs: "flex-start", sm: "center" },
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    On:{" "}
+                    <Link
+                      to={comment.contentUrl || "#"}
+                      style={{ color: "inherit", textDecoration: "none" }}
+                    >
+                      <Typography
+                        component="span"
+                        sx={{
+                          color: "primary.main",
+                          fontWeight: 500,
+                          "&:hover": { textDecoration: "underline" },
+                        }}
+                      >
+                        {comment.contentTitle}
+                      </Typography>
+                    </Link>
                   </Typography>
                   <Typography
-                    variant="body2"
+                    variant="caption"
                     color="text.secondary"
-                    component="span"
-                    sx={{ ml: 1 }}
+                    sx={{ display: { xs: "block", sm: "inline" } }}
                   >
-                    {comment.authorEmail}
-                  </Typography>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  {comment.language && (
-                    <Chip
-                      label={comment.language.toUpperCase()}
-                      size="small"
-                      variant="filled"
-                      color="primary"
-                      sx={{
-                        fontSize: "0.75rem",
-                        height: 24,
-                        fontWeight: 600,
-                      }}
-                    />
-                  )}
-                  <Chip
-                    label={statusInfo.label}
-                    color={statusInfo.color}
-                    size="small"
-                    icon={<statusInfo.icon size={16} />}
-                  />
-                  <Typography variant="caption" color="text.secondary">
                     {formatDate(comment.createdAt)}
                   </Typography>
                 </Box>
               </Box>
 
-              {/* Content reference */}
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                On:{" "}
-                <Link
-                  to={comment.contentUrl || "#"}
-                  style={{ color: "inherit", textDecoration: "none" }}
-                >
-                  <Typography
-                    component="span"
-                    sx={{
-                      color: "primary.main",
-                      "&:hover": { textDecoration: "underline" },
-                    }}
-                  >
-                    {comment.contentTitle}
-                  </Typography>
-                </Link>
-              </Typography>
+              <Divider sx={{ mb: 2 }} />
 
               {/* Comment body */}
               <Box
@@ -737,84 +839,157 @@ export const CommentsList: React.FC = () => {
                   mb: 2,
                   border: "1px solid",
                   borderColor: "grey.200",
+                  maxHeight: 300,
+                  overflow: "auto",
                 }}
               >
                 {renderCommentBody(comment.body)}
               </Box>
 
               {/* Actions */}
-              <Box display="flex" gap={1} flexWrap="wrap">
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<Reply size={16} />}
-                  onClick={() => handleReplyClick(comment)}
-                >
-                  Reply
-                </Button>
+              <Box>
+                <Grid container spacing={1}>
+                  <Grid size={{ xs: 12, sm: "auto" }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Reply size={16} />}
+                      onClick={() => handleReplyClick(comment)}
+                      fullWidth
+                      sx={{ minWidth: { sm: 100 } }}
+                    >
+                      Reply
+                    </Button>
+                  </Grid>
 
-                {comment.status !== "Approved" && comment.status !== "Answer" && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="success"
-                    startIcon={
-                      statusChangeLoadingId === comment.id ? (
-                        <CircularProgress size={16} />
-                      ) : (
-                        <CheckCircle2 size={16} />
-                      )
-                    }
-                    onClick={() => handleStatusChange(comment.id || 0, "Approved")}
-                    disabled={statusChangeLoadingId === comment.id}
-                  >
-                    Approve
-                  </Button>
-                )}
+                  {comment.status !== "Approved" && comment.status !== "Answer" && (
+                    <Grid size={{ xs: 12, sm: "auto" }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="success"
+                        startIcon={
+                          statusChangeLoading?.commentId === comment.id &&
+                          statusChangeLoading?.action === "Approved" ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <CheckCircle2 size={16} />
+                          )
+                        }
+                        onClick={() => handleStatusChange(comment.id || 0, "Approved")}
+                        disabled={statusChangeLoading?.commentId === comment.id}
+                        fullWidth
+                        sx={{ minWidth: { sm: 100 } }}
+                      >
+                        Approve
+                      </Button>
+                    </Grid>
+                  )}
 
-                {comment.status !== "Spam" && comment.status !== "Answer" && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="warning"
-                    startIcon={
-                      statusChangeLoadingId === comment.id ? (
-                        <CircularProgress size={16} />
-                      ) : (
-                        <AlertCircle size={16} />
-                      )
-                    }
-                    onClick={() => handleStatusChange(comment.id || 0, "Spam")}
-                    disabled={statusChangeLoadingId === comment.id}
-                  >
-                    Mark as Spam
-                  </Button>
-                )}
+                  {comment.status !== "Spam" && comment.status !== "Answer" && (
+                    <Grid size={{ xs: 12, sm: "auto" }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="warning"
+                        startIcon={
+                          statusChangeLoading?.commentId === comment.id &&
+                          statusChangeLoading?.action === "Spam" ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <AlertCircle size={16} />
+                          )
+                        }
+                        onClick={() => handleStatusChange(comment.id || 0, "Spam")}
+                        disabled={statusChangeLoading?.commentId === comment.id}
+                        fullWidth
+                        sx={{ minWidth: { sm: 120 } }}
+                      >
+                        Mark as Spam
+                      </Button>
+                    </Grid>
+                  )}
 
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<Edit size={16} />}
-                  onClick={() => handleEditClick(comment)}
-                >
-                  Edit
-                </Button>
+                  {comment.answerStatus !== "Answered" && (
+                    <Grid size={{ xs: 12, sm: "auto" }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="success"
+                        startIcon={
+                          answerStatusChangeLoading?.commentId === comment.id &&
+                          answerStatusChangeLoading?.action === "Answered" ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <CheckCircle2 size={16} />
+                          )
+                        }
+                        onClick={() => handleAnswerStatusChange(comment.id || 0, "Answered")}
+                        disabled={answerStatusChangeLoading?.commentId === comment.id}
+                        fullWidth
+                        sx={{ minWidth: { sm: 120 } }}
+                      >
+                        Mark Answered
+                      </Button>
+                    </Grid>
+                  )}
 
-                <Button
-                  variant="outlined"
-                  size="small"
-                  color="error"
-                  startIcon={<Trash2 size={16} />}
-                  onClick={() => {
-                    setSelectedComment(comment);
-                    setIsDeleteDialogOpen(true);
-                  }}
-                >
-                  Delete
-                </Button>
+                  {comment.answerStatus !== "Closed" && (
+                    <Grid size={{ xs: 12, sm: "auto" }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={
+                          answerStatusChangeLoading?.commentId === comment.id &&
+                          answerStatusChangeLoading?.action === "Closed" ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <Clock size={16} />
+                          )
+                        }
+                        onClick={() => handleAnswerStatusChange(comment.id || 0, "Closed")}
+                        disabled={answerStatusChangeLoading?.commentId === comment.id}
+                        fullWidth
+                        sx={{ minWidth: { sm: 100 } }}
+                      >
+                        Mark Closed
+                      </Button>
+                    </Grid>
+                  )}
+
+                  <Grid size={{ xs: 6, sm: "auto" }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Edit size={16} />}
+                      onClick={() => handleEditClick(comment)}
+                      fullWidth
+                      sx={{ minWidth: { sm: 80 } }}
+                    >
+                      Edit
+                    </Button>
+                  </Grid>
+
+                  <Grid size={{ xs: 6, sm: "auto" }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="error"
+                      startIcon={<Trash2 size={16} />}
+                      onClick={() => {
+                        setSelectedComment(comment);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                      fullWidth
+                      sx={{ minWidth: { sm: 80 } }}
+                    >
+                      Delete
+                    </Button>
+                  </Grid>
+                </Grid>
               </Box>
-            </Box>
-          </Box>
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
     );
@@ -906,113 +1081,174 @@ export const CommentsList: React.FC = () => {
 
         <Box>
           {/* Status tabs */}
-          <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
-            <Tab
-              value="All"
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <MessageSquare size={16} />
-                  All
-                  <Chip label={statusCounts.All} size="small" />
-                </Box>
-              }
-            />
-            <Tab
-              value="NotApproved"
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Clock size={16} />
-                  Not Approved
-                  <Chip label={statusCounts.NotApproved} size="small" />
-                </Box>
-              }
-            />
-            <Tab
-              value="Approved"
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CheckCircle2 size={16} />
-                  Approved
-                  <Chip label={statusCounts.Approved} size="small" />
-                </Box>
-              }
-            />
-            <Tab
-              value="Spam"
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <AlertCircle size={16} />
-                  Spam
-                  <Chip label={statusCounts.Spam} size="small" />
-                </Box>
-              }
-            />
-            <Tab
-              value="Answer"
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Reply size={16} />
-                  Answer
-                  <Chip label={statusCounts.Answer} size="small" />
-                </Box>
-              }
-            />
-            <Tab
-              value="Unanswered"
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <MessageCircle size={16} />
-                  Unanswered
-                  <Chip label={statusCounts.Unanswered} size="small" />
-                </Box>
-              }
-            />
-          </Tabs>
+          <Box
+            sx={{
+              position: "sticky",
+              top: 0,
+              bgcolor: "background.paper",
+              zIndex: 10,
+              borderBottom: 1,
+              borderColor: "divider",
+              overflow: "auto",
+            }}
+          >
+            <Tabs
+              value={activeTab}
+              onChange={(_, newValue) => setActiveTab(newValue)}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+            >
+              <Tab
+                value="All"
+                label={
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <MessageSquare size={16} />
+                    <Typography variant="body2" fontWeight={500}>
+                      All
+                    </Typography>
+                    <Chip label={statusCounts.All} size="small" />
+                  </Stack>
+                }
+              />
+              <Tab
+                value="NotApproved"
+                label={
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Clock size={16} />
+                    <Typography variant="body2" fontWeight={500}>
+                      Not Approved
+                    </Typography>
+                    <Chip label={statusCounts.NotApproved} size="small" />
+                  </Stack>
+                }
+              />
+              <Tab
+                value="Approved"
+                label={
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CheckCircle2 size={16} />
+                    <Typography variant="body2" fontWeight={500}>
+                      Approved
+                    </Typography>
+                    <Chip label={statusCounts.Approved} size="small" />
+                  </Stack>
+                }
+              />
+              <Tab
+                value="Spam"
+                label={
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <AlertCircle size={16} />
+                    <Typography variant="body2" fontWeight={500}>
+                      Spam
+                    </Typography>
+                    <Chip label={statusCounts.Spam} size="small" />
+                  </Stack>
+                }
+              />
+              <Tab
+                value="Answer"
+                label={
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Reply size={16} />
+                    <Typography variant="body2" fontWeight={500}>
+                      Answer
+                    </Typography>
+                    <Chip label={statusCounts.Answer} size="small" />
+                  </Stack>
+                }
+              />
+              <Tab
+                value="Unanswered"
+                label={
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <MessageCircle size={16} />
+                    <Typography variant="body2" fontWeight={500}>
+                      Unanswered
+                    </Typography>
+                    <Chip label={statusCounts.Unanswered} size="small" />
+                  </Stack>
+                }
+              />
+            </Tabs>
+          </Box>
 
           {/* Bulk actions bar */}
           {selectedRows.length > 0 && (
-            <Box
+            <Card
               sx={{
+                position: "sticky",
+                top: 48,
                 bgcolor: "primary.50",
-                p: 2,
-                borderRadius: 1,
                 mb: 3,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
+                borderLeft: 4,
+                borderColor: "primary.main",
+                zIndex: 9,
               }}
             >
-              <Typography variant="body2">
-                {selectedRows.length} comment{selectedRows.length !== 1 ? "s" : ""} selected
-              </Typography>
-              <Box display="flex" gap={1}>
-                <FormControl size="small" sx={{ minWidth: 150 }}>
-                  <InputLabel>Bulk Actions</InputLabel>
-                  <Select
-                    label="Bulk Actions"
-                    onChange={(e: SelectChangeEvent) => handleBulkActionSelect(e.target.value)}
-                    value={selectedBulkAction}
-                  >
-                    <MenuItem value="approve">Approve Selected</MenuItem>
-                    <MenuItem value="spam">Mark as Spam</MenuItem>
-                    <MenuItem value="closed">Mark as Closed</MenuItem>
-                    <MenuItem value="delete">Delete Selected</MenuItem>
-                  </Select>
-                </FormControl>
-                <Button variant="outlined" size="small" onClick={handleBulkActionCancel}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={handleBulkActionApply}
-                  disabled={!selectedBulkAction || isBulkActionLoading}
-                  startIcon={isBulkActionLoading ? <CircularProgress size={16} /> : undefined}
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 2,
+                    flexDirection: { xs: "column", sm: "row" },
+                  }}
                 >
-                  Apply
-                </Button>
-              </Box>
-            </Box>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    {selectedRows.length} comment{selectedRows.length !== 1 ? "s" : ""} selected
+                  </Typography>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      width: { xs: "100%", sm: "auto" },
+                      justifyContent: { xs: "stretch", sm: "flex-end" },
+                    }}
+                  >
+                    <FormControl
+                      size="small"
+                      sx={{
+                        minWidth: { xs: "100%", sm: 200 },
+                        maxWidth: { xs: "100%", sm: 200 },
+                      }}
+                    >
+                      <InputLabel>Bulk Actions</InputLabel>
+                      <Select
+                        label="Bulk Actions"
+                        onChange={(e: SelectChangeEvent) => handleBulkActionSelect(e.target.value)}
+                        value={selectedBulkAction}
+                      >
+                        <MenuItem value="approve">Approve Selected</MenuItem>
+                        <MenuItem value="spam">Mark as Spam</MenuItem>
+                        <MenuItem value="closed">Mark as Closed</MenuItem>
+                        <MenuItem value="delete">Delete Selected</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={handleBulkActionCancel}
+                      sx={{ minWidth: 100 }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleBulkActionApply}
+                      disabled={!selectedBulkAction || isBulkActionLoading}
+                      startIcon={isBulkActionLoading ? <CircularProgress size={16} /> : undefined}
+                      sx={{ minWidth: 100 }}
+                    >
+                      Apply
+                    </Button>
+                  </Stack>
+                </Box>
+              </CardContent>
+            </Card>
           )}
 
           {/* Comments list */}
@@ -1045,18 +1281,19 @@ export const CommentsList: React.FC = () => {
           ) : (
             <>
               {/* Select all checkbox */}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={selectAll}
-                    indeterminate={selectedRows.length > 0 && !selectAll}
-                    onChange={toggleSelectAll}
-                    size="small"
-                  />
-                }
-                label={`Select all (${comments.length})`}
-                sx={{ mb: 2 }}
-              />
+              <Box sx={{ ml: { xs: 2, sm: 3 }, mb: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectAll}
+                      indeterminate={selectedRows.length > 0 && !selectAll}
+                      onChange={toggleSelectAll}
+                      size="small"
+                    />
+                  }
+                  label={`Select all (${comments.length})`}
+                />
+              </Box>
 
               {/* Comments with InfiniteScroll */}
               <InfiniteScroll
@@ -1087,47 +1324,34 @@ export const CommentsList: React.FC = () => {
         <DialogTitle>{dialogMode === "edit" ? "Edit Comment" : "Reply to Comment"}</DialogTitle>
         <DialogContent>
           {dialogMode === "reply" && (
-            <>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                You are replying to a comment by {selectedComment?.authorName}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Replying to comment by {selectedComment?.authorName}
               </Typography>
-              <Box
-                sx={{
-                  bgcolor: "grey.50",
-                  p: 2,
-                  borderRadius: 1,
-                  mb: 3,
-                  border: "1px solid",
-                  borderColor: "grey.200",
-                }}
-              >
-                {renderCommentBody(selectedComment?.body)}
-              </Box>
-            </>
+              <Card variant="outlined" sx={{ bgcolor: "grey.50" }}>
+                <CardContent>{renderCommentBody(selectedComment?.body)}</CardContent>
+              </Card>
+            </Box>
           )}
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              mt: dialogMode === "edit" ? 1 : 0,
-            }}
-          >
-            <TextField
-              fullWidth
-              multiline
-              rows={dialogMode === "edit" ? 6 : 4}
-              label={dialogMode === "edit" ? "Comment Body" : "Your Reply"}
-              value={commentBody}
-              onChange={(e) => setCommentBody(e.target.value)}
-              placeholder={
-                dialogMode === "edit" ? "Edit comment body..." : "Write your reply here..."
-              }
-              required
-            />
+          <Grid container spacing={2} sx={{ mt: dialogMode === "edit" ? 0 : 1 }}>
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                {dialogMode === "edit" ? "Comment Body" : "Your Reply"} *
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={dialogMode === "edit" ? 6 : 4}
+                value={commentBody}
+                onChange={(e) => setCommentBody(e.target.value)}
+                placeholder={dialogMode === "edit" ? "Edit comment body..." : "Write reply..."}
+                required
+                variant="outlined"
+              />
+            </Grid>
 
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Author Name"
@@ -1136,7 +1360,9 @@ export const CommentsList: React.FC = () => {
                 placeholder="Enter author name"
                 required
               />
+            </Grid>
 
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Author Email"
@@ -1146,43 +1372,69 @@ export const CommentsList: React.FC = () => {
                 placeholder="Enter author email"
                 required
               />
-            </Box>
+            </Grid>
 
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={commentStatus}
-                  label="Status"
-                  onChange={(e) =>
-                    setCommentStatus(
-                      e.target.value as "NotApproved" | "Approved" | "Spam" | "Answer"
-                    )
-                  }
-                >
-                  <MenuItem value="Approved">Approved</MenuItem>
-                  <MenuItem value="NotApproved">Not Approved</MenuItem>
-                  <MenuItem value="Spam">Spam</MenuItem>
-                  <MenuItem value="Answer">Answer</MenuItem>
-                </Select>
-              </FormControl>
+            {dialogMode === "edit" && (
+              <>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                      value={commentStatus}
+                      label="Status"
+                      onChange={(e) =>
+                        setCommentStatus(
+                          e.target.value as "NotApproved" | "Approved" | "Spam" | "Answer"
+                        )
+                      }
+                    >
+                      <MenuItem value="Approved">Approved</MenuItem>
+                      <MenuItem value="NotApproved">Not Approved</MenuItem>
+                      <MenuItem value="Spam">Spam</MenuItem>
+                      <MenuItem value="Answer">Answer</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-              <FormControl fullWidth>
-                <InputLabel>Language</InputLabel>
-                <Select
-                  value={commentLanguage}
-                  label="Language"
-                  onChange={(e) => setCommentLanguage(e.target.value)}
-                >
-                  {config?.languages?.map((lang) => (
-                    <MenuItem key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          </Box>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Language</InputLabel>
+                    <Select
+                      value={commentLanguage}
+                      label="Language"
+                      onChange={(e) => setCommentLanguage(e.target.value)}
+                    >
+                      {config?.languages?.map((lang) => (
+                        <MenuItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Answer Status</InputLabel>
+                    <Select
+                      value={commentAnswerStatus || ""}
+                      label="Answer Status"
+                      onChange={(e) =>
+                        setCommentAnswerStatus(
+                          (e.target.value as "Unanswered" | "Answered" | "Closed") || null
+                        )
+                      }
+                    >
+                      <MenuItem value="">None</MenuItem>
+                      <MenuItem value="Unanswered">Unanswered</MenuItem>
+                      <MenuItem value="Answered">Answered</MenuItem>
+                      <MenuItem value="Closed">Closed</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </>
+            )}
+          </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogMode(null)}>Cancel</Button>
