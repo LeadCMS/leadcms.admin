@@ -1694,6 +1694,16 @@ export interface CommentDetailsDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Status
+   * @example "NotApproved"
+   */
+  status?: "NotApproved" | "Approved" | "Spam" | "Answer";
+  /**
+   * Answer Status
+   * @example "Unanswered"
+   */
+  answerStatus?: "Unanswered" | "Answered" | "Closed";
 }
 
 export interface CommentImportDto {
@@ -1779,7 +1789,7 @@ export interface CommentImportDto {
    * Status
    * @example "NotApproved"
    */
-  status?: "NotApproved" | "Approved" | "Spam" | null;
+  status?: "NotApproved" | "Approved" | "Spam" | "Answer" | null;
   /**
    * Language
    * @example "string"
@@ -1822,6 +1832,11 @@ export interface CommentImportDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Answer Status
+   * @example "Unanswered"
+   */
+  answerStatus?: "Unanswered" | "Answered" | "Closed" | null;
 }
 
 export interface CommentSummaryDto {
@@ -1864,10 +1879,48 @@ export interface CommentSummaryDto {
 export interface CommentUpdateDto {
   /**
    * Body
-   * @minLength 1
    * @example "string"
    */
-  body: string;
+  body?: string | null;
+  /**
+   * Author Name
+   * @example "string"
+   */
+  authorName?: string | null;
+  /**
+   * Author Email
+   * @format email
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  authorEmail?: string | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Status
+   * @example "NotApproved"
+   */
+  status?: "NotApproved" | "Approved" | "Spam" | "Answer" | null;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+}
+
+export interface CommentsWithStatisticsDto {
+  /** Comments */
+  comments?: CommentDetailsDto[];
+  /** Statistics */
+  statistics?: Record<string, number>;
 }
 
 export interface ConfigDto {
@@ -3539,12 +3592,12 @@ export interface ContentCreateDto {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @minLength 1
@@ -3626,12 +3679,12 @@ export interface ContentDetailsDto {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @minLength 1
@@ -3751,12 +3804,12 @@ export interface ContentEditRequest {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @minLength 1
@@ -3930,12 +3983,12 @@ export interface ContentImportDto {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @example "string"
@@ -4221,12 +4274,12 @@ export interface ContentUpdateDto {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @minLength 1
@@ -7589,7 +7642,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.83.0
+ * @version 1.2.86.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -7861,6 +7914,29 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
+     * @name CommentsWithStatisticsList
+     * @request GET:/api/comments/with-statistics
+     * @secure
+     */
+    commentsWithStatisticsList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<CommentsWithStatisticsDto, ProblemDetails>({
+        path: `/api/comments/with-statistics`,
+        method: "GET",
+        query: query,
+        secure: true,
         format: "json",
         ...params,
       }),
