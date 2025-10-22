@@ -16,8 +16,10 @@ const convertSchemaToDtoSchema = (
     for (const [key, value] of Object.entries(schema.properties)) {
       const refName = (value.$ref && value.$ref.replace("#/components/schemas/", "")) || undefined;
       const refSchema = (refName && allSchemas[refName]) || undefined;
+
       if (refSchema && refSchema !== schema) {
         const refDtoSchema = convertSchemaToDtoSchema(refSchema, allSchemas);
+
         if (refDtoSchema.type === "string") {
           dtoSchema.properties[key] = {
             hide: false,
@@ -29,7 +31,7 @@ const convertSchemaToDtoSchema = (
       } else {
         dtoSchema.properties[key] = {
           type: value.type || "unknown",
-          hide: false,
+          hide: value.title == "Updated At",
         };
 
         if (value.format) {
