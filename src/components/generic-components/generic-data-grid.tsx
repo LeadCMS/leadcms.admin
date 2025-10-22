@@ -168,8 +168,6 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
   const [items, setItems] = useState<T[] | undefined>();
 
   const [totalItemsCount, setTotalItemsCount] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState<number>(0);
-  const [pageSize, setPageSize] = useState<number>(10);
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
     type: "include",
     ids: new Set(),
@@ -359,6 +357,12 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     saveGridStateInLocalStorage();
   }, [columnWidths]);
 
+  useEffect(() => {
+    if (filterState.columnOrder) {
+      setColumns?.(sortColumnsByOrder(columns, filterState.columnOrder));
+    }
+  }, [filterState.columnOrder]);
+
   const handleSortChange = (sortModel: GridSortModel) => {
     if (sortModel.length > 0) {
       setFilterState((prev) => ({
@@ -428,6 +432,14 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     return [...ordered, ...missing];
   }
 
+  const handlePaginationModelChange = (model: { page: number; pageSize: number }) => {
+    setFilterState({
+      pageNumber: model.page,
+      skipLimit: model.page * model.pageSize,
+      filterLimit: model.pageSize,
+    });
+  };
+
   const saveGridStateInLocalStorage = () => {
     if (filterState) {
       setGridSettings({
@@ -458,14 +470,11 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         pageSizeOptions={[10, 25, 50, 100]}
         pagination
         paginationModel={{
-          page: pageNumber,
-          pageSize: pageSize,
+          page: filterState.pageNumber || 0,
+          pageSize: filterState.filterLimit || 25,
         }}
         paginationMode="server"
-        onPaginationModelChange={(model) => {
-          setPageNumber(model.page);
-          setPageSize(model.pageSize);
-        }}
+        onPaginationModelChange={handlePaginationModelChange}
         disableColumnFilter={true}
         sortingMode="server"
         onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}

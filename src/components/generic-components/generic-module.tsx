@@ -138,7 +138,6 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         const status = (err as any).status;
         message = `Export failed (${status}): ${statusText}`;
       }
-      console.log("export error generic module", message);
       setExportError(message);
     } finally {
       setExporting(false);
