@@ -5,21 +5,51 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import { useConfig } from "@providers/config-provider";
 
 function RequireAuth({ children }: PropsWithChildren) {
-  const { isTokenLoaded, localToken } = useAuthState();
+  const { isTokenLoaded, localToken, getToken } = useAuthState();
   const { accounts, inProgress } = useMsal();
   const account = accounts.at(0);
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
 
-  if (!isTokenLoaded || inProgress !== InteractionStatus.None) {
+  // Handle Microsoft authentication token exchange
+  // Only exchange tokens if we have Microsoft account but no local token
+  useEffect(() => {
+    if (account && !localToken && !isProcessingAuth && isTokenLoaded) {
+      setIsProcessingAuth(true);
+      getToken().finally(() => setIsProcessingAuth(false));
+    }
+  }, [account, localToken, isProcessingAuth, isTokenLoaded, getToken]);
+
+  if (!isTokenLoaded || inProgress !== InteractionStatus.None || isProcessingAuth) {
     return <Loading message="Authenticating, please wait..." />;
   }
 
-  if (!account && !localToken && !window.location.pathname.startsWith("/auth")) {
-    window.location.replace("/auth/login");
+  // Check if we need to handle device verification flow
+  const isDeviceVerifyPath = window.location.pathname === "/auth/device-verify";
+
+  if (!localToken && !account && !window.location.pathname.startsWith("/auth")) {
+    // Preserve current URL as return URL when redirecting to login
+    const returnUrl = encodeURIComponent(window.location.href);
+    window.location.replace(`/auth/login?returnUrl=${returnUrl}`);
     return null;
   }
 
-  if ((localToken || account) && window.location.pathname.startsWith("/auth")) {
-    window.location.replace("/");
+  if (localToken && window.location.pathname.startsWith("/auth") && !isDeviceVerifyPath) {
+    // Check for return URL from multiple sources
+    const urlParams = new URLSearchParams(window.location.search);
+    let returnUrl = urlParams.get("returnUrl");
+
+    // Also check Microsoft auth state parameter for return URL
+    if (!returnUrl && account?.idTokenClaims?.state) {
+      try {
+        const stateData = JSON.parse(account.idTokenClaims.state as string);
+        returnUrl = stateData.returnUrl;
+      } catch {
+        // Ignore invalid JSON in state
+      }
+    }
+
+    const redirectUrl = returnUrl ? decodeURIComponent(returnUrl) : "/";
+    window.location.replace(redirectUrl);
     return null;
   }
 
@@ -104,6 +134,7 @@ export const AuthProvider = memo(function AuthProvider({ children }: PropsWithCh
 export const useAuthState = () => {
   const [localToken, setLocalToken] = useState(() => localStorage.getItem("token"));
   const [isTokenLoaded, setIsTokenLoaded] = useState(false);
+  const [isExchangingToken, setIsExchangingToken] = useState(false);
 
   const { instance, accounts } = useMsal();
 
@@ -114,41 +145,90 @@ export const useAuthState = () => {
       return localToken;
     }
 
-    try {
-      const { idToken } = await instance.acquireTokenSilent({
-        scopes: ["User.Read"],
-        account,
-        forceRefresh: true,
-      });
-      return idToken;
-    } catch {
-      return undefined;
+    // If we have a Microsoft account but no local token, try to exchange
+    if (account && !isExchangingToken) {
+      setIsExchangingToken(true);
+      try {
+        const { idToken } = await instance.acquireTokenSilent({
+          scopes: ["User.Read"],
+          account,
+        });
+
+        // Exchange Microsoft token for local JWT
+        const response = await fetch(`${process.env.CORE_API}/api/identity/exchange-token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ microsoftToken: idToken }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          localStorage.setItem("token", result.token);
+          setLocalToken(result.token);
+
+          // Clear Microsoft account cache after successful exchange
+          // This ensures logout works properly and we don't keep Microsoft tokens
+          try {
+            await instance.clearCache();
+          } catch (error) {
+            console.warn("Failed to clear Microsoft cache:", error);
+          }
+
+          return result.token;
+        } else {
+          console.error("Token exchange failed with status:", response.status);
+          // If exchange fails, we should not use Microsoft token
+          return undefined;
+        }
+      } catch (error) {
+        console.error("Token exchange failed:", error);
+        // If token exchange fails, we should not fallback to Microsoft token
+        return undefined;
+      } finally {
+        setIsExchangingToken(false);
+      }
     }
-  }, [instance, account, localToken]);
+
+    return undefined;
+  }, [instance, account, localToken, isExchangingToken]);
 
   const logout = useCallback(async () => {
-    if (instance && account) {
-      await instance.logoutRedirect({
-        postLogoutRedirectUri: "/auth/login",
-      });
-    } else {
-      localStorage.removeItem("token");
-      setLocalToken(null);
-      window.location.replace("/auth/login");
+    // Clear local token
+    localStorage.removeItem("token");
+    setLocalToken(null);
+
+    // Clear any remaining Microsoft cache to ensure clean logout
+    try {
+      if (instance && accounts.length > 0) {
+        await instance.clearCache();
+      }
+    } catch (error) {
+      console.warn("Failed to clear Microsoft cache during logout:", error);
     }
-  }, [instance, account]);
+
+    // Redirect to login
+    window.location.replace("/auth/login");
+  }, [instance, accounts]);
 
   const reLogin = useCallback(async () => {
-    if (instance && account) {
-      await instance.logoutRedirect({
-        postLogoutRedirectUri: "/auth/login",
-      });
-    } else {
-      localStorage.removeItem("token");
-      setLocalToken(null);
-      window.location.replace("/auth/login");
+    // Clear local token
+    localStorage.removeItem("token");
+    setLocalToken(null);
+
+    // Clear any remaining Microsoft cache to ensure clean logout
+    try {
+      if (instance && accounts.length > 0) {
+        await instance.clearCache();
+      }
+    } catch (error) {
+      console.warn("Failed to clear Microsoft cache during reLogin:", error);
     }
-  }, [instance, account]);
+
+    // Redirect to login
+    window.location.replace("/auth/login");
+  }, [instance, accounts]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");

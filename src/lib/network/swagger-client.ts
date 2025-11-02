@@ -1784,7 +1784,7 @@ export interface CommentImportDto {
    * Body
    * @example "string"
    */
-  body?: string;
+  body?: string | null;
   /**
    * Status
    * @example "NotApproved"
@@ -1805,12 +1805,12 @@ export interface CommentImportDto {
    * @format int32
    * @example 1
    */
-  commentableId?: number;
+  commentableId?: number | null;
   /**
    * Commentable Type
    * @example "string"
    */
-  commentableType?: string;
+  commentableType?: string | null;
   /**
    * Parent Id
    * @format int32
@@ -1904,6 +1904,11 @@ export interface CommentUpdateDto {
    * @example "NotApproved"
    */
   status?: "NotApproved" | "Approved" | "Spam" | "Answer" | null;
+  /**
+   * Answer Status
+   * @example "Unanswered"
+   */
+  answerStatus?: "Unanswered" | "Answered" | "Closed" | null;
   /**
    * Translation Key
    * @example "string"
@@ -4761,6 +4766,63 @@ export interface DealUpdateDto {
   tags?: string[] | null;
 }
 
+export interface DeviceAuthInitiateDto {
+  /**
+   * Device Code
+   * @minLength 1
+   * @example "string"
+   */
+  deviceCode: string;
+  /**
+   * User Code
+   * @minLength 1
+   * @example "string"
+   */
+  userCode: string;
+  /**
+   * Verification Uri
+   * @minLength 1
+   * @example "string"
+   */
+  verificationUri: string;
+  /**
+   * Verification Uri Complete
+   * @minLength 1
+   * @example "string"
+   */
+  verificationUriComplete: string;
+  /**
+   * Expires In
+   * @format int32
+   * @example 1
+   */
+  expiresIn: number;
+  /**
+   * Interval
+   * @format int32
+   * @example 1
+   */
+  interval: number;
+}
+
+export interface DeviceAuthPollDto {
+  /**
+   * Device Code
+   * @minLength 1
+   * @example "string"
+   */
+  deviceCode: string;
+}
+
+export interface DeviceAuthVerificationDto {
+  /**
+   * User Code
+   * @minLength 1
+   * @example "string"
+   */
+  userCode: string;
+}
+
 export interface DnsRecord {
   /**
    * Domain Name
@@ -5649,6 +5711,22 @@ export interface ImportResult {
   skipped?: number;
   /** Errors */
   errors?: ImportError[] | null;
+}
+
+export interface JWTokenDto {
+  /**
+   * Token
+   * @minLength 1
+   * @example "string"
+   */
+  token: string;
+  /**
+   * Expiration
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  expiration: string;
 }
 
 export interface LanguageDto {
@@ -7075,6 +7153,15 @@ export interface TextGenerationResponse {
   metadata?: Record<string, any>;
 }
 
+export interface TokenExchangeDto {
+  /**
+   * Microsoft Token
+   * @minLength 1
+   * @example "string"
+   */
+  microsoftToken: string;
+}
+
 export interface TopAccountDto {
   /**
    * Account Id
@@ -7642,7 +7729,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.86.0
+ * @version 1.2.88.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8044,6 +8131,29 @@ export class Api<
      * No description
      *
      * @tags Comments
+     * @name CommentsSyncList
+     * @request GET:/api/comments/sync
+     * @secure
+     */
+    commentsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/comments/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
      * @name CommentsImportCreate
      * @request POST:/api/comments/import
      * @secure
@@ -8078,29 +8188,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/comments/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Comments
-     * @name CommentsSyncList
-     * @request GET:/api/comments/sync
-     * @secure
-     */
-    commentsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/comments/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -12947,6 +13034,109 @@ export class Api<
     ) =>
       this.request<void, void | ProblemDetails>({
         path: `/api/identity/change-password`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityExchangeTokenCreate
+     * @request POST:/api/identity/exchange-token
+     * @secure
+     */
+    identityExchangeTokenCreate: (
+      data: TokenExchangeDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<JWTokenDto, void | ProblemDetails>({
+        path: `/api/identity/exchange-token`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityDeviceInitiateCreate
+     * @request POST:/api/identity/device/initiate
+     * @secure
+     */
+    identityDeviceInitiateCreate: (params: RequestParams = {}) =>
+      this.request<DeviceAuthInitiateDto, ProblemDetails>({
+        path: `/api/identity/device/initiate`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityDevicePollCreate
+     * @request POST:/api/identity/device/poll
+     * @secure
+     */
+    identityDevicePollCreate: (
+      data: DeviceAuthPollDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<JWTokenDto, void | ProblemDetails>({
+        path: `/api/identity/device/poll`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityDeviceVerifyCreate
+     * @request POST:/api/identity/device/verify
+     * @secure
+     */
+    identityDeviceVerifyCreate: (
+      data: DeviceAuthVerificationDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/identity/device/verify`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityDeviceDenyCreate
+     * @request POST:/api/identity/device/deny
+     * @secure
+     */
+    identityDeviceDenyCreate: (
+      data: DeviceAuthVerificationDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/identity/device/deny`,
         method: "POST",
         body: data,
         secure: true,
