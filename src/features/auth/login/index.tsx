@@ -11,6 +11,7 @@ import {
   Link,
 } from "@mui/material";
 import { Eye, EyeOff } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { LoginDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { LoginContainer, StyledForm, Logo, MicrosoftButton, OrText, LogoRow } from "./index.styled";
@@ -55,6 +56,9 @@ export const Login = () => {
   const { config, loading } = useConfig();
   const { instance } = useMsal();
   const [loginLoading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  const returnUrl = searchParams.get("returnUrl");
 
   const {
     register,
@@ -75,8 +79,12 @@ export const Login = () => {
   }, [loginError]);
 
   const handleMicrosoftLogin = () => {
+    // Use state parameter to preserve return URL through Microsoft auth
+    const state = returnUrl ? JSON.stringify({ returnUrl }) : undefined;
+
     instance.loginRedirect({
       scopes: ["User.Read"],
+      state,
     });
   };
 
@@ -101,16 +109,19 @@ export const Login = () => {
       const responseJson = await response.json();
       localStorage.setItem("token", responseJson.token);
       setLocalToken(responseJson.token);
-      window.location.replace("/");
-    } catch (err: any) {
+
+      // Redirect to return URL if provided, otherwise go to home
+      const redirectUrl = returnUrl ? decodeURIComponent(returnUrl) : "/";
+      window.location.replace(redirectUrl);
+    } catch (err) {
       try {
-      const errorJson = await err.json();
-      setLoginError(errorJson?.title || "Login failed. Please try again.");
-      return;
+        const errorJson = await (err as Response).json();
+        setLoginError(errorJson?.title || "Login failed. Please try again.");
+        return;
       } catch {
-      setLoginError("Login failed. Please try again.");
-      return;
-      } 
+        setLoginError("Login failed. Please try again.");
+        return;
+      }
     } finally {
       setLoading(false);
     }

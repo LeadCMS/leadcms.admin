@@ -1694,6 +1694,16 @@ export interface CommentDetailsDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Status
+   * @example "NotApproved"
+   */
+  status?: "NotApproved" | "Approved" | "Spam" | "Answer";
+  /**
+   * Answer Status
+   * @example "Unanswered"
+   */
+  answerStatus?: "Unanswered" | "Answered" | "Closed";
 }
 
 export interface CommentImportDto {
@@ -1774,12 +1784,12 @@ export interface CommentImportDto {
    * Body
    * @example "string"
    */
-  body?: string;
+  body?: string | null;
   /**
    * Status
    * @example "NotApproved"
    */
-  status?: "NotApproved" | "Approved" | "Spam" | null;
+  status?: "NotApproved" | "Approved" | "Spam" | "Answer" | null;
   /**
    * Language
    * @example "string"
@@ -1795,12 +1805,12 @@ export interface CommentImportDto {
    * @format int32
    * @example 1
    */
-  commentableId?: number;
+  commentableId?: number | null;
   /**
    * Commentable Type
    * @example "string"
    */
-  commentableType?: string;
+  commentableType?: string | null;
   /**
    * Parent Id
    * @format int32
@@ -1822,6 +1832,11 @@ export interface CommentImportDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Answer Status
+   * @example "Unanswered"
+   */
+  answerStatus?: "Unanswered" | "Answered" | "Closed" | null;
 }
 
 export interface CommentSummaryDto {
@@ -1864,10 +1879,53 @@ export interface CommentSummaryDto {
 export interface CommentUpdateDto {
   /**
    * Body
-   * @minLength 1
    * @example "string"
    */
-  body: string;
+  body?: string | null;
+  /**
+   * Author Name
+   * @example "string"
+   */
+  authorName?: string | null;
+  /**
+   * Author Email
+   * @format email
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  authorEmail?: string | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Status
+   * @example "NotApproved"
+   */
+  status?: "NotApproved" | "Approved" | "Spam" | "Answer" | null;
+  /**
+   * Answer Status
+   * @example "Unanswered"
+   */
+  answerStatus?: "Unanswered" | "Answered" | "Closed" | null;
+  /**
+   * Translation Key
+   * @example "string"
+   */
+  translationKey?: string | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+}
+
+export interface CommentsWithStatisticsDto {
+  /** Comments */
+  comments?: CommentDetailsDto[];
+  /** Statistics */
+  statistics?: Record<string, number>;
 }
 
 export interface ConfigDto {
@@ -3539,12 +3597,12 @@ export interface ContentCreateDto {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @minLength 1
@@ -3626,12 +3684,12 @@ export interface ContentDetailsDto {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @minLength 1
@@ -3751,12 +3809,12 @@ export interface ContentEditRequest {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @minLength 1
@@ -3930,12 +3988,12 @@ export interface ContentImportDto {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @example "string"
@@ -4221,12 +4279,12 @@ export interface ContentUpdateDto {
    * Cover Image Url
    * @example "string"
    */
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   /**
    * Cover Image Alt
    * @example "string"
    */
-  coverImageAlt?: string;
+  coverImageAlt?: string | null;
   /**
    * Slug
    * @minLength 1
@@ -4706,6 +4764,63 @@ export interface DealUpdateDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+}
+
+export interface DeviceAuthInitiateDto {
+  /**
+   * Device Code
+   * @minLength 1
+   * @example "string"
+   */
+  deviceCode: string;
+  /**
+   * User Code
+   * @minLength 1
+   * @example "string"
+   */
+  userCode: string;
+  /**
+   * Verification Uri
+   * @minLength 1
+   * @example "string"
+   */
+  verificationUri: string;
+  /**
+   * Verification Uri Complete
+   * @minLength 1
+   * @example "string"
+   */
+  verificationUriComplete: string;
+  /**
+   * Expires In
+   * @format int32
+   * @example 1
+   */
+  expiresIn: number;
+  /**
+   * Interval
+   * @format int32
+   * @example 1
+   */
+  interval: number;
+}
+
+export interface DeviceAuthPollDto {
+  /**
+   * Device Code
+   * @minLength 1
+   * @example "string"
+   */
+  deviceCode: string;
+}
+
+export interface DeviceAuthVerificationDto {
+  /**
+   * User Code
+   * @minLength 1
+   * @example "string"
+   */
+  userCode: string;
 }
 
 export interface DnsRecord {
@@ -5596,6 +5711,22 @@ export interface ImportResult {
   skipped?: number;
   /** Errors */
   errors?: ImportError[] | null;
+}
+
+export interface JWTokenDto {
+  /**
+   * Token
+   * @minLength 1
+   * @example "string"
+   */
+  token: string;
+  /**
+   * Expiration
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  expiration: string;
 }
 
 export interface LanguageDto {
@@ -7022,6 +7153,15 @@ export interface TextGenerationResponse {
   metadata?: Record<string, any>;
 }
 
+export interface TokenExchangeDto {
+  /**
+   * Microsoft Token
+   * @minLength 1
+   * @example "string"
+   */
+  microsoftToken: string;
+}
+
 export interface TopAccountDto {
   /**
    * Account Id
@@ -7589,7 +7729,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.83.0
+ * @version 1.2.88.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -7869,6 +8009,29 @@ export class Api<
      * No description
      *
      * @tags Comments
+     * @name CommentsWithStatisticsList
+     * @request GET:/api/comments/with-statistics
+     * @secure
+     */
+    commentsWithStatisticsList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<CommentsWithStatisticsDto, ProblemDetails>({
+        path: `/api/comments/with-statistics`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
      * @name CommentsDetail
      * @request GET:/api/comments/{id}
      * @secure
@@ -7968,6 +8131,29 @@ export class Api<
      * No description
      *
      * @tags Comments
+     * @name CommentsSyncList
+     * @request GET:/api/comments/sync
+     * @secure
+     */
+    commentsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/comments/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
      * @name CommentsImportCreate
      * @request POST:/api/comments/import
      * @secure
@@ -8002,29 +8188,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/comments/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Comments
-     * @name CommentsSyncList
-     * @request GET:/api/comments/sync
-     * @secure
-     */
-    commentsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/comments/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -8428,6 +8591,23 @@ export class Api<
      * No description
      *
      * @tags Content
+     * @name ContentAuthorsList
+     * @request GET:/api/content/authors
+     * @secure
+     */
+    contentAuthorsList: (params: RequestParams = {}) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/content/authors`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
      * @name ContentCategoriesDetail
      * @request GET:/api/content/categories/{contentType}
      * @secure
@@ -8441,6 +8621,30 @@ export class Api<
     ) =>
       this.request<string[], void | ProblemDetails>({
         path: `/api/content/categories/${contentType}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentAuthorsDetail
+     * @request GET:/api/content/authors/{contentType}
+     * @secure
+     */
+    contentAuthorsDetail: (
+      contentType: string,
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/content/authors/${contentType}`,
         method: "GET",
         query: query,
         secure: true,
@@ -12912,6 +13116,109 @@ export class Api<
     ) =>
       this.request<void, void | ProblemDetails>({
         path: `/api/identity/change-password`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityExchangeTokenCreate
+     * @request POST:/api/identity/exchange-token
+     * @secure
+     */
+    identityExchangeTokenCreate: (
+      data: TokenExchangeDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<JWTokenDto, void | ProblemDetails>({
+        path: `/api/identity/exchange-token`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityDeviceInitiateCreate
+     * @request POST:/api/identity/device/initiate
+     * @secure
+     */
+    identityDeviceInitiateCreate: (params: RequestParams = {}) =>
+      this.request<DeviceAuthInitiateDto, ProblemDetails>({
+        path: `/api/identity/device/initiate`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityDevicePollCreate
+     * @request POST:/api/identity/device/poll
+     * @secure
+     */
+    identityDevicePollCreate: (
+      data: DeviceAuthPollDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<JWTokenDto, void | ProblemDetails>({
+        path: `/api/identity/device/poll`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityDeviceVerifyCreate
+     * @request POST:/api/identity/device/verify
+     * @secure
+     */
+    identityDeviceVerifyCreate: (
+      data: DeviceAuthVerificationDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/identity/device/verify`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Identity
+     * @name IdentityDeviceDenyCreate
+     * @request POST:/api/identity/device/deny
+     * @secure
+     */
+    identityDeviceDenyCreate: (
+      data: DeviceAuthVerificationDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/identity/device/deny`,
         method: "POST",
         body: data,
         secure: true,
