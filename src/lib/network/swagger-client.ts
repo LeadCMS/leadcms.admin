@@ -8561,10 +8561,16 @@ export class Api<
      * @request GET:/api/content/tags
      * @secure
      */
-    contentTagsList: (params: RequestParams = {}) =>
+    contentTagsList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<string[], void | ProblemDetails>({
         path: `/api/content/tags`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -8578,10 +8584,16 @@ export class Api<
      * @request GET:/api/content/categories
      * @secure
      */
-    contentCategoriesList: (params: RequestParams = {}) =>
+    contentCategoriesList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<string[], void | ProblemDetails>({
         path: `/api/content/categories`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -8595,10 +8607,16 @@ export class Api<
      * @request GET:/api/content/authors
      * @secure
      */
-    contentAuthorsList: (params: RequestParams = {}) =>
+    contentAuthorsList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<string[], void | ProblemDetails>({
         path: `/api/content/authors`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -8669,47 +8687,6 @@ export class Api<
     ) =>
       this.request<string[], void | ProblemDetails>({
         path: `/api/content/tags/${contentType}`,
-        method: "GET",
-        query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Content
-     * @name ContentAuthorsList
-     * @request GET:/api/content/authors
-     * @secure
-     */
-    contentAuthorsList: (params: RequestParams = {}) =>
-      this.request<string[], void | ProblemDetails>({
-        path: `/api/content/authors`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Content
-     * @name ContentAuthorsDetail
-     * @request GET:/api/content/authors/{contentType}
-     * @secure
-     */
-    contentAuthorsDetail: (
-      contentType: string,
-      query?: {
-        language?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<string[], void | ProblemDetails>({
-        path: `/api/content/authors/${contentType}`,
         method: "GET",
         query: query,
         secure: true,
