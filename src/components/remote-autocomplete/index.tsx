@@ -37,8 +37,10 @@ export function RemoteAutocomplete({
               language: language,
             });
           } else {
-            // Fallback to general endpoint
-            response = await client.api.contentTagsList();
+            // Use general endpoint with language filtering
+            response = await client.api.contentTagsList({
+              language: language,
+            });
           }
           break;
         case RemoteValues.CATEGORIES:
@@ -48,9 +50,17 @@ export function RemoteAutocomplete({
               language: language,
             });
           } else {
-            // Fallback to general endpoint
-            response = await client.api.contentCategoriesList();
+            // Use general endpoint with language filtering
+            response = await client.api.contentCategoriesList({
+              language: language,
+            });
           }
+          break;
+        case RemoteValues.AUTHORS:
+          // Use content-independent endpoint for all authors with language filtering
+          response = await client.api.contentAuthorsList({
+            language: language,
+          });
           break;
       }
     } catch (e) {

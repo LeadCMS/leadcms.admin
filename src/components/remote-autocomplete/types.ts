@@ -18,4 +18,5 @@ export interface RemoteAutoCompleteProps {
 export enum RemoteValues {
   TAGS = 1,
   CATEGORIES,
+  AUTHORS,
 }

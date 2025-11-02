@@ -1282,11 +1282,10 @@ export const ContentEdit = (props: ContentEditProps) => {
                         </Grid>
                       )}
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <TextField
-                          disabled={props.readonly}
+                        <RemoteAutocomplete
+                          type={RemoteValues.AUTHORS}
                           label="Author"
-                          name="author"
-                          value={contentFormOps.formik.values.author}
+                          placeholder="Enter author name"
                           error={
                             contentFormOps.formik.touched.author &&
                             Boolean(contentFormOps.formik.errors.author)
@@ -1295,10 +1294,15 @@ export const ContentEdit = (props: ContentEditProps) => {
                             contentFormOps.formik.touched.author &&
                             contentFormOps.formik.errors.author
                           }
-                          placeholder="Enter author name"
-                          variant="outlined"
-                          onChange={contentFormOps.valueUpdate}
-                          fullWidth
+                          value={contentFormOps.formik.values.author}
+                          onChange={(ev, val) =>
+                            contentFormOps.autoCompleteValueUpdate("author", val as string)
+                          }
+                          freeSolo
+                          multiple={false}
+                          limit={1}
+                          contentType={contentFormOps.formik.values.type}
+                          language={contentFormOps.formik.values.language}
                         />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
