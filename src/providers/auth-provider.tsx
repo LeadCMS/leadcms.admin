@@ -3,6 +3,7 @@ import { PublicClientApplication, Configuration, InteractionStatus } from "@azur
 import { MsalProvider, useMsal } from "@azure/msal-react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { useConfig } from "@providers/config-provider";
+import { Api } from "@lib/network/swagger-client";
 
 function RequireAuth({ children }: PropsWithChildren) {
   const { isTokenLoaded, localToken, getToken } = useAuthState();
@@ -154,19 +155,18 @@ export const useAuthState = () => {
           account,
         });
 
-        // Exchange Microsoft token for local JWT
-        const response = await fetch(`${process.env.CORE_API}/api/identity/exchange-token`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ microsoftToken: idToken }),
+        // Exchange Microsoft token for local JWT using API client
+        const apiClient = new Api({
+          baseUrl: process.env.CORE_API,
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          localStorage.setItem("token", result.token);
-          setLocalToken(result.token);
+        const result = await apiClient.api.identityExchangeTokenCreate({
+          microsoftToken: idToken,
+        });
+
+        if (result.data?.token) {
+          localStorage.setItem("token", result.data.token);
+          setLocalToken(result.data.token);
 
           // Clear Microsoft account cache after successful exchange
           // This ensures logout works properly and we don't keep Microsoft tokens
@@ -176,9 +176,9 @@ export const useAuthState = () => {
             console.warn("Failed to clear Microsoft cache:", error);
           }
 
-          return result.token;
+          return result.data.token;
         } else {
-          console.error("Token exchange failed with status:", response.status);
+          console.error("Token exchange failed: No token in response");
           // If exchange fails, we should not use Microsoft token
           return undefined;
         }
