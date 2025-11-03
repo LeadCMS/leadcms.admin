@@ -4,6 +4,7 @@ import { MsalProvider, useMsal } from "@azure/msal-react";
 import { Box, CircularProgress, Typography, Alert } from "@mui/material";
 import { useConfig } from "@providers/config-provider";
 import { Api } from "@lib/network/swagger-client";
+import { buildAbsoluteUrl } from "@lib/network/utils";
 
 function RequireAuth({ children }: PropsWithChildren) {
   const { isTokenLoaded, localToken, getToken, authError } = useAuthState();
@@ -246,16 +247,11 @@ export const useAuthState = () => {
           account,
         });
 
-        // Determine the base URL for API calls
-        // Use CORE_API env variable if available, otherwise fall back to current origin
-        const baseUrl =
-          process.env.CORE_API && process.env.CORE_API.trim().length > 0
-            ? process.env.CORE_API
-            : window.location.origin;
-
         // Exchange Microsoft token for local JWT using API client
+        // Use buildAbsoluteUrl to get the base URL (handles CORE_API env var and fallback)
+        const baseUrl = buildAbsoluteUrl("/api");
         const apiClient = new Api({
-          baseUrl,
+          baseUrl: baseUrl.replace("/api", ""), // Remove the /api suffix to get base URL
         });
 
         const result = await apiClient.api.identityExchangeTokenCreate({
