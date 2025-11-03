@@ -426,7 +426,39 @@ const MDXEditorNew = ({
                     isReadOnly ? undefined : uploadCallbacks
                   ),
                 }),
-                // JSX plugin for custom components with implementations
+                // Frontmatter must come early to parse the content correctly
+                frontmatterPlugin(),
+                // Code block plugins must come BEFORE JSX plugin to handle code blocks properly
+                codeBlockPlugin({ defaultCodeBlockLanguage: "text" }),
+                codeMirrorPlugin({
+                  codeBlockLanguages: {
+                    js: "JavaScript",
+                    ts: "TypeScript",
+                    tsx: "TypeScript React",
+                    jsx: "JavaScript React",
+                    css: "CSS",
+                    html: "HTML",
+                    json: "JSON",
+                    yaml: "YAML",
+                    yml: "YAML",
+                    markdown: "Markdown",
+                    mdx: "MDX",
+                    md: "Markdown",
+                    bash: "Bash",
+                    sh: "Shell",
+                    shell: "Shell",
+                    python: "Python",
+                    typescript: "TypeScript",
+                    javascript: "JavaScript",
+                    text: "Plain Text",
+                    txt: "Plain Text",
+                    plaintext: "Plain Text",
+                    "": "Plain Text",
+                  },
+                  // Use custom extensions that conditionally include line numbers
+                  codeMirrorExtensions: buildCodeBlockExtensions(config),
+                }),
+                // JSX plugin for custom components - must come AFTER code block plugins
                 jsxPlugin({
                   jsxComponentDescriptors: createJsxComponentDescriptors(),
                 }),
@@ -448,25 +480,6 @@ const MDXEditorNew = ({
                 }),
                 tablePlugin(),
                 thematicBreakPlugin(),
-                frontmatterPlugin(),
-                codeBlockPlugin({ defaultCodeBlockLanguage: "javascript" }),
-                codeMirrorPlugin({
-                  codeBlockLanguages: {
-                    js: "JavaScript",
-                    ts: "TypeScript",
-                    tsx: "TypeScript React",
-                    jsx: "JavaScript React",
-                    css: "CSS",
-                    html: "HTML",
-                    json: "JSON",
-                    yaml: "YAML",
-                    markdown: "Markdown",
-                    bash: "Bash",
-                    python: "Python",
-                  },
-                  // Use custom extensions that conditionally include line numbers
-                  codeMirrorExtensions: buildCodeBlockExtensions(config),
-                }),
                 markdownShortcutPlugin(),
                 // Toolbar
                 ...(isReadOnly
