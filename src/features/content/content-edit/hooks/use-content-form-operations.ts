@@ -5,7 +5,7 @@ import { useNotificationsService, useCoreModuleNavigation } from "@hooks";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useConfig } from "@providers/config-provider";
-import { buildAbsoluteUrl } from "@lib/network/utils";
+
 import { execSubmitWithToast } from "utils/formik-helper";
 import { handleDraftSaveError, handleSubmitError } from "@utils/error-handler";
 import { CoreModule } from "@lib/router";
@@ -31,7 +31,7 @@ import { Dayjs } from "dayjs";
 import { ValidateFrontmatterError } from "utils/frontmatter-validator";
 import { validateContentSyntax } from "@utils/syntax-validators";
 import { isRealtimeSyntaxValidationEnabled } from "@utils/config-helpers";
-import { ImageData } from "@components/file-dropdown";
+
 import {
   getContentLengthSettings,
   validateTitleLength,
@@ -67,7 +67,7 @@ export interface ContentFormOperations {
   valueUpdateGeneric: (field: string, value: unknown) => void;
   autoCompleteValueUpdate: (field: string, value: unknown) => void;
   handleDateChange: (field: string, newValue: Dayjs | null) => void;
-  onCoverImageChange: (url: ImageData) => void;
+  onCoverImageChange: (imageUrl: string | null) => void;
   // Auto-save
   isDraftSaving: boolean;
   // Live preview
@@ -158,7 +158,11 @@ export const useContentFormOperations = (
 
     try {
       setIsDraftSaving(true);
+
+      // Cover image is already uploaded via the CoverImageEditor component
+      // Draft saves can use the current form values directly
       const filteredValues = filterEmptyValues(values);
+
       if (id) {
         await client.api.contentDraftPartialUpdate(Number(id), filteredValues);
       } else {
@@ -218,7 +222,6 @@ export const useContentFormOperations = (
 
   const submitFunc = async (values: ContentDetails, helpers: FormikHelpers<ContentDetails>) => {
     let response: HttpResponse<ContentDetailsDto, void | ProblemDetails>;
-    let coverUrl = values.coverImageUrl;
     setIsSaving(true);
 
     if (frontmatterState !== null) {
@@ -239,47 +242,27 @@ export const useContentFormOperations = (
 
     const trimmedSlug = values.slug ? values.slug.replace(/^\/+|\/+$/g, "") : values.slug;
 
-    if (coverWasModified && values.coverImagePending && values.coverImagePending.url) {
-      const blob = await (await fetch(values.coverImagePending.url)).blob();
-      const file = new File([blob], values.coverImagePending.fileName || "image.jpg");
-      const imageUploadingResponse = await client.api.mediaCreate({
-        File: file,
-        ScopeUid: trimmedSlug,
-      });
-      if (imageUploadingResponse.error) {
-        throw Error(imageUploadingResponse.error.title as string);
-      }
-      if (imageUploadingResponse.data.location === null) {
-        throw Error("imageupload.data.location is null");
-      }
-      coverUrl = imageUploadingResponse.data.location as string;
-    }
+    // Cover image is already uploaded via the CoverImageEditor component
+    // No need for additional processing here
 
     if (values?.id) {
       response = await client.api.contentUpdate(Number(values.id), {
         ...values,
         slug: trimmedSlug,
-        coverImageUrl: coverUrl,
       });
     } else {
       response = await client.api.contentCreate({
         ...values,
         slug: trimmedSlug,
-        coverImageUrl: coverUrl,
       });
     }
 
     const patched: ContentDetails = {
       ...response.data,
       id: response.data.id ? response.data.id.toString() : null,
-      coverImagePending: {
-        url: response.data.coverImageUrl ? buildAbsoluteUrl(response.data.coverImageUrl) : "",
-        fileName: "",
-      },
     } as ContentDetails;
 
     helpers.setValues(patched);
-    await helpers.setFieldValue("coverImagePending", patched.coverImagePending);
     setRefreshKey(Date.now());
     setWasModified(false);
     setCoverWasModified(false);
@@ -343,7 +326,6 @@ export const useContentFormOperations = (
       category: "",
       tags: [],
       allowComments: false,
-      coverImagePending: { url: "", fileName: "" },
       coverImageAlt: "",
       publishedAt: null,
       id: null,
@@ -381,8 +363,8 @@ export const useContentFormOperations = (
     }
   };
 
-  const onCoverImageChange = (url: ImageData) => {
-    formik.setFieldValue("coverImagePending", url);
+  const onCoverImageChange = (imageUrl: string | null) => {
+    formik.setFieldValue("coverImageUrl", imageUrl || "");
     setCoverWasModified(true);
   };
 

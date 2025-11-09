@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { ContentDetails } from "@features/content/content-edit/types";
-import { buildAbsoluteUrl } from "@lib/network/utils";
+
 import { TranslationType } from "@components/translate-dialog";
 import { ContentDetailsDto } from "@lib/network/swagger-client";
 
@@ -110,11 +110,6 @@ export const useTranslationOperations = (): TranslationOperations => {
         createdAt: null,
         updatedAt: null,
         publishedAt: null,
-        coverImagePending: {
-          url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
-          fileName: "",
-        },
-        files: [],
       } as ContentDetails;
 
       if (translationType === "AITranslation") {

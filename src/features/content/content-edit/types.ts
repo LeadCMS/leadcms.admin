@@ -1,5 +1,3 @@
-import { ImageData } from "@components/file-dropdown";
-
 export interface ContentDetails {
   id: string | null;
   type: string;
@@ -7,7 +5,6 @@ export interface ContentDetails {
   description: string;
   body: string;
   coverImageUrl: string;
-  coverImagePending: ImageData;
   coverImageAlt: string;
   slug: string;
   author: string;

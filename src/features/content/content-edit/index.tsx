@@ -63,7 +63,7 @@ import { ContentEditRestoreState, ContentDetails } from "./types";
 import { generateDefaultValues, idToDisplayName, ContentFormat } from "../content-types";
 import MDXEditorNew from "@components/mdx-editor-new";
 import ValidationStatusBubble from "@components/validation-status-bubble";
-import FileDropdown from "@components/file-dropdown";
+import CoverImageEditor from "@components/image-selection-dialog";
 import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
 import { LanguageSelect } from "@components/language-select";
@@ -433,7 +433,6 @@ export const ContentEdit = (props: ContentEditProps) => {
 
     // Set form values
     await contentFormOps.formik.setValues(content);
-    await contentFormOps.formik.setFieldValue("coverImagePending", content.coverImagePending);
 
     // Set content state - only set original content if specified (preserve during AI edits)
     if (setOriginalContent) {
@@ -1141,35 +1140,38 @@ export const ContentEdit = (props: ContentEditProps) => {
                   )}
 
                   {activeTab === "cover" && contentDataOps.contentType?.supportsCoverImage && (
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <FileDropdown
-                          onChange={contentFormOps.onCoverImageChange}
-                          acceptMIME="image/*"
-                          maxFileSize={2 * 1024 * 1024} // 2MB
-                          data={contentFormOps.formik.values.coverImagePending}
-                        />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
-                          label="Cover Image Alt Text"
-                          name="coverImageAlt"
-                          value={contentFormOps.formik.values.coverImageAlt || ""}
-                          error={Boolean(
-                            contentFormOps.formik.touched.coverImageAlt &&
+                    <Box sx={{ pt: 4 }}>
+                      <Grid container spacing={2} alignItems="flex-start">
+                        <Grid size={{ xs: 12, md: 7 }}>
+                          <CoverImageEditor
+                            value={contentFormOps.formik.values.coverImageUrl}
+                            onChange={contentFormOps.onCoverImageChange}
+                            contentSlug={contentFormOps.formik.values.slug}
+                            disabled={props.readonly}
+                            maxFileSize={512 * 1024} // 512KB
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 5 }}>
+                          <TextField
+                            label="Cover Image Alt Text"
+                            name="coverImageAlt"
+                            value={contentFormOps.formik.values.coverImageAlt || ""}
+                            error={Boolean(
+                              contentFormOps.formik.touched.coverImageAlt &&
+                                contentFormOps.formik.errors.coverImageAlt
+                            )}
+                            helperText={
+                              contentFormOps.formik.touched.coverImageAlt &&
                               contentFormOps.formik.errors.coverImageAlt
-                          )}
-                          helperText={
-                            contentFormOps.formik.touched.coverImageAlt &&
-                            contentFormOps.formik.errors.coverImageAlt
-                          }
-                          placeholder="Enter Cover Image Alt Text"
-                          variant="outlined"
-                          onChange={contentFormOps.valueUpdate}
-                          fullWidth
-                        />
+                            }
+                            placeholder="Enter Cover Image Alt Text"
+                            variant="outlined"
+                            onChange={contentFormOps.valueUpdate}
+                            fullWidth
+                          />
+                        </Grid>
                       </Grid>
-                    </Grid>
+                    </Box>
                   )}
 
                   {activeTab === "settings" && (

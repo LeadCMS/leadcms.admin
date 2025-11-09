@@ -72,7 +72,7 @@ export const generateDefaultValues = (contentUid: string, authorName?: string): 
     description: "",
     body: "",
     coverImageUrl: "",
-    coverImagePending: { fileName: "", url: "" },
+
     coverImageAlt: "",
     slug: "",
     author: authorName || "",

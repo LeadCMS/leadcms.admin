@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { ContentDetails } from "@features/content/content-edit/types";
-import { buildAbsoluteUrl } from "@lib/network/utils";
 
 export interface AIContentOperations {
   // Draft creation
@@ -93,11 +92,6 @@ export const useAIContentOperations = (): AIContentOperations => {
         createdAt: null,
         updatedAt: null,
         publishedAt: null,
-        coverImagePending: {
-          url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
-          fileName: "",
-        },
-        files: [],
       } as ContentDetails;
 
       notificationsService.success("AI draft created successfully!");
@@ -141,11 +135,6 @@ export const useAIContentOperations = (): AIContentOperations => {
       const editedContent: ContentDetails = {
         ...content, // Keep existing data like id, dates, etc.
         ...data, // Override with AI-edited content
-        coverImagePending: {
-          url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
-          fileName: "",
-        },
-        files: content.files, // Keep existing files
       } as ContentDetails;
 
       notificationsService.success("Content edited successfully with AI!");

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
-import { buildAbsoluteUrl } from "@lib/network/utils";
+
 import { ContentDetails } from "@features/content/content-edit/types";
 import {
   ContentDetailsDto,
@@ -83,11 +83,6 @@ export const useContentDataOperations = (): ContentDataOperations => {
     const patched: ContentDetails = {
       ...contentData,
       id: contentData.id ? contentData.id.toString() : null,
-      coverImagePending: {
-        url: contentData.coverImageUrl ? buildAbsoluteUrl(contentData.coverImageUrl) : "",
-        fileName: "",
-      },
-      files: [],
     } as ContentDetails;
 
     return patched;
@@ -129,11 +124,6 @@ export const useContentDataOperations = (): ContentDataOperations => {
       slug: data.slug + "-copy",
       createdAt: null,
       updatedAt: null,
-      coverImagePending: {
-        url: data.coverImageUrl ? buildAbsoluteUrl(data.coverImageUrl) : "",
-        fileName: "",
-      },
-      files: [],
     } as ContentDetails;
 
     return duplicatedContent;
@@ -146,11 +136,6 @@ export const useContentDataOperations = (): ContentDataOperations => {
       createdAt: null,
       updatedAt: null,
       publishedAt: null,
-      coverImagePending: {
-        url: aiContent.coverImageUrl ? buildAbsoluteUrl(aiContent.coverImageUrl) : "",
-        fileName: "",
-      },
-      files: [],
     } as ContentDetails;
 
     return content;
