@@ -4400,6 +4400,13 @@ export interface ContentUpdateDtoChangeLogDetailsDto {
   updatedBy?: string | null;
 }
 
+export interface ContentWithStatisticsDto {
+  /** Content */
+  content?: ContentDetailsDto[];
+  /** Statistics */
+  statistics?: Record<string, number>;
+}
+
 export interface CrmMetricsDto {
   /**
    * Total Contacts
@@ -7729,7 +7736,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.88.0
+ * @version 1.2.93.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8459,6 +8466,34 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentWithStatisticsList
+     * @request GET:/api/content/with-statistics
+     * @secure
+     */
+    contentWithStatisticsList: (
+      query?: {
+        query?: string;
+        /**
+         * Include translation mappings in the response
+         * @default false
+         */
+        includeTranslations?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentWithStatisticsDto, ProblemDetails>({
+        path: `/api/content/with-statistics`,
+        method: "GET",
+        query: query,
+        secure: true,
         format: "json",
         ...params,
       }),

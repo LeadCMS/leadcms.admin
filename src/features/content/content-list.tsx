@@ -91,6 +91,7 @@ export const ContentList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [contentItems, setContentItems] = useState<ContentDetailsDto[]>([]);
   const [contentItemsCount, setContentItemsCount] = useState<number>(0);
+  const [statistics, setStatistics] = useState<Record<string, number>>({});
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -241,18 +242,27 @@ export const ContentList = () => {
     }
 
     try {
-      const { data, headers } = await client.api.contentList(filter);
+      const { data, headers } = await client.api.contentWithStatisticsList(filter);
+
+      // Extract content and statistics from response
+      const contentData = data?.content || [];
+      const statisticsData = data?.statistics || {};
+
       // Deduplicate by id
       setContentItems((prev) => {
         const map = new Map<number, ContentDetailsDto>();
         prev.forEach((item) => {
           if (item.id != null) map.set(item.id, item);
         });
-        data.forEach((item: ContentDetailsDto) => {
+        contentData.forEach((item: ContentDetailsDto) => {
           if (item.id != null) map.set(item.id, item);
         });
         return Array.from(map.values());
       });
+
+      // Store statistics from API
+      setStatistics(statisticsData);
+
       let totalCount = contentItemsCount;
       if (headers && typeof headers.get === "function") {
         const count = headers.get("x-total-count");
@@ -271,9 +281,10 @@ export const ContentList = () => {
       whereFilters,
       sortField,
       sortDirection,
+      searchTerm,
       selectedContentType,
     });
-  }, [whereFilters, sortField, sortDirection, selectedContentType, setStoredSettings]);
+  }, [whereFilters, sortField, sortDirection, searchTerm, selectedContentType, setStoredSettings]);
 
   useEffect(() => {
     setWhereFilters(storedSettings.whereFilters);
@@ -290,6 +301,7 @@ export const ContentList = () => {
   useEffect(() => {
     setContentItems([]);
     setContentItemsCount(0);
+    setStatistics({});
     initialLoadRef.current = false;
     scrollTargetRef.current?.scrollTo?.(0, 0);
     fetchData().then(() => {
@@ -468,6 +480,7 @@ export const ContentList = () => {
         <ContentTypeFilter
           selectedContentType={selectedContentType}
           onContentTypeChange={handleContentTypeChange}
+          statistics={statistics}
         />
       </Box>
       <NoRecordsDisplay
