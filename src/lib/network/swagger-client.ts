@@ -6930,10 +6930,9 @@ export interface SegmentCreateDto {
   description?: string | null;
   /**
    * Type
-   * @minLength 1
-   * @example "string"
+   * @example "Dynamic"
    */
-  type: string;
+  type: "Dynamic" | "Static";
   definition?: SegmentDefinition;
   /** Contact Ids */
   contactIds?: number[] | null;
@@ -6969,10 +6968,9 @@ export interface SegmentDetailsDto {
   description?: string | null;
   /**
    * Type
-   * @minLength 1
-   * @example "string"
+   * @example "Dynamic"
    */
-  type: string;
+  type: "Dynamic" | "Static";
   /**
    * Contact Count
    * @format int32
@@ -14516,6 +14514,23 @@ export class Api<
         path: `/api/segments/${id}/contacts`,
         method: "GET",
         query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsRecalculateCreate
+     * @request POST:/api/segments/{id}/recalculate
+     * @secure
+     */
+    segmentsRecalculateCreate: (id: number, params: RequestParams = {}) =>
+      this.request<SegmentDetailsDto, void | ProblemDetails>({
+        path: `/api/segments/${id}/recalculate`,
+        method: "POST",
         secure: true,
         format: "json",
         ...params,
