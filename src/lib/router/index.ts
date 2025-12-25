@@ -11,6 +11,7 @@ export const enum CoreModule {
   orders = "orders",
   deals = "deals",
   domains = "domains",
+  segments = "segments",
   unsubscribes = "unsubscribes",
   users = "users",
   about = "about",

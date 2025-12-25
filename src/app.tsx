@@ -31,6 +31,7 @@ export const App = () => {
     deals: { category: "CRM", name: "Deals" },
     domains: { category: "CRM", name: "Domains" },
     "activity-logs": { category: "CRM", name: "Activity logs" },
+    segments: { category: "MARKETING", name: "Segments" },
     "email-templates": { category: "MARKETING", name: "Email templates" },
     unsubscribes: { category: "MARKETING", name: "Unsubscribes" },
     users: { category: "GENERAL", name: "Users" },

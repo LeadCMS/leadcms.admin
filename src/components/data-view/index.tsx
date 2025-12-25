@@ -25,7 +25,14 @@ export const DataView = ({ header, rows }: dataViewProps) => {
           rows.map(({ label, value }, index) => (
             <Fragment key={index}>
               <ViewRowGrid container marginBottom={2}>
-                <ViewListItemText primary={label} secondary={renderValue(value)} />
+                <ViewListItemText
+                  primary={label}
+                  secondary={renderValue(value)}
+                  slotProps={{
+                    primary: { component: "div" },
+                    secondary: { component: "div" },
+                  }}
+                />
               </ViewRowGrid>
             </Fragment>
           ))}

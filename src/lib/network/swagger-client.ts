@@ -6877,6 +6877,24 @@ export interface ResetPasswordDto {
   newPassword: string;
 }
 
+export interface RuleGroup {
+  /**
+   * Id
+   * @minLength 1
+   * @example "string"
+   */
+  id: string;
+  /**
+   * Connector
+   * @example "And"
+   */
+  connector: "And" | "Or";
+  /** Rules */
+  rules?: SegmentRule[];
+  /** Groups */
+  groups?: RuleGroup[];
+}
+
 export interface SalesPerformancePointDto {
   /**
    * Period
@@ -6896,6 +6914,193 @@ export interface SalesPerformancePointDto {
    * @example 1
    */
   orders?: number;
+}
+
+export interface SegmentCreateDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Type
+   * @minLength 1
+   * @example "string"
+   */
+  type: string;
+  definition?: SegmentDefinition;
+  /** Contact Ids */
+  contactIds?: number[] | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+}
+
+export interface SegmentDefinition {
+  includeRules: RuleGroup;
+  excludeRules?: RuleGroup;
+}
+
+export interface SegmentDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Type
+   * @minLength 1
+   * @example "string"
+   */
+  type: string;
+  /**
+   * Contact Count
+   * @format int32
+   * @example 1
+   */
+  contactCount?: number;
+  definition?: SegmentDefinition;
+  /** Contact Ids */
+  contactIds?: number[] | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+  /**
+   * Created By Id
+   * @example "string"
+   */
+  createdById?: string | null;
+  /**
+   * Updated By Id
+   * @example "string"
+   */
+  updatedById?: string | null;
+  /**
+   * Created By Ip
+   * @example "string"
+   */
+  createdByIp?: string | null;
+  /**
+   * Created By User Agent
+   * @example "string"
+   */
+  createdByUserAgent?: string | null;
+  /**
+   * Updated By Ip
+   * @example "string"
+   */
+  updatedByIp?: string | null;
+  /**
+   * Updated By User Agent
+   * @example "string"
+   */
+  updatedByUserAgent?: string | null;
+}
+
+export interface SegmentPreviewResultDto {
+  /**
+   * Contact Count
+   * @format int32
+   * @example 1
+   */
+  contactCount?: number;
+  /** Contacts */
+  contacts?: ContactDetailsDto[];
+}
+
+export interface SegmentRule {
+  /**
+   * Id
+   * @minLength 1
+   * @example "string"
+   */
+  id: string;
+  /**
+   * Field Id
+   * @minLength 1
+   * @example "string"
+   */
+  fieldId: string;
+  /**
+   * Operator
+   * @example "Equals"
+   */
+  operator:
+    | "Equals"
+    | "NotEquals"
+    | "Contains"
+    | "NotContains"
+    | "StartsWith"
+    | "EndsWith"
+    | "IsEmpty"
+    | "IsNotEmpty"
+    | "GreaterThan"
+    | "LessThan"
+    | "GreaterThanOrEqual"
+    | "LessThanOrEqual"
+    | "IsTrue"
+    | "IsFalse"
+    | "In"
+    | "NotIn";
+  /** Value */
+  value?: any;
+}
+
+export interface SegmentUpdateDto {
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string | null;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  definition?: SegmentDefinition;
+  /** Contact Ids */
+  contactIds?: number[] | null;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[] | null;
 }
 
 export interface SettingCreateDto {
@@ -7736,7 +7941,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.93.0
+ * @version 1.2.94.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -14167,6 +14372,197 @@ export class Api<
         method: "GET",
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsCreate
+     * @request POST:/api/segments
+     * @secure
+     */
+    segmentsCreate: (data: SegmentCreateDto, params: RequestParams = {}) =>
+      this.request<SegmentDetailsDto, void | ProblemDetails>({
+        path: `/api/segments`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsList
+     * @request GET:/api/segments
+     * @secure
+     */
+    segmentsList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SegmentDetailsDto[], void | ProblemDetails>({
+        path: `/api/segments`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsPartialUpdate
+     * @request PATCH:/api/segments/{id}
+     * @secure
+     */
+    segmentsPartialUpdate: (
+      id: number,
+      data: SegmentUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SegmentDetailsDto, void | ProblemDetails>({
+        path: `/api/segments/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsDetail
+     * @request GET:/api/segments/{id}
+     * @secure
+     */
+    segmentsDetail: (id: number, params: RequestParams = {}) =>
+      this.request<SegmentDetailsDto, void | ProblemDetails>({
+        path: `/api/segments/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsDelete
+     * @request DELETE:/api/segments/{id}
+     * @secure
+     */
+    segmentsDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/segments/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsPreviewCreate
+     * @request POST:/api/segments/preview
+     * @secure
+     */
+    segmentsPreviewCreate: (
+      data: SegmentDefinition,
+      params: RequestParams = {},
+    ) =>
+      this.request<SegmentPreviewResultDto, void | ProblemDetails>({
+        path: `/api/segments/preview`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsContactsList
+     * @request GET:/api/segments/{id}/contacts
+     * @secure
+     */
+    segmentsContactsList: (
+      id: number,
+      query?: {
+        query?: string;
+        /** @format int32 */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ContactDetailsDto[], void | ProblemDetails>({
+        path: `/api/segments/${id}/contacts`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsExportList
+     * @request GET:/api/segments/export
+     * @secure
+     */
+    segmentsExportList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, void | ProblemDetails>({
+        path: `/api/segments/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsSyncList
+     * @request GET:/api/segments/sync
+     * @secure
+     */
+    segmentsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/segments/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
         ...params,
       }),
 

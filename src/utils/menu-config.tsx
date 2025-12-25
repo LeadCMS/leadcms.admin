@@ -101,6 +101,13 @@ export const MENU_CONFIG = [
     header: "MARKETING",
     items: [
       {
+        id: "segments",
+        label: "Segments",
+        icon: <Users size={20} />,
+        entity: "segment",
+        route: getCoreModuleRoute(CoreModule.segments),
+      },
+      {
         id: "emailTemplates",
         label: "Email templates",
         icon: <Mail size={20} />,

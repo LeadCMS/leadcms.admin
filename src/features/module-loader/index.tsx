@@ -14,6 +14,7 @@ import { CommentsModule } from "@features/comments";
 import { UnsubscribesModule } from "@features/unsubscribes";
 import { UserModule } from "@features/users";
 import { AboutModule } from "@features/about";
+import { SegmentsModule } from "@features/segments/segments-module";
 import { Navigate } from "react-router-dom";
 import { EmailTemplatesModule } from "@features/email-templates";
 import { ActivityLogModule } from "@features/activity-log";
@@ -37,6 +38,7 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.accounts && <AccountsModule />}
           {moduleName === CoreModule.orders && <OrdersModule />}
           {moduleName === CoreModule.domains && <DomainsModule />}
+          {moduleName === CoreModule.segments && <SegmentsModule />}
           {moduleName === CoreModule.users && <UserModule />}
           {moduleName === CoreModule.about && <AboutModule />}
           {moduleName === CoreModule.emailTemplates && <EmailTemplatesModule />}
