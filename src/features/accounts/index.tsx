@@ -11,12 +11,12 @@ import {
   searchLabel,
 } from "./constants";
 import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
-import { GridColDef } from "@mui/x-data-grid";
+import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { CoreModule, getAddFormRoute } from "lib/router";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { SearchBar } from "@components/search-bar";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import useLocalStorage from "use-local-storage";
@@ -28,7 +28,7 @@ import { ToolbarButton } from "@components/tool-bar-button";
 
 export const Accounts = () => {
   const { client } = useRequestContext();
-  const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
+  const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
     accountGridSettingsStorageKey,
     undefined
   );
@@ -38,7 +38,7 @@ export const Accounts = () => {
   const [openExport, setOpenExport] = useState(false);
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
-  const [importFieldsObject, setImportFieldsObject] = useState<any>();
+  const [importFieldsObject, setImportFieldsObject] = useState<ReturnType<typeof getModelByName>>();
   const dataExportQuery = useRef("");
 
   const getAccountList = async (mainQuery: string, exportQuery?: string) => {
@@ -75,6 +75,20 @@ export const Accounts = () => {
     await client.api.accountsImportCreate(importDtoCollection);
   };
 
+  const numberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0,
+      }),
+    []
+  );
+
+  const formatNumberValue = (raw?: number | null) => {
+    if (raw === null || raw === undefined) return "";
+    const num = Number(raw);
+    return Number.isNaN(num) ? "" : numberFormatter.format(num);
+  };
+
   const [columns, setColumns] = useState<GridColDef<AccountDetailsDto>[]>([
     {
       field: "name",
@@ -97,8 +111,26 @@ export const Accounts = () => {
       ),
     },
     {
+      field: "tin",
+      headerName: "TIN",
+      width: 140,
+      type: "string",
+    },
+    {
+      field: "address",
+      headerName: "Address",
+      width: 220,
+      type: "string",
+    },
+    {
       field: "state",
       headerName: "State",
+      width: 120,
+      type: "string",
+    },
+    {
+      field: "countryCode",
+      headerName: "Country",
       width: 120,
       type: "string",
     },
@@ -106,6 +138,12 @@ export const Accounts = () => {
       field: "cityName",
       headerName: "City",
       width: 120,
+      type: "string",
+    },
+    {
+      field: "employeesRange",
+      headerName: "Employees Range",
+      width: 160,
       type: "string",
     },
     {
@@ -117,10 +155,62 @@ export const Accounts = () => {
       type: "date",
     },
     {
+      field: "updatedAt",
+      headerName: "Updated At",
+      width: 120,
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+      type: "date",
+    },
+    {
       field: "continentCode",
       headerName: "Continent Code",
       width: 120,
       type: "number",
+    },
+    {
+      field: "revenue",
+      headerName: "Revenue",
+      width: 140,
+      type: "number",
+      valueFormatter: (
+        params: GridRenderCellParams<AccountDetailsDto, number | null | undefined>
+      ) => formatNumberValue(params?.value ?? params?.row?.revenue),
+      renderCell: (params: GridRenderCellParams<AccountDetailsDto, number | null | undefined>) =>
+        formatNumberValue(params.value ?? params.row?.revenue),
+    },
+    {
+      field: "profit",
+      headerName: "Profit",
+      width: 140,
+      type: "number",
+      valueFormatter: (
+        params: GridRenderCellParams<AccountDetailsDto, number | null | undefined>
+      ) => formatNumberValue(params?.value ?? params?.row?.profit),
+      renderCell: (params: GridRenderCellParams<AccountDetailsDto, number | null | undefined>) =>
+        formatNumberValue(params.value ?? params.row?.profit),
+    },
+    {
+      field: "source",
+      headerName: "Source",
+      width: 140,
+      type: "string",
+    },
+    {
+      field: "tags",
+      headerName: "Tags",
+      width: 200,
+      type: "string",
+      valueGetter: (params) => {
+        const tags = params && (params as { row?: AccountDetailsDto }).row?.tags;
+        return Array.isArray(tags) ? tags : [];
+      },
+      renderCell: (
+        params: GridRenderCellParams<AccountDetailsDto, string[] | undefined>
+      ): string => {
+        const value = params.value as string[] | undefined;
+        return Array.isArray(value) && value.length > 0 ? value.join(", ") : "";
+      },
     },
   ]);
 
@@ -134,6 +224,7 @@ export const Accounts = () => {
 
   const extraActions = [
     <ToolbarButton
+      key="filter-btn"
       startIcon={<Filter size={18} />}
       onClick={() => setFilterPanelOpen(true)}
       sx={{
@@ -144,6 +235,7 @@ export const Accounts = () => {
       }}
     ></ToolbarButton>,
     <ToolbarButton
+      key="columns-btn"
       startIcon={<Settings2 size={18} />}
       onClick={() => setColumnsPanelOpen((open) => !open)}
     >
@@ -196,7 +288,11 @@ export const Accounts = () => {
         searchText={searchTerm}
         getModelDataList={getAccountList}
         initialGridState={{
-          columns: { columnVisibilityModel: { continentCode: false } },
+          columns: {
+            columnVisibilityModel: {
+              continentCode: false,
+            },
+          },
           sorting: {
             sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
           },

@@ -1,7 +1,9 @@
 import { ModuleWrapper } from "@components/module-wrapper";
+import { DataManagementBlock } from "@components/data-management";
 import { AccountDetailsDto } from "@lib/network/swagger-client";
+import { CoreModule } from "@lib/router";
 import { Divider, ListItem, ListItemAvatar, Tab, Tabs } from "@mui/material";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useRequestContext } from "providers/request-provider";
 import { accountFormBreadcrumbLinks } from "../constants";
@@ -21,6 +23,13 @@ export const AccountViewBase = () => {
     (state as AccountDetailsDto) || null
   );
   const didFetchRef = useRef(false);
+
+  const accountIdFromRoute = params.id ? Number(params.id) : undefined;
+  const accountId = useMemo(() => {
+    if (Number.isFinite(accountIdFromRoute)) return accountIdFromRoute as number;
+    if (account?.id && Number.isFinite(account.id)) return account.id;
+    return undefined;
+  }, [account?.id, accountIdFromRoute]);
 
   useEffect(() => {
     const load = async () => {
@@ -54,8 +63,25 @@ export const AccountViewBase = () => {
 
   const accountName = account?.name || "View Account";
 
+  const actionButtons = accountId ? (
+    <DataManagementBlock
+      header="Data Management"
+      description="Please be aware that what has been deleted can never be brought back."
+      entity="account"
+      handleDeleteAsync={(idVal) => client.api.accountsDelete(Number(idVal))}
+      itemId={accountId}
+      successNavigationRoute={CoreModule.accounts}
+      showOnlyButtons={true}
+      onDeleted={() => accountDetailsCache.delete(accountId)}
+    />
+  ) : null;
+
   return (
-    <ModuleWrapper breadcrumbs={accountFormBreadcrumbLinks} currentBreadcrumb={accountName}>
+    <ModuleWrapper
+      breadcrumbs={accountFormBreadcrumbLinks}
+      currentBreadcrumb={accountName}
+      actionButtons={actionButtons}
+    >
       {account && (
         <ListItem>
           <ListItemAvatar>

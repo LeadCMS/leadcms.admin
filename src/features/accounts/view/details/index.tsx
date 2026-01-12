@@ -1,15 +1,12 @@
 import { AccountDetailsDto } from "@lib/network/swagger-client";
-import { CoreModule, viewFormRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DataView, DataViewNoLabel } from "components/data-view";
 import { getContinentByCode, getCountryByCode } from "utils/general-helper";
 import { Grid } from "@mui/material";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { DataManagementBlock } from "@components/data-management";
 import { AccountUrlHref } from "@features/accounts/index.styled";
 import { useOutletContext } from "react-router-dom";
-import { useRouteParams } from "typesafe-routes";
 
 interface DataViewRow {
   label: string;
@@ -19,9 +16,7 @@ interface DataViewRow {
 export const AccountView = () => {
   const context = useRequestContext();
   const { setBusy } = useModuleWrapperContext();
-  const { client } = context;
   const { account } = useOutletContext<{ account: AccountDetailsDto | null }>();
-  const { id } = useRouteParams(viewFormRoute);
   const [country, setCountry] = useState<string>();
   const [continent, setContinent] = useState<string>();
   const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -29,6 +24,17 @@ export const AccountView = () => {
     currency: "USD",
     maximumFractionDigits: 2,
   });
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    []
+  );
 
   useEffect(() => {
     if (!account) return;
@@ -69,6 +75,7 @@ export const AccountView = () => {
     ? [
         { label: "Name", value: account.name || "" },
         { label: "Site url", value: accountSiteUrl || "" },
+        { label: "Id", value: account.id ?? "" },
         {
           label: "Revenue",
           value:
@@ -76,22 +83,50 @@ export const AccountView = () => {
               ? currencyFormatter.format(account.revenue)
               : "",
         },
+        {
+          label: "Profit",
+          value:
+            account.profit !== null && account.profit !== undefined
+              ? currencyFormatter.format(account.profit)
+              : "",
+        },
+        { label: "TIN", value: account.tin || "" },
         { label: "Employees range", value: account.employeesRange || "" },
+        { label: "Source", value: account.source || "" },
+        {
+          label: "Created",
+          value: account.createdAt ? dateFormatter.format(new Date(account.createdAt)) : "",
+        },
+        {
+          label: "Updated",
+          value: account.updatedAt ? dateFormatter.format(new Date(account.updatedAt)) : "",
+        },
       ]
     : undefined;
 
   const accountLocationData: DataViewRow[] | undefined = account
     ? [
+        { label: "Address", value: account.address || "" },
+        { label: "State", value: account.state || "" },
         { label: "City", value: account.cityName || "" },
         { label: "Country", value: country || "" },
         { label: "Continent", value: continent || "" },
+        { label: "Country code", value: account.countryCode || "" },
+        { label: "Continent code", value: account.continentCode || "" },
       ]
     : undefined;
 
   const accountOtherData: DataViewRow[] | undefined = account
     ? [
         { label: "Tags", value: account.tags?.join(", ") || "" },
-        { label: "Source", value: account.source || "" },
+        {
+          label: "Contacts",
+          value: account.contacts ? account.contacts.length : "",
+        },
+        {
+          label: "Domains",
+          value: account.domains ? account.domains.length : "",
+        },
       ]
     : undefined;
 
@@ -107,6 +142,7 @@ export const AccountView = () => {
 
   const hasLocation = !!(
     (account?.cityName && account.cityName.trim()) ||
+    (account?.address && account.address.trim()) ||
     (country && country.trim()) ||
     (continent && continent.trim())
   );
@@ -139,17 +175,6 @@ export const AccountView = () => {
             <DataView header="Other" rows={accountOtherData} />
           </Grid>
         )}
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <DataManagementBlock
-            header="Data Management"
-            description="Please be aware that what
-            has been deleted can never be brought back."
-            entity="account"
-            handleDeleteAsync={(idVal) => client.api.accountsDelete(idVal as number)}
-            itemId={id}
-            successNavigationRoute={CoreModule.accounts}
-          ></DataManagementBlock>
-        </Grid>
       </Grid>
     </>
   );

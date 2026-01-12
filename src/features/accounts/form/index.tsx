@@ -83,12 +83,15 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
       formik.setValues({
         name: account.name || "",
         socialMedia: account.socialMedia || {},
-        revenue: account.revenue || null,
+        revenue: account.revenue ?? null,
+        profit: account.profit ?? null,
         siteUrl: account.siteUrl || "",
         logoUrl: account.logoUrl || "",
         employeesRange: account.employeesRange || "",
         cityName: account.cityName || "",
         state: account.state || "",
+        address: account.address || "",
+        tin: account.tin || "",
         countryCode: account.countryCode || "ZZ",
         continentCode: account.continentCode || "ZZ",
         tags: account.tags || [],
@@ -182,12 +185,23 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
       }, zod.number().nullable().optional())
       .nullable()
       .optional(),
+    profit: zod
+      .preprocess((val) => {
+        if (val === "" || val === undefined) return null;
+        if (val === null) return null;
+        const num = Number(val);
+        return Number.isNaN(num) ? null : num;
+      }, zod.number().nullable().optional())
+      .nullable()
+      .optional(),
     socialMedia: zod.record(zod.string()).optional(),
     siteUrl: zod.string().optional(),
     logoUrl: zod.string().optional(),
     employeesRange: zod.string().optional(),
     cityName: zod.string().optional(),
     state: zod.string().optional(),
+    address: zod.string().optional(),
+    tin: zod.string().optional(),
     countryCode: zod.string().optional(),
     continentCode: zod.string().optional(),
     tags: zod.array(zod.string()).optional(),
@@ -200,11 +214,14 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
       name: "",
       socialMedia: {},
       revenue: null,
+      profit: null,
       siteUrl: "",
       logoUrl: "",
       employeesRange: "",
       cityName: "",
       state: "",
+      address: "",
+      tin: "",
       countryCode: "ZZ",
       continentCode: "ZZ",
       tags: [],
@@ -325,7 +342,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 2 }}>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
                   label="Employees Range"
@@ -338,14 +355,14 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   size="small"
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 2 }}>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <Tooltip title="Revenue field must contain only numbers">
                   <TextField
                     disabled={isLoading || formik.isSubmitting}
                     label="Revenue"
                     name="revenue"
                     type="number"
-                    value={formik.values.revenue || ""}
+                    value={formik.values.revenue ?? ""}
                     placeholder="Enter Revenue"
                     variant="outlined"
                     error={formik.touched.revenue && Boolean(formik.errors.revenue)}
@@ -356,11 +373,55 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
                   />
                 </Tooltip>
               </Grid>
+              <Grid size={{ xs: 12, sm: 3 }}>
+                <Tooltip title="Profit field must contain only numbers">
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Profit"
+                    name="profit"
+                    type="number"
+                    value={formik.values.profit ?? ""}
+                    placeholder="Enter Profit"
+                    variant="outlined"
+                    error={formik.touched.profit && Boolean(formik.errors.profit)}
+                    helperText={formik.touched.profit && formik.errors.profit}
+                    onChange={formik.handleChange}
+                    fullWidth
+                    size="small"
+                  />
+                </Tooltip>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 3 }}>
+                <TextField
+                  disabled={isLoading || formik.isSubmitting}
+                  label="TIN"
+                  name="tin"
+                  value={formik.values.tin || ""}
+                  placeholder="Enter TIN"
+                  variant="outlined"
+                  onChange={formik.handleChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
             </Grid>
             <Divider></Divider>
             <Grid container spacing={4} marginTop={2} marginBottom={4}>
               <Grid size={{ xs: 12, sm: 12 }}>
                 <SectionHeader icon={<MapPin size={22} />} title="Location" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  disabled={isLoading || formik.isSubmitting}
+                  label="Address"
+                  name="address"
+                  value={formik.values.address || ""}
+                  placeholder="Enter Address"
+                  variant="outlined"
+                  onChange={formik.handleChange}
+                  fullWidth
+                  size="small"
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 3 }}>
                 <TextField

@@ -299,6 +299,16 @@ export interface AccountCreateDto {
    */
   logoUrl?: string | null;
   /**
+   * Address
+   * @example "string"
+   */
+  address?: string | null;
+  /**
+   * Tin
+   * @example "string"
+   */
+  tin?: string | null;
+  /**
    * Employees Range
    * @example "50K-100K"
    */
@@ -309,6 +319,12 @@ export interface AccountCreateDto {
    * @example 1
    */
   revenue?: number | null;
+  /**
+   * Profit
+   * @format double
+   * @example 1
+   */
+  profit?: number | null;
   /**
    * Tags
    * @example ["string1","string2"]
@@ -620,6 +636,16 @@ export interface AccountDetailsDto {
    */
   logoUrl?: string | null;
   /**
+   * Address
+   * @example "string"
+   */
+  address?: string | null;
+  /**
+   * Tin
+   * @example "string"
+   */
+  tin?: string | null;
+  /**
    * Employees Range
    * @example "50K-100K"
    */
@@ -630,6 +656,12 @@ export interface AccountDetailsDto {
    * @example 1
    */
   revenue?: number | null;
+  /**
+   * Profit
+   * @format double
+   * @example 1
+   */
+  profit?: number | null;
   /**
    * Tags
    * @example ["string1","string2"]
@@ -738,10 +770,10 @@ export interface AccountImportDto {
    */
   name?: string;
   /**
-   * City
+   * City Name
    * @example "string"
    */
-  city?: string | null;
+  cityName?: string | null;
   /**
    * State Code
    * @example "string"
@@ -1019,6 +1051,16 @@ export interface AccountImportDto {
    */
   logoUrl?: string | null;
   /**
+   * Address
+   * @example "string"
+   */
+  address?: string | null;
+  /**
+   * Tin
+   * @example "string"
+   */
+  tin?: string | null;
+  /**
    * Employees Range
    * @example "string"
    */
@@ -1029,6 +1071,12 @@ export interface AccountImportDto {
    * @example 1
    */
   revenue?: number | null;
+  /**
+   * Profit
+   * @format double
+   * @example 1
+   */
+  profit?: number | null;
   /**
    * Tags
    * @example ["string1","string2"]
@@ -1063,15 +1111,25 @@ export interface AccountUpdateDto {
    */
   logoUrl?: string | null;
   /**
-   * City
+   * City Name
    * @example "string"
    */
-  city?: string | null;
+  cityName?: string | null;
   /**
    * State Code
    * @example "string"
    */
   stateCode?: string | null;
+  /**
+   * Address
+   * @example "string"
+   */
+  address?: string | null;
+  /**
+   * Tin
+   * @example "string"
+   */
+  tin?: string | null;
   /**
    * Continent Code
    * @example "ZZ"
@@ -1344,6 +1402,12 @@ export interface AccountUpdateDto {
    * @example 1
    */
   revenue?: number | null;
+  /**
+   * Profit
+   * @format double
+   * @example 1
+   */
+  profit?: number | null;
   /**
    * Tags
    * @example ["string1","string2"]
@@ -1919,13 +1983,6 @@ export interface CommentUpdateDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
-}
-
-export interface CommentsWithStatisticsDto {
-  /** Comments */
-  comments?: CommentDetailsDto[];
-  /** Statistics */
-  statistics?: Record<string, number>;
 }
 
 export interface ConfigDto {
@@ -8229,12 +8286,11 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<CommentsWithStatisticsDto, ProblemDetails>({
+      this.request<void, ProblemDetails>({
         path: `/api/comments/with-statistics`,
         method: "GET",
         query: query,
         secure: true,
-        format: "json",
         ...params,
       }),
 
