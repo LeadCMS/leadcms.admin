@@ -16,6 +16,7 @@ import {
   BookOpen,
   HelpCircle,
   Settings,
+  ListChecks,
 } from "lucide-react";
 
 export const MENU_CONFIG = [
@@ -127,6 +128,18 @@ export const MENU_CONFIG = [
         icon: <Globe size={20} />,
         entity: "domain",
         route: getCoreModuleRoute(CoreModule.domains),
+      },
+    ],
+  },
+  {
+    header: "OPERATIONS",
+    items: [
+      {
+        id: "tasks",
+        label: "Tasks",
+        icon: <ListChecks size={20} />,
+        entity: null,
+        route: getCoreModuleRoute(CoreModule.tasks),
       },
     ],
   },

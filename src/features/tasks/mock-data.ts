@@ -1,0 +1,71 @@
+import type { TaskExecutionLog } from "./types";
+
+// Mock data for execution history
+export const mockTaskExecutionLogs: TaskExecutionLog[] = [
+  {
+    id: "1",
+    taskName: "EnrichmentExecutorTask",
+    status: "success",
+    startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    duration: 2340,
+    triggeredBy: "schedule",
+  },
+  {
+    id: "2",
+    taskName: "EnrichmentSchedulerTask",
+    status: "success",
+    startedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    duration: 1200,
+    triggeredBy: "schedule",
+  },
+  {
+    id: "3",
+    taskName: "SyncEmailLogTask",
+    status: "success",
+    startedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    duration: 890,
+    triggeredBy: "schedule",
+  },
+  {
+    id: "4",
+    taskName: "ContactAccountTask",
+    status: "failed",
+    startedAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    duration: 5600,
+    triggeredBy: "schedule",
+    error: "Connection timeout while syncing account data",
+  },
+  {
+    id: "5",
+    taskName: "DomainVerificationTask",
+    status: "success",
+    startedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    duration: 780,
+    triggeredBy: "manual",
+  },
+  {
+    id: "6",
+    taskName: "ContactScheduledEmailTask",
+    status: "success",
+    startedAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+    duration: 3200,
+    triggeredBy: "schedule",
+  },
+  {
+    id: "7",
+    taskName: "SyncIpDetailsTask",
+    status: "success",
+    startedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    duration: 4500,
+    triggeredBy: "schedule",
+  },
+  {
+    id: "8",
+    taskName: "EnrichmentExecutorTask",
+    status: "failed",
+    startedAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+    duration: 1200,
+    triggeredBy: "manual",
+    error: "API rate limit exceeded",
+  },
+];

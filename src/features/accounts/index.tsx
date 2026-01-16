@@ -197,6 +197,24 @@ export const Accounts = () => {
       type: "string",
     },
     {
+      field: "contactCount",
+      headerName: "Contacts",
+      width: 120,
+      type: "number",
+    },
+    {
+      field: "dealsCount",
+      headerName: "Deals",
+      width: 120,
+      type: "number",
+    },
+    {
+      field: "domainsCount",
+      headerName: "Domains",
+      width: 120,
+      type: "number",
+    },
+    {
       field: "tags",
       headerName: "Tags",
       width: 200,

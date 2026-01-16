@@ -22,6 +22,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { ErrorBoundaryFallbackPage } from "@components/error-boundary-fallback-page";
 import { MediaModule } from "@features/media/lazy";
 import { SettingsModule } from "@features/settings/lazy";
+import { TasksModule } from "@features/tasks";
 
 export const ModuleLoader = () => {
   const { moduleName } = useRouteParams(coreModuleRoute);
@@ -46,6 +47,7 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.dashboard && <DashboardModule />}
           {moduleName === CoreModule.media && <MediaModule />}
           {moduleName === CoreModule.settings && <SettingsModule />}
+          {moduleName === CoreModule.tasks && <TasksModule />}
           {!moduleName && <Navigate to={defaultModuleRoute} replace />}
         </Suspense>
       </ErrorBoundary>

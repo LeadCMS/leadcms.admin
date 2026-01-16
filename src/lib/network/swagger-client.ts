@@ -702,6 +702,24 @@ export interface AccountDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
+  /**
+   * Contact Count
+   * @format int32
+   * @example 1
+   */
+  contactCount?: number;
+  /**
+   * Deals Count
+   * @format int32
+   * @example 1
+   */
+  dealsCount?: number;
+  /**
+   * Domains Count
+   * @format int32
+   * @example 1
+   */
+  domainsCount?: number;
   /** Contacts */
   contacts?: ContactDetailsDto[] | null;
   /** Domains */
@@ -7380,6 +7398,61 @@ export interface TaskExecutionDto {
   completed?: boolean;
 }
 
+export interface TaskExecutionLogDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Task Name
+   * @example "string"
+   */
+  taskName?: string;
+  /**
+   * Scheduled Execution Time
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  scheduledExecutionTime?: string;
+  /**
+   * Actual Execution Time
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  actualExecutionTime?: string;
+  /**
+   * Status
+   * @example "string"
+   */
+  status?: string;
+  /**
+   * Retry Count
+   * @format int32
+   * @example 1
+   */
+  retryCount?: number;
+  /**
+   * Result
+   * @example "string"
+   */
+  result?: string | null;
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Triggered By
+   * @example "string"
+   */
+  triggeredBy?: string;
+  duration?: TimeSpan;
+}
+
 export interface TextGenerationRequest {
   /**
    * User Prompt
@@ -7418,6 +7491,39 @@ export interface TextGenerationResponse {
   finishReason?: string;
   /** Metadata */
   metadata?: Record<string, any>;
+}
+
+export interface TimeSpan {
+  /** @format int64 */
+  ticks?: number;
+  /** @format int32 */
+  days?: number;
+  /** @format int32 */
+  hours?: number;
+  /** @format int32 */
+  milliseconds?: number;
+  /** @format int32 */
+  microseconds?: number;
+  /** @format int32 */
+  nanoseconds?: number;
+  /** @format int32 */
+  minutes?: number;
+  /** @format int32 */
+  seconds?: number;
+  /** @format double */
+  totalDays?: number;
+  /** @format double */
+  totalHours?: number;
+  /** @format double */
+  totalMilliseconds?: number;
+  /** @format double */
+  totalMicroseconds?: number;
+  /** @format double */
+  totalNanoseconds?: number;
+  /** @format double */
+  totalMinutes?: number;
+  /** @format double */
+  totalSeconds?: number;
 }
 
 export interface TokenExchangeDto {
@@ -15068,10 +15174,11 @@ export class Api<
      * @secure
      */
     tasksList: (params: RequestParams = {}) =>
-      this.request<void, void | ProblemDetails>({
+      this.request<TaskDetailsDto[], void | ProblemDetails>({
         path: `/api/tasks`,
         method: "GET",
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -15138,6 +15245,29 @@ export class Api<
       this.request<TaskExecutionDto, void | ProblemDetails>({
         path: `/api/tasks/execute/${name}`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Tasks
+     * @name TasksLogsList
+     * @request GET:/api/tasks/logs
+     * @secure
+     */
+    tasksLogsList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<TaskExecutionLogDetailsDto[], void | ProblemDetails>({
+        path: `/api/tasks/logs`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
