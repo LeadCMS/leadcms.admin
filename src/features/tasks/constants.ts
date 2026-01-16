@@ -40,7 +40,7 @@ export const TASK_METADATA: Record<string, TaskMetadata> = {
 
 export const CATEGORY_COLORS: Record<TaskCategory, string> = {
   "data-sync": "info",
-  maintenance: "warning",
+  maintenance: "info",
   reporting: "default",
   enrichment: "secondary",
   email: "primary",

@@ -49,6 +49,9 @@ import {
   Build,
   Language,
   TrendingUp,
+  PlayCircleOutline,
+  ToggleOn,
+  ToggleOff,
 } from "@mui/icons-material";
 import { useRequestContext } from "@providers/request-provider";
 import type { TaskDetailsDto, TaskExecutionLogDetailsDto } from "lib/network/swagger-client";
@@ -116,23 +119,23 @@ export const TasksList = () => {
     }
   };
 
-  const handleStartTask = async (taskName: string) => {
+  const handleEnableTask = async (taskName: string) => {
     try {
       setConfirmDialog({ open: false, action: "start", taskName: "" });
       await client.api.tasksStartDetail(taskName);
       await loadTasks();
     } catch (error) {
-      console.error("Failed to start task:", error);
+      console.error("Failed to enable task:", error);
     }
   };
 
-  const handleStopTask = async (taskName: string) => {
+  const handleDisableTask = async (taskName: string) => {
     try {
       setConfirmDialog({ open: false, action: "stop", taskName: "" });
       await client.api.tasksStopDetail(taskName);
       await loadTasks();
     } catch (error) {
-      console.error("Failed to stop task:", error);
+      console.error("Failed to disable task:", error);
     }
   };
 
@@ -263,7 +266,7 @@ export const TasksList = () => {
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom variant="body2">
-                Stopped
+                Disabled
               </Typography>
               <Typography variant="h4" color="warning.main">
                 {stoppedCount}
@@ -363,8 +366,8 @@ export const TasksList = () => {
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
                     <MenuItem value="all">All Status</MenuItem>
-                    <MenuItem value="running">Running</MenuItem>
-                    <MenuItem value="stopped">Stopped</MenuItem>
+                    <MenuItem value="running">Enabled</MenuItem>
+                    <MenuItem value="stopped">Disabled</MenuItem>
                   </Select>
                 </FormControl>
               </>
@@ -456,14 +459,14 @@ export const TasksList = () => {
                           size="small"
                           color="success"
                           icon={<CheckCircle sx={{ fontSize: 16 }} />}
-                          label="Running"
+                          label="Enabled"
                         />
                       ) : (
                         <Chip
                           size="small"
-                          color="warning"
+                          color="default"
                           icon={<Cancel sx={{ fontSize: 16 }} />}
-                          label="Stopped"
+                          label="Disabled"
                         />
                       )}
                     </TableCell>
@@ -481,12 +484,12 @@ export const TasksList = () => {
                             }
                             disabled={isExecuting}
                           >
-                            <Refresh fontSize="small" />
+                            <PlayCircleOutline fontSize="small" />
                           </IconButton>
                         </Tooltip>
 
                         {task.isRunning ? (
-                          <Tooltip title="Stop task">
+                          <Tooltip title="Disable task">
                             <IconButton
                               size="small"
                               onClick={() =>
@@ -497,11 +500,11 @@ export const TasksList = () => {
                                 })
                               }
                             >
-                              <Stop fontSize="small" />
+                              <ToggleOn sx={{ fontSize: 28, color: "success.main" }} />
                             </IconButton>
                           </Tooltip>
                         ) : (
-                          <Tooltip title="Start task">
+                          <Tooltip title="Enable task">
                             <IconButton
                               size="small"
                               onClick={() =>
@@ -512,7 +515,7 @@ export const TasksList = () => {
                                 })
                               }
                             >
-                              <PlayArrow fontSize="small" />
+                              <ToggleOff sx={{ fontSize: 28, color: "action.disabled" }} />
                             </IconButton>
                           </Tooltip>
                         )}
@@ -588,7 +591,7 @@ export const TasksList = () => {
 
                   let duration: { totalMilliseconds?: number } | number | null = null;
 
-                  if (hasDuration) {
+                  if (hasDuration && log.duration) {
                     duration = log.duration;
                   } else if (log.scheduledExecutionTime && log.actualExecutionTime) {
                     const scheduledTime = new Date(log.scheduledExecutionTime);
@@ -708,15 +711,15 @@ export const TasksList = () => {
         onClose={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
       >
         <DialogTitle>
-          {confirmDialog.action === "start" && "Start Task"}
-          {confirmDialog.action === "stop" && "Stop Task"}
+          {confirmDialog.action === "start" && "Enable Task"}
+          {confirmDialog.action === "stop" && "Disable Task"}
           {confirmDialog.action === "execute" && "Execute Task"}
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
             {confirmDialog.action === "start" && (
               <>
-                Are you sure you want to start the scheduled execution of{" "}
+                Are you sure you want to enable the scheduled execution of{" "}
                 <strong>
                   {getTaskMetadata(confirmDialog.taskName)?.displayName || confirmDialog.taskName}
                 </strong>
@@ -725,11 +728,11 @@ export const TasksList = () => {
             )}
             {confirmDialog.action === "stop" && (
               <>
-                Are you sure you want to stop the scheduled execution of{" "}
+                Are you sure you want to disable the scheduled execution of{" "}
                 <strong>
                   {getTaskMetadata(confirmDialog.taskName)?.displayName || confirmDialog.taskName}
                 </strong>
-                ? The task will not run on its schedule until started again.
+                ? The task will not run on its schedule until enabled again.
               </>
             )}
             {confirmDialog.action === "execute" && (
@@ -750,9 +753,9 @@ export const TasksList = () => {
           <Button
             onClick={() => {
               if (confirmDialog.action === "start") {
-                handleStartTask(confirmDialog.taskName);
+                handleEnableTask(confirmDialog.taskName);
               } else if (confirmDialog.action === "stop") {
-                handleStopTask(confirmDialog.taskName);
+                handleDisableTask(confirmDialog.taskName);
               } else {
                 handleExecuteTask(confirmDialog.taskName);
               }
@@ -760,8 +763,8 @@ export const TasksList = () => {
             color={confirmDialog.action === "stop" ? "error" : "primary"}
             variant="contained"
           >
-            {confirmDialog.action === "start" && "Start Task"}
-            {confirmDialog.action === "stop" && "Stop Task"}
+            {confirmDialog.action === "start" && "Enable Task"}
+            {confirmDialog.action === "stop" && "Disable Task"}
             {confirmDialog.action === "execute" && "Execute Now"}
           </Button>
         </DialogActions>
