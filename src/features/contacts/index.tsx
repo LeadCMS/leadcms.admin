@@ -16,7 +16,7 @@ import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
@@ -25,9 +25,12 @@ import { Result } from "react-spreadsheet-import/types/types";
 import useLocalStorage from "use-local-storage";
 import { DataListSettings } from "types";
 import { ToolbarButton } from "@components/tool-bar-button";
+import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
+import { getWhereFilterQuery } from "@providers/query-provider";
 
 export const Contacts = () => {
   const { client } = useRequestContext();
+  const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
     contactGridSettingsStorageKey,
     undefined
@@ -39,14 +42,32 @@ export const Contacts = () => {
   const [importFieldsObject, setImportFieldsObject] = useState<any>();
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const dataExportQuery = useRef("");
+
+  // Trigger refresh when global language filter changes
+  useEffect(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, [selectedLanguage]);
 
   const getContactList = async (mainQuery: string, exportQuery?: string) => {
     try {
       dataExportQuery.current = exportQuery || "";
       const includeFilter = "filter[include]=Account";
-      const fullQuery = mainQuery ? `${mainQuery}&${includeFilter}` : includeFilter;
+
+      // Add global language filter if active
+      let globalLanguageQuery = "";
+      if (isLanguageFilterActive && selectedLanguage !== "all") {
+        // Extract language code prefix (e.g., "en" from "en-US")
+        const languageCode = selectedLanguage.split("-")[0];
+        globalLanguageQuery = getWhereFilterQuery("language", languageCode, "contains");
+        // Remove leading & to avoid double ampersands
+        globalLanguageQuery = globalLanguageQuery.replace(/^&/, "");
+      }
+
+      const fullQuery = [mainQuery, includeFilter, globalLanguageQuery].filter(Boolean).join("&");
+
       const result = await client.api.contactsList({
         query: fullQuery,
       });
@@ -80,6 +101,12 @@ export const Contacts = () => {
 
   const [columns, setColumns] = useState<GridColDef<ContactDetailsDto>[]>([
     {
+      field: "id",
+      headerName: "ID",
+      width: 100,
+      type: "number",
+    },
+    {
       field: "prefix",
       headerName: "Prefix",
       width: 80,
@@ -87,7 +114,7 @@ export const Contacts = () => {
     },
     {
       field: "firstName",
-      headerName: "Name",
+      headerName: "Contact",
       width: 250,
       type: "string",
       renderCell: ({ row }) => (
@@ -96,11 +123,21 @@ export const Contacts = () => {
             <Avatar src={row.avatarUrl}></Avatar>
           </ListItemAvatar>
           <ContactNameListItemText
-            primary={`${row.firstName || ""} ${row.lastName || ""}`}
+            primary={row.fullName?.trim() || `${row.firstName || ""} ${row.lastName || ""}`.trim()}
             secondary={<ContactHref href={`mailto:${row.email}`}>{row.email}</ContactHref>}
           />
         </ContactNameListItem>
       ),
+    },
+    {
+      field: "fullName",
+      headerName: "Full Name",
+      width: 200,
+      type: "string",
+      sortable: true,
+      valueGetter: (value, row) => {
+        return `${row.firstName || ""} ${row.lastName || ""}`.trim();
+      },
     },
     {
       field: "account.name",
@@ -196,6 +233,7 @@ export const Contacts = () => {
 
   const extraActions = [
     <ToolbarButton
+      key="filter-btn"
       startIcon={<Filter size={18} />}
       onClick={() => setFilterPanelOpen(true)}
       sx={{
@@ -206,6 +244,7 @@ export const Contacts = () => {
       }}
     ></ToolbarButton>,
     <ToolbarButton
+      key="columns-btn"
       startIcon={<Settings2 size={18} />}
       onClick={() => setColumnsPanelOpen((open) => !open)}
     >
@@ -269,6 +308,7 @@ export const Contacts = () => {
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
         exportApiCall={contactsExportApi}
+        refreshFlag={refreshTrigger}
       ></DataList>
     </ModuleWrapper>
   );

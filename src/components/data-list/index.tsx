@@ -52,6 +52,7 @@ type dataListProps<TModel extends GridValidRowModel> = {
   onExportOpen?: boolean;
   onExportClose?: () => void;
   exportApiCall?: (finalQueryString: string, accept: string) => Promise<Response>;
+  refreshFlag?: number;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -72,6 +73,7 @@ export const DataList = <TModel extends GridValidRowModel>({
   onExportOpen = false,
   onExportClose = () => {},
   exportApiCall,
+  refreshFlag = 0,
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -100,6 +102,7 @@ export const DataList = <TModel extends GridValidRowModel>({
 
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const defaultFilterState = {
     filterLimit: defaultFilterLimit,
@@ -174,6 +177,9 @@ export const DataList = <TModel extends GridValidRowModel>({
     } else {
       setFilterState(defaultFilterState);
     }
+
+    // Mark initialization as complete
+    setIsInitialized(true);
   }, []);
 
   useEffect(() => {
@@ -181,11 +187,12 @@ export const DataList = <TModel extends GridValidRowModel>({
   }, [searchText]);
 
   useEffect(() => {
-    if (filterState) {
+    // Only fetch data after initialization is complete
+    if (filterState && isInitialized) {
       saveGridStateInLocalStorage();
       getDataListAsync();
     }
-  }, [searchTerm, filterState]);
+  }, [searchTerm, filterState, refreshFlag]);
 
   useEffect(() => {
     saveGridStateInLocalStorage();

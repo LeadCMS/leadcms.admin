@@ -24,9 +24,12 @@ import { CsvImport } from "@components/spreadsheet-import";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { ToolbarButton } from "@components/tool-bar-button";
+import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
+import { getWhereFilterQuery } from "@providers/query-provider";
 
 export const Orders = () => {
   const { client } = useRequestContext();
+  const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     orderGridSettingsStorageKey,
     undefined
@@ -38,13 +41,33 @@ export const Orders = () => {
   const [importFieldsObject, setImportFieldsObject] = useState<any>();
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const dataExportQuery = useRef("");
+
+  // Trigger refresh when global language filter changes
+  useEffect(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, [selectedLanguage]);
 
   const getOrderList = async (mainQuery: string, exportQuery?: string) => {
     try {
       dataExportQuery.current = exportQuery || "";
+      const includeFilter = "filter[include]=Contact";
+
+      // Add global language filter if active (filter by contact language)
+      let globalLanguageQuery = "";
+      if (isLanguageFilterActive && selectedLanguage !== "all") {
+        // Extract language code prefix (e.g., "en" from "en-US")
+        const languageCode = selectedLanguage.split("-")[0];
+        globalLanguageQuery = getWhereFilterQuery("contact.language", languageCode, "contains");
+        // Remove leading & to avoid double ampersands
+        globalLanguageQuery = globalLanguageQuery.replace(/^&/, "");
+      }
+
+      const fullQuery = [mainQuery, includeFilter, globalLanguageQuery].filter(Boolean).join("&");
+
       const result = await client.api.ordersList({
-        query: mainQuery,
+        query: fullQuery,
       });
       return result;
     } catch (error) {
@@ -97,10 +120,44 @@ export const Orders = () => {
 
   const [columns, setColumns] = useState<GridColDef<OrderDetailsDto>[]>([
     {
+      field: "id",
+      headerName: "ID",
+      width: 100,
+      type: "number",
+    },
+    {
       field: "orderNumber",
       headerName: "Order Number",
       width: 120,
       type: "string",
+    },
+    {
+      field: "contact.fullName",
+      headerName: "Customer Name",
+      width: 200,
+      type: "string",
+      sortable: true,
+      valueGetter: (value, row) => {
+        const firstName = row.contact?.firstName || "";
+        const lastName = row.contact?.lastName || "";
+        return `${firstName} ${lastName}`.trim();
+      },
+    },
+    {
+      field: "contact.email",
+      headerName: "Contact Email",
+      width: 200,
+      type: "string",
+      sortable: true,
+      valueGetter: (value, row) => row.contact?.email || "",
+    },
+    {
+      field: "contact.language",
+      headerName: "Contact Language",
+      width: 120,
+      type: "string",
+      sortable: true,
+      valueGetter: (value, row) => row.contact?.language || "",
     },
     {
       field: "refNo",
@@ -171,6 +228,7 @@ export const Orders = () => {
 
   const extraActions = [
     <ToolbarButton
+      key="filter-btn"
       startIcon={<Filter size={18} />}
       onClick={() => setFilterPanelOpen(true)}
       sx={{
@@ -181,6 +239,7 @@ export const Orders = () => {
       }}
     ></ToolbarButton>,
     <ToolbarButton
+      key="columns-btn"
       startIcon={<Settings2 size={18} />}
       onClick={() => setColumnsPanelOpen((open) => !open)}
     >
@@ -245,6 +304,7 @@ export const Orders = () => {
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
         exportApiCall={ordersExportApi}
+        refreshFlag={refreshTrigger}
       ></DataList>
     </ModuleWrapper>
   );

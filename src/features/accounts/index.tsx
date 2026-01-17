@@ -91,6 +91,12 @@ export const Accounts = () => {
 
   const [columns, setColumns] = useState<GridColDef<AccountDetailsDto>[]>([
     {
+      field: "id",
+      headerName: "ID",
+      width: 100,
+      type: "number",
+    },
+    {
       field: "name",
       headerName: "Name",
       width: 250,

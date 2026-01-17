@@ -2782,6 +2782,11 @@ export interface ContactDetailsDto {
    */
   id?: number;
   /**
+   * Full Name
+   * @example "string"
+   */
+  fullName?: string | null;
+  /**
    * Avatar Url
    * @example "string"
    */
@@ -8102,7 +8107,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.94.0
+ * @version 1.2.95.0
  */
 export class Api<
   SecurityDataType extends unknown,
