@@ -102,18 +102,6 @@ export const Contacts = () => {
 
   const [columns, setColumns] = useState<GridColDef<ContactDetailsDto>[]>([
     {
-      field: "id",
-      headerName: "ID",
-      width: 100,
-      type: "number",
-    },
-    {
-      field: "prefix",
-      headerName: "Prefix",
-      width: 80,
-      type: "string",
-    },
-    {
       field: "firstName",
       headerName: "Contact",
       width: 250,
@@ -131,22 +119,23 @@ export const Contacts = () => {
       ),
     },
     {
-      field: "fullName",
-      headerName: "Full Name",
-      width: 200,
-      type: "string",
-      sortable: true,
-      valueGetter: (value, row) => {
-        return `${row.firstName || ""} ${row.lastName || ""}`.trim();
-      },
-    },
-    {
       field: "account.name",
       headerName: "Account",
       width: 200,
       type: "string",
       sortable: true,
       valueGetter: (value, row) => row.account?.name || "",
+    },
+    {
+      field: "totalRevenue",
+      headerName: "Total Revenue",
+      width: 160,
+      type: "number",
+      sortable: true,
+      align: "right",
+      headerAlign: "right",
+      valueGetter: (value, row) => row.totalRevenue ?? null,
+      renderCell: ({ value }) => <RevenueCell value={value} />,
     },
     {
       field: "dealsCount",
@@ -167,17 +156,6 @@ export const Contacts = () => {
       renderCell: ({ value }) => <CountPill value={value} />,
     },
     {
-      field: "totalRevenue",
-      headerName: "Total Revenue",
-      width: 160,
-      type: "number",
-      sortable: true,
-      align: "right",
-      headerAlign: "right",
-      valueGetter: (value, row) => row.totalRevenue ?? null,
-      renderCell: ({ value }) => <RevenueCell value={value} />,
-    },
-    {
       field: "lastOrderDate",
       headerName: "Last Order",
       width: 150,
@@ -186,6 +164,54 @@ export const Contacts = () => {
       headerAlign: "left",
       valueGetter: (value, row) => DateValueGetter(row.lastOrderDate || null),
       valueFormatter: DateValueFormatter,
+    },
+    {
+      field: "jobTitle",
+      headerName: "Job Title",
+      width: 100,
+      type: "string",
+    },
+    {
+      field: "phone",
+      headerName: "Phone",
+      width: 100,
+      type: "string",
+    },
+    {
+      field: "email",
+      headerName: "Email",
+      width: 150,
+      type: "string",
+    },
+    {
+      field: "createdAt",
+      headerName: "Created At",
+      width: 100,
+      type: "date",
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+    },
+    {
+      field: "id",
+      headerName: "ID",
+      width: 100,
+      type: "number",
+    },
+    {
+      field: "prefix",
+      headerName: "Prefix",
+      width: 80,
+      type: "string",
+    },
+    {
+      field: "fullName",
+      headerName: "Full Name",
+      width: 200,
+      type: "string",
+      sortable: true,
+      valueGetter: (value, row) => {
+        return `${row.firstName || ""} ${row.lastName || ""}`.trim();
+      },
     },
     {
       field: "middleName",
@@ -208,12 +234,6 @@ export const Contacts = () => {
       valueFormatter: DateValueFormatter,
     },
     {
-      field: "jobTitle",
-      headerName: "Job Title",
-      width: 100,
-      type: "string",
-    },
-    {
       field: "companyName",
       headerName: "Company Name",
       width: 100,
@@ -226,12 +246,6 @@ export const Contacts = () => {
       type: "string",
     },
     {
-      field: "email",
-      headerName: "Email",
-      width: 150,
-      type: "string",
-    },
-    {
       field: "address1",
       headerName: "Address 1",
       width: 150,
@@ -240,20 +254,6 @@ export const Contacts = () => {
       field: "address2",
       headerName: "Address 2",
       width: 150,
-    },
-    {
-      field: "phone",
-      headerName: "Phone",
-      width: 100,
-      type: "string",
-    },
-    {
-      field: "createdAt",
-      headerName: "Created At",
-      width: 100,
-      type: "date",
-      valueGetter: DateValueGetter,
-      valueFormatter: DateValueFormatter,
     },
     {
       field: "language",

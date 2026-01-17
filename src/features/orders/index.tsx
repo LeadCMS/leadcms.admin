@@ -120,12 +120,6 @@ export const Orders = () => {
 
   const [columns, setColumns] = useState<GridColDef<OrderDetailsDto>[]>([
     {
-      field: "id",
-      headerName: "ID",
-      width: 100,
-      type: "number",
-    },
-    {
       field: "orderNumber",
       headerName: "Order Number",
       width: 120,
@@ -144,32 +138,35 @@ export const Orders = () => {
       },
     },
     {
+      field: "total",
+      headerName: "Total",
+      width: 120,
+      type: "number",
+      align: "left",
+      headerAlign: "left",
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 120,
+      type: "string",
+      renderCell: (params) => <StatusCell value={params.value} />,
+    },
+    {
+      field: "createdAt",
+      headerName: "Created At",
+      width: 140,
+      type: "date",
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+    },
+    {
       field: "contact.email",
       headerName: "Contact Email",
       width: 200,
       type: "string",
       sortable: true,
       valueGetter: (value, row) => row.contact?.email || "",
-    },
-    {
-      field: "contact.language",
-      headerName: "Contact Language",
-      width: 120,
-      type: "string",
-      sortable: true,
-      valueGetter: (value, row) => row.contact?.language || "",
-    },
-    {
-      field: "refNo",
-      headerName: "Reference Number",
-      width: 120,
-      type: "string",
-    },
-    {
-      field: "affiliateName",
-      headerName: "Affiliate",
-      width: 140,
-      type: "string",
     },
     {
       field: "quantity",
@@ -180,12 +177,10 @@ export const Orders = () => {
       headerAlign: "left",
     },
     {
-      field: "total",
-      headerName: "Total",
-      width: 120,
-      type: "number",
-      align: "left",
-      headerAlign: "left",
+      field: "affiliateName",
+      headerName: "Affiliate",
+      width: 140,
+      type: "string",
     },
     {
       field: "currency",
@@ -208,6 +203,20 @@ export const Orders = () => {
         (typeof params.row?.currencyTotal === "number" ? params.row.currencyTotal : ""),
     },
     {
+      field: "contact.language",
+      headerName: "Contact Language",
+      width: 120,
+      type: "string",
+      sortable: true,
+      valueGetter: (value, row) => row.contact?.language || "",
+    },
+    {
+      field: "refNo",
+      headerName: "Reference Number",
+      width: 120,
+      type: "string",
+    },
+    {
       field: "exchangeRate",
       headerName: "Exchange Rate",
       width: 120,
@@ -216,19 +225,10 @@ export const Orders = () => {
       headerAlign: "left",
     },
     {
-      field: "status",
-      headerName: "Status",
-      width: 120,
-      type: "string",
-      renderCell: (params) => <StatusCell value={params.value} />,
-    },
-    {
-      field: "createdAt",
-      headerName: "Created At",
-      width: 140,
-      type: "date",
-      valueGetter: DateValueGetter,
-      valueFormatter: DateValueFormatter,
+      field: "id",
+      headerName: "ID",
+      width: 100,
+      type: "number",
     },
   ]);
 
