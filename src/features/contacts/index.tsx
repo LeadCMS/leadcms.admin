@@ -103,17 +103,12 @@ export const Contacts = () => {
       ),
     },
     {
-      field: "account",
+      field: "account.name",
       headerName: "Account",
       width: 200,
       type: "string",
       sortable: true,
       valueGetter: (value, row) => row.account?.name || "",
-      sortComparator: (v1, v2, param1, param2) => {
-        const accountId1 = param1.api.getRow(param1.id)?.accountId || 0;
-        const accountId2 = param2.api.getRow(param2.id)?.accountId || 0;
-        return accountId1 - accountId2;
-      },
     },
     {
       field: "middleName",
