@@ -188,18 +188,32 @@ export const Orders = () => {
       headerAlign: "left",
     },
     {
+      field: "currency",
+      headerName: "Currency",
+      width: 120,
+      type: "string",
+      sortable: true,
+      valueGetter: (value, row) => row.currency || "",
+    },
+    {
+      field: "currencyTotal",
+      headerName: "Currency Total",
+      width: 140,
+      type: "number",
+      align: "left",
+      headerAlign: "left",
+      valueGetter: (value, row) => row.currencyTotal ?? null,
+      valueFormatter: (params) =>
+        params.value ??
+        (typeof params.row?.currencyTotal === "number" ? params.row.currencyTotal : ""),
+    },
+    {
       field: "exchangeRate",
       headerName: "Exchange Rate",
       width: 120,
       type: "number",
       align: "left",
       headerAlign: "left",
-    },
-    {
-      field: "currency",
-      headerName: "Currency",
-      width: 120,
-      type: "string",
     },
     {
       field: "status",

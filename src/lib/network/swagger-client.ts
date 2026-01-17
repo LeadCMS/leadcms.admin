@@ -720,6 +720,25 @@ export interface AccountDetailsDto {
    * @example 1
    */
   domainsCount?: number;
+  /**
+   * Orders Count
+   * @format int32
+   * @example 1
+   */
+  ordersCount?: number;
+  /**
+   * Last Order Date
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  lastOrderDate?: string | null;
+  /**
+   * Total Revenue
+   * @format double
+   * @example 1
+   */
+  totalRevenue?: number;
   /** Contacts */
   contacts?: ContactDetailsDto[] | null;
   /** Domains */
@@ -2817,6 +2836,31 @@ export interface ContactDetailsDto {
    * @example 1
    */
   accountId?: number;
+  /**
+   * Deals Count
+   * @format int32
+   * @example 1
+   */
+  dealsCount?: number;
+  /**
+   * Orders Count
+   * @format int32
+   * @example 1
+   */
+  ordersCount?: number;
+  /**
+   * Last Order Date
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  lastOrderDate?: string | null;
+  /**
+   * Total Revenue
+   * @format double
+   * @example 1
+   */
+  totalRevenue?: number;
   domain?: DomainDetailsDto;
   account?: AccountDetailsDto;
   /** Orders */

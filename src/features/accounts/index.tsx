@@ -25,6 +25,7 @@ import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { GhostLink } from "@components/ghost-link";
 import { ToolbarButton } from "@components/tool-bar-button";
+import { CountPill, RevenueCell } from "@components/metric-cells";
 
 export const Accounts = () => {
   const { client } = useRequestContext();
@@ -213,6 +214,39 @@ export const Accounts = () => {
       headerName: "Deals",
       width: 120,
       type: "number",
+      sortable: true,
+      valueGetter: (value, row) => row.dealsCount ?? 0,
+      renderCell: ({ value }) => <CountPill value={value} />,
+    },
+    {
+      field: "ordersCount",
+      headerName: "Orders",
+      width: 120,
+      type: "number",
+      sortable: true,
+      valueGetter: (value, row) => (row as any)?.ordersCount ?? 0,
+      renderCell: ({ value }) => <CountPill value={value} />,
+    },
+    {
+      field: "totalRevenue",
+      headerName: "Total Revenue",
+      width: 160,
+      type: "number",
+      sortable: true,
+      align: "right",
+      headerAlign: "right",
+      valueGetter: (value, row) => (row as any)?.totalRevenue ?? null,
+      renderCell: ({ value }) => <RevenueCell value={value} />,
+    },
+    {
+      field: "lastOrderDate",
+      headerName: "Last Order",
+      width: 150,
+      type: "date",
+      align: "left",
+      headerAlign: "left",
+      valueGetter: (value, row) => DateValueGetter((row as any)?.lastOrderDate || null),
+      valueFormatter: DateValueFormatter,
     },
     {
       field: "domainsCount",

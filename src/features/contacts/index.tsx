@@ -20,6 +20,7 @@ import { useRef, useState, useEffect } from "react";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { GhostLink } from "@components/ghost-link";
 import { CsvImport } from "@components/spreadsheet-import";
+import { CountPill, RevenueCell } from "@components/metric-cells";
 import { getModelByName } from "lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import useLocalStorage from "use-local-storage";
@@ -146,6 +147,45 @@ export const Contacts = () => {
       type: "string",
       sortable: true,
       valueGetter: (value, row) => row.account?.name || "",
+    },
+    {
+      field: "dealsCount",
+      headerName: "Deals",
+      width: 120,
+      type: "number",
+      sortable: true,
+      valueGetter: (value, row) => row.dealsCount ?? 0,
+      renderCell: ({ value }) => <CountPill value={value} />,
+    },
+    {
+      field: "ordersCount",
+      headerName: "Orders",
+      width: 120,
+      type: "number",
+      sortable: true,
+      valueGetter: (value, row) => row.ordersCount ?? 0,
+      renderCell: ({ value }) => <CountPill value={value} />,
+    },
+    {
+      field: "totalRevenue",
+      headerName: "Total Revenue",
+      width: 160,
+      type: "number",
+      sortable: true,
+      align: "right",
+      headerAlign: "right",
+      valueGetter: (value, row) => row.totalRevenue ?? null,
+      renderCell: ({ value }) => <RevenueCell value={value} />,
+    },
+    {
+      field: "lastOrderDate",
+      headerName: "Last Order",
+      width: 150,
+      type: "date",
+      align: "left",
+      headerAlign: "left",
+      valueGetter: (value, row) => DateValueGetter(row.lastOrderDate || null),
+      valueFormatter: DateValueFormatter,
     },
     {
       field: "middleName",

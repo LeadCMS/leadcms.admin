@@ -29,8 +29,8 @@ import { getModuleNameFromUrl } from "@utils/general-helper";
 import { downloadExportFile } from "@components/download";
 
 // Define response type for API model data
-interface ModelDataResponse {
-  data: unknown[];
+interface ModelDataResponse<TModel> {
+  data: TModel[];
   headers: Headers;
 }
 
@@ -42,7 +42,10 @@ type dataListProps<TModel extends GridValidRowModel> = {
   defaultFilterOrderColumn: string;
   defaultFilterOrderDirection: string;
   initialGridState: GridInitialStateCommunity | undefined;
-  getModelDataList: (mainQuery: string, exportQuery?: string) => Promise<ModelDataResponse | null>;
+  getModelDataList: (
+    mainQuery: string,
+    exportQuery?: string
+  ) => Promise<ModelDataResponse<TModel> | null>;
   showEditButton?: boolean;
   showViewButton?: boolean;
   filterPanelOpen?: boolean;
@@ -81,7 +84,7 @@ export const DataList = <TModel extends GridValidRowModel>({
     gridSettingsStorageKey,
     undefined
   );
-  const [modelData, setModelData] = useState<unknown[] | undefined>([]);
+  const [modelData, setModelData] = useState<TModel[] | undefined>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [totalRowCount, setTotalRowCount] = useState<number>();
 
@@ -264,7 +267,7 @@ export const DataList = <TModel extends GridValidRowModel>({
     removeIndex?: number,
     editIdx?: number
   ) => {
-    let updatedFilters = [...(filterState?.whereFilters || [])];
+    const updatedFilters = [...(filterState?.whereFilters || [])];
 
     if (typeof removeIndex === "number") {
       updatedFilters.splice(removeIndex, 1);
