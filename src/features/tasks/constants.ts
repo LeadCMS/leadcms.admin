@@ -28,12 +28,12 @@ export const TASK_METADATA: Record<string, TaskMetadata> = {
   },
   EnrichmentSchedulerTask: {
     displayName: "Enrichment Scheduler",
-    description: "Schedules contact enrichment jobs",
+    description: "Schedules data enrichment jobs",
     category: "enrichment",
   },
   EnrichmentExecutorTask: {
     displayName: "Enrichment Executor",
-    description: "Executes contact enrichment with external providers",
+    description: "Executes data enrichment with external providers",
     category: "enrichment",
   },
 };
