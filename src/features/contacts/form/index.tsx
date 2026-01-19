@@ -6,11 +6,13 @@ import {
   TextField,
   Typography,
   Box,
-  Paper,
   Avatar,
   Grid,
-  useMediaQuery,
-  useTheme,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Card,
+  CardContent,
 } from "@mui/material";
 import { ContactDetailsDto } from "lib/network/swagger-client";
 import { CoreModule } from "lib/router";
@@ -20,7 +22,6 @@ import { useRequestContext } from "@providers/request-provider";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { SavingBar } from "@components/saving-bar";
 import { useFormik, FormikHelpers } from "formik";
 import zod from "zod";
 import { toFormikValidationSchema } from "zod-formik-adapter";
@@ -45,6 +46,9 @@ import {
   Share2,
   Link,
   Save,
+  ChevronDown,
+  Phone,
+  Mail,
 } from "lucide-react";
 
 interface ContactFormProps {
@@ -63,6 +67,11 @@ type Continent = {
   name: string;
 };
 
+type Account = {
+  id: number;
+  name: string;
+};
+
 interface SocialMedia {
   [key: string]: string;
 }
@@ -73,13 +82,14 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
   const handleNavigation = useCoreModuleNavigation();
   const { setBusy } = useModuleWrapperContext();
   const { Show: showErrorModal } = useErrorDetailsModal();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { config } = useConfig();
   const languages = config?.languages || [];
 
   const [countryList, setCountryList] = useState<Country[]>([]);
   const [continentList, setContinentList] = useState<Continent[]>([]);
+  const [accountList, setAccountList] = useState<Account[]>([]);
+  const [accountSearchOpen, setAccountSearchOpen] = useState(false);
+  const [accountSearchLoading, setAccountSearchLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const header = isEdit ? contactEditHeader : contactAddHeader;
@@ -105,8 +115,11 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
   }, []);
 
   useEffect(() => {
-    if (contact.email) {
+    if (contact.email && !formik.dirty) {
       formik.setValues(contact);
+      if (contact.accountId) {
+        loadAccountById(contact.accountId);
+      }
     }
   }, [contact]);
 
@@ -160,6 +173,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       phone: "",
       language: "",
       birthday: null,
+      accountId: undefined,
       id: 0,
     } as ContactDetailsDto,
     onSubmit: submit,
@@ -186,10 +200,10 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
 
   const handleLanguageChange = (
     e: SyntheticEvent<Element, Event>,
-    value: { value: string; label: string } | null
+    value: { code?: string; name?: string } | null
   ) => {
-    if (value) {
-      formik.setFieldValue("language", value.value);
+    if (value && value.code) {
+      formik.setFieldValue("language", value.code);
     }
   };
 
@@ -205,6 +219,74 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
   const handlePrefixChange = (e: SyntheticEvent<Element, Event>, value: string | null) => {
     if (value) {
       formik.setFieldValue("prefix", value);
+    }
+  };
+
+  const handleAccountChange = (e: SyntheticEvent<Element, Event>, value: Account | null) => {
+    if (value) {
+      formik.setFieldValue("accountId", value.id);
+    } else {
+      formik.setFieldValue("accountId", null);
+    }
+  };
+
+  const loadAccountById = async (accountId: number) => {
+    try {
+      const response = await context.client.api.accountsDetail(accountId);
+      if (response && response.data && response.data.id && response.data.name) {
+        const account = { id: response.data.id, name: response.data.name };
+        setAccountList((prev) => {
+          const exists = prev.find((acc) => acc.id === account.id);
+          return exists ? prev : [...prev, account];
+        });
+      }
+    } catch (error) {
+      console.error("Error loading account:", error);
+    }
+  };
+
+  const loadInitialAccounts = async (force = false) => {
+    if (!force && accountList.length > 0) return;
+    setAccountSearchLoading(true);
+    try {
+      const response = await context.client.api.accountsList({
+        query: "&filter[limit]=100&filter[order]=name ASC&filter[skip]=0",
+      });
+      if (response && response.data) {
+        setAccountList(
+          response.data
+            .filter((acc) => acc.id !== undefined && acc.name !== undefined)
+            .map((acc) => ({ id: acc.id as number, name: acc.name as string }))
+        );
+      }
+    } catch (error) {
+      console.error("Error loading accounts:", error);
+    } finally {
+      setAccountSearchLoading(false);
+    }
+  };
+
+  const handleAccountSearch = async (searchTerm: string) => {
+    if (!searchTerm) {
+      loadInitialAccounts(true);
+      return;
+    }
+    setAccountSearchLoading(true);
+    try {
+      const response = await context.client.api.accountsList({
+        query: `${searchTerm}&filter[limit]=100&filter[order]=name ASC&filter[skip]=0`,
+      });
+      if (response && response.data) {
+        setAccountList(
+          response.data
+            .filter((acc) => acc.id !== undefined && acc.name !== undefined)
+            .map((acc) => ({ id: acc.id as number, name: acc.name as string }))
+        );
+      }
+    } catch (error) {
+      console.error("Error searching accounts:", error);
+    } finally {
+      setAccountSearchLoading(false);
     }
   };
 
@@ -257,24 +339,6 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     return `${prefix}${firstName} ${middleName}${lastName}`.trim() || "New Contact";
   };
 
-  const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        mb: 3,
-        mt: 4,
-        pb: 1,
-        borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
-      }}
-    >
-      <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
-      <Typography variant="subtitle1" fontWeight="500" color="primary.main">
-        {title}
-      </Typography>
-    </Box>
-  );
-
   return (
     <ModuleWrapper
       breadcrumbs={contactFormBreadcrumbLinks}
@@ -307,133 +371,90 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
       }
     >
       <form onSubmit={formik.handleSubmit}>
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: "8px",
-            overflow: "hidden",
-            border: "1px solid rgba(0, 0, 0, 0.12)",
-            mb: 4,
-          }}
-        >
-          <Box
+        <Card sx={{ mb: 4 }}>
+          <CardContent
             sx={{
-              p: { xs: 2, sm: 2.5 },
               display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "center" : "flex-start",
-              borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
-              backgroundColor: "rgba(0, 0, 0, 0.02)",
-              gap: 2,
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: "center",
+              gap: 3,
+              p: 3,
             }}
           >
             <Avatar
               sx={{
-                width: { xs: 60, sm: 72 },
-                height: { xs: 60, sm: 72 },
+                width: 80,
+                height: 80,
                 bgcolor: "primary.main",
-                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                fontSize: "2rem",
                 fontWeight: "bold",
               }}
             >
               {getInitials()}
             </Avatar>
-            <Box sx={{ textAlign: isMobile ? "center" : "left" }}>
-              <Typography variant={isMobile ? "h6" : "h5"} fontWeight="medium">
+            <Box sx={{ textAlign: { xs: "center", md: "left" }, flex: 1 }}>
+              <Typography variant="h5" fontWeight="bold">
                 {getFullName()}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 {formik.values.email || "No email provided"}
               </Typography>
+              {formik.values.companyName && (
+                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                  {formik.values.companyName}
+                </Typography>
+              )}
             </Box>
-          </Box>
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 1.5,
+                justifyContent: { xs: "center", md: "flex-end" },
+                mt: { xs: 2, md: 0 },
+              }}
+            >
+              {formik.values.phone && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Phone size={16} />}
+                  href={`tel:${formik.values.phone}`}
+                >
+                  Call
+                </Button>
+              )}
+              {formik.values.email && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Mail size={16} />}
+                  href={`mailto:${formik.values.email}`}
+                >
+                  Email
+                </Button>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
 
-          <Box sx={{ p: { xs: 2.5, sm: 3 } }}>
-            <SectionHeader icon={<User />} title="Personal Information" />
-            <Grid container spacing={3} marginBottom={5}>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <Autocomplete
-                  id="prefix"
-                  options={prefixOptions}
-                  size="small"
-                  disabled={isLoading || formik.isSubmitting}
-                  value={prefixOptions.find((c) => c === formik.values.prefix) || ""}
-                  onChange={handlePrefixChange}
-                  fullWidth
-                  renderInput={(params) => <TextField {...params} label="Prefix" />}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 8 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="First Name"
-                  name="firstName"
-                  value={formik.values.firstName || ""}
-                  placeholder="First name"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  error={formik.touched.firstName && Boolean(formik.errors.firstName)}
-                  helperText={formik.touched.firstName && formik.errors.firstName}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Middle"
-                  name="middleName"
-                  value={formik.values.middleName || ""}
-                  placeholder="Middle"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 8 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Last Name"
-                  name="lastName"
-                  value={formik.values.lastName || ""}
-                  placeholder="Last name"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Autocomplete
-                  disabled={isLoading || formik.isSubmitting}
-                  options={languages}
-                  getOptionLabel={(option) => option.name}
-                  size="small"
-                  fullWidth
-                  value={languages.find((c) => c.code === formik.values.language) || null}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Language" placeholder="Select language" />
-                  )}
-                  onChange={handleLanguageChange}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <DateField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Birthday"
-                  format="MM-DD-YYYY"
-                  size="small"
-                  fullWidth
-                  variant="outlined"
-                  value={(formik.values.birthday && dayjs(formik.values.birthday)) || null}
-                  onChange={(newValue) => handleDateChange(newValue)}
-                />
-              </Grid>
-            </Grid>
-
-            <SectionHeader icon={<Contact />} title="Contact Information" />
-            <Grid container spacing={3} marginBottom={5}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mb: 3,
+              }}
+            >
+              <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
+                <Contact size={20} />
+              </Box>
+              <Typography variant="h6" fontWeight="600">
+                Contact Information
+              </Typography>
+            </Box>
+            <Grid container spacing={3}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   disabled={isLoading || formik.isSubmitting}
@@ -446,6 +467,7 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   onChange={formik.handleChange}
                   size="small"
                   fullWidth
+                  required
                   error={formik.touched.email && Boolean(formik.errors.email)}
                   helperText={formik.touched.email && formik.errors.email}
                 />
@@ -463,165 +485,46 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   fullWidth
                 />
               </Grid>
-            </Grid>
-
-            <SectionHeader icon={<Briefcase />} title="Job Information" />
-            <Grid container spacing={3} marginBottom={5}>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
+                <Autocomplete
                   disabled={isLoading || formik.isSubmitting}
-                  label="Job title"
-                  name="jobTitle"
-                  value={formik.values.jobTitle || ""}
-                  placeholder="Job title"
-                  variant="outlined"
-                  onChange={formik.handleChange}
+                  options={accountList}
+                  getOptionLabel={(option) => option.name}
                   size="small"
                   fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Company"
-                  name="companyName"
-                  value={formik.values.companyName || ""}
-                  placeholder="Company"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Department"
-                  name="department"
-                  value={formik.values.department || ""}
-                  placeholder="Department"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-
-            <SectionHeader icon={<Home />} title="Address" />
-            <Grid container spacing={3} marginBottom={5}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Street address"
-                  name="address1"
-                  value={formik.values.address1 || ""}
-                  placeholder="Street address"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Apt, suite, etc"
-                  name="address2"
-                  value={formik.values.address2 || ""}
-                  placeholder="Apt, suite, etc"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="City"
-                  name="cityName"
-                  value={formik.values.cityName || ""}
-                  placeholder="City"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="State"
-                  name="state"
-                  value={formik.values.state || ""}
-                  placeholder="State"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  disabled={isLoading || formik.isSubmitting}
-                  label="Zip"
-                  name="zip"
-                  value={formik.values.zip || ""}
-                  placeholder="Zip"
-                  variant="outlined"
-                  onChange={formik.handleChange}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                {!isLoading && (
-                  <Autocomplete
-                    disabled={isLoading || formik.isSubmitting}
-                    options={countryList}
-                    getOptionLabel={(option) => option.name}
-                    value={countryList.find((c) => c.code === formik.values.countryCode) || null}
-                    onChange={handleCountryChange}
-                    fullWidth
-                    size="small"
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Country"
-                        value={
-                          countryList.find((c) => c.code === formik.values.countryCode) || null
-                        }
-                        onChange={formik.handleChange}
-                      />
-                    )}
-                  />
-                )}
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                {!isLoading && (
-                  <Autocomplete
-                    disabled={isLoading || formik.isSubmitting}
-                    options={continentList}
-                    getOptionLabel={(option) => option.name}
-                    value={
-                      continentList.find((c) => c.code === formik.values.continentCode) || null
+                  open={accountSearchOpen}
+                  onOpen={() => {
+                    setAccountSearchOpen(true);
+                    loadInitialAccounts();
+                  }}
+                  onClose={() => setAccountSearchOpen(false)}
+                  loading={accountSearchLoading}
+                  value={accountList.find((acc) => acc.id === formik.values.accountId) || null}
+                  onChange={handleAccountChange}
+                  onInputChange={(e, value) => {
+                    if (e && e.type !== "blur") {
+                      handleAccountSearch(value);
                     }
-                    onChange={handleContinentChange}
-                    fullWidth
-                    size="small"
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Continent"
-                        value={
-                          continentList.find((c) => c.code === formik.values.continentCode) || null
-                        }
-                        onChange={formik.handleChange}
-                      />
-                    )}
-                  />
-                )}
+                  }}
+                  filterOptions={(x) => x}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Account" placeholder="Search account..." />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Autocomplete
+                  disabled={isLoading || formik.isSubmitting}
+                  options={languages}
+                  getOptionLabel={(option) => option.name || ""}
+                  size="small"
+                  fullWidth
+                  value={languages.find((c) => c.code === formik.values.language) || null}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Language" placeholder="Select language" />
+                  )}
+                  onChange={handleLanguageChange}
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Autocomplete
@@ -638,31 +541,300 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                 />
               </Grid>
             </Grid>
+          </CardContent>
+        </Card>
 
-            <SectionHeader icon={<Share2 />} title="Social Media" />
-            <Grid container spacing={3} marginBottom={5}>
-              {["facebook", "instagram", "twitter", "linkedin"].map((platform) => (
-                <Grid size={{ xs: 12, sm: 6 }} marginBottom={1} key={platform}>
-                  <TextField
-                    disabled={isLoading || formik.isSubmitting}
-                    label={platform.charAt(0).toUpperCase() + platform.slice(1)}
+        <Box sx={{ "& .MuiAccordion-root": { mb: 2 } }}>
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ py: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
+                  <User size={20} />
+                </Box>
+                <Typography variant="subtitle1" fontWeight="600">
+                  Personal Information
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <Autocomplete
+                    id="prefix"
+                    options={prefixOptions}
                     size="small"
-                    value={(formik.values.socialMedia as SocialMedia)?.[platform] || ""}
+                    disabled={isLoading || formik.isSubmitting}
+                    value={prefixOptions.find((c) => c === formik.values.prefix) || ""}
+                    onChange={handlePrefixChange}
                     fullWidth
-                    onChange={(event) => handleSocialMediaChange(event, platform)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          {getSocialMediaIcon(platform)}
-                        </InputAdornment>
-                      ),
-                    }}
+                    renderInput={(params) => <TextField {...params} label="Prefix" />}
                   />
                 </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </Paper>
+                <Grid size={{ xs: 12, sm: 8 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="First Name"
+                    name="firstName"
+                    value={formik.values.firstName || ""}
+                    placeholder="First name"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    error={formik.touched.firstName && Boolean(formik.errors.firstName)}
+                    helperText={formik.touched.firstName && formik.errors.firstName}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Middle"
+                    name="middleName"
+                    value={formik.values.middleName || ""}
+                    placeholder="Middle"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 8 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Last Name"
+                    name="lastName"
+                    value={formik.values.lastName || ""}
+                    placeholder="Last name"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <DateField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Birthday"
+                    format="MM-DD-YYYY"
+                    size="small"
+                    fullWidth
+                    variant="outlined"
+                    value={(formik.values.birthday && dayjs(formik.values.birthday)) || null}
+                    onChange={(newValue) => handleDateChange(newValue)}
+                  />
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ py: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
+                  <Briefcase size={20} />
+                </Box>
+                <Typography variant="subtitle1" fontWeight="600">
+                  Job Information
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Job title"
+                    name="jobTitle"
+                    value={formik.values.jobTitle || ""}
+                    placeholder="Job title"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Company"
+                    name="companyName"
+                    value={formik.values.companyName || ""}
+                    placeholder="Company"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Department"
+                    name="department"
+                    value={formik.values.department || ""}
+                    placeholder="Department"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ py: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
+                  <Home size={20} />
+                </Box>
+                <Typography variant="subtitle1" fontWeight="600">
+                  Address
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Street address"
+                    name="address1"
+                    value={formik.values.address1 || ""}
+                    placeholder="Street address"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Apt, suite, etc"
+                    name="address2"
+                    value={formik.values.address2 || ""}
+                    placeholder="Apt, suite, etc"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="City"
+                    name="cityName"
+                    value={formik.values.cityName || ""}
+                    placeholder="City"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="State"
+                    name="state"
+                    value={formik.values.state || ""}
+                    placeholder="State"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    disabled={isLoading || formik.isSubmitting}
+                    label="Zip"
+                    name="zip"
+                    value={formik.values.zip || ""}
+                    placeholder="Zip"
+                    variant="outlined"
+                    onChange={formik.handleChange}
+                    size="small"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  {!isLoading && (
+                    <Autocomplete
+                      disabled={isLoading || formik.isSubmitting}
+                      options={countryList}
+                      getOptionLabel={(option) => option.name}
+                      value={countryList.find((c) => c.code === formik.values.countryCode) || null}
+                      onChange={handleCountryChange}
+                      fullWidth
+                      size="small"
+                      renderInput={(params) => (
+                        <TextField {...params} label="Country" placeholder="Select country" />
+                      )}
+                    />
+                  )}
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  {!isLoading && (
+                    <Autocomplete
+                      disabled={isLoading || formik.isSubmitting}
+                      options={continentList}
+                      getOptionLabel={(option) => option.name}
+                      value={
+                        continentList.find((c) => c.code === formik.values.continentCode) || null
+                      }
+                      onChange={handleContinentChange}
+                      fullWidth
+                      size="small"
+                      renderInput={(params) => (
+                        <TextField {...params} label="Continent" placeholder="Select continent" />
+                      )}
+                    />
+                  )}
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ py: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
+                  <Share2 size={20} />
+                </Box>
+                <Typography variant="subtitle1" fontWeight="600">
+                  Social Media
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={3}>
+                {["facebook", "instagram", "twitter", "linkedin"].map((platform) => (
+                  <Grid size={{ xs: 12, sm: 6 }} key={platform}>
+                    <TextField
+                      disabled={isLoading || formik.isSubmitting}
+                      label={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      size="small"
+                      value={(formik.values.socialMedia as SocialMedia)?.[platform] || ""}
+                      fullWidth
+                      onChange={(event) => handleSocialMediaChange(event, platform)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            {getSocialMediaIcon(platform)}
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+        </Box>
       </form>
     </ModuleWrapper>
   );

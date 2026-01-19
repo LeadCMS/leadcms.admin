@@ -2022,6 +2022,13 @@ export interface CommentUpdateDto {
   tags?: string[] | null;
 }
 
+export interface CommentsWithStatisticsDto {
+  /** Comments */
+  comments?: CommentDetailsDto[];
+  /** Statistics */
+  statistics?: Record<string, number>;
+}
+
 export interface ConfigDto {
   auth?: AuthConfigDto;
   /** Entities */
@@ -2411,6 +2418,12 @@ export interface ContactCreateDto {
    */
   source?: string | null;
   /**
+   * Account Id
+   * @format int32
+   * @example 1
+   */
+  accountId?: number | null;
+  /**
    * Email
    * @format email
    * @minLength 1
@@ -2787,6 +2800,12 @@ export interface ContactDetailsDto {
    */
   source?: string | null;
   /**
+   * Account Id
+   * @format int32
+   * @example 1
+   */
+  accountId?: number | null;
+  /**
    * Email
    * @format email
    * @minLength 1
@@ -2830,12 +2849,6 @@ export interface ContactDetailsDto {
    * @example 1
    */
   domainId?: number;
-  /**
-   * Account Id
-   * @format int32
-   * @example 1
-   */
-  accountId?: number;
   /**
    * Deals Count
    * @format int32
@@ -3689,6 +3702,12 @@ export interface ContactUpdateDto {
    * @example "string"
    */
   source?: string | null;
+  /**
+   * Account Id
+   * @format int32
+   * @example 1
+   */
+  accountId?: number | null;
   /**
    * Email
    * @format email
@@ -8151,7 +8170,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.95.0
+ * @version 1.2.97.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8441,11 +8460,12 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<void, ProblemDetails>({
+      this.request<CommentsWithStatisticsDto, ProblemDetails>({
         path: `/api/comments/with-statistics`,
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
         ...params,
       }),
 
