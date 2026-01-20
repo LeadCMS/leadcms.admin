@@ -1,4 +1,10 @@
-import { Box, Grid, TextField, Typography, IconButton, Collapse, Alert } from "@mui/material";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Collapse from "@mui/material/Collapse";
+import Alert from "@mui/material/Alert";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { ContentTypeDropdown } from "@features/content/content-types";
 import { LanguageHighlights } from "@components/content-language-switcher";

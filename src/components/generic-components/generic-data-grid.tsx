@@ -24,7 +24,9 @@ import {
   GenericDataGridSettings,
 } from "@components/generic-components/common";
 import { ActionButtonContainer, DataTableContainer } from "@components/data-table/index.styled";
-import { Box, IconButton, Typography } from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { Pencil, Eye, AlertCircle } from "lucide-react";
 import dayjs from "dayjs";
 import useLocalStorage from "use-local-storage";

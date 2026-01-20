@@ -20,7 +20,8 @@ import {
 import { ModuleWrapper } from "@components/module-wrapper";
 import { dataListBreadcrumbLinks } from "../../utils/constants";
 import { GenericForm, GenericFormProps } from "@components/generic-components/generic-form";
-import { Button, Box } from "@mui/material";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 import { SearchBar } from "@components/search-bar";
 import { GhostLink } from "@components/ghost-link";
 import {

@@ -1,5 +1,9 @@
 import React from "react";
-import { Box, Tooltip, Paper, Typography, Alert } from "@mui/material";
+import Box from "@mui/material/Box";
+import Tooltip from "@mui/material/Tooltip";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
 import { AlertCircle, CheckCircle, Clock, Code, AlertTriangle } from "lucide-react";
 import { useSyntaxValidation } from "@hooks";
 import { useConfig } from "@providers/config-provider";

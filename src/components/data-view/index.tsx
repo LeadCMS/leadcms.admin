@@ -1,4 +1,6 @@
-import { CardContent, Grid, Typography } from "@mui/material";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
 import { Fragment, ReactNode } from "react";
 import { CardContainer, ViewListItemText, ViewRowGrid } from "./index.styled";
 

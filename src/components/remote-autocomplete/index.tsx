@@ -1,4 +1,6 @@
-import { Autocomplete, TextField, CircularProgress } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
+import CircularProgress from "@mui/material/CircularProgress";
 import { RemoteAutoCompleteProps, RemoteValues } from "./types";
 import React, { useState, useEffect } from "react";
 import { useRequestContext } from "@providers/request-provider";

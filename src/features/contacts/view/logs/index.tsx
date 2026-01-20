@@ -1,1 +1,2 @@
-export { ContactActivity as ContactLogs } from "../activity";
+import { ContactActivity as ContactLogs } from "../activity";
+export { ContactLogs };

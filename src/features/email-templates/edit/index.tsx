@@ -20,31 +20,28 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { emailTemplateFormBreadcrumbLinks, emailTemplateGroupFilterStorageKey } from "../constants";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { EmailTemplateEditContainer } from "./index.styled";
-import {
-  Alert,
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  TextField,
-  Tabs,
-  Tab,
-  Box,
-  Typography,
-  IconButton,
-  Collapse,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-} from "@mui/material";
-import type { SelectChangeEvent } from "@mui/material";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Box from "@mui/material/Box";
+import Alert from "@mui/material/Alert";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Collapse from "@mui/material/Collapse";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
 import useLocalStorage from "use-local-storage";
 import { EmailTemplateEditProps } from "./types";
 import { LanguageSelect } from "@components/language-select";

@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { Paper } from "@mui/material";
+import Paper from "@mui/material/Paper";
 
 export const DataTableContainer = styled(Paper)`
   flex-grow: 1;

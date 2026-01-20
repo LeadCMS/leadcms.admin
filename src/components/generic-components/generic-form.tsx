@@ -8,7 +8,13 @@ import {
 } from "@components/generic-components/common";
 import { useEffect, useState } from "react";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { Card, CardContent, Grid, Tab, Tabs, Typography, Box } from "@mui/material";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 import {
   NumberEdit,
   TextEdit,

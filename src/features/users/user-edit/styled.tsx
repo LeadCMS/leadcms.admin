@@ -1,6 +1,6 @@
 import { styled } from "@mui/material/styles";
-import { Avatar } from "@mui/material";
-import { Theme as MuiTheme } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
+import Avatar from "@mui/material/Avatar";
 
 export const UserEditContainer = styled("div")`
   flex-grow: 1;
@@ -8,7 +8,7 @@ export const UserEditContainer = styled("div")`
 
 export const StyledAvatar = styled(Avatar)`
   &:hover {
-    background-color: ${({ theme }: { theme: MuiTheme }) => theme.palette.primary.light};
+    background-color: ${({ theme }: { theme: Theme }) => theme.palette.primary.light};
     cursor: pointer;
   }
 `;

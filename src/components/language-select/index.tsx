@@ -1,4 +1,5 @@
-import { TextField, MenuItem } from "@mui/material";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
 import { useConfig } from "@providers/config-provider";
 
 interface LanguageSelectProps {

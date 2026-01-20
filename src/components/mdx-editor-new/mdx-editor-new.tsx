@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import React from "react";
-import { Box, Grid, IconButton, Drawer, Typography, Chip } from "@mui/material";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import Drawer from "@mui/material/Drawer";
+import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
 import { Component, ImagePlus } from "lucide-react";
 import {
   MDXEditor,

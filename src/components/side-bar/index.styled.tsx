@@ -1,15 +1,11 @@
-import {
-  Drawer,
-  ListItemButton,
-  ListItemButtonProps,
-  ListItemIcon,
-  ListItemText,
-  ListItemTextProps,
-  ListSubheader,
-  styled,
-  IconButton,
-} from "@mui/material";
 import { ElementType } from "react";
+import Drawer from "@mui/material/Drawer";
+import ListItemButton, { type ListItemButtonProps } from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText, { type ListItemTextProps } from "@mui/material/ListItemText";
+import ListSubheader from "@mui/material/ListSubheader";
+import { styled } from "@mui/material/styles";
+import IconButton from "@mui/material/IconButton";
 
 export const SidebarTopContainer = styled("div")<{
   isMobile?: boolean;

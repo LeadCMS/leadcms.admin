@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Alert, Box, CircularProgress } from "@mui/material";
+import { useEffect, useState } from "react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useNavigate, useParams } from "react-router-dom";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SegmentsBreadcrumbLinks } from "../constants";

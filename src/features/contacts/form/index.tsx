@@ -1,25 +1,23 @@
 import { ChangeEvent, SyntheticEvent, useEffect, useRef, useState } from "react";
-import {
-  Autocomplete,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  InputAdornment,
-  TextField,
-  Typography,
-  Box,
-  Avatar,
-  Grid,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Card,
-  CardContent,
-  CircularProgress,
-} from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Avatar from "@mui/material/Avatar";
+import Grid from "@mui/material/Grid";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
 import { ContactDetailsDto } from "lib/network/swagger-client";
 import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "lib/router";
 import { contactAddHeader, contactEditHeader, contactFormBreadcrumbLinks } from "../constants";

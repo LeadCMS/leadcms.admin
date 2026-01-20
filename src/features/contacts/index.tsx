@@ -1,14 +1,12 @@
-import {
-  Avatar,
-  Autocomplete,
-  Box,
-  Button,
-  Chip,
-  ListItemAvatar,
-  MenuItem,
-  TextField,
-  Tooltip,
-} from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import { ContactDetailsDto, ContactImportDto, SegmentDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { getAvailableContactFields } from "@features/segments/types";

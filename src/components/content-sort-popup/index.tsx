@@ -1,5 +1,10 @@
 import React from "react";
-import { Popover, Divider, Box, useTheme, Stack, Button } from "@mui/material";
+import Popover from "@mui/material/Popover";
+import Divider from "@mui/material/Divider";
+import Box from "@mui/material/Box";
+import { useTheme } from "@mui/material/styles";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
 import { Check } from "lucide-react";
 
 interface SortOption {

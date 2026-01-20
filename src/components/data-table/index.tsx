@@ -14,7 +14,9 @@ import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateComm
 import { Pencil, Eye, ChevronRight, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getEditFormRoute, getViewFormRoute } from "lib/router";
-import { Box, Collapse, IconButton } from "@mui/material";
+import Box from "@mui/material/Box";
+import Collapse from "@mui/material/Collapse";
+import IconButton from "@mui/material/IconButton";
 import { GridDataFilterState } from "types";
 import { forwardRef, ReactNode, useEffect, useState } from "react";
 

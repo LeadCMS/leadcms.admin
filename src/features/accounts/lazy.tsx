@@ -1,5 +1,11 @@
 import { lazy } from "react";
 
-export const AccountsLazy = lazy(() =>
-  import("features/accounts").then(({ Accounts }) => ({ default: Accounts }))
+const AccountsModule = lazy(() =>
+  import("./accounts-module").then((module) => ({ default: module.AccountsModule }))
 );
+
+const AccountsLazy = lazy(() =>
+  import("./index").then((module) => ({ default: module.Accounts }))
+);
+
+export { AccountsModule, AccountsLazy };

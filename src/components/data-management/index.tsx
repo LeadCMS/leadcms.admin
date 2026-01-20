@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
-import {
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Grid,
-  Typography,
-  Box,
-} from "@mui/material";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 import { DeleteButtonContainer } from "./index.styled";
 import { Trash2, Edit } from "lucide-react";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";

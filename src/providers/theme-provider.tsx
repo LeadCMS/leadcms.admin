@@ -1,5 +1,6 @@
 import { memo, PropsWithChildren } from "react";
-import { createTheme, CssBaseline, ThemeProvider as MUIThemeProvider } from "@mui/material";
+import { createTheme, ThemeProvider as MUIThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeOptions } from "@mui/material/styles";
 
 export const themeOptions: ThemeOptions = {

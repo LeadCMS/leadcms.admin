@@ -1,4 +1,4 @@
-import { AlertColor } from "@mui/material";
+import type { AlertColor } from "@mui/material/Alert";
 
 export const initialSnackBarParams = {
   message: "",

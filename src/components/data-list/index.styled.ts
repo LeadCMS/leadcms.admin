@@ -1,4 +1,9 @@
-import { CardHeader, Grid, ListItem, ListItemText, Paper, styled } from "@mui/material";
+import CardHeader from "@mui/material/CardHeader";
+import Grid from "@mui/material/Grid";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Paper from "@mui/material/Paper";
+import { styled } from "@mui/material/styles";
 
 export const ActionsContainer = styled("div")`
   display: flex;

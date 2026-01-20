@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { TextField, MenuItem, CircularProgress, Grid, Chip, Box } from "@mui/material";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import CircularProgress from "@mui/material/CircularProgress";
+import Grid from "@mui/material/Grid";
+import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
 import { Plus } from "lucide-react";
 import { CreateNewEmailGroup } from "./create-new";
 import { useRequestContext } from "@providers/request-provider";

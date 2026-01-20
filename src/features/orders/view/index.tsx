@@ -1,16 +1,14 @@
 import { SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  Tab,
-  Tabs,
-  Typography,
-} from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
 import { Edit, ShoppingCart, User } from "lucide-react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import {

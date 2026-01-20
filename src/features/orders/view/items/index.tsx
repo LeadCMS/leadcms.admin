@@ -1,16 +1,14 @@
 import { useState } from "react";
-import {
-  Autocomplete,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  IconButton,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { DataGrid, GridCellParams, GridColDef } from "@mui/x-data-grid";
 import { Edit, Package, Plus, XCircle } from "lucide-react";
 import { useOutletContext } from "react-router-dom";

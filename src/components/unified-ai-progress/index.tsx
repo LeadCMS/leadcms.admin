@@ -1,4 +1,9 @@
-import { Dialog, DialogContent, Box, Typography, LinearProgress, Backdrop } from "@mui/material";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import LinearProgress from "@mui/material/LinearProgress";
+import Backdrop from "@mui/material/Backdrop";
 import { Bot, Sparkles } from "lucide-react";
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import type { Theme } from "@mui/material/styles";

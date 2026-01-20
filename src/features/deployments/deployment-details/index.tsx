@@ -1,31 +1,29 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  Chip,
-  Skeleton,
-  IconButton,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  Alert,
-  Link,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Skeleton from "@mui/material/Skeleton";
+import IconButton from "@mui/material/IconButton";
+import Stepper from "@mui/material/Stepper";
+import Step from "@mui/material/Step";
+import StepLabel from "@mui/material/StepLabel";
+import StepContent from "@mui/material/StepContent";
+import Alert from "@mui/material/Alert";
+import Link from "@mui/material/Link";
 import Grid from "@mui/material/Grid";
 import {
-  ArrowBack,
-  PlayArrow,
-  Refresh,
+  ArrowLeft,
+  Play,
+  RefreshCw,
   CheckCircle,
-  Cancel,
-  Schedule,
-  Error as ErrorIcon,
-  HourglassEmpty,
+  X,
+  Clock,
+  AlertCircle,
+  Loader,
   Terminal,
-} from "@mui/icons-material";
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
@@ -38,15 +36,15 @@ const getStepIcon = (status: string | undefined) => {
     case "Completed":
       return <CheckCircle color="success" />;
     case "Failed":
-      return <ErrorIcon color="error" />;
+      return <AlertCircle color="error" />;
     case "InProgress":
-      return <Schedule color="info" />;
+      return <Clock color="info" />;
     case "Pending":
-      return <HourglassEmpty color="warning" />;
+      return <Loader color="warning" />;
     case "Cancelled":
-      return <Cancel color="disabled" />;
+      return <X color="disabled" />;
     default:
-      return <Schedule />;
+      return <Clock />;
   }
 };
 
@@ -149,11 +147,11 @@ export const DeploymentDetails = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Paper sx={{ p: 4, textAlign: "center" }}>
-          <ErrorIcon sx={{ fontSize: 48, color: "error.main", mb: 2 }} />
+          <AlertCircle fontSize="large" color="error" style={{ marginBottom: 2 }} />
           <Typography variant="h6" gutterBottom>
             {error || "Deployment not found"}
           </Typography>
-          <Button variant="contained" startIcon={<ArrowBack />} onClick={handleBack} sx={{ mt: 2 }}>
+          <Button variant="contained" startIcon={<ArrowLeft />} onClick={handleBack} sx={{ mt: 2 }}>
             Back to Deployments
           </Button>
         </Paper>
@@ -180,7 +178,7 @@ export const DeploymentDetails = () => {
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <IconButton onClick={handleBack}>
-            <ArrowBack />
+            <ArrowLeft />
           </IconButton>
           <Box>
             <Typography variant="h4" fontWeight={600}>
@@ -194,7 +192,7 @@ export const DeploymentDetails = () => {
         <Box sx={{ display: "flex", gap: 2 }}>
           <Button
             variant="outlined"
-            startIcon={<Refresh />}
+            startIcon={<RefreshCw />}
             onClick={loadDeployment}
             disabled={loading}
           >
@@ -203,7 +201,7 @@ export const DeploymentDetails = () => {
           {deployment.status === "Failed" && (
             <Button
               variant="contained"
-              startIcon={<PlayArrow />}
+              startIcon={<Play />}
               onClick={handleRetry}
               disabled={retrying}
             >
@@ -227,13 +225,13 @@ export const DeploymentDetails = () => {
               deployment.status === "Completed" ? (
                 <CheckCircle />
               ) : deployment.status === "Failed" ? (
-                <ErrorIcon />
+                <AlertCircle />
               ) : deployment.status === "InProgress" ? (
-                <Schedule />
+                <Clock />
               ) : deployment.status === "Pending" ? (
-                <HourglassEmpty />
+                <Loader />
               ) : (
-                <Cancel />
+                <X />
               )
             }
             sx={{ fontSize: "1rem", py: 2.5, px: 1 }}

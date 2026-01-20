@@ -1,5 +1,8 @@
 import React, { useMemo } from "react";
-import { Box, Chip, Typography, Tooltip } from "@mui/material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+import Tooltip from "@mui/material/Tooltip";
 import { idToDisplayName } from "@features/content/content-types";
 
 interface ContentTypeFilterProps {

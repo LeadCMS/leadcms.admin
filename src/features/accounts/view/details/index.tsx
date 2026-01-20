@@ -1,16 +1,13 @@
 import { ReactNode, useEffect, useState } from "react";
-import { Box, Card, CardContent, Chip, Divider, Grid, Typography, useTheme } from "@mui/material";
-import {
-  Building,
-  Globe,
-  Hash,
-  MapPin,
-  Share2,
-  ShoppingCart,
-  Tag,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
+import { Building, Globe, Hash, MapPin, Share2, ShoppingCart, Tag, TrendingUp, Users } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";
 import { AccountUrlHref } from "@features/accounts/index.styled";

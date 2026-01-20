@@ -1,7 +1,8 @@
 import { forwardRef, SyntheticEvent, useEffect, useState } from "react";
 import Stack from "@mui/material/Stack";
 import Snackbar from "@mui/material/Snackbar";
-import MuiAlert, { AlertColor, AlertProps } from "@mui/material/Alert";
+import MuiAlert from "@mui/material/Alert";
+import { type AlertColor, type AlertProps } from "@mui/material/Alert";
 import { CoreModule } from "lib/router";
 import { useCoreModuleNavigation } from "@hooks";
 
