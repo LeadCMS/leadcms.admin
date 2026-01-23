@@ -171,6 +171,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     language: string;
     contentType: string;
     prompt: string;
+    referenceContentId?: number | null;
   } | null>(null);
   const [aiEditPrompt, setAiEditPrompt] = useState<string>("");
 
@@ -260,8 +261,13 @@ export const ContentEdit = (props: ContentEditProps) => {
   };
 
   // AI Draft handlers
-  const handleAIDraftCreate = async (language: string, contentType: string, prompt: string) => {
-    setAiDraftFormValues({ language, contentType, prompt });
+  const handleAIDraftCreate = async (
+    language: string,
+    contentType: string,
+    prompt: string,
+    referenceContentId?: number | null
+  ) => {
+    setAiDraftFormValues({ language, contentType, prompt, referenceContentId });
     setAiDraftDialogOpen(false);
 
     setAiProgressType("content");
@@ -269,7 +275,12 @@ export const ContentEdit = (props: ContentEditProps) => {
     setAiProgressOpen(true);
 
     try {
-      const aiContent = await aiContentOps.createAIDraft(language, contentType, prompt);
+      const aiContent = await aiContentOps.createAIDraft(
+        language,
+        contentType,
+        prompt,
+        referenceContentId
+      );
 
       await loadContentIntoForm(aiContent, {
         markAsModified: true,

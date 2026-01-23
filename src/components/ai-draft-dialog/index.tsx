@@ -15,18 +15,28 @@ import {
   Alert,
   Backdrop,
   TextField,
+  Autocomplete,
 } from "@mui/material";
 import { Sparkles, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useDebounce } from "use-debounce";
 import { useConfig } from "@providers/config-provider";
-import { ContentTypeDetailsDto } from "@lib/network/swagger-client";
+import { useRequestContext } from "@providers/request-provider";
+import { useNotificationsService } from "@hooks";
+import { getWhereFilterQuery } from "@providers/query-provider";
+import { ContentDetailsDto, ContentTypeDetailsDto } from "@lib/network/swagger-client";
 import { idToDisplayName } from "@features/content/content-types";
 import type { Theme } from "@mui/material/styles";
 
 export interface AIDraftDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (language: string, contentType: string, prompt: string) => void;
+  onCreate: (
+    language: string,
+    contentType: string,
+    prompt: string,
+    referenceContentId?: number | null
+  ) => void;
   contentTypes: ContentTypeDetailsDto[];
   isLoading?: boolean;
   error?: string | null;
@@ -35,6 +45,7 @@ export interface AIDraftDialogProps {
     language?: string;
     contentType?: string;
     prompt?: string;
+    referenceContentId?: number | null;
   };
 }
 
@@ -49,9 +60,17 @@ export const AIDraftDialog = ({
   initialValues,
 }: AIDraftDialogProps) => {
   const { config } = useConfig();
+  const { client } = useRequestContext();
+  const { notificationsService } = useNotificationsService();
   const [language, setLanguage] = useState("");
   const [contentType, setContentType] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [referenceContent, setReferenceContent] = useState<ContentDetailsDto | null>(null);
+  const [referenceContentOptions, setReferenceContentOptions] = useState<ContentDetailsDto[]>([]);
+  const [referenceContentInput, setReferenceContentInput] = useState("");
+  const [isReferenceLoading, setIsReferenceLoading] = useState(false);
+  const [isReferenceOpen, setIsReferenceOpen] = useState(false);
+  const [debouncedReferenceInput] = useDebounce(referenceContentInput, 300);
 
   const languages = config?.languages || [];
 
@@ -65,12 +84,101 @@ export const AIDraftDialog = ({
       setLanguage(initialValues?.language || config?.defaultLanguage || "");
       setContentType(initialValues?.contentType || "");
       setPrompt(initialValues?.prompt || "");
+      setReferenceContentInput("");
+      setReferenceContent(null);
     }
-  }, [open, config?.defaultLanguage, initialValues]);
+  }, [
+    open,
+    config?.defaultLanguage,
+    initialValues?.language,
+    initialValues?.contentType,
+    initialValues?.prompt,
+  ]);
+
+  useEffect(() => {
+    if (!open || !initialValues?.referenceContentId) return;
+
+    let isActive = true;
+
+    const loadReferenceContent = async () => {
+      try {
+        const { data } = await client.api.contentDetail(initialValues.referenceContentId ?? 0);
+        if (isActive) {
+          setReferenceContent(data);
+        }
+      } catch (err) {
+        if (isActive) {
+          notificationsService.error("Failed to load reference content.");
+        }
+      }
+    };
+
+    loadReferenceContent();
+
+    return () => {
+      isActive = false;
+    };
+  }, [client.api, initialValues?.referenceContentId, notificationsService, open]);
+
+  useEffect(() => {
+    setReferenceContent(null);
+    setReferenceContentInput("");
+  }, [contentType]);
+
+  useEffect(() => {
+    const shouldSearch = isReferenceOpen || debouncedReferenceInput.trim().length > 0;
+
+    if (!open || !contentType || !shouldSearch) {
+      setReferenceContentOptions([]);
+      setIsReferenceLoading(false);
+      return;
+    }
+
+    const loadReferenceContent = async () => {
+      setIsReferenceLoading(true);
+
+      try {
+        const trimmedSearch = debouncedReferenceInput.trim();
+        const filter: Record<string, unknown> = {
+          "filter[skip]": 0,
+          "filter[limit]": trimmedSearch ? 20 : 10,
+          "filter[order]": "updatedAt desc",
+          includeTranslations: (config?.languages?.length || 0) > 1,
+        };
+
+        if (trimmedSearch) {
+          filter.query = trimmedSearch;
+        }
+
+        const typeQuery = getWhereFilterQuery("type", contentType, "equals");
+        if (typeQuery) {
+          filter.query = `${filter.query || ""}${typeQuery}`;
+        }
+
+        const { data } = await client.api.contentWithStatisticsList(filter);
+        const items = data?.content || [];
+        setReferenceContentOptions(items);
+      } catch (err) {
+        notificationsService.error("Failed to load reference content list.");
+      } finally {
+        setIsReferenceLoading(false);
+      }
+    };
+
+    loadReferenceContent();
+  }, [
+    client.api,
+    config?.languages?.length,
+    contentType,
+    debouncedReferenceInput,
+    isReferenceOpen,
+    notificationsService,
+    open,
+  ]);
 
   const handleCreate = () => {
     if (language && contentType && prompt.trim()) {
-      onCreate(language, contentType, prompt.trim());
+      onCreate(language, contentType, prompt.trim(), referenceContent?.id || null);
     }
   };
 
@@ -228,6 +336,67 @@ export const AIDraftDialog = ({
                 ))}
             </Select>
           </FormControl>
+
+          <Autocomplete
+            options={referenceContentOptions}
+            value={referenceContent}
+            inputValue={referenceContentInput}
+            open={isReferenceOpen}
+            onOpen={() => setIsReferenceOpen(true)}
+            onClose={() => setIsReferenceOpen(false)}
+            onInputChange={(_, value) => {
+              setReferenceContentInput(value);
+            }}
+            onChange={(_, value) => {
+              setReferenceContent(value);
+              if (error && onErrorClear) {
+                onErrorClear();
+              }
+            }}
+            getOptionLabel={(option) => {
+              const title = option.title || "Untitled";
+              const slugPart = option.slug ? ` • ${option.slug}` : "";
+              return `${title}${slugPart}`;
+            }}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            loading={isReferenceLoading}
+            noOptionsText={contentType ? "No content found" : "Select a content type first"}
+            disabled={!contentType || isLoading}
+            renderOption={(props, option) => (
+              <Box component="li" {...props} key={option.id ?? option.slug ?? option.title}>
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {option.title || "Untitled"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {option.slug || `ID: ${option.id ?? "-"}`}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Reference Content (Optional)"
+                placeholder={
+                  contentType
+                    ? "Search or select a content sample to reference"
+                    : "Select a content type first"
+                }
+                helperText={"Pick a content record to guide the AI (top 10 shown by default)."}
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {isReferenceLoading ? <CircularProgress size={18} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+                sx={{ mb: 3 }}
+              />
+            )}
+          />
 
           <TextField
             fullWidth

@@ -5,7 +5,12 @@ import { ContentDetails } from "@features/content/content-edit/types";
 
 export interface AIContentOperations {
   // Draft creation
-  createAIDraft: (language: string, contentType: string, prompt: string) => Promise<ContentDetails>;
+  createAIDraft: (
+    language: string,
+    contentType: string,
+    prompt: string,
+    referenceContentId?: number | null
+  ) => Promise<ContentDetails>;
   // Content editing
   editWithAI: (content: ContentDetails, prompt: string) => Promise<ContentDetails>;
   // State
@@ -74,7 +79,8 @@ export const useAIContentOperations = (): AIContentOperations => {
   const createAIDraft = async (
     language: string,
     contentType: string,
-    prompt: string
+    prompt: string,
+    referenceContentId?: number | null
   ): Promise<ContentDetails> => {
     setIsLoading(true);
     setError(null);
@@ -84,6 +90,7 @@ export const useAIContentOperations = (): AIContentOperations => {
         language,
         contentType,
         prompt,
+        referenceContentId: referenceContentId || undefined,
       });
 
       const aiContent: ContentDetails = {

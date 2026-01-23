@@ -1,4 +1,5 @@
 import { toast } from "react-toastify";
+import { useMemo } from "react";
 import "react-toastify/dist/ReactToastify.css";
 
 export interface NotificationOptions {
@@ -109,6 +110,10 @@ export class NotificationsService {
 export const useNotificationsService = (
   settings: NotificationsServiceSettings = {}
 ): { notificationsService: NotificationsService } => {
-  const notificationsService = new NotificationsService(settings);
+  const defaultAutoClose = settings.defaultAutoClose ?? 5000;
+  const notificationsService = useMemo(
+    () => new NotificationsService({ defaultAutoClose }),
+    [defaultAutoClose]
+  );
   return { notificationsService: notificationsService };
 };

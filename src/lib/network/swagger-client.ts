@@ -4040,6 +4040,12 @@ export interface ContentGenerationRequest {
    * @example "string"
    */
   prompt: string;
+  /**
+   * Reference Content Id
+   * @format int32
+   * @example 1
+   */
+  referenceContentId?: number | null;
 }
 
 export interface ContentGrowthPointDto {
@@ -6230,6 +6236,11 @@ export interface MediaDetailsDto {
    * @example "string"
    */
   mimeType?: string;
+  /**
+   * Tags
+   * @example ["string1","string2"]
+   */
+  tags?: string[];
   /**
    * Created At
    * @format date-time
@@ -13955,6 +13966,7 @@ export class Api<
         File: File;
         ScopeUid: string;
         Description?: string;
+        Tags?: string[];
       },
       params: RequestParams = {},
     ) =>
@@ -14009,6 +14021,7 @@ export class Api<
         ScopeUid: string;
         FileName: string;
         Description?: string;
+        Tags?: string[];
       },
       params: RequestParams = {},
     ) =>
