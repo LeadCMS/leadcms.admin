@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Card,
@@ -51,6 +51,11 @@ interface SettingsFormData {
   "Identity.RequireNonAlphanumeric": string;
   "Identity.RequiredLength": string;
   "Identity.RequiredUniqueChars": string;
+  "AI.SiteProfile.Topic": string;
+  "AI.SiteProfile.Audience": string;
+  "AI.SiteProfile.BrandVoice": string;
+  "AI.SiteProfile.PreferredTerms": string;
+  "AI.SiteProfile.AvoidTerms": string;
 }
 
 const availableVariables = [
@@ -65,8 +70,10 @@ const Settings = () => {
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
   const { setFullWidth } = useLayout();
-  const { reloadConfig } = useConfig();
+  const { config, reloadConfig } = useConfig();
+  const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
   const [activeTab, setActiveTab] = useState<string>("preview");
+  const hasInitializedTab = useRef(false);
   const [formData, setFormData] = useState<SettingsFormData>({
     LivePreviewUrlTemplate: "",
     PreviewUrlTemplate: "",
@@ -82,6 +89,11 @@ const Settings = () => {
     "Identity.RequireNonAlphanumeric": "true",
     "Identity.RequiredLength": "8",
     "Identity.RequiredUniqueChars": "1",
+    "AI.SiteProfile.Topic": "",
+    "AI.SiteProfile.Audience": "",
+    "AI.SiteProfile.BrandVoice": "",
+    "AI.SiteProfile.PreferredTerms": "",
+    "AI.SiteProfile.AvoidTerms": "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -98,6 +110,18 @@ const Settings = () => {
   useEffect(() => {
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    if (!hasInitializedTab.current) {
+      setActiveTab(hasAIAssistance ? "siteProfile" : "preview");
+      hasInitializedTab.current = true;
+      return;
+    }
+
+    if (!hasAIAssistance && activeTab === "siteProfile") {
+      setActiveTab("preview");
+    }
+  }, [activeTab, hasAIAssistance]);
 
   const loadSettings = async () => {
     try {
@@ -120,6 +144,11 @@ const Settings = () => {
         "Identity.RequireNonAlphanumeric": "true",
         "Identity.RequiredLength": "8",
         "Identity.RequiredUniqueChars": "1",
+        "AI.SiteProfile.Topic": "",
+        "AI.SiteProfile.Audience": "",
+        "AI.SiteProfile.BrandVoice": "",
+        "AI.SiteProfile.PreferredTerms": "",
+        "AI.SiteProfile.AvoidTerms": "",
       };
 
       if (settings) {
@@ -152,6 +181,16 @@ const Settings = () => {
             newFormData["Identity.RequiredLength"] = setting.value || "8";
           } else if (setting.key === "Identity.RequiredUniqueChars") {
             newFormData["Identity.RequiredUniqueChars"] = setting.value || "1";
+          } else if (setting.key === "AI.SiteProfile.Topic") {
+            newFormData["AI.SiteProfile.Topic"] = setting.value || "";
+          } else if (setting.key === "AI.SiteProfile.Audience") {
+            newFormData["AI.SiteProfile.Audience"] = setting.value || "";
+          } else if (setting.key === "AI.SiteProfile.BrandVoice") {
+            newFormData["AI.SiteProfile.BrandVoice"] = setting.value || "";
+          } else if (setting.key === "AI.SiteProfile.PreferredTerms") {
+            newFormData["AI.SiteProfile.PreferredTerms"] = setting.value || "";
+          } else if (setting.key === "AI.SiteProfile.AvoidTerms") {
+            newFormData["AI.SiteProfile.AvoidTerms"] = setting.value || "";
           }
         });
       }
@@ -318,6 +357,19 @@ const Settings = () => {
           { key: "Identity.RequiredUniqueChars", value: formData["Identity.RequiredUniqueChars"] },
         ];
 
+        if (hasAIAssistance) {
+          settingsToSave.push(
+            { key: "AI.SiteProfile.Topic", value: formData["AI.SiteProfile.Topic"] },
+            { key: "AI.SiteProfile.Audience", value: formData["AI.SiteProfile.Audience"] },
+            { key: "AI.SiteProfile.BrandVoice", value: formData["AI.SiteProfile.BrandVoice"] },
+            {
+              key: "AI.SiteProfile.PreferredTerms",
+              value: formData["AI.SiteProfile.PreferredTerms"],
+            },
+            { key: "AI.SiteProfile.AvoidTerms", value: formData["AI.SiteProfile.AvoidTerms"] }
+          );
+        }
+
         // Use the batch import endpoint to save all settings at once
         const importResult = await client.api.settingsImportCreate(settingsToSave);
 
@@ -434,6 +486,7 @@ const Settings = () => {
             {/* Settings Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
               <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+                {hasAIAssistance && <Tab label="Site Profile" value="siteProfile" />}
                 <Tab label="Preview" value="preview" />
                 <Tab
                   label={
@@ -767,6 +820,102 @@ const Settings = () => {
                         will not be able to save the content unless the validation errors are fixed.
                       </Typography>
                     </Alert>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+
+            {/* Site Profile Settings Tab */}
+            {activeTab === "siteProfile" && hasAIAssistance && (
+              <Box sx={{ mt: "20px" }}>
+                <Grid container spacing={3} marginBottom={4}>
+                  <Grid size={{ xs: 12 }}>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2">
+                        Define your site profile to help the AI assistant generate content that
+                        matches your brand and audience.
+                      </Typography>
+                    </Alert>
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      maxRows={8}
+                      label="Topic (Short Summary)"
+                      value={formData["AI.SiteProfile.Topic"]}
+                      onChange={handleInputChange("AI.SiteProfile.Topic")}
+                      placeholder={"Briefly describe the main topic of your site."}
+                      helperText="A concise summary of the site focus."
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      maxRows={8}
+                      label="Audience"
+                      value={formData["AI.SiteProfile.Audience"]}
+                      onChange={handleInputChange("AI.SiteProfile.Audience")}
+                      placeholder={"Describe the target audience and their needs."}
+                      helperText="Who the content is for and what they care about."
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      maxRows={8}
+                      label="Brand Voice"
+                      value={formData["AI.SiteProfile.BrandVoice"]}
+                      onChange={handleInputChange("AI.SiteProfile.BrandVoice")}
+                      placeholder={"Describe the tone and style for your content."}
+                      helperText="Tone, formality, and writing style guidance."
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      maxRows={8}
+                      label="Preferred Terms"
+                      value={formData["AI.SiteProfile.PreferredTerms"]}
+                      onChange={handleInputChange("AI.SiteProfile.PreferredTerms")}
+                      placeholder={"List words or phrases the AI should prefer."}
+                      helperText="Terminology to encourage in generated content."
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      maxRows={8}
+                      label="Avoid Terms"
+                      value={formData["AI.SiteProfile.AvoidTerms"]}
+                      onChange={handleInputChange("AI.SiteProfile.AvoidTerms")}
+                      placeholder={"List words or phrases the AI should avoid."}
+                      helperText="Terminology to avoid in generated content."
+                      variant="outlined"
+                      size="small"
+                    />
                   </Grid>
                 </Grid>
               </Box>
