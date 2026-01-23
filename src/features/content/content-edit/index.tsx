@@ -172,6 +172,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     contentType: string;
     prompt: string;
   } | null>(null);
+  const [aiEditPrompt, setAiEditPrompt] = useState<string>("");
 
   // Initialize custom hooks
   const configSettings = (config as ExtendedConfig)?.settings;
@@ -290,6 +291,7 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   // AI Edit handlers
   const handleAIEdit = async (prompt: string) => {
+    setAiEditPrompt(prompt);
     setAiEditDialogOpen(false);
 
     setAiProgressType("edit");
@@ -305,6 +307,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         triggerValidation: true,
         setOriginalContent: false, // Preserve original content during AI edits
       });
+      setAiEditPrompt("");
     } catch (error) {
       setAiEditDialogOpen(true);
     } finally {
@@ -1369,11 +1372,13 @@ export const ContentEdit = (props: ContentEditProps) => {
         open={aiEditDialogOpen}
         onClose={() => {
           setAiEditDialogOpen(false);
+          setAiEditPrompt("");
         }}
         onEdit={handleAIEdit}
         isLoading={aiContentOps.isLoading}
         error={aiContentOps.error}
         onErrorClear={aiContentOps.clearError}
+        initialPrompt={aiEditPrompt}
         contentTitle={contentFormOps.formik.values.title || "Untitled"}
       />
 
