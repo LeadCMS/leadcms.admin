@@ -13,7 +13,7 @@ import { SearchBar } from "@components/search-bar";
 import { UserDetailsDto } from "@lib/network/swagger-client";
 import useLocalStorage from "use-local-storage";
 import { DataListSettings } from "types";
-import { Plus, Download, Upload, Settings2 } from "lucide-react";
+import { Plus, Download, Upload, Settings2, Filter } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Avatar, Button, ListItemAvatar } from "@mui/material";
 import { getAddFormRoute } from "@lib/router";
@@ -31,6 +31,7 @@ export const UserList = () => {
   );
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
 
   const [columns, setColumns] = useState<GridColDef<UserDetailsDto>[]>([
     {
@@ -81,9 +82,9 @@ export const UserList = () => {
     ></SearchBar>
   );
 
-  const getUserList = async () => {
+  const getUserList = async (mainQuery: string, _exportQuery?: string) => {
     try {
-      const result = await client.api.usersList();
+      const result = await client.api.usersList({ query: mainQuery });
       return result;
     } catch (error) {
       console.log(error);
@@ -93,6 +94,18 @@ export const UserList = () => {
 
   const extraActions = [
     <ToolbarButton
+      key="filter-btn"
+      startIcon={<Filter size={18} />}
+      onClick={() => setFilterPanelOpen(true)}
+      sx={{
+        minWidth: 0,
+        py: 2,
+        px: 2,
+        ".MuiButton-startIcon": { marginRight: 0, marginLeft: 0 },
+      }}
+    ></ToolbarButton>,
+    <ToolbarButton
+      key="columns-btn"
       startIcon={<Settings2 size={18} />}
       onClick={() => setColumnsPanelOpen((open) => !open)}
     >
@@ -143,6 +156,8 @@ export const UserList = () => {
             sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
           },
         }}
+        filterPanelOpen={filterPanelOpen}
+        setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
       />

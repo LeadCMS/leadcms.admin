@@ -15550,10 +15550,16 @@ export class Api<
      * @request GET:/api/users
      * @secure
      */
-    usersList: (params: RequestParams = {}) =>
+    usersList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<UserDetailsDto[], void | ProblemDetails>({
         path: `/api/users`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
