@@ -29,7 +29,7 @@ import {
   ContentChangeLog,
 } from "./components";
 import { UnifiedAIProgress } from "@components/unified-ai-progress";
-import { AIDraftDialog } from "@components/ai-draft-dialog";
+import { AIDraftDialog, TokenEstimation } from "@components/ai-draft-dialog";
 import { AIEditDialog } from "@components/ai-edit-dialog";
 import { TranslateDialog } from "@components/translate-dialog";
 import { PublicationStatusDialog, PublicationStatus } from "@components/publication-status-dialog";
@@ -159,7 +159,10 @@ export const ContentEdit = (props: ContentEditProps) => {
     targetLanguage?: string;
     originalTitle?: string;
     contentTitle?: string;
+    estimatedOutputTokens?: number;
+    estimatedSeconds?: number;
   }>({});
+  const [aiOperationComplete, setAiOperationComplete] = useState(false);
 
   // Translation state
   const [targetLanguageForTranslation, setTargetLanguageForTranslation] = useState<string>("");
@@ -265,13 +268,22 @@ export const ContentEdit = (props: ContentEditProps) => {
     language: string,
     contentType: string,
     prompt: string,
-    referenceContentId?: number | null
+    referenceContentId?: number | null,
+    wordCount?: number | null,
+    characterCount?: number | null,
+    tokenEstimation?: TokenEstimation | null
   ) => {
     setAiDraftFormValues({ language, contentType, prompt, referenceContentId });
     setAiDraftDialogOpen(false);
 
     setAiProgressType("content");
-    setAiProgressProps({ contentType, language });
+    setAiOperationComplete(false);
+    setAiProgressProps({
+      contentType,
+      language,
+      estimatedOutputTokens: tokenEstimation?.outputTokens,
+      estimatedSeconds: tokenEstimation?.estimatedSeconds,
+    });
     setAiProgressOpen(true);
 
     try {
@@ -279,8 +291,13 @@ export const ContentEdit = (props: ContentEditProps) => {
         language,
         contentType,
         prompt,
-        referenceContentId
+        referenceContentId,
+        wordCount,
+        characterCount
       );
+
+      // Signal completion before loading content
+      setAiOperationComplete(true);
 
       await loadContentIntoForm(aiContent, {
         markAsModified: true,
@@ -296,21 +313,43 @@ export const ContentEdit = (props: ContentEditProps) => {
     } catch (error) {
       setAiDraftDialogOpen(true);
     } finally {
-      setAiProgressOpen(false);
+      // Small delay to let completion animation play
+      setTimeout(() => {
+        setAiProgressOpen(false);
+        setAiOperationComplete(false);
+      }, 500);
     }
   };
 
   // AI Edit handlers
-  const handleAIEdit = async (prompt: string) => {
+  const handleAIEdit = async (
+    prompt: string,
+    wordCount?: number | null,
+    characterCount?: number | null,
+    tokenEstimation?: TokenEstimation | null
+  ) => {
     setAiEditPrompt(prompt);
     setAiEditDialogOpen(false);
 
     setAiProgressType("edit");
-    setAiProgressProps({ contentTitle: contentFormOps.formik.values.title || "Untitled" });
+    setAiOperationComplete(false);
+    setAiProgressProps({
+      contentTitle: contentFormOps.formik.values.title || "Untitled",
+      estimatedOutputTokens: tokenEstimation?.outputTokens,
+      estimatedSeconds: tokenEstimation?.estimatedSeconds,
+    });
     setAiProgressOpen(true);
 
     try {
-      const editedContent = await aiContentOps.editWithAI(contentFormOps.formik.values, prompt);
+      const editedContent = await aiContentOps.editWithAI(
+        contentFormOps.formik.values,
+        prompt,
+        wordCount,
+        characterCount
+      );
+
+      // Signal completion before loading content
+      setAiOperationComplete(true);
 
       await loadContentIntoForm(editedContent, {
         markAsModified: true,
@@ -322,7 +361,11 @@ export const ContentEdit = (props: ContentEditProps) => {
     } catch (error) {
       setAiEditDialogOpen(true);
     } finally {
-      setAiProgressOpen(false);
+      // Small delay to let completion animation play
+      setTimeout(() => {
+        setAiProgressOpen(false);
+        setAiOperationComplete(false);
+      }, 500);
     }
   };
 
@@ -1358,7 +1401,12 @@ export const ContentEdit = (props: ContentEditProps) => {
       </ModuleWrapper>
 
       {/* Unified AI Progress Dialog */}
-      <UnifiedAIProgress open={aiProgressOpen} type={aiProgressType} {...aiProgressProps} />
+      <UnifiedAIProgress
+        open={aiProgressOpen}
+        type={aiProgressType}
+        isComplete={aiOperationComplete}
+        {...aiProgressProps}
+      />
 
       {/* AI Draft Dialog */}
       <AIDraftDialog
@@ -1391,6 +1439,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         onErrorClear={aiContentOps.clearError}
         initialPrompt={aiEditPrompt}
         contentTitle={contentFormOps.formik.values.title || "Untitled"}
+        currentContent={contentFormOps.formik.values}
       />
 
       {/* Publication Status Dialog */}

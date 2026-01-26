@@ -11,21 +11,48 @@ import {
   Alert,
   Backdrop,
   TextField,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  FormControl,
+  FormLabel,
 } from "@mui/material";
 import { Sparkles, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useConfig } from "@providers/config-provider";
 import type { Theme } from "@mui/material/styles";
+import {
+  LimitType,
+  countWords,
+  countCharacters,
+  estimateEditTokens,
+  formatTokenCount,
+  formatEstimatedTime,
+  formatCost,
+} from "@utils/ai-token-estimation";
+
+export interface TokenEstimation {
+  inputTokens: number;
+  outputTokens: number;
+  estimatedSeconds: number;
+  estimatedCost: number;
+}
 
 export interface AIEditDialogProps {
   open: boolean;
   onClose: () => void;
-  onEdit: (prompt: string) => void;
+  onEdit: (
+    prompt: string,
+    wordCount?: number | null,
+    characterCount?: number | null,
+    tokenEstimation?: TokenEstimation | null
+  ) => void;
   isLoading?: boolean;
   error?: string | null;
   onErrorClear?: () => void;
   initialPrompt?: string;
   contentTitle?: string;
+  currentContent?: unknown;
 }
 
 export const AIEditDialog = ({
@@ -37,23 +64,79 @@ export const AIEditDialog = ({
   onErrorClear,
   initialPrompt = "",
   contentTitle,
+  currentContent,
 }: AIEditDialogProps) => {
   const { config } = useConfig();
   const [prompt, setPrompt] = useState(initialPrompt);
+  const [limitType, setLimitType] = useState<LimitType>("none");
+  const [limitValue, setLimitValue] = useState<number | "">("");
 
   // Check if AI assistance is available
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
+
+  // Calculate current content stats
+  const contentStats = useMemo(() => {
+    if (!currentContent) return null;
+    const contentJson = JSON.stringify(currentContent);
+    const bodyText =
+      typeof currentContent === "object" && currentContent !== null
+        ? (currentContent as Record<string, unknown>).body
+        : "";
+    const bodyString = typeof bodyText === "string" ? bodyText : "";
+    return {
+      characters: countCharacters(contentJson),
+      words: countWords(bodyString),
+      bodyCharacters: countCharacters(bodyString),
+    };
+  }, [currentContent]);
+
+  // Auto-populate limit value when limit type changes
+  useEffect(() => {
+    if (!contentStats) {
+      setLimitValue("");
+      return;
+    }
+    if (limitType === "characters") {
+      setLimitValue(contentStats.bodyCharacters);
+    } else if (limitType === "words") {
+      setLimitValue(contentStats.words);
+    } else {
+      setLimitValue("");
+    }
+  }, [limitType, contentStats]);
+
+  // Token estimation
+  const tokenEstimation = useMemo(() => {
+    return estimateEditTokens({
+      currentContent,
+      userPrompt: prompt,
+      limitType,
+      limitValue: typeof limitValue === "number" ? limitValue : undefined,
+    });
+  }, [currentContent, prompt, limitType, limitValue]);
 
   // Initialize form when dialog opens
   useEffect(() => {
     if (open) {
       setPrompt(initialPrompt);
+      setLimitType("none");
+      setLimitValue("");
     }
   }, [open, initialPrompt]);
 
   const handleEdit = () => {
     if (prompt.trim()) {
-      onEdit(prompt.trim());
+      const wordCount = limitType === "words" && limitValue ? Number(limitValue) : null;
+      const characterCount = limitType === "characters" && limitValue ? Number(limitValue) : null;
+      const estimation: TokenEstimation | null = tokenEstimation
+        ? {
+            inputTokens: tokenEstimation.inputTokens,
+            outputTokens: tokenEstimation.outputTokens,
+            estimatedSeconds: tokenEstimation.estimatedSeconds,
+            estimatedCost: tokenEstimation.estimatedCost,
+          }
+        : null;
+      onEdit(prompt.trim(), wordCount, characterCount, estimation);
     }
   };
 
@@ -192,6 +275,99 @@ export const AIEditDialog = ({
             }}
             helperText={`${prompt.length} characters. Be specific about the changes you want.`}
           />
+
+          {/* Output Length Limit Section */}
+          <Box
+            sx={{
+              p: 3,
+              mb: 3,
+              bgcolor: "grey.50",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "grey.200",
+            }}
+          >
+            <FormControl component="fieldset">
+              <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, fontSize: "0.875rem" }}>
+                Output Length Limit
+              </FormLabel>
+              <RadioGroup
+                value={limitType}
+                onChange={(e) => setLimitType(e.target.value as LimitType)}
+                sx={{ mb: 2 }}
+              >
+                <FormControlLabel
+                  value="none"
+                  control={<Radio size="small" />}
+                  label={
+                    <Box>
+                      <Typography variant="body2">Do not set a limit</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        AI will decide based on the current content
+                      </Typography>
+                    </Box>
+                  }
+                  disabled={isLoading}
+                />
+                <FormControlLabel
+                  value="characters"
+                  control={<Radio size="small" />}
+                  label={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography variant="body2">Limit by characters</Typography>
+                      {contentStats && (
+                        <Typography variant="caption" color="primary">
+                          (current: {contentStats.bodyCharacters.toLocaleString()})
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                  disabled={isLoading}
+                />
+                <FormControlLabel
+                  value="words"
+                  control={<Radio size="small" />}
+                  label={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography variant="body2">Limit by words</Typography>
+                      {contentStats && (
+                        <Typography variant="caption" color="primary">
+                          (current: {contentStats.words.toLocaleString()})
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                  disabled={isLoading}
+                />
+              </RadioGroup>
+
+              {limitType !== "none" && (
+                <TextField
+                  type="number"
+                  size="small"
+                  label={limitType === "characters" ? "Character limit" : "Word limit"}
+                  value={limitValue}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLimitValue(val === "" ? "" : parseInt(val, 10) || 0);
+                  }}
+                  disabled={isLoading}
+                  inputProps={{ min: 1 }}
+                  sx={{ maxWidth: 200 }}
+                />
+              )}
+            </FormControl>
+
+            {/* Token Estimation */}
+            <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid", borderColor: "grey.300" }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                <strong>Tokens:</strong> ~{formatTokenCount(tokenEstimation.inputTokens)} in / ~
+                {formatTokenCount(tokenEstimation.outputTokens)} out |{" "}
+                {formatEstimatedTime(tokenEstimation.estimatedSeconds)} |{" "}
+                {formatCost(tokenEstimation.estimatedCost)}
+              </Typography>
+            </Box>
+          </Box>
 
           <Box
             sx={{

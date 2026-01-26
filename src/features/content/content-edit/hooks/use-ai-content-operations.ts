@@ -9,10 +9,17 @@ export interface AIContentOperations {
     language: string,
     contentType: string,
     prompt: string,
-    referenceContentId?: number | null
+    referenceContentId?: number | null,
+    wordCount?: number | null,
+    characterCount?: number | null
   ) => Promise<ContentDetails>;
   // Content editing
-  editWithAI: (content: ContentDetails, prompt: string) => Promise<ContentDetails>;
+  editWithAI: (
+    content: ContentDetails,
+    prompt: string,
+    wordCount?: number | null,
+    characterCount?: number | null
+  ) => Promise<ContentDetails>;
   // State
   isLoading: boolean;
   error: string | null;
@@ -80,7 +87,9 @@ export const useAIContentOperations = (): AIContentOperations => {
     language: string,
     contentType: string,
     prompt: string,
-    referenceContentId?: number | null
+    referenceContentId?: number | null,
+    wordCount?: number | null,
+    characterCount?: number | null
   ): Promise<ContentDetails> => {
     setIsLoading(true);
     setError(null);
@@ -91,6 +100,8 @@ export const useAIContentOperations = (): AIContentOperations => {
         contentType,
         prompt,
         referenceContentId: referenceContentId || undefined,
+        wordCount: wordCount || undefined,
+        characterCount: characterCount || undefined,
       });
 
       const aiContent: ContentDetails = {
@@ -113,7 +124,12 @@ export const useAIContentOperations = (): AIContentOperations => {
     }
   };
 
-  const editWithAI = async (content: ContentDetails, prompt: string): Promise<ContentDetails> => {
+  const editWithAI = async (
+    content: ContentDetails,
+    prompt: string,
+    wordCount?: number | null,
+    characterCount?: number | null
+  ): Promise<ContentDetails> => {
     setIsLoading(true);
     setError(null);
 
@@ -135,6 +151,8 @@ export const useAIContentOperations = (): AIContentOperations => {
         source: undefined, // Not included in ContentDetails
         publishedAt: content.publishedAt,
         prompt,
+        wordCount: wordCount || undefined,
+        characterCount: characterCount || undefined,
       };
 
       const { data } = await client.api.contentAiEditCreate(currentContent);

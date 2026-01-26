@@ -16,9 +16,13 @@ import {
   Backdrop,
   TextField,
   Autocomplete,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  FormLabel,
 } from "@mui/material";
 import { Sparkles, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDebounce } from "use-debounce";
 import { useConfig } from "@providers/config-provider";
 import { useRequestContext } from "@providers/request-provider";
@@ -27,6 +31,22 @@ import { getWhereFilterQuery } from "@providers/query-provider";
 import { ContentDetailsDto, ContentTypeDetailsDto } from "@lib/network/swagger-client";
 import { idToDisplayName } from "@features/content/content-types";
 import type { Theme } from "@mui/material/styles";
+import {
+  LimitType,
+  countWords,
+  countCharacters,
+  estimateGenerationTokens,
+  formatTokenCount,
+  formatEstimatedTime,
+  formatCost,
+} from "@utils/ai-token-estimation";
+
+export interface TokenEstimation {
+  inputTokens: number;
+  outputTokens: number;
+  estimatedSeconds: number;
+  estimatedCost: number;
+}
 
 export interface AIDraftDialogProps {
   open: boolean;
@@ -35,7 +55,10 @@ export interface AIDraftDialogProps {
     language: string,
     contentType: string,
     prompt: string,
-    referenceContentId?: number | null
+    referenceContentId?: number | null,
+    wordCount?: number | null,
+    characterCount?: number | null,
+    tokenEstimation?: TokenEstimation | null
   ) => void;
   contentTypes: ContentTypeDetailsDto[];
   isLoading?: boolean;
@@ -71,6 +94,8 @@ export const AIDraftDialog = ({
   const [isReferenceLoading, setIsReferenceLoading] = useState(false);
   const [isReferenceOpen, setIsReferenceOpen] = useState(false);
   const [debouncedReferenceInput] = useDebounce(referenceContentInput, 300);
+  const [limitType, setLimitType] = useState<LimitType>("none");
+  const [limitValue, setLimitValue] = useState<number | "">("");
 
   const languages = config?.languages || [];
 
@@ -86,6 +111,8 @@ export const AIDraftDialog = ({
       setPrompt(initialValues?.prompt || "");
       setReferenceContentInput("");
       setReferenceContent(null);
+      setLimitType("none");
+      setLimitValue("");
     }
   }, [
     open,
@@ -123,6 +150,8 @@ export const AIDraftDialog = ({
   useEffect(() => {
     setReferenceContent(null);
     setReferenceContentInput("");
+    // Reset limit value when reference changes
+    setLimitValue("");
   }, [contentType]);
 
   useEffect(() => {
@@ -178,13 +207,68 @@ export const AIDraftDialog = ({
 
   const handleCreate = () => {
     if (language && contentType && prompt.trim()) {
-      onCreate(language, contentType, prompt.trim(), referenceContent?.id || null);
+      const wordCount = limitType === "words" && limitValue ? Number(limitValue) : null;
+      const characterCount = limitType === "characters" && limitValue ? Number(limitValue) : null;
+      const estimation: TokenEstimation | null = tokenEstimation
+        ? {
+            inputTokens: tokenEstimation.inputTokens,
+            outputTokens: tokenEstimation.outputTokens,
+            estimatedSeconds: tokenEstimation.estimatedSeconds,
+            estimatedCost: tokenEstimation.estimatedCost,
+          }
+        : null;
+      onCreate(
+        language,
+        contentType,
+        prompt.trim(),
+        referenceContent?.id || null,
+        wordCount,
+        characterCount,
+        estimation
+      );
     }
   };
 
   const handleClose = () => {
     onClose();
   };
+
+  // Calculate sample content stats
+  const sampleStats = useMemo(() => {
+    if (!referenceContent) return null;
+    const contentJson = JSON.stringify(referenceContent);
+    const bodyText = referenceContent.body || "";
+    return {
+      characters: countCharacters(contentJson),
+      words: countWords(bodyText),
+      bodyCharacters: countCharacters(bodyText),
+    };
+  }, [referenceContent]);
+
+  // Auto-populate limit value when limit type changes and sample is selected
+  useEffect(() => {
+    if (!sampleStats) {
+      setLimitValue("");
+      return;
+    }
+    if (limitType === "characters") {
+      setLimitValue(sampleStats.bodyCharacters);
+    } else if (limitType === "words") {
+      setLimitValue(sampleStats.words);
+    } else {
+      setLimitValue("");
+    }
+  }, [limitType, sampleStats]);
+
+  // Token estimation
+  const tokenEstimation = useMemo(() => {
+    return estimateGenerationTokens({
+      sampleContent: referenceContent,
+      userPrompt: prompt,
+      limitType,
+      limitValue: typeof limitValue === "number" ? limitValue : undefined,
+    });
+  }, [referenceContent, prompt, limitType, limitValue]);
 
   const isFormValid = language && contentType && prompt.trim().length > 0;
 
@@ -428,6 +512,99 @@ export const AIDraftDialog = ({
             }}
             helperText={`${prompt.length} characters. Be as detailed as possible for best results.`}
           />
+
+          {/* Output Length Limit Section */}
+          <Box
+            sx={{
+              p: 3,
+              mb: 3,
+              bgcolor: "grey.50",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "grey.200",
+            }}
+          >
+            <FormControl component="fieldset">
+              <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, fontSize: "0.875rem" }}>
+                Output Length Limit
+              </FormLabel>
+              <RadioGroup
+                value={limitType}
+                onChange={(e) => setLimitType(e.target.value as LimitType)}
+                sx={{ mb: 2 }}
+              >
+                <FormControlLabel
+                  value="none"
+                  control={<Radio size="small" />}
+                  label={
+                    <Box>
+                      <Typography variant="body2">Do not set a limit</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        AI will decide based on the sample and prompt
+                      </Typography>
+                    </Box>
+                  }
+                  disabled={isLoading}
+                />
+                <FormControlLabel
+                  value="characters"
+                  control={<Radio size="small" />}
+                  label={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography variant="body2">Limit by characters</Typography>
+                      {sampleStats && (
+                        <Typography variant="caption" color="primary">
+                          (sample: {sampleStats.bodyCharacters.toLocaleString()})
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                  disabled={isLoading}
+                />
+                <FormControlLabel
+                  value="words"
+                  control={<Radio size="small" />}
+                  label={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography variant="body2">Limit by words</Typography>
+                      {sampleStats && (
+                        <Typography variant="caption" color="primary">
+                          (sample: {sampleStats.words.toLocaleString()})
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                  disabled={isLoading}
+                />
+              </RadioGroup>
+
+              {limitType !== "none" && (
+                <TextField
+                  type="number"
+                  size="small"
+                  label={limitType === "characters" ? "Character limit" : "Word limit"}
+                  value={limitValue}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLimitValue(val === "" ? "" : parseInt(val, 10) || 0);
+                  }}
+                  disabled={isLoading}
+                  inputProps={{ min: 1 }}
+                  sx={{ maxWidth: 200 }}
+                />
+              )}
+            </FormControl>
+
+            {/* Token Estimation */}
+            <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid", borderColor: "grey.300" }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                <strong>Tokens:</strong> ~{formatTokenCount(tokenEstimation.inputTokens)} in / ~
+                {formatTokenCount(tokenEstimation.outputTokens)} out |{" "}
+                {formatEstimatedTime(tokenEstimation.estimatedSeconds)} |{" "}
+                {formatCost(tokenEstimation.estimatedCost)}
+              </Typography>
+            </Box>
+          </Box>
 
           <Box
             sx={{

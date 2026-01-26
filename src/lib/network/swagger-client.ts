@@ -4019,6 +4019,18 @@ export interface ContentEditRequest {
    * @example "string"
    */
   prompt: string;
+  /**
+   * Word Count
+   * @format int32
+   * @example 1
+   */
+  wordCount?: number | null;
+  /**
+   * Character Count
+   * @format int32
+   * @example 1
+   */
+  characterCount?: number | null;
 }
 
 export interface ContentGenerationRequest {
@@ -4046,6 +4058,18 @@ export interface ContentGenerationRequest {
    * @example 1
    */
   referenceContentId?: number | null;
+  /**
+   * Word Count
+   * @format int32
+   * @example 1
+   */
+  wordCount?: number | null;
+  /**
+   * Character Count
+   * @format int32
+   * @example 1
+   */
+  characterCount?: number | null;
 }
 
 export interface ContentGrowthPointDto {
