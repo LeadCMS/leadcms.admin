@@ -8,12 +8,12 @@ import { SegmentsBreadcrumbLinks } from "../constants";
 import { SegmentCreateDto, SegmentDetailsDto, SegmentUpdateDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { useNotificationsService } from "@hooks";
-import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "lib/router";
+import { CoreModule, getCoreModuleRoute, getViewFormRoute, type IdRouteParams } from "lib/router";
 import { SegmentForm } from "./segment-form";
 
 export const SegmentEdit = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<IdRouteParams>();
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
 

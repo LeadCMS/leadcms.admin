@@ -1,12 +1,11 @@
 import { ReactNode, useState } from "react";
+import { useParams } from "react-router-dom";
 import { AppHeader } from "@components/app-header";
 import { Sidebar } from "@components/side-bar";
 import { AppLayoutWrapper, MainColumn, MainContent } from "./index.styled";
-import useMediaQuery from "@mui/material/useMediaQuery";
-import { useTheme } from "@mui/material/styles";
+import { useMediaQuery, useTheme } from "@mui/material";
 import { buildMenuItems } from "../../utils/build-menu-items";
-import { useRouteParams } from "typesafe-routes";
-import { coreModuleRoute } from "@lib/router";
+import { ModuleRouteParams } from "@lib/router";
 import { SidebarProvider } from "@providers/sidebar-provider";
 import { useConfig } from "@providers/config-provider";
 
@@ -41,12 +40,12 @@ export const AppLayout = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { moduleName } = useRouteParams(coreModuleRoute);
+  const { moduleName } = useParams<ModuleRouteParams>();
   const { config, loading: configLoading } = useConfig();
 
   const menuItems = buildMenuItems(
     config?.entities,
-    moduleName,
+    moduleName ?? "",
     config?.capabilities
   ) as SidebarMenuSection[];
   const menuLoading = configLoading;

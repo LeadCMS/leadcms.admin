@@ -1,4 +1,4 @@
-import { addFormRoute, editFormRoute, viewFormRoute } from "lib/router";
+import { getAddFormRoute, getEditFormRoute, getViewFormRoute } from "lib/router";
 import { Outlet, Route, Routes } from "react-router-dom";
 import { Segments } from "./index";
 import { SegmentAdd } from "./form/add";
@@ -10,9 +10,9 @@ export const SegmentsModule = () => {
     <>
       <Routes>
         <Route index element={<Segments />} />
-        <Route path={editFormRoute.template} element={<SegmentEdit />} />
-        <Route path={viewFormRoute.template} element={<SegmentView />} />
-        <Route path={addFormRoute.template} element={<SegmentAdd />} />
+        <Route path={getEditFormRoute()} element={<SegmentEdit />} />
+        <Route path={getViewFormRoute()} element={<SegmentView />} />
+        <Route path={getAddFormRoute()} element={<SegmentAdd />} />
       </Routes>
       <Outlet />
     </>

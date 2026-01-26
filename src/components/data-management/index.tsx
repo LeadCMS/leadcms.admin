@@ -17,9 +17,8 @@ import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
 import { HttpResponse, ProblemDetails } from "@lib/network/swagger-client";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { execDeleteWithToast } from "utils/general-helper";
-import { useRouteParams } from "typesafe-routes";
-import { coreModuleRoute } from "@lib/router";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { ModuleRouteParams } from "@lib/router";
 
 type DataDeleteProps = {
   header: string;
@@ -99,7 +98,7 @@ export const DataManagementBlock = ({
   const { Show: showErrorModal } = useErrorDetailsModal();
   const handleNavigation = useCoreModuleNavigation();
   const navigate = useNavigate();
-  const { moduleName } = useRouteParams(coreModuleRoute);
+  const { moduleName } = useParams<ModuleRouteParams>();
 
   const [openConfirmation, setOpenConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);

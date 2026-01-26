@@ -1,7 +1,7 @@
 "use client";
 import { Suspense } from "react";
-import { useRouteParams } from "typesafe-routes";
-import { CoreModule, coreModuleRoute, defaultModuleRoute } from "lib/router";
+import { useParams } from "react-router-dom";
+import { CoreModule, defaultModuleRoute, ModuleRouteParams } from "lib/router";
 import { ModuleWrapperProvider } from "@providers/module-wrapper-provider";
 import { Navigate } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
@@ -28,7 +28,7 @@ import { CampaignsModule } from "@features/campaigns/campaigns-module";
 import { SequencesModule } from "@features/sequences/sequences-module";
 
 export const ModuleLoader = () => {
-  const { moduleName } = useRouteParams(coreModuleRoute);
+  const { moduleName } = useParams<ModuleRouteParams>();
 
   return (
     <ModuleWrapperProvider>

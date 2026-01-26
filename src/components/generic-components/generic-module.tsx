@@ -1,10 +1,9 @@
 import { Outlet, Route, Routes } from "react-router-dom";
 import {
-  addFormRoute,
-  CoreModule,
-  editFormRoute,
+  CoreModuleType,
   getAddFormRoute,
-  viewFormRoute,
+  getEditFormRoute,
+  getViewFormRoute,
 } from "@lib/router";
 import {
   BasicTypeForGeneric,
@@ -68,7 +67,7 @@ interface ExtraActions {
 
 interface GenericModuleProps<TView extends BasicTypeForGeneric, TCreate, TUpdate> {
   moduleName: string;
-  modulePath: CoreModule;
+  modulePath: CoreModuleType;
   addButtonContent?: string | ReactNode | undefined;
   extraActions?: ExtraActions | undefined;
   tableProps?: GenericDataGridProps<TView>;
@@ -309,7 +308,7 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
               }
             }}
             object={extraActions?.import?.importSchema.properties}
-            endRoute={modulePath as CoreModule}
+            endRoute={modulePath as CoreModuleType}
           />
         )}
       </ModuleWrapper>
@@ -398,9 +397,9 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
     <>
       <Routes>
         <Route index element={genericTable} />
-        <Route path={addFormRoute.template} element={genericCreateForm} />
-        <Route path={editFormRoute.template} element={genericEditForm} />
-        <Route path={viewFormRoute.template} element={genericViewForm} />
+        <Route path={getAddFormRoute()} element={genericCreateForm} />
+        <Route path={getEditFormRoute()} element={genericEditForm} />
+        <Route path={getViewFormRoute()} element={genericViewForm} />
       </Routes>
       <Outlet />
     </>

@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { AccountDetailsDto, AccountUpdateDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { AccountForm } from "../form";
-import { useRouteParams } from "typesafe-routes";
-import { editFormRoute } from "@lib/router";
+import { useParams } from "react-router-dom";
+import { type IdRouteParams } from "@lib/router";
 
 export const AccountEdit = () => {
   const { client } = useRequestContext();
 
-  const { id } = useRouteParams(editFormRoute);
+  const { id: idParam } = useParams<IdRouteParams>();
+  const id = Number(idParam);
 
   const [account, setAccount] = useState<AccountDetailsDto>({ name: "" });
 

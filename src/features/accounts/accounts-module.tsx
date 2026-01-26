@@ -1,4 +1,4 @@
-import { detailsRoute, addFormRoute, editFormRoute, viewFormRoute } from "lib/router";
+import { getAddFormRoute, getEditFormRoute, getViewFormRoute } from "lib/router";
 import { Outlet, Route, Routes } from "react-router-dom";
 import { AccountAdd } from "./add";
 import { AccountEdit } from "./edit";
@@ -11,12 +11,12 @@ export const AccountsModule = () => {
     <>
       <Routes>
         <Route index element={<AccountsLazy />} />
-        <Route path={editFormRoute.template} element={<AccountEdit />} />
-        <Route path={viewFormRoute.template} element={<AccountViewBase />}>
+        <Route path={getEditFormRoute()} element={<AccountEdit />} />
+        <Route path={getViewFormRoute()} element={<AccountViewBase />}>
           <Route index element={<AccountView />} />
-          <Route path={detailsRoute.template} element={<AccountView />} />
+          <Route path="details" element={<AccountView />} />
         </Route>
-        <Route path={addFormRoute.template} element={<AccountAdd />} />
+        <Route path={getAddFormRoute()} element={<AccountAdd />} />
       </Routes>
       <Outlet />
     </>

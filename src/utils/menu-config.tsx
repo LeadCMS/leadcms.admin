@@ -1,4 +1,4 @@
-import { CoreModule, getCoreModuleRoute } from "../lib/router";
+import { CoreModule, CoreModuleType, getCoreModuleRoute } from "../lib/router";
 import {
   LayoutDashboard,
   FileText,
@@ -22,7 +22,20 @@ import {
   Zap,
 } from "lucide-react";
 
-export const MENU_CONFIG = [
+export type MenuItem = {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  entity?: string;
+  route: string;
+};
+
+interface SidebarMenuSection {
+  header: string;
+  items: MenuItem[];
+}
+
+export const MENU_CONFIG: SidebarMenuSection[] = [
   {
     header: "MAIN",
     items: [
@@ -30,7 +43,6 @@ export const MENU_CONFIG = [
         id: "dashboard",
         label: "Dashboard",
         icon: <LayoutDashboard size={20} />,
-        entity: null,
         route: getCoreModuleRoute(CoreModule.dashboard),
       },
     ],
@@ -163,7 +175,6 @@ export const MENU_CONFIG = [
         id: "tasks",
         label: "Tasks",
         icon: <ListChecks size={20} />,
-        entity: null,
         route: getCoreModuleRoute(CoreModule.tasks),
       },
     ],
@@ -175,7 +186,6 @@ export const MENU_CONFIG = [
         id: "settings",
         label: "Settings",
         icon: <Settings size={20} />,
-        entity: null,
         route: getCoreModuleRoute(CoreModule.settings),
       },
       {
@@ -196,7 +206,6 @@ export const MENU_CONFIG = [
         id: "about",
         label: "About",
         icon: <HelpCircle size={20} />,
-        entity: null,
         route: getCoreModuleRoute(CoreModule.about),
       },
     ],

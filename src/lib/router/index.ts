@@ -1,85 +1,66 @@
-import { Parser, route, intParser } from "typesafe-routes";
+export const CoreModule = {
+  dashboard: "dashboard",
+  contacts: "contacts",
+  links: "links",
+  comments: "comments",
+  content: "content",
+  media: "media",
+  accounts: "accounts",
+  orders: "orders",
+  deals: "deals",
+  domains: "domains",
+  segments: "segments",
+  unsubscribes: "unsubscribes",
+  users: "users",
+  about: "about",
+  emailTemplates: "email-templates",
+  activityLogs: "activity-logs",
+  settings: "settings",
+  tasks: "tasks",
+  deployments: "deployments",
+  campaigns: "campaigns",
+  sequences: "sequences",
+} as const;
 
-export const enum CoreModule {
-  dashboard = "dashboard",
-  contacts = "contacts",
-  links = "links",
-  comments = "comments",
-  content = "content",
-  media = "media",
-  accounts = "accounts",
-  orders = "orders",
-  deals = "deals",
-  domains = "domains",
-  segments = "segments",
-  unsubscribes = "unsubscribes",
-  users = "users",
-  about = "about",
-  emailTemplates = "email-templates",
-  activityLogs = "activity-logs",
-  settings = "settings",
-  tasks = "tasks",
-  deployments = "deployments",
-  campaigns = "campaigns",
-  sequences = "sequences",
-}
+export type CoreModuleType = typeof CoreModule[keyof typeof CoreModule];
 
-const coreModuleParser: Parser<CoreModule> = {
-  parse: (value) => value as CoreModule,
-  serialize: (moduleName) => moduleName,
+// Route parameter types for use with React Router's useParams<T>()
+// Note: URL params are always strings, so we parse them when needed
+// Using Record type to satisfy React Router's type constraints
+export type ModuleRouteParams = {
+  moduleName?: string;
 };
 
-export const coreModuleRoute = route(
-  "/:moduleName",
-  {
-    moduleName: coreModuleParser,
-  },
-  {}
-);
+export type IdRouteParams = {
+  id?: string;
+};
 
-export const editFormRoute = route(
-  ":id/edit",
-  {
-    id: intParser,
-  },
-  {}
-);
+export type ModuleWithIdRouteParams = ModuleRouteParams & IdRouteParams;
 
-export const viewFormRoute = route(
-  ":id/view",
-  {
-    id: intParser,
-  },
-  {}
-);
+// Simple type-safe route builders
+export const getCoreModuleRoute = (moduleName: CoreModuleType) => `/${moduleName}`;
 
-export const addFormRoute = route("add", {}, {});
+/**
+ * Returns a route path for editing a form.
+ * @param id - Optional ID. If provided, returns actual path (e.g., "123/edit").
+ *             If not provided, returns route template (e.g., ":id/edit") for use in route definitions.
+ */
+export const getEditFormRoute = (id?: number): string => {
+  return id !== undefined ? `${id}/edit` : ":id/edit";
+};
 
-export const importFormRoute = route("import", {}, {});
+/**
+ * Returns a route path for viewing a form.
+ * @param id - Optional ID. If provided, returns actual path (e.g., "123/view").
+ *             If not provided, returns route template (e.g., ":id/view") for use in route definitions.
+ */
+export const getViewFormRoute = (id?: number): string => {
+  return id !== undefined ? `${id}/view` : ":id/view";
+};
 
-export const detailsRoute = route("details", {}, {});
+export const getAddFormRoute = () => "add";
 
-export const contactInvoicesRoute = route("invoices", {}, {});
-
-export const contactLogsRoute = route("logs", {}, {});
-
-export const contactCommunicationsRoute = route("communications", {}, {});
-
-export const contactActivityRoute = route("activity", {}, {});
-
-export const contactOrdersRoute = route("orders", {}, {});
-
-export const contactDealsRoute = route("deals", {}, {});
-
-export const getCoreModuleRoute = (moduleName: CoreModule) => coreModuleRoute({ moduleName }).$;
-
-export const getEditFormRoute = (id: number) => editFormRoute({ id: id }).$;
-
-export const getViewFormRoute = (id: number) => viewFormRoute({ id: id }).$;
-
-export const getAddFormRoute = () => addFormRoute({}).$;
-
-export const getImportFormRoute = () => importFormRoute({}).$;
+export const getImportFormRoute = () => "import";
 
 export const rootRoute = "/";
 

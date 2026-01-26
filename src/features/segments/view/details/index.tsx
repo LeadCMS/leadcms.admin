@@ -20,7 +20,7 @@ import { SegmentsBreadcrumbLinks } from "../../constants";
 import { getFieldDisplayName, getOperatorDisplayName } from "../../types";
 import { useRequestContext } from "providers/request-provider";
 import { SegmentDetailsDto as ApiSegmentDetailsDto, SegmentRule } from "lib/network/swagger-client";
-import { CoreModule, getEditFormRoute } from "@lib/router";
+import { CoreModule, getEditFormRoute, type IdRouteParams } from "@lib/router";
 import { getFormattedDateOnly } from "utils/general-helper";
 
 type DetailRow = { label: string; value: ReactNode };
@@ -99,7 +99,7 @@ const getSegmentViewTabValue = (tabParam: string | null) => {
 };
 
 export const SegmentView = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<IdRouteParams>();
   const { client } = useRequestContext();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

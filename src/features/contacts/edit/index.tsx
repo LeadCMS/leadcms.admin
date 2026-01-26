@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { ContactDetailsDto, ContactUpdateDto } from "lib/network/swagger-client";
-import { editFormRoute } from "lib/router";
 import { useRequestContext } from "providers/request-provider";
-import { useRouteParams } from "typesafe-routes";
+import { useParams } from "react-router-dom";
+import { type IdRouteParams } from "@lib/router";
 import { ContactForm } from "../form";
 
 export const ContactEdit = () => {
   const { client } = useRequestContext();
 
-  const { id } = useRouteParams(editFormRoute);
+  const { id: idParam } = useParams<IdRouteParams>();
+  const id = Number(idParam);
 
   const [contact, setContact] = useState<ContactDetailsDto>({
     firstName: "",
