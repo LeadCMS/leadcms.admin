@@ -21,6 +21,7 @@ import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
+import Tooltip from "@mui/material/Tooltip";
 import DownloadIcon from "@mui/icons-material/Download";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
@@ -35,6 +36,7 @@ import { useNotificationsService } from "@hooks";
 import { ApiErrorDisplay } from "@components/api-error-display";
 import { parseApiError } from "@utils/api-error-parser";
 import { ApiError } from "@lib/network/wrapApiClient";
+import { useConfig } from "@providers/config-provider";
 
 interface MediaPreviewProps {
   file: MediaDetailsDto | null;
@@ -116,6 +118,7 @@ export const MediaPreview = ({
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { getToken } = useAuthState();
   const { notificationsService } = useNotificationsService();
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -252,12 +255,27 @@ export const MediaPreview = ({
   const areTagsUnchanged =
     currentTags.length === normalizedTagsValue.length &&
     currentTags.every((tag, index) => tag === normalizedTagsValue[index]);
+  const mediaSettings = config?.settings ?? {};
+  const optimizeSetting = (mediaSettings["Media.EnableOptimisation"] ?? "true")
+    .toLowerCase()
+    .trim();
+  const optimizeEnabled = optimizeSetting === "true";
+  const preferredFormatSetting = mediaSettings["Media.PreferredFormat"]?.trim();
+  const preferredFormatLabel = preferredFormatSetting
+    ? preferredFormatSetting.toUpperCase()
+    : "the preferred format";
+  const maxDimensionsSetting = mediaSettings["Media.Max.Dimensions"]?.trim();
+  const maxDimensionsLabel = maxDimensionsSetting || "configured max dimensions";
+  const coverDimensionsSetting = mediaSettings["Media.Cover.Dimensions"]?.trim();
+  const coverDimensionsSuffix = coverDimensionsSetting ? ` (${coverDimensionsSetting})` : "";
+  const coverDimensionsLabel = coverDimensionsSetting || "configured cover dimensions";
   const usageCount = file.usageCount ?? 0;
   const usageLabel = usageCount > 0 ? usageCount : 0;
   const hasNameChange = newFileName.trim() !== (file.name || "");
   const hasFolderChange = newScopeUid.trim() !== (file.scopeUid || "");
-
+  const isCoverImage = currentTags.some((tag) => tag.toLowerCase() === "cover");
   const isImage = file.mimeType?.startsWith("image/") || false;
+  const showOptimizeTooltip = !optimizeEnabled && isImage;
 
   const parseOptionalNumber = (value: string) => {
     if (!value.trim()) return undefined;
@@ -745,15 +763,33 @@ export const MediaPreview = ({
                       Move / Rename
                     </MenuItem>
                     <Divider />
-                    <MenuItem
-                      disabled={!isImage}
-                      onClick={() => {
-                        setIsResizeDialogOpen(true);
-                        handleMenuClose();
-                      }}
+                    <Tooltip
+                      title={
+                        isCoverImage ? (
+                          <Typography variant="caption" color="inherit">
+                            Cover images have a fixed size{coverDimensionsSuffix} and cannot be
+                            resized.
+                          </Typography>
+                        ) : (
+                          ""
+                        )
+                      }
+                      disableHoverListener={!isCoverImage}
+                      disableFocusListener={!isCoverImage}
+                      disableTouchListener={!isCoverImage}
                     >
-                      Resize
-                    </MenuItem>
+                      <span>
+                        <MenuItem
+                          disabled={!isImage || isCoverImage}
+                          onClick={() => {
+                            setIsResizeDialogOpen(true);
+                            handleMenuClose();
+                          }}
+                        >
+                          Resize
+                        </MenuItem>
+                      </span>
+                    </Tooltip>
                     {enableCrop &&
                       (cropMode ? (
                         <MenuItem
@@ -776,15 +812,44 @@ export const MediaPreview = ({
                           Crop
                         </MenuItem>
                       ))}
-                    <MenuItem
-                      disabled={!isImage || isOptimizing}
-                      onClick={async () => {
-                        handleMenuClose();
-                        setIsOptimizeDialogOpen(true);
-                      }}
+                    <Tooltip
+                      title={
+                        showOptimizeTooltip ? (
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                            <Typography variant="caption" color="inherit">
+                              Optimization is disabled in Media settings.
+                            </Typography>
+                            <Link
+                              href="/settings?tab=media"
+                              underline="always"
+                              target="_blank"
+                              rel="noreferrer"
+                              color="inherit"
+                              sx={{ alignSelf: "flex-start" }}
+                            >
+                              Media settings
+                            </Link>
+                          </Box>
+                        ) : (
+                          ""
+                        )
+                      }
+                      disableHoverListener={!showOptimizeTooltip}
+                      disableFocusListener={!showOptimizeTooltip}
+                      disableTouchListener={!showOptimizeTooltip}
                     >
-                      {isOptimizing ? "Optimizing..." : "Optimize"}
-                    </MenuItem>
+                      <span>
+                        <MenuItem
+                          disabled={!isImage || !optimizeEnabled || isOptimizing}
+                          onClick={async () => {
+                            handleMenuClose();
+                            setIsOptimizeDialogOpen(true);
+                          }}
+                        >
+                          {isOptimizing ? "Optimizing..." : "Optimize"}
+                        </MenuItem>
+                      </span>
+                    </Tooltip>
                   </Menu>
                   {isPdf ? (
                     isLoadingPdf ? (
@@ -1560,20 +1625,33 @@ export const MediaPreview = ({
         <DialogTitle>Optimize Image</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Optimization runs only when Enable Optimisation is turned on in
-            <Link
-              href="/settings?tab=media"
-              underline="hover"
-              sx={{ ml: 0.5 }}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Media settings
-            </Link>
-            . If enabled, we convert to the preferred format, resize to stay within min/max
-            dimensions while keeping aspect ratio, and update references if the file name changes.
-            Images tagged as Cover are resized to cover size requirements.
+            We convert the image to {preferredFormatLabel}, update references if the file name
+            changes, and apply size constraints.{" "}
+            {isCoverImage ? (
+              <>
+                Cover images are fit into a fixed size {coverDimensionsLabel} with a crop if needed
+                to preserve aspect ratio.
+              </>
+            ) : (
+              <>
+                Images are resized to stay within {maxDimensionsLabel} while keeping aspect ratio.
+              </>
+            )}
           </Typography>
+          {usageLabel > 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              This image is used in{" "}
+              <Box component="span" sx={{ fontWeight: 600 }}>
+                {usageLabel}
+              </Box>{" "}
+              place(s). We will attempt to refactor those references after optimization.
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              It seems like this image is not used anywhere. We will check again and replace any
+              usages if found.
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsOptimizeDialogOpen(false)} variant="text">
@@ -1585,7 +1663,7 @@ export const MediaPreview = ({
               setIsOptimizeDialogOpen(false);
             }}
             variant="contained"
-            disabled={isOptimizing}
+            disabled={isOptimizing || !optimizeEnabled}
             startIcon={isOptimizing ? <CircularProgress size={14} /> : undefined}
           >
             {isOptimizing ? "Optimizing..." : "Optimize"}

@@ -160,6 +160,16 @@ const MediaManagement = () => {
   useEffect(() => {
     if (!previewOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tagName = target.tagName;
+        const isFormField =
+          tagName === "INPUT" ||
+          tagName === "TEXTAREA" ||
+          tagName === "SELECT" ||
+          target.isContentEditable;
+        if (isFormField) return;
+      }
       if (e.key === "ArrowLeft") {
         handlePreviewPrev();
       } else if (e.key === "ArrowRight") {
@@ -537,7 +547,7 @@ const MediaManagement = () => {
             const folderItemCount = isFolder ? item.id : undefined;
             return (
               <Grid
-                key={item.id}
+                key={`${item.scopeUid || "root"}:${item.name}:${item.location || item.id}`}
                 size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}
                 sx={{ mb: 3, minWidth: 290, maxWidth: 330 }}
               >
