@@ -1,3 +1,4 @@
+import cronstrue from "cronstrue";
 import type { TaskCategory } from "./types";
 import { TASK_METADATA, CATEGORY_COLORS } from "./constants";
 
@@ -14,30 +15,12 @@ export const getCategoryColor = (category: TaskCategory) => {
 };
 
 export const describeCron = (cronSchedule: string): string => {
-  // Simple cron parser for common patterns
-  const parts = cronSchedule.split(" ");
-
-  if (cronSchedule === "0 0/1 * * * ?" || cronSchedule === "0 0/1 * * * ? *") {
-    return "Every minute";
+  if (!cronSchedule.trim()) return "-";
+  try {
+    return cronstrue.toString(cronSchedule, { throwExceptionOnParseError: false });
+  } catch {
+    return cronSchedule;
   }
-  if (cronSchedule === "0/10 * * * * ? *") {
-    return "Every 10 seconds";
-  }
-  if (cronSchedule === "0/15 * * * * ? *") {
-    return "Every 15 seconds";
-  }
-  if (cronSchedule === "0/30 * * * * ?" || cronSchedule === "0/30 * * * * ? *") {
-    return "Every 30 seconds";
-  }
-  if (cronSchedule === "0 0 * * * ?") {
-    return "Every hour";
-  }
-  if (cronSchedule === "0 0 0 * * ?") {
-    return "Daily at midnight";
-  }
-
-  // Default fallback
-  return cronSchedule;
 };
 
 export const formatDuration = (

@@ -36,6 +36,11 @@ export const TASK_METADATA: Record<string, TaskMetadata> = {
     description: "Executes data enrichment with external providers",
     category: "enrichment",
   },
+  MediaMetaUpdateTask: {
+    displayName: "Media Metadata Update",
+    description: "Refreshes and updates media metadata for stored files",
+    category: "maintenance",
+  },
 };
 
 export const CATEGORY_COLORS: Record<TaskCategory, string> = {

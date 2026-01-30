@@ -2,6 +2,10 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   TextField,
   IconButton,
@@ -77,6 +81,7 @@ type MediaItem = {
   mimeType: string;
   createdAt: string;
   updatedAt: string | null;
+  usageCount?: number;
 };
 
 type DialogType = "new-folder" | "upload" | null;
@@ -119,6 +124,9 @@ const MediaManagement = () => {
   // Add preview dialog state
   const [previewFile, setPreviewFile] = useState<MediaItem | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MediaItem | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // For preview navigation - include both images and PDFs
   const previewableItems = items.filter((item) => {
@@ -335,24 +343,29 @@ const MediaManagement = () => {
 
   const handleDelete = async (item: MediaItem) => {
     handleMenuClose();
+    setDeleteTarget(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     const deletePromise = async () => {
-      // Calculate pathToFile as required by the API
-      const pathToFile = `${item.scopeUid}/${item.name}`;
+      const pathToFile = `${deleteTarget.scopeUid}/${deleteTarget.name}`;
       const result = await api.mediaDelete(pathToFile);
-      // Only refresh the list after successful deletion and toast completion
-      refreshMediaList();
+      await refreshMediaList();
       return result;
     };
     try {
-      // Use notificationsService.promise to handle toasts
+      setIsDeleting(true);
       await notificationsService.promise(deletePromise(), {
         pending: "Deleting media file",
         success: "Media file deleted successfully",
         error: (error) => {
           const errMessage = "Unable to delete media file. An error occurred.";
           const errDetails: string[] = [];
-          if (error?.message) {
-            errDetails.push(error.message);
+          const errorWithMessage = error as { message?: string } | undefined;
+          if (errorWithMessage?.message) {
+            errDetails.push(errorWithMessage.message);
           }
           return {
             title: errMessage,
@@ -360,9 +373,10 @@ const MediaManagement = () => {
           };
         },
       });
-    } catch (error) {
-      // Error toast is already handled by notificationsService.promise
-      // No need to refresh the list on error
+      setIsDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -693,9 +707,23 @@ const MediaManagement = () => {
                         justifyContent: "space-between",
                       }}
                     >
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>
-                        {formatFileSize(item.size)}
-                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>
+                          {formatFileSize(item.size)}
+                        </Typography>
+                        {!isFolder && typeof item.usageCount === "number" && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: 12 }}
+                          >
+                            | Used:{" "}
+                            <Box component="span" sx={{ fontWeight: 600 }}>
+                              {item.usageCount}
+                            </Box>
+                          </Typography>
+                        )}
+                      </Box>
                       {isFolder ? (
                         <Typography
                           variant="caption"
@@ -752,6 +780,59 @@ const MediaManagement = () => {
           </MenuItem>
         )}
       </Menu>
+      <Dialog
+        open={isDeleteDialogOpen}
+        onClose={() => {
+          if (isDeleting) return;
+          setIsDeleteDialogOpen(false);
+          setDeleteTarget(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete media</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              You are about to delete "{deleteTarget?.name}".
+            </Typography>
+            {deleteTarget && (deleteTarget.usageCount ?? 0) > 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                This media is used in{" "}
+                <Box component="span" sx={{ fontWeight: 600 }}>
+                  {deleteTarget.usageCount}
+                </Box>{" "}
+                place(s). Deleting it may cause broken links.
+              </Typography>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                It seems this media is not used anywhere and can likely be deleted safely.
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setDeleteTarget(null);
+            }}
+            variant="text"
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            variant="contained"
+            color="error"
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={14} /> : undefined}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
       {/* Media Preview Dialog */}
       <MediaPreview
         file={previewFile}

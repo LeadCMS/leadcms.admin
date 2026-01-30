@@ -52,6 +52,7 @@ import {
   PlayCircleOutline,
   ToggleOn,
   ToggleOff,
+  PhotoLibrary,
 } from "@mui/icons-material";
 import { useRequestContext } from "@providers/request-provider";
 import type { TaskDetailsDto, TaskExecutionLogDetailsDto } from "lib/network/swagger-client";
@@ -67,6 +68,10 @@ const categoryIcons: Record<TaskCategory, React.ReactNode> = {
   email: <Mail sx={{ fontSize: 16 }} />,
   cleanup: <Delete sx={{ fontSize: 16 }} />,
   other: <Language sx={{ fontSize: 16 }} />,
+};
+
+const taskIcons: Record<string, React.ReactNode> = {
+  MediaMetaUpdateTask: <PhotoLibrary sx={{ fontSize: 16 }} />,
 };
 
 export const TasksList = () => {
@@ -177,23 +182,25 @@ export const TasksList = () => {
     handleMenuClose();
   };
 
-  const filteredTasks = tasks.filter((task) => {
-    const metadata = getTaskMetadata(task.name || "");
-    const matchesSearch =
-      task.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      metadata?.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      metadata?.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredTasks = [...tasks]
+    .filter((task) => {
+      const metadata = getTaskMetadata(task.name || "");
+      const matchesSearch =
+        task.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        metadata?.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        metadata?.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const category = getTaskCategory(task.name || "");
-    const matchesCategory = categoryFilter === "all" || category === categoryFilter;
+      const category = getTaskCategory(task.name || "");
+      const matchesCategory = categoryFilter === "all" || category === categoryFilter;
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "running" && task.isRunning) ||
-      (statusFilter === "stopped" && !task.isRunning);
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "running" && task.isRunning) ||
+        (statusFilter === "stopped" && !task.isRunning);
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+      return matchesSearch && matchesCategory && matchesStatus;
+    })
+    .sort((a, b) => Number(Boolean(b.isRunning)) - Number(Boolean(a.isRunning)));
 
   const filteredLogs = executionLogs.filter((log) => {
     const metadata = getTaskMetadata(log.taskName || "");
@@ -412,17 +419,22 @@ export const TasksList = () => {
             </TableHead>
             <TableBody>
               {filteredTasks.map((task) => {
-                const metadata = getTaskMetadata(task.name || "");
-                const category = getTaskCategory(task.name || "");
+                const taskName = task.name || "";
+                const metadata = getTaskMetadata(taskName);
+                const category = getTaskCategory(taskName);
                 const isExecuting = executingTask === task.name;
+                const taskIcon = taskIcons[taskName] || categoryIcons[category];
 
                 return (
                   <TableRow key={task.name}>
                     <TableCell>
                       <Box>
-                        <Typography variant="body2" fontWeight={500}>
-                          {metadata?.displayName || task.name}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          {taskIcon}
+                          <Typography variant="body2" fontWeight={500}>
+                            {metadata?.displayName || task.name}
+                          </Typography>
+                        </Box>
                         <Typography variant="caption" color="text.secondary">
                           {metadata?.description || task.name}
                         </Typography>
