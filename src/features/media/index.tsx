@@ -188,23 +188,23 @@ const MediaManagement = () => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [previewOpen, handlePreviewNext, handlePreviewPrev]);
 
-  // On mount, set currentScopeUid from URL if present
+  // Sync currentScopeUid with URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const folder = params.get("folder");
-    if (folder) {
-      setCurrentScopeUid(folder);
-      setBreadcrumbs(
-        folder
-          .split("/")
-          .filter(Boolean)
-          .map((name, idx, arr) => ({
-            name,
-            scopeUid: arr.slice(0, idx + 1).join("/"),
-          }))
-      );
-    }
-  }, []); // Only on mount
+    const folder = params.get("folder") || "";
+    setCurrentScopeUid(folder);
+    setBreadcrumbs(
+      folder
+        ? folder
+            .split("/")
+            .filter(Boolean)
+            .map((name, idx, arr) => ({
+              name,
+              scopeUid: arr.slice(0, idx + 1).join("/"),
+            }))
+        : []
+    );
+  }, [location.search]);
 
   // When currentScopeUid changes, update the URL
   useEffect(() => {
