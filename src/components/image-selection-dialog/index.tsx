@@ -10,11 +10,11 @@ import {
   Stack,
   Link,
 } from "@mui/material";
-import { Upload, Trash2, Image as ImageIcon, ExternalLink } from "lucide-react";
+import { Upload, Trash2, Image as ImageIcon, ExternalLink, Sparkles } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
-import { buildAbsoluteUrl } from "@lib/network/utils";
+import { buildAbsoluteUrl, buildAbsoluteUrlWithCacheBustKey } from "@lib/network/utils";
 import { ImageSelectionDialog } from "./image-selection-dialog";
 
 export interface CoverImageEditorProps {
@@ -25,6 +25,10 @@ export interface CoverImageEditorProps {
   disabled?: boolean;
   maxFileSize?: number; // in bytes
   acceptedFileTypes?: string[];
+  onGenerateWithAI?: () => void;
+  onEditWithAI?: () => void;
+  generateWithAIDisabled?: boolean;
+  previewCacheKey?: string | number | null;
 }
 
 interface UploadStatus {
@@ -41,6 +45,10 @@ export const CoverImageEditor: React.FC<CoverImageEditorProps> = ({
   disabled = false,
   maxFileSize = 512 * 1024, // 512KB default
   acceptedFileTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"],
+  onGenerateWithAI,
+  onEditWithAI,
+  generateWithAIDisabled = false,
+  previewCacheKey,
 }) => {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
@@ -51,6 +59,7 @@ export const CoverImageEditor: React.FC<CoverImageEditorProps> = ({
   const [isReplaceMode, setIsReplaceMode] = useState(false);
 
   const hasImage = Boolean(value && value.trim());
+  const previewUrl = hasImage ? buildAbsoluteUrlWithCacheBustKey(value, previewCacheKey) : "";
 
   // Helper function to check if error is file-size related and add "Learn why" link
   const formatErrorWithLearnMore = (message: string, isReplace = false): React.ReactNode => {
@@ -186,6 +195,7 @@ export const CoverImageEditor: React.FC<CoverImageEditorProps> = ({
       const response = await client.api.mediaCreate({
         File: file,
         ScopeUid: scopeUid,
+        Tags: ["Cover"],
       });
 
       if (response.error) {
@@ -383,7 +393,7 @@ export const CoverImageEditor: React.FC<CoverImageEditorProps> = ({
         <>
           <Box
             component="img"
-            src={buildAbsoluteUrl(value || "")}
+            src={previewUrl}
             alt="Cover image"
             sx={{
               width: "100%",
@@ -479,6 +489,30 @@ export const CoverImageEditor: React.FC<CoverImageEditorProps> = ({
           >
             Select from Media
           </Button>
+
+          {onGenerateWithAI && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Sparkles />}
+              onClick={onGenerateWithAI}
+              disabled={uploadStatus.status === "uploading" || generateWithAIDisabled}
+            >
+              Generate with AI
+            </Button>
+          )}
+
+          {hasImage && onEditWithAI && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Sparkles />}
+              onClick={onEditWithAI}
+              disabled={uploadStatus.status === "uploading" || generateWithAIDisabled}
+            >
+              Edit with AI
+            </Button>
+          )}
 
           {hasImage && (
             <Button

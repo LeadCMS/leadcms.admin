@@ -15,11 +15,14 @@ export const buildAbsoluteUrl = (localUrl: string | null | undefined) => {
   return new URL(localUrl, base).href;
 };
 
-export const getContentCoverImageUrl = (coverImageUrl?: string | null) => {
+export const getContentCoverImageUrl = (
+  coverImageUrl?: string | null,
+  cacheKey?: string | number | null
+) => {
   if (!coverImageUrl || coverImageUrl.length === 0) {
     return "/images/placeholder.svg";
   }
-  return buildAbsoluteUrl(coverImageUrl);
+  return buildAbsoluteUrlWithCacheBustKey(coverImageUrl, cacheKey);
 };
 
 // Simple hash function for cache busting
@@ -54,4 +57,23 @@ export const buildAbsoluteUrlWithCacheBust = (
   }
 
   return baseUrl;
+};
+
+export const buildAbsoluteUrlWithCacheBustKey = (
+  localUrl: string | null | undefined,
+  cacheKey?: string | number | null
+) => {
+  if (!localUrl || localUrl.length === 0) {
+    return "";
+  }
+
+  const baseUrl = buildAbsoluteUrl(localUrl);
+
+  if (cacheKey === undefined || cacheKey === null || cacheKey === "") {
+    return baseUrl;
+  }
+
+  const hash = simpleHash(String(cacheKey));
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${separator}v=${hash}`;
 };

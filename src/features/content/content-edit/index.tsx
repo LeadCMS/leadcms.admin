@@ -31,6 +31,7 @@ import {
 import { UnifiedAIProgress } from "@components/unified-ai-progress";
 import { AIDraftDialog, TokenEstimation } from "@components/ai-draft-dialog";
 import { AIEditDialog } from "@components/ai-edit-dialog";
+import { AICoverDialog } from "@components/ai-cover-dialog";
 import { TranslateDialog } from "@components/translate-dialog";
 import { PublicationStatusDialog, PublicationStatus } from "@components/publication-status-dialog";
 import { RestoreDataModal } from "@components/restore-data";
@@ -150,9 +151,9 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   // AI Progress states
   const [aiProgressOpen, setAiProgressOpen] = useState(false);
-  const [aiProgressType, setAiProgressType] = useState<"content" | "translation" | "edit">(
-    "content"
-  );
+  const [aiProgressType, setAiProgressType] = useState<
+    "content" | "translation" | "edit" | "cover"
+  >("content");
   const [aiProgressProps, setAiProgressProps] = useState<{
     contentType?: string;
     language?: string;
@@ -177,6 +178,9 @@ export const ContentEdit = (props: ContentEditProps) => {
     referenceContentId?: number | null;
   } | null>(null);
   const [aiEditPrompt, setAiEditPrompt] = useState<string>("");
+  const [aiCoverDialogOpen, setAiCoverDialogOpen] = useState(false);
+  const [aiCoverDialogMode, setAiCoverDialogMode] = useState<"generate" | "edit">("generate");
+  const [coverImageRefreshKey, setCoverImageRefreshKey] = useState<string | number | null>(null);
 
   // Initialize custom hooks
   const configSettings = (config as ExtendedConfig)?.settings;
@@ -192,6 +196,11 @@ export const ContentEdit = (props: ContentEditProps) => {
   const aiContentOps = useAIContentOperations();
   const translationOps = useTranslationOperations();
   const publicationDialogPreference = usePublicationDialogPreference();
+
+  const handleCoverImageChange = (imageUrl: string | null) => {
+    contentFormOps.onCoverImageChange(imageUrl);
+    setCoverImageRefreshKey(Date.now());
+  };
 
   // Determine if metadata should be collapsed
   const isMetadataCollapsed = isCreateMode ? localMetadataCollapsed : storedMetadataCollapsed;
@@ -271,7 +280,8 @@ export const ContentEdit = (props: ContentEditProps) => {
     referenceContentId?: number | null,
     wordCount?: number | null,
     characterCount?: number | null,
-    tokenEstimation?: TokenEstimation | null
+    tokenEstimation?: TokenEstimation | null,
+    requiredMediaPaths?: string[]
   ) => {
     setAiDraftFormValues({ language, contentType, prompt, referenceContentId });
     setAiDraftDialogOpen(false);
@@ -293,7 +303,8 @@ export const ContentEdit = (props: ContentEditProps) => {
         prompt,
         referenceContentId,
         wordCount,
-        characterCount
+        characterCount,
+        requiredMediaPaths
       );
 
       // Signal completion before loading content
@@ -326,7 +337,8 @@ export const ContentEdit = (props: ContentEditProps) => {
     prompt: string,
     wordCount?: number | null,
     characterCount?: number | null,
-    tokenEstimation?: TokenEstimation | null
+    tokenEstimation?: TokenEstimation | null,
+    requiredMediaPaths?: string[]
   ) => {
     setAiEditPrompt(prompt);
     setAiEditDialogOpen(false);
@@ -345,7 +357,8 @@ export const ContentEdit = (props: ContentEditProps) => {
         contentFormOps.formik.values,
         prompt,
         wordCount,
-        characterCount
+        characterCount,
+        requiredMediaPaths
       );
 
       // Signal completion before loading content
@@ -362,6 +375,110 @@ export const ContentEdit = (props: ContentEditProps) => {
       setAiEditDialogOpen(true);
     } finally {
       // Small delay to let completion animation play
+      setTimeout(() => {
+        setAiProgressOpen(false);
+        setAiOperationComplete(false);
+      }, 500);
+    }
+  };
+
+  const handleAICoverGenerate = async (prompt: string | null, sampleImagePaths: string[]) => {
+    const { title, description, slug } = contentFormOps.formik.values;
+
+    if (!title || !description || !slug) {
+      return;
+    }
+
+    setAiCoverDialogOpen(false);
+    setAiProgressType("cover");
+    setAiOperationComplete(false);
+    setAiProgressProps({
+      contentTitle: title,
+      estimatedSeconds: Math.min(120, 40 + sampleImagePaths.length * 5),
+    });
+    setAiProgressOpen(true);
+
+    try {
+      const media = await aiContentOps.generateAICover({
+        contentTitle: title,
+        contentDescription: description,
+        contentSlug: slug,
+        prompt: prompt || undefined,
+        sampleImagePaths: sampleImagePaths.length ? sampleImagePaths : undefined,
+      });
+
+      if (media.location) {
+        handleCoverImageChange(media.location);
+      }
+
+      setAiOperationComplete(true);
+    } catch (error) {
+      setAiCoverDialogOpen(true);
+    } finally {
+      setTimeout(() => {
+        setAiProgressOpen(false);
+        setAiOperationComplete(false);
+      }, 500);
+    }
+  };
+
+  const handleAICoverEdit = async (prompt: string, sampleImagePaths: string[]) => {
+    const { coverImageUrl, title, description } = contentFormOps.formik.values;
+
+    if (!coverImageUrl || !title || !description || !prompt) {
+      return;
+    }
+
+    setAiCoverDialogOpen(false);
+    setAiProgressType("cover");
+    setAiOperationComplete(false);
+    setAiProgressProps({
+      contentTitle: contentFormOps.formik.values.title || "",
+      estimatedSeconds: Math.min(120, 40 + sampleImagePaths.length * 5),
+    });
+    setAiProgressOpen(true);
+
+    const normalizeCoverImageUrl = (rawUrl: string) => {
+      const trimmedUrl = rawUrl.trim();
+      if (!trimmedUrl) return trimmedUrl;
+      const apiPath = "/api/media/";
+
+      try {
+        const parsedUrl = new URL(trimmedUrl, window.location.origin);
+        const pathname = parsedUrl.pathname;
+        if (pathname.startsWith(apiPath)) {
+          return pathname;
+        }
+      } catch {
+        // Fall through to string-based normalization
+      }
+
+      const withoutQuery = trimmedUrl.split("?")[0];
+      const apiIndex = withoutQuery.indexOf(apiPath);
+      if (apiIndex >= 0) {
+        return withoutQuery.slice(apiIndex);
+      }
+
+      return withoutQuery;
+    };
+
+    try {
+      const media = await aiContentOps.editAICover({
+        coverImageUrl: normalizeCoverImageUrl(coverImageUrl),
+        contentTitle: title,
+        contentDescription: description,
+        prompt,
+        sampleImagePaths: sampleImagePaths.length ? sampleImagePaths : undefined,
+      });
+
+      if (media.location) {
+        handleCoverImageChange(media.location);
+      }
+
+      setAiOperationComplete(true);
+    } catch (error) {
+      setAiCoverDialogOpen(true);
+    } finally {
       setTimeout(() => {
         setAiProgressOpen(false);
         setAiOperationComplete(false);
@@ -1202,10 +1319,28 @@ export const ContentEdit = (props: ContentEditProps) => {
                         <Grid size={{ xs: 12, md: 7 }}>
                           <CoverImageEditor
                             value={contentFormOps.formik.values.coverImageUrl}
-                            onChange={contentFormOps.onCoverImageChange}
+                            onChange={handleCoverImageChange}
+                            previewCacheKey={coverImageRefreshKey}
                             contentSlug={contentFormOps.formik.values.slug}
                             disabled={props.readonly}
                             maxFileSize={512 * 1024} // 512KB
+                            onGenerateWithAI={
+                              hasAIAssistance
+                                ? () => {
+                                    setAiCoverDialogMode("generate");
+                                    setAiCoverDialogOpen(true);
+                                  }
+                                : undefined
+                            }
+                            onEditWithAI={
+                              hasAIAssistance
+                                ? () => {
+                                    setAiCoverDialogMode("edit");
+                                    setAiCoverDialogOpen(true);
+                                  }
+                                : undefined
+                            }
+                            generateWithAIDisabled={props.readonly}
                           />
                         </Grid>
                         <Grid size={{ xs: 12, md: 5 }}>
@@ -1441,6 +1576,24 @@ export const ContentEdit = (props: ContentEditProps) => {
         contentTitle={contentFormOps.formik.values.title || "Untitled"}
         currentContent={contentFormOps.formik.values}
       />
+
+      {hasAIAssistance && (
+        <AICoverDialog
+          open={aiCoverDialogOpen}
+          onClose={() => setAiCoverDialogOpen(false)}
+          onGenerate={handleAICoverGenerate}
+          onEdit={handleAICoverEdit}
+          title={contentFormOps.formik.values.title || ""}
+          description={contentFormOps.formik.values.description || ""}
+          slug={contentFormOps.formik.values.slug || ""}
+          coverImageUrl={contentFormOps.formik.values.coverImageUrl || ""}
+          language={contentFormOps.formik.values.language || ""}
+          mode={aiCoverDialogMode}
+          isLoading={aiContentOps.isLoading}
+          error={aiContentOps.error}
+          onErrorClear={aiContentOps.clearError}
+        />
+      )}
 
       {/* Publication Status Dialog */}
       <PublicationStatusDialog

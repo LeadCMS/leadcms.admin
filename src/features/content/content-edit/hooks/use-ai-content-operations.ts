@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { ContentDetails } from "@features/content/content-edit/types";
+import {
+  CoverImageEditRequest,
+  CoverImageGenerationRequest,
+  MediaDetailsDto,
+} from "@lib/network/swagger-client";
 
 export interface AIContentOperations {
   // Draft creation
@@ -11,15 +16,20 @@ export interface AIContentOperations {
     prompt: string,
     referenceContentId?: number | null,
     wordCount?: number | null,
-    characterCount?: number | null
+    characterCount?: number | null,
+    requiredMediaPaths?: string[]
   ) => Promise<ContentDetails>;
   // Content editing
   editWithAI: (
     content: ContentDetails,
     prompt: string,
     wordCount?: number | null,
-    characterCount?: number | null
+    characterCount?: number | null,
+    requiredMediaPaths?: string[]
   ) => Promise<ContentDetails>;
+  // Cover image generation
+  generateAICover: (request: CoverImageGenerationRequest) => Promise<MediaDetailsDto>;
+  editAICover: (request: CoverImageEditRequest) => Promise<MediaDetailsDto>;
   // State
   isLoading: boolean;
   error: string | null;
@@ -89,7 +99,8 @@ export const useAIContentOperations = (): AIContentOperations => {
     prompt: string,
     referenceContentId?: number | null,
     wordCount?: number | null,
-    characterCount?: number | null
+    characterCount?: number | null,
+    requiredMediaPaths?: string[]
   ): Promise<ContentDetails> => {
     setIsLoading(true);
     setError(null);
@@ -102,6 +113,7 @@ export const useAIContentOperations = (): AIContentOperations => {
         referenceContentId: referenceContentId || undefined,
         wordCount: wordCount || undefined,
         characterCount: characterCount || undefined,
+        requiredMediaPaths: requiredMediaPaths?.length ? requiredMediaPaths : undefined,
       });
 
       const aiContent: ContentDetails = {
@@ -128,7 +140,8 @@ export const useAIContentOperations = (): AIContentOperations => {
     content: ContentDetails,
     prompt: string,
     wordCount?: number | null,
-    characterCount?: number | null
+    characterCount?: number | null,
+    requiredMediaPaths?: string[]
   ): Promise<ContentDetails> => {
     setIsLoading(true);
     setError(null);
@@ -153,6 +166,7 @@ export const useAIContentOperations = (): AIContentOperations => {
         prompt,
         wordCount: wordCount || undefined,
         characterCount: characterCount || undefined,
+        requiredMediaPaths: requiredMediaPaths?.length ? requiredMediaPaths : undefined,
       };
 
       const { data } = await client.api.contentAiEditCreate(currentContent);
@@ -174,13 +188,52 @@ export const useAIContentOperations = (): AIContentOperations => {
     }
   };
 
+  const generateAICover = async (
+    request: CoverImageGenerationRequest
+  ): Promise<MediaDetailsDto> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data } = await client.api.contentAiCoverCreate(request);
+      notificationsService.success("Cover image generated successfully!");
+      return data as MediaDetailsDto;
+    } catch (err) {
+      const errorMessage = extractErrorMessage(err);
+      setError(errorMessage);
+      console.error("Failed to generate AI cover image:", err);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const editAICover = async (request: CoverImageEditRequest): Promise<MediaDetailsDto> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data } = await client.api.contentAiCoverEditCreate(request);
+      notificationsService.success("Cover image updated successfully!");
+      return data as MediaDetailsDto;
+    } catch (err) {
+      const errorMessage = extractErrorMessage(err);
+      setError(errorMessage);
+      console.error("Failed to edit AI cover image:", err);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const clearError = () => setError(null);
 
   return {
     createAIDraft,
     editWithAI,
+    generateAICover,
     isLoading,
     error,
     clearError,
+    editAICover,
   };
 };

@@ -8,7 +8,7 @@ import { TOKEN_GENERATION_SPEED, getRandomInRange } from "@utils/ai-token-estima
 
 export interface UnifiedAIProgressProps {
   open: boolean;
-  type: "content" | "translation" | "edit";
+  type: "content" | "translation" | "edit" | "cover";
   // Content-specific props
   contentType?: string;
   language?: string;
@@ -83,12 +83,26 @@ const PROGRESS_MESSAGES_BY_STAGE = {
       "Wrapping up...",
     ],
   },
+  cover: {
+    early: [
+      "Preparing the visual concept...",
+      "Analyzing the content context...",
+      "Setting up the creative pipeline...",
+    ],
+    middle: [
+      "Generating the cover image...",
+      "Composing the layout and imagery...",
+      "Balancing colors and composition...",
+    ],
+    late: ["Refining details...", "Enhancing visual clarity...", "Applying final touches..."],
+  },
 };
 
 const TITLES = {
   content: "AI Content Generation in Progress",
   translation: "AI Translation in Progress",
   edit: "AI Editing in Progress",
+  cover: "AI Cover Generation in Progress",
 };
 
 export const UnifiedAIProgress = ({
@@ -274,6 +288,16 @@ export const UnifiedAIProgress = ({
             {contentTitle && (
               <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
                 Editing &quot;{contentTitle}&quot;
+              </Typography>
+            )}
+          </>
+        );
+      case "cover":
+        return (
+          <>
+            {contentTitle && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                Generating a cover for &quot;{contentTitle}&quot;
               </Typography>
             )}
           </>

@@ -16,11 +16,14 @@ import {
   Radio,
   FormControl,
   FormLabel,
+  Stack,
 } from "@mui/material";
-import { Sparkles, X } from "lucide-react";
+import { ImagePlus, Sparkles, Trash2, X } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useConfig } from "@providers/config-provider";
 import type { Theme } from "@mui/material/styles";
+import { ImageSelectionDialog } from "@components/image-selection-dialog/image-selection-dialog";
+import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import {
   LimitType,
   countWords,
@@ -45,7 +48,8 @@ export interface AIEditDialogProps {
     prompt: string,
     wordCount?: number | null,
     characterCount?: number | null,
-    tokenEstimation?: TokenEstimation | null
+    tokenEstimation?: TokenEstimation | null,
+    requiredMediaPaths?: string[]
   ) => void;
   isLoading?: boolean;
   error?: string | null;
@@ -53,7 +57,10 @@ export interface AIEditDialogProps {
   initialPrompt?: string;
   contentTitle?: string;
   currentContent?: unknown;
+  initialRequiredMediaPaths?: string[];
 }
+
+const MAX_REQUIRED_MEDIA = 10;
 
 export const AIEditDialog = ({
   open,
@@ -65,11 +72,14 @@ export const AIEditDialog = ({
   initialPrompt = "",
   contentTitle,
   currentContent,
+  initialRequiredMediaPaths,
 }: AIEditDialogProps) => {
   const { config } = useConfig();
   const [prompt, setPrompt] = useState(initialPrompt);
   const [limitType, setLimitType] = useState<LimitType>("none");
   const [limitValue, setLimitValue] = useState<number | "">("");
+  const [requiredMediaPaths, setRequiredMediaPaths] = useState<string[]>([]);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   // Check if AI assistance is available
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
@@ -92,6 +102,14 @@ export const AIEditDialog = ({
 
   // Auto-populate limit value when limit type changes
   useEffect(() => {
+    <ImageSelectionDialog
+      open={mediaPickerOpen}
+      onClose={() => setMediaPickerOpen(false)}
+      onSelect={(imageUrl) => {
+        handleSelectMedia(imageUrl);
+        setMediaPickerOpen(false);
+      }}
+    />;
     if (!contentStats) {
       setLimitValue("");
       return;
@@ -121,8 +139,9 @@ export const AIEditDialog = ({
       setPrompt(initialPrompt);
       setLimitType("none");
       setLimitValue("");
+      setRequiredMediaPaths(initialRequiredMediaPaths || []);
     }
-  }, [open, initialPrompt]);
+  }, [open, initialPrompt, initialRequiredMediaPaths]);
 
   const handleEdit = () => {
     if (prompt.trim()) {
@@ -136,7 +155,13 @@ export const AIEditDialog = ({
             estimatedCost: tokenEstimation.estimatedCost,
           }
         : null;
-      onEdit(prompt.trim(), wordCount, characterCount, estimation);
+      onEdit(
+        prompt.trim(),
+        wordCount,
+        characterCount,
+        estimation,
+        requiredMediaPaths.length ? requiredMediaPaths : undefined
+      );
     }
   };
 
@@ -145,6 +170,28 @@ export const AIEditDialog = ({
   };
 
   const isFormValid = prompt.trim().length > 0;
+
+  const handleSelectMedia = (path: string) => {
+    if (requiredMediaPaths.includes(path)) return;
+    if (requiredMediaPaths.length >= MAX_REQUIRED_MEDIA) return;
+    setRequiredMediaPaths((prev) => [...prev, path]);
+  };
+
+  const handleSelectMediaPaths = (paths: string[]) => {
+    setRequiredMediaPaths((prev) => {
+      const next = [...prev];
+      paths.forEach((path) => {
+        if (next.includes(path)) return;
+        if (next.length >= MAX_REQUIRED_MEDIA) return;
+        next.push(path);
+      });
+      return next;
+    });
+  };
+
+  const handleRemoveMedia = (path: string) => {
+    setRequiredMediaPaths((prev) => prev.filter((item) => item !== path));
+  };
 
   return (
     <>
@@ -248,13 +295,6 @@ export const AIEditDialog = ({
             minRows={4}
             maxRows={8}
             label="Edit Instructions"
-            placeholder={
-              "Describe what changes you want to make. For example:\n" +
-              "• Make it more engaging and add examples\n" +
-              "• Improve the SEO and readability\n" +
-              "• Add more technical details\n" +
-              "• Change the tone to be more professional..."
-            }
             value={prompt}
             onChange={(e) => {
               setPrompt(e.target.value);
@@ -275,6 +315,79 @@ export const AIEditDialog = ({
             }}
             helperText={`${prompt.length} characters. Be specific about the changes you want.`}
           />
+
+          <Box
+            sx={{
+              p: 3,
+              mb: 3,
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "rgba(0, 0, 0, 0.02)",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Media to insert (optional)
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {requiredMediaPaths.length}/{MAX_REQUIRED_MEDIA}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+              Add images that the AI must place inside the article and blend into the content flow.
+            </Typography>
+
+            <Box sx={{ mt: 2 }}>
+              {requiredMediaPaths.length === 0 ? (
+                <Typography variant="caption" color="text.secondary">
+                  No media selected.
+                </Typography>
+              ) : (
+                <Stack spacing={1}>
+                  {requiredMediaPaths.map((path) => (
+                    <Box
+                      key={path}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        p: 1,
+                        border: "1px solid",
+                        borderColor: "grey.200",
+                        borderRadius: 2,
+                        backgroundColor: "common.white",
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={buildAbsoluteUrlWithCacheBust(path)}
+                        alt="Selected media"
+                        sx={{ width: 56, height: 56, objectFit: "cover", borderRadius: 1 }}
+                      />
+                      <Typography variant="body2" sx={{ flex: 1 }}>
+                        {path}
+                      </Typography>
+                      <IconButton size="small" onClick={() => handleRemoveMedia(path)}>
+                        <Trash2 size={16} />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+            </Box>
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ImagePlus size={16} />}
+              onClick={() => setMediaPickerOpen(true)}
+              disabled={requiredMediaPaths.length >= MAX_REQUIRED_MEDIA || isLoading}
+              sx={{ mt: 2 }}
+            >
+              Add from Media Library
+            </Button>
+          </Box>
 
           {/* Output Length Limit Section */}
           <Box
@@ -427,6 +540,21 @@ export const AIEditDialog = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ImageSelectionDialog
+        open={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={(imageUrl) => {
+          handleSelectMedia(imageUrl);
+          setMediaPickerOpen(false);
+        }}
+        onSelectMultiple={(imageUrls) => {
+          handleSelectMediaPaths(imageUrls);
+          setMediaPickerOpen(false);
+        }}
+        selectionMode="multiple"
+        maxSelection={MAX_REQUIRED_MEDIA}
+      />
     </>
   );
 };

@@ -36,7 +36,10 @@ interface ImageSelectionDialogProps {
   open: boolean;
   onClose: () => void;
   onSelect: (imageUrl: string) => void;
+  onSelectMultiple?: (imageUrls: string[]) => void;
   initialFolder?: string;
+  selectionMode?: "single" | "multiple";
+  maxSelection?: number;
 }
 
 // Helper for file size formatting
@@ -52,7 +55,10 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
   open,
   onClose,
   onSelect,
+  onSelectMultiple,
   initialFolder = "",
+  selectionMode = "single",
+  maxSelection,
 }) => {
   const { client } = useRequestContext();
   const api = useMemo(() => wrapApiClient(client.api), [client.api]);
@@ -63,6 +69,10 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
   const [currentFolder, setCurrentFolder] = useState(initialFolder);
   const [breadcrumbs, setBreadcrumbs] = useState<{ name: string; scopeUid: string }[]>([]);
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
+  const [selectedItems, setSelectedItems] = useState<MediaItem[]>([]);
+
+  const isMultiSelect = selectionMode === "multiple";
+  const selectedCount = isMultiSelect ? selectedItems.length : selectedItem ? 1 : 0;
 
   // Initialize breadcrumbs from initial folder
   useEffect(() => {
@@ -157,10 +167,33 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
   };
 
   const handleImageSelect = (item: MediaItem) => {
-    setSelectedItem(item);
+    if (!isMultiSelect) {
+      setSelectedItem(item);
+      return;
+    }
+
+    setSelectedItems((prev) => {
+      const isAlreadySelected = prev.some((selected) => selected.id === item.id);
+      if (isAlreadySelected) {
+        return prev.filter((selected) => selected.id !== item.id);
+      }
+
+      if (maxSelection && prev.length >= maxSelection) {
+        return prev;
+      }
+
+      return [...prev, item];
+    });
   };
 
   const handleConfirmSelection = () => {
+    if (isMultiSelect) {
+      if (selectedItems.length > 0) {
+        onSelectMultiple?.(selectedItems.map((item) => item.location));
+      }
+      return;
+    }
+
     if (selectedItem) {
       onSelect(selectedItem.location);
     }
@@ -170,7 +203,10 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">Select Image</Typography>
+          <Typography variant="h6">
+            {isMultiSelect ? "Select Images" : "Select Image"}
+            {isMultiSelect && selectedCount > 0 ? ` (${selectedCount})` : ""}
+          </Typography>
           <IconButton onClick={onClose}>
             <X />
           </IconButton>
@@ -201,7 +237,11 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                   Root
                 </Button>
                 {breadcrumbs.map((bc, idx) => (
-                  <Button key={bc.scopeUid} size="small" onClick={() => handleBreadcrumbClick(idx)}>
+                  <Button
+                    key={`${bc.scopeUid}-${idx}`}
+                    size="small"
+                    onClick={() => handleBreadcrumbClick(idx)}
+                  >
                     {bc.name}
                   </Button>
                 ))}
@@ -225,7 +265,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                     </Typography>
                     <Grid container spacing={2}>
                       {folderItems.map((item) => (
-                        <Grid size={{ xs: 6, sm: 4, md: 3 }} key={item.id}>
+                        <Grid size={{ xs: 6, sm: 4, md: 3 }} key={`${item.id}-${item.scopeUid}`}>
                           <Paper
                             elevation={1}
                             sx={{
@@ -289,16 +329,34 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                     </Typography>
                     <Grid container spacing={2}>
                       {imageItems.map((item) => (
-                        <Grid size={{ xs: 6, sm: 4, md: 3 }} key={item.id}>
+                        <Grid size={{ xs: 6, sm: 4, md: 3 }} key={`${item.id}-${item.location}`}>
                           <Paper
-                            elevation={selectedItem?.id === item.id ? 3 : 1}
+                            elevation={
+                              isMultiSelect
+                                ? selectedItems.some((selected) => selected.id === item.id)
+                                  ? 3
+                                  : 1
+                                : selectedItem?.id === item.id
+                                ? 3
+                                : 1
+                            }
                             sx={{
                               position: "relative",
                               cursor: "pointer",
-                              border:
-                                selectedItem?.id === item.id ? "2px solid" : "1px solid #e0e0e0",
-                              borderColor:
-                                selectedItem?.id === item.id ? "primary.main" : "#e0e0e0",
+                              border: isMultiSelect
+                                ? selectedItems.some((selected) => selected.id === item.id)
+                                  ? "2px solid"
+                                  : "1px solid #e0e0e0"
+                                : selectedItem?.id === item.id
+                                ? "2px solid"
+                                : "1px solid #e0e0e0",
+                              borderColor: isMultiSelect
+                                ? selectedItems.some((selected) => selected.id === item.id)
+                                  ? "primary.main"
+                                  : "#e0e0e0"
+                                : selectedItem?.id === item.id
+                                ? "primary.main"
+                                : "#e0e0e0",
                               borderRadius: 2,
                               overflow: "hidden",
                               transition: "all 0.2s",
@@ -383,8 +441,8 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
 
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleConfirmSelection} disabled={!selectedItem}>
-          Select Image
+        <Button variant="contained" onClick={handleConfirmSelection} disabled={selectedCount === 0}>
+          {isMultiSelect ? "Select Images" : "Select Image"}
         </Button>
       </DialogActions>
     </Dialog>

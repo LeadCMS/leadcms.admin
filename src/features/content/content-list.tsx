@@ -727,7 +727,10 @@ const ItemCard = ({
         </Tooltip>
         <CardMedia
           component="img"
-          image={getContentCoverImageUrl(item.coverImageUrl)}
+          image={getContentCoverImageUrl(
+            item.coverImageUrl,
+            item.updatedAt || item.createdAt || undefined
+          )}
           alt={item.coverImageAlt || item.title || ""}
           sx={{
             width: "100%",

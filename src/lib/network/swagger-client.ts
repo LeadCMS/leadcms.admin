@@ -4031,6 +4031,11 @@ export interface ContentEditRequest {
    * @example 1
    */
   characterCount?: number | null;
+  /**
+   * Required Media Paths
+   * @maxItems 10
+   */
+  requiredMediaPaths?: string[] | null;
 }
 
 export interface ContentGenerationRequest {
@@ -4070,6 +4075,11 @@ export interface ContentGenerationRequest {
    * @example 1
    */
   characterCount?: number | null;
+  /**
+   * Required Media Paths
+   * @maxItems 10
+   */
+  requiredMediaPaths?: string[] | null;
 }
 
 export interface ContentGrowthPointDto {
@@ -4578,6 +4588,69 @@ export interface ContentWithStatisticsDto {
   content?: ContentDetailsDto[];
   /** Statistics */
   statistics?: Record<string, number>;
+}
+
+export interface CoverImageEditRequest {
+  /**
+   * Cover Image Url
+   * @minLength 1
+   * @example "string"
+   */
+  coverImageUrl: string;
+  /**
+   * Content Title
+   * @minLength 1
+   * @example "string"
+   */
+  contentTitle: string;
+  /**
+   * Content Description
+   * @minLength 1
+   * @example "string"
+   */
+  contentDescription: string;
+  /**
+   * Prompt
+   * @minLength 1
+   * @example "string"
+   */
+  prompt: string;
+  /**
+   * Sample Image Paths
+   * @maxItems 5
+   */
+  sampleImagePaths?: string[] | null;
+}
+
+export interface CoverImageGenerationRequest {
+  /**
+   * Content Title
+   * @minLength 1
+   * @example "string"
+   */
+  contentTitle: string;
+  /**
+   * Content Description
+   * @minLength 1
+   * @example "string"
+   */
+  contentDescription: string;
+  /**
+   * Content Slug
+   * @minLength 1
+   * @example "string"
+   */
+  contentSlug: string;
+  /**
+   * Prompt
+   * @example "string"
+   */
+  prompt?: string | null;
+  /**
+   * Sample Image Paths
+   * @maxItems 5
+   */
+  sampleImagePaths?: string[] | null;
 }
 
 export interface CrmMetricsDto {
@@ -5791,55 +5864,6 @@ export interface ForgotPasswordDto {
   language?: string;
 }
 
-export interface GeneratedImage {
-  /**
-   * Url
-   * @example "string"
-   */
-  url?: string;
-  /**
-   * Revised Prompt
-   * @example "string"
-   */
-  revisedPrompt?: string | null;
-}
-
-export interface ImageGenerationRequest {
-  /**
-   * Prompt
-   * @minLength 1
-   * @example "string"
-   */
-  prompt: string;
-  /**
-   * Size
-   * @example "string"
-   */
-  size?: string;
-  /**
-   * Quality
-   * @example "string"
-   */
-  quality?: string;
-  /**
-   * Style
-   * @example "string"
-   */
-  style?: string;
-}
-
-export interface ImageGenerationResponse {
-  /** Images */
-  images?: GeneratedImage[];
-  /**
-   * Model
-   * @example "string"
-   */
-  model?: string;
-  /** Metadata */
-  metadata?: Record<string, any>;
-}
-
 export interface ImportActionDto {
   /**
    * Show Button
@@ -6218,6 +6242,49 @@ export interface MdxComponentPropertyDto {
   exampleValues?: string[];
 }
 
+export interface MediaCropRequestDto {
+  /**
+   * Scope Uid
+   * @minLength 1
+   * @example "string"
+   */
+  scopeUid: string;
+  /**
+   * File Name
+   * @minLength 1
+   * @example "string"
+   */
+  fileName: string;
+  /**
+   * Width
+   * @format int32
+   * @min 1
+   * @max 2147483647
+   * @example 1
+   */
+  width?: number;
+  /**
+   * Height
+   * @format int32
+   * @min 1
+   * @max 2147483647
+   * @example 1
+   */
+  height?: number;
+  /**
+   * X
+   * @format int32
+   * @example 1
+   */
+  x?: number | null;
+  /**
+   * Y
+   * @format int32
+   * @example 1
+   */
+  y?: number | null;
+}
+
 export interface MediaDetailsDto {
   /**
    * Location
@@ -6241,6 +6308,11 @@ export interface MediaDetailsDto {
    */
   name?: string;
   /**
+   * Original Name
+   * @example "string"
+   */
+  originalName?: string | null;
+  /**
    * Description
    * @example "string"
    */
@@ -6251,20 +6323,65 @@ export interface MediaDetailsDto {
    */
   size?: number;
   /**
+   * Original Size
+   * @format int64
+   */
+  originalSize?: number | null;
+  /**
+   * Width
+   * @format int32
+   * @example 1
+   */
+  width?: number | null;
+  /**
+   * Height
+   * @format int32
+   * @example 1
+   */
+  height?: number | null;
+  /**
+   * Original Width
+   * @format int32
+   * @example 1
+   */
+  originalWidth?: number | null;
+  /**
+   * Original Height
+   * @format int32
+   * @example 1
+   */
+  originalHeight?: number | null;
+  /**
    * Extension
    * @example "string"
    */
   extension?: string;
+  /**
+   * Original Extension
+   * @example "string"
+   */
+  originalExtension?: string | null;
   /**
    * Mime Type
    * @example "string"
    */
   mimeType?: string;
   /**
+   * Original Mime Type
+   * @example "string"
+   */
+  originalMimeType?: string | null;
+  /**
    * Tags
    * @example ["string1","string2"]
    */
   tags?: string[];
+  /**
+   * Usage Count
+   * @format int32
+   * @example 1
+   */
+  usageCount?: number;
   /**
    * Created At
    * @format date-time
@@ -6279,6 +6396,98 @@ export interface MediaDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
+}
+
+export interface MediaRenameRequestDto {
+  /**
+   * Scope Uid
+   * @minLength 1
+   * @example "string"
+   */
+  scopeUid: string;
+  /**
+   * File Name
+   * @minLength 1
+   * @example "string"
+   */
+  fileName: string;
+  /**
+   * New Scope Uid
+   * @minLength 1
+   * @example "string"
+   */
+  newScopeUid: string;
+  /**
+   * New File Name
+   * @minLength 1
+   * @example "string"
+   */
+  newFileName: string;
+}
+
+export interface MediaReoptimizeResponseDto {
+  /**
+   * Updated
+   * @format int32
+   * @example 1
+   */
+  updated?: number;
+  /**
+   * Message
+   * @example "string"
+   */
+  message?: string | null;
+}
+
+export interface MediaResizeRequestDto {
+  /**
+   * Scope Uid
+   * @minLength 1
+   * @example "string"
+   */
+  scopeUid: string;
+  /**
+   * File Name
+   * @minLength 1
+   * @example "string"
+   */
+  fileName: string;
+  /**
+   * Width
+   * @format int32
+   * @min 1
+   * @max 2147483647
+   * @example 1
+   */
+  width?: number;
+  /**
+   * Height
+   * @format int32
+   * @min 1
+   * @max 2147483647
+   * @example 1
+   */
+  height?: number;
+  /**
+   * Maintain Aspect Ratio
+   * @example true
+   */
+  maintainAspectRatio?: boolean;
+}
+
+export interface MediaTransformRequestDto {
+  /**
+   * Scope Uid
+   * @minLength 1
+   * @example "string"
+   */
+  scopeUid: string;
+  /**
+   * File Name
+   * @minLength 1
+   * @example "string"
+   */
+  fileName: string;
 }
 
 export interface MsalConfigDto {
@@ -7556,46 +7765,6 @@ export interface TaskExecutionLogDetailsDto {
   duration?: TimeSpan;
 }
 
-export interface TextGenerationRequest {
-  /**
-   * User Prompt
-   * @minLength 1
-   * @example "string"
-   */
-  userPrompt: string;
-  /**
-   * System Prompt
-   * @example "string"
-   */
-  systemPrompt?: string;
-}
-
-export interface TextGenerationResponse {
-  /**
-   * Generated Text
-   * @example "string"
-   */
-  generatedText?: string;
-  /**
-   * Model
-   * @example "string"
-   */
-  model?: string;
-  /**
-   * Tokens Used
-   * @format int32
-   * @example 1
-   */
-  tokensUsed?: number;
-  /**
-   * Finish Reason
-   * @example "string"
-   */
-  finishReason?: string;
-  /** Metadata */
-  metadata?: Record<string, any>;
-}
-
 export interface TimeSpan {
   /** @format int64 */
   ticks?: number;
@@ -8205,7 +8374,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.97.0
+ * @version 1.2.98.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -9405,6 +9574,22 @@ export class Api<
      * No description
      *
      * @tags Content
+     * @name ContentRefreshMediaMetadataCreate
+     * @request POST:/api/content/refresh-media-metadata
+     * @secure
+     */
+    contentRefreshMediaMetadataCreate: (params: RequestParams = {}) =>
+      this.request<void, ProblemDetails>({
+        path: `/api/content/refresh-media-metadata`,
+        method: "POST",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
      * @name ContentImportCreate
      * @request POST:/api/content/import
      * @secure
@@ -9708,6 +9893,50 @@ export class Api<
         path: `/api/countries`,
         method: "GET",
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentAiCoverCreate
+     * @request POST:/api/content/ai-cover
+     * @secure
+     */
+    contentAiCoverCreate: (
+      data: CoverImageGenerationRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaDetailsDto, ProblemDetails>({
+        path: `/api/content/ai-cover`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentAiCoverEditCreate
+     * @request POST:/api/content/ai-cover/edit
+     * @secure
+     */
+    contentAiCoverEditCreate: (
+      data: CoverImageEditRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaDetailsDto, ProblemDetails>({
+        path: `/api/content/ai-cover/edit`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -13710,28 +13939,6 @@ export class Api<
     /**
      * No description
      *
-     * @tags AIAssistance
-     * @name AiImageGenerationCreate
-     * @request POST:/api/ai/image-generation
-     * @secure
-     */
-    aiImageGenerationCreate: (
-      data: ImageGenerationRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<ImageGenerationResponse, any>({
-        path: `/api/ai/image-generation`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @tags Links
      * @name LinksCreate
      * @request POST:/api/links
@@ -14095,6 +14302,108 @@ export class Api<
      * No description
      *
      * @tags Media
+     * @name MediaReoptimizeCreate
+     * @request POST:/api/media/reoptimize
+     * @secure
+     */
+    mediaReoptimizeCreate: (params: RequestParams = {}) =>
+      this.request<MediaReoptimizeResponseDto, void | ProblemDetails>({
+        path: `/api/media/reoptimize`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaRenameCreate
+     * @request POST:/api/media/rename
+     * @secure
+     */
+    mediaRenameCreate: (
+      data: MediaRenameRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaDetailsDto, void | ProblemDetails>({
+        path: `/api/media/rename`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaOptimizeCreate
+     * @request POST:/api/media/optimize
+     * @secure
+     */
+    mediaOptimizeCreate: (
+      data: MediaTransformRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaDetailsDto, void | ProblemDetails>({
+        path: `/api/media/optimize`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaResizeCreate
+     * @request POST:/api/media/resize
+     * @secure
+     */
+    mediaResizeCreate: (
+      data: MediaResizeRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaDetailsDto, void | ProblemDetails>({
+        path: `/api/media/resize`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaCropCreate
+     * @request POST:/api/media/crop
+     * @secure
+     */
+    mediaCropCreate: (data: MediaCropRequestDto, params: RequestParams = {}) =>
+      this.request<MediaDetailsDto, void | ProblemDetails>({
+        path: `/api/media/crop`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
      * @name MediaSyncList
      * @request GET:/api/media/sync
      * @secure
@@ -14111,6 +14420,23 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaFormatsList
+     * @request GET:/api/media/formats
+     * @secure
+     */
+    mediaFormatsList: (params: RequestParams = {}) =>
+      this.request<string[], any>({
+        path: `/api/media/formats`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -15375,28 +15701,6 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags AIAssistance
-     * @name AiTextGenerationCreate
-     * @request POST:/api/ai/text-generation
-     * @secure
-     */
-    aiTextGenerationCreate: (
-      data: TextGenerationRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<TextGenerationResponse, any>({
-        path: `/api/ai/text-generation`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
         format: "json",
         ...params,
       }),

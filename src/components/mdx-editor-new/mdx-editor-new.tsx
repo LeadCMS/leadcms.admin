@@ -412,6 +412,13 @@ const MDXEditorNew = ({
               markdown={value}
               onChange={handleContentChange}
               readOnly={isReadOnly}
+              toMarkdownOptions={{
+                emphasis: "_",
+                rule: "-",
+                bullet: "-",
+                incrementListMarker: true,
+                listItemIndent: "one",
+              }}
               className="mdx-editor-new"
               plugins={[
                 // Enable diff/source mode plugin - start in source mode for custom components

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Box,
   Card,
@@ -9,10 +10,6 @@ import {
   Chip,
   Stack,
   CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   Alert,
   Grid,
   Accordion,
@@ -23,9 +20,11 @@ import {
   FormControlLabel,
   Switch,
   FormGroup,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
-import { Save, Info, Link } from "lucide-react";
+import { Save, Info } from "lucide-react";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
@@ -56,6 +55,13 @@ interface SettingsFormData {
   "AI.SiteProfile.BrandVoice": string;
   "AI.SiteProfile.PreferredTerms": string;
   "AI.SiteProfile.AvoidTerms": string;
+  "AI.SiteProfile.BlogCover.Instructions": string;
+  "AI.SiteProfile.BlogCover.Size": string;
+  "Media.Cover.Dimensions": string;
+  "Media.MaxDimensions": string;
+  "Media.MaxFileSize": string;
+  "Media.PreferredFormat": string;
+  "Media.EnableOptimisation": string;
 }
 
 const availableVariables = [
@@ -72,7 +78,15 @@ const Settings = () => {
   const { setFullWidth } = useLayout();
   const { config, reloadConfig } = useConfig();
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
-  const [activeTab, setActiveTab] = useState<string>("preview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    // Initialize from URL or default
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl) {
+      return tabFromUrl;
+    }
+    return hasAIAssistance ? "siteProfile" : "preview";
+  });
   const hasInitializedTab = useRef(false);
   const [formData, setFormData] = useState<SettingsFormData>({
     LivePreviewUrlTemplate: "",
@@ -94,7 +108,20 @@ const Settings = () => {
     "AI.SiteProfile.BrandVoice": "",
     "AI.SiteProfile.PreferredTerms": "",
     "AI.SiteProfile.AvoidTerms": "",
+    "AI.SiteProfile.BlogCover.Instructions": "",
+    "AI.SiteProfile.BlogCover.Size": "",
+    "Media.Cover.Dimensions": "",
+    "Media.MaxDimensions": "",
+    "Media.MaxFileSize": "",
+    "Media.PreferredFormat": "",
+    "Media.EnableOptimisation": "true",
   });
+  const [coverWidth, setCoverWidth] = useState("");
+  const [coverHeight, setCoverHeight] = useState("");
+  const [maxWidth, setMaxWidth] = useState("");
+  const [maxHeight, setMaxHeight] = useState("");
+  const [availableFormats, setAvailableFormats] = useState<string[]>([]);
+  const [loadingFormats, setLoadingFormats] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Partial<SettingsFormData>>({});
@@ -109,19 +136,40 @@ const Settings = () => {
 
   useEffect(() => {
     loadSettings();
+    loadAvailableFormats();
   }, []);
 
+  // Handle tab changes based on capabilities and sync with URL
   useEffect(() => {
     if (!hasInitializedTab.current) {
-      setActiveTab(hasAIAssistance ? "siteProfile" : "preview");
+      // On first render, validate the tab from URL
+      const tabFromUrl = searchParams.get("tab");
+      if (!tabFromUrl) {
+        // No tab in URL, set default
+        const defaultTab = hasAIAssistance ? "siteProfile" : "preview";
+        setActiveTab(defaultTab);
+        setSearchParams({ tab: defaultTab }, { replace: true });
+      } else if (!hasAIAssistance && tabFromUrl === "siteProfile") {
+        // AI not available but siteProfile tab requested, redirect to preview
+        setActiveTab("preview");
+        setSearchParams({ tab: "preview" }, { replace: true });
+      }
       hasInitializedTab.current = true;
       return;
     }
 
+    // If AI assistance is removed and user is on siteProfile tab, switch to preview
     if (!hasAIAssistance && activeTab === "siteProfile") {
       setActiveTab("preview");
+      setSearchParams({ tab: "preview" }, { replace: true });
     }
-  }, [activeTab, hasAIAssistance]);
+  }, [activeTab, hasAIAssistance, searchParams, setSearchParams]);
+
+  // Handler for tab changes
+  const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
+    setActiveTab(newValue);
+    setSearchParams({ tab: newValue });
+  };
 
   const loadSettings = async () => {
     try {
@@ -149,6 +197,13 @@ const Settings = () => {
         "AI.SiteProfile.BrandVoice": "",
         "AI.SiteProfile.PreferredTerms": "",
         "AI.SiteProfile.AvoidTerms": "",
+        "AI.SiteProfile.BlogCover.Instructions": "",
+        "AI.SiteProfile.BlogCover.Size": "",
+        "Media.Cover.Dimensions": "",
+        "Media.MaxDimensions": "",
+        "Media.MaxFileSize": "",
+        "Media.PreferredFormat": "",
+        "Media.EnableOptimisation": "true",
       };
 
       if (settings) {
@@ -191,6 +246,29 @@ const Settings = () => {
             newFormData["AI.SiteProfile.PreferredTerms"] = setting.value || "";
           } else if (setting.key === "AI.SiteProfile.AvoidTerms") {
             newFormData["AI.SiteProfile.AvoidTerms"] = setting.value || "";
+          } else if (setting.key === "AI.SiteProfile.BlogCover.Instructions") {
+            newFormData["AI.SiteProfile.BlogCover.Instructions"] = setting.value || "";
+          } else if (setting.key === "AI.SiteProfile.BlogCover.Size") {
+            newFormData["AI.SiteProfile.BlogCover.Size"] = setting.value || "";
+          } else if (setting.key === "Media.Cover.Dimensions") {
+            newFormData["Media.Cover.Dimensions"] = setting.value || "";
+            const rawSize = setting.value || "";
+            const [widthValue, heightValue] = rawSize.split(/x/i);
+            setCoverWidth(widthValue?.trim() || "");
+            setCoverHeight(heightValue?.trim() || "");
+          } else if (setting.key === "Media.Max.Dimensions") {
+            newFormData["Media.MaxDimensions"] = setting.value || "";
+            const rawSize = setting.value || "";
+            const [widthValue, heightValue] = rawSize.split(/x/i);
+            setMaxWidth(widthValue?.trim() || "");
+            setMaxHeight(heightValue?.trim() || "");
+          } else if (setting.key === "Media.Max.FileSize") {
+            // Backend stores in KB, display as-is
+            newFormData["Media.MaxFileSize"] = setting.value || "";
+          } else if (setting.key === "Media.PreferredFormat") {
+            newFormData["Media.PreferredFormat"] = setting.value || "";
+          } else if (setting.key === "Media.EnableOptimisation") {
+            newFormData["Media.EnableOptimisation"] = setting.value || "true";
           }
         });
       }
@@ -200,6 +278,20 @@ const Settings = () => {
       notificationsService.error("Failed to load settings");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAvailableFormats = async () => {
+    try {
+      setLoadingFormats(true);
+      const response = await client.api.mediaFormatsList();
+      if (response.data) {
+        setAvailableFormats(response.data);
+      }
+    } catch (err: unknown) {
+      notificationsService.error("Failed to load available media formats");
+    } finally {
+      setLoadingFormats(false);
     }
   };
 
@@ -357,6 +449,22 @@ const Settings = () => {
           { key: "Identity.RequiredUniqueChars", value: formData["Identity.RequiredUniqueChars"] },
         ];
 
+        // Add Media settings
+        const coverDimensionsValue =
+          coverWidth.trim() && coverHeight.trim()
+            ? `${coverWidth.trim()}x${coverHeight.trim()}`
+            : null;
+        const maxDimensionsValue =
+          maxWidth.trim() && maxHeight.trim() ? `${maxWidth.trim()}x${maxHeight.trim()}` : null;
+
+        settingsToSave.push(
+          { key: "Media.Cover.Dimensions", value: coverDimensionsValue || "" },
+          { key: "Media.Max.Dimensions", value: maxDimensionsValue || "" },
+          { key: "Media.Max.FileSize", value: formData["Media.MaxFileSize"] },
+          { key: "Media.PreferredFormat", value: formData["Media.PreferredFormat"] },
+          { key: "Media.EnableOptimisation", value: formData["Media.EnableOptimisation"] }
+        );
+
         if (hasAIAssistance) {
           settingsToSave.push(
             { key: "AI.SiteProfile.Topic", value: formData["AI.SiteProfile.Topic"] },
@@ -366,7 +474,11 @@ const Settings = () => {
               key: "AI.SiteProfile.PreferredTerms",
               value: formData["AI.SiteProfile.PreferredTerms"],
             },
-            { key: "AI.SiteProfile.AvoidTerms", value: formData["AI.SiteProfile.AvoidTerms"] }
+            { key: "AI.SiteProfile.AvoidTerms", value: formData["AI.SiteProfile.AvoidTerms"] },
+            {
+              key: "AI.SiteProfile.BlogCover.Instructions",
+              value: formData["AI.SiteProfile.BlogCover.Instructions"],
+            }
           );
         }
 
@@ -422,24 +534,6 @@ const Settings = () => {
 
   const breadcrumbs = settingsFormBreadcrumbLinks;
 
-  const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        mb: 3,
-        mt: 4,
-        pb: 1,
-        borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
-      }}
-    >
-      <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
-      <Typography variant="subtitle1" fontWeight="500" color="primary.main">
-        {title}
-      </Typography>
-    </Box>
-  );
-
   const actionButtons = (
     <Box sx={{ display: "flex", width: "100%", gap: 2, justifyContent: "flex-end" }}>
       <Button
@@ -484,10 +578,11 @@ const Settings = () => {
         <Card>
           <CardContent>
             {/* Settings Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
-              <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+            <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 4 }}>
+              <Tabs value={activeTab} onChange={handleTabChange}>
                 {hasAIAssistance && <Tab label="Site Profile" value="siteProfile" />}
                 <Tab label="Preview" value="preview" />
+                <Tab label="Media" value="media" />
                 <Tab
                   label={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -533,29 +628,34 @@ const Settings = () => {
 
             {/* Preview Settings Tab */}
             {activeTab === "preview" && (
-              <Box sx={{ mt: "20px" }}>
-                <Grid container spacing={3} marginBottom={4}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
+              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Preview URL Templates
+                </Typography>
+                <Grid container spacing={4} marginBottom={5}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="Preview URL Template"
                       value={formData.PreviewUrlTemplate}
                       onChange={handleInputChange("PreviewUrlTemplate")}
                       placeholder="https://leadcms.ai/{lang+slug}/"
-                      helperText="URL template used for general content preview"
+                      helperText="URL template used for general content preview.
+                      This is typically a public URL."
                       variant="outlined"
                       size="small"
                     />
                   </Grid>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="Live Preview URL Template"
                       value={formData.LivePreviewUrlTemplate}
                       onChange={handleInputChange("LivePreviewUrlTemplate")}
                       placeholder="https://preview.leadcms.ai/{lang+slug}-{userId}/"
-                      helperText="URL template used for live preview functionality while editing"
+                      helperText="URL template for live preview while editing.
+                      Includes user-specific variables for personalized previews."
                       variant="outlined"
                       size="small"
                     />
@@ -578,89 +678,285 @@ const Settings = () => {
                         <Info size={22} />
                       </Box>
                       <Typography variant="subtitle1" fontWeight="500" color="primary.main">
-                        Template Variables
+                        Available Template Variables
                       </Typography>
                     </Box>
                   </AccordionSummary>
                   <AccordionDetails sx={{ pt: 3 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      You can use the following variables in your URL templates:
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      You can use the following variables in your URL templates. They will be
+                      replaced with actual values when generating preview URLs:
                     </Typography>
-                    <List dense>
+                    <Stack spacing={2}>
                       {availableVariables.map((variable) => (
-                        <ListItem key={variable.name}>
-                          <ListItemIcon>
-                            <Chip
-                              label={variable.name}
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                            />
-                          </ListItemIcon>
-                          <ListItemText primary={variable.description} />
-                        </ListItem>
+                        <Box
+                          key={variable.name}
+                          sx={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 2,
+                            p: 1.5,
+                            backgroundColor: "rgba(0, 0, 0, 0.02)",
+                            borderRadius: 1,
+                          }}
+                        >
+                          <Chip
+                            label={variable.name}
+                            size="small"
+                            variant="outlined"
+                            sx={{ mt: 0.5, flexShrink: 0 }}
+                          />
+                          <Typography variant="body2" color="text.secondary">
+                            {variable.description}
+                          </Typography>
+                        </Box>
                       ))}
-                    </List>
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                      <Typography variant="body2">
-                        <strong>Examples:</strong>
-                        <br />
-                        {" • "}
-                        <code>
-                          https://preview.leadcms.ai/{"{lang+slug}"}-{"{userId}"}/
-                        </code>
-                        <br />
-                        {" • "}
-                        <code>https://leadcms.ai/{"{lang+slug}"}/</code>
-                        <br />
-                        {" • "}
-                        <code>https://leadcms.ai/{"{slug}"}/</code>
-                      </Typography>
-                    </Alert>
+                    </Stack>
                   </AccordionDetails>
                 </Accordion>
+              </Box>
+            )}
 
-                <Card sx={{ mt: 3 }}>
-                  <CardContent>
-                    <SectionHeader icon={<Link size={22} />} title="Template Explanation" />
-                    <Stack spacing={2}>
+            {/* Media Settings Tab */}
+            {activeTab === "media" && (
+              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
+                <Alert severity="info" sx={{ mb: 4 }}>
+                  <Typography variant="body2">
+                    Configure media processing settings including cover image dimensions for AI
+                    generation, file size limits, and optimization preferences.
+                  </Typography>
+                </Alert>
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  AI Cover Generation
+                </Typography>
+                <Box
+                  sx={{ mb: 5, p: 2.5, backgroundColor: "rgba(0, 0, 0, 0.02)", borderRadius: 1 }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 2, fontWeight: 500 }}
+                  >
+                    Cover Dimensions
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mb: 2, display: "block" }}
+                  >
+                    Dimensions used for AI cover generation (default: 512x256)
+                  </Typography>
+                  <Grid container spacing={2} alignItems="flex-end">
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Width"
+                        value={coverWidth}
+                        onChange={(e) => setCoverWidth(e.target.value)}
+                        placeholder="512"
+                        variant="outlined"
+                        size="small"
+                        slotProps={{ htmlInput: { min: 1 } }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Height"
+                        value={coverHeight}
+                        onChange={(e) => setCoverHeight(e.target.value)}
+                        placeholder="256"
+                        variant="outlined"
+                        size="small"
+                        slotProps={{ htmlInput: { min: 1 } }}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: "block" }}
+                  >
+                    Saved as WxH. If either value is empty, the setting is cleared.
+                  </Typography>
+                </Box>
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  File Management
+                </Typography>
+                <Box sx={{ mb: 5 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Maximum File Size (KB)"
+                    value={formData["Media.MaxFileSize"]}
+                    onChange={handleInputChange("Media.MaxFileSize")}
+                    placeholder="10240"
+                    variant="outlined"
+                    size="small"
+                    helperText="Maximum file size for uploads in kilobytes"
+                    slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                  />
+                </Box>
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Optimization Settings
+                </Typography>
+                <Box
+                  sx={{ mb: 5, p: 2.5, backgroundColor: "rgba(0, 0, 0, 0.02)", borderRadius: 1 }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData["Media.EnableOptimisation"] === "true"}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            "Media.EnableOptimisation": e.target.checked ? "true" : "false",
+                          }))
+                        }
+                      />
+                    }
+                    label={
                       <Box>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                        >
-                          <Box component="span">Preview URL Template</Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                          Enable Media Optimization
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          This template is used for general content preview functionality. It
-                          provides a standardized way to generate preview URLs for published or
-                          staged content that can be shared with stakeholders or used for content
-                          review processes.
+                        <Typography variant="caption" color="text.secondary">
+                          When enabled, media files will be optimized based on settings below
                         </Typography>
                       </Box>
-                      <Box>
+                    }
+                    sx={{ width: "100%" }}
+                  />
+                </Box>
+
+                {formData["Media.EnableOptimisation"] === "true" && (
+                  <>
+                    <Box
+                      sx={{
+                        mb: 5,
+                        p: 2.5,
+                        backgroundColor: "rgba(0, 0, 0, 0.02)",
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ mb: 2, fontWeight: 500 }}
+                      >
+                        Maximum Dimensions
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mb: 2, display: "block" }}
+                      >
+                        Maximum dimensions for media resizing and re-optimization
+                      </Typography>
+                      <Grid container spacing={2} alignItems="flex-end">
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            type="number"
+                            label="Width"
+                            value={maxWidth}
+                            onChange={(e) => setMaxWidth(e.target.value)}
+                            placeholder="2048"
+                            variant="outlined"
+                            size="small"
+                            slotProps={{ htmlInput: { min: 1 } }}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            type="number"
+                            label="Height"
+                            value={maxHeight}
+                            onChange={(e) => setMaxHeight(e.target.value)}
+                            placeholder="2048"
+                            variant="outlined"
+                            size="small"
+                            slotProps={{ htmlInput: { min: 1 } }}
+                          />
+                        </Grid>
+                      </Grid>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1, display: "block" }}
+                      >
+                        Saved as WxH. If either value is empty, the setting is cleared.
+                      </Typography>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        mb: 5,
+                        p: 2.5,
+                        backgroundColor: "rgba(0, 0, 0, 0.02)",
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ mb: 2, fontWeight: 500 }}
+                      >
+                        Preferred Format
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mb: 2, display: "block" }}
+                      >
+                        Format to use for media optimization (default: avif)
+                      </Typography>
+                      <Select
+                        fullWidth
+                        value={formData["Media.PreferredFormat"]}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            "Media.PreferredFormat": e.target.value,
+                          }))
+                        }
+                        displayEmpty
+                        size="small"
+                        disabled={loadingFormats || availableFormats.length === 0}
+                      >
+                        <MenuItem value="">
+                          <em>{loadingFormats ? "Loading..." : "None (use original format)"}</em>
+                        </MenuItem>
+                        {availableFormats.map((format) => (
+                          <MenuItem key={format} value={format}>
+                            {format}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {availableFormats.length === 0 && !loadingFormats && (
                         <Typography
-                          variant="subtitle1"
-                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                          variant="caption"
+                          color="error"
+                          sx={{ mt: 1, display: "block" }}
                         >
-                          <Box component="span">Live Preview URL Template</Box>
+                          No formats available. Please check server configuration.
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          This template is used when content editors want to see a live preview of
-                          their changes while editing. It typically includes user-specific variables
-                          to provide personalized preview URLs that can show draft content or
-                          work-in-progress changes.
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </Card>
+                      )}
+                    </Box>
+                  </>
+                )}
               </Box>
             )}
 
             {/* Content Settings Tab */}
             {activeTab === "content" && (
-              <Box sx={{ mt: "20px" }}>
+              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
                 <Grid container spacing={3} marginBottom={4}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
@@ -827,7 +1123,7 @@ const Settings = () => {
 
             {/* Site Profile Settings Tab */}
             {activeTab === "siteProfile" && hasAIAssistance && (
-              <Box sx={{ mt: "20px" }}>
+              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
                 <Grid container spacing={3} marginBottom={4}>
                   <Grid size={{ xs: 12 }}>
                     <Alert severity="info" sx={{ mb: 2 }}>
@@ -917,13 +1213,29 @@ const Settings = () => {
                       size="small"
                     />
                   </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      maxRows={8}
+                      label="Blog Cover Instructions"
+                      value={formData["AI.SiteProfile.BlogCover.Instructions"]}
+                      onChange={handleInputChange("AI.SiteProfile.BlogCover.Instructions")}
+                      placeholder={"Provide guidance for cover image generation."}
+                      helperText="Used for AI cover generation prompts."
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
                 </Grid>
               </Box>
             )}
 
             {/* Password Policy Settings Tab */}
             {activeTab === "password" && (
-              <Box sx={{ mt: "20px" }}>
+              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
                 <Grid container spacing={3} marginBottom={4}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField

@@ -20,8 +20,9 @@ import {
   FormControlLabel,
   Radio,
   FormLabel,
+  Stack,
 } from "@mui/material";
-import { Sparkles, X } from "lucide-react";
+import { ImagePlus, Sparkles, Trash2, X } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useDebounce } from "use-debounce";
 import { useConfig } from "@providers/config-provider";
@@ -31,6 +32,8 @@ import { getWhereFilterQuery } from "@providers/query-provider";
 import { ContentDetailsDto, ContentTypeDetailsDto } from "@lib/network/swagger-client";
 import { idToDisplayName } from "@features/content/content-types";
 import type { Theme } from "@mui/material/styles";
+import { ImageSelectionDialog } from "@components/image-selection-dialog/image-selection-dialog";
+import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import {
   LimitType,
   countWords,
@@ -58,7 +61,8 @@ export interface AIDraftDialogProps {
     referenceContentId?: number | null,
     wordCount?: number | null,
     characterCount?: number | null,
-    tokenEstimation?: TokenEstimation | null
+    tokenEstimation?: TokenEstimation | null,
+    requiredMediaPaths?: string[]
   ) => void;
   contentTypes: ContentTypeDetailsDto[];
   isLoading?: boolean;
@@ -69,8 +73,11 @@ export interface AIDraftDialogProps {
     contentType?: string;
     prompt?: string;
     referenceContentId?: number | null;
+    requiredMediaPaths?: string[];
   };
 }
+
+const MAX_REQUIRED_MEDIA = 10;
 
 export const AIDraftDialog = ({
   open,
@@ -96,6 +103,8 @@ export const AIDraftDialog = ({
   const [debouncedReferenceInput] = useDebounce(referenceContentInput, 300);
   const [limitType, setLimitType] = useState<LimitType>("none");
   const [limitValue, setLimitValue] = useState<number | "">("");
+  const [requiredMediaPaths, setRequiredMediaPaths] = useState<string[]>([]);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   const languages = config?.languages || [];
 
@@ -113,6 +122,7 @@ export const AIDraftDialog = ({
       setReferenceContent(null);
       setLimitType("none");
       setLimitValue("");
+      setRequiredMediaPaths(initialValues?.requiredMediaPaths || []);
     }
   }, [
     open,
@@ -120,6 +130,7 @@ export const AIDraftDialog = ({
     initialValues?.language,
     initialValues?.contentType,
     initialValues?.prompt,
+    initialValues?.requiredMediaPaths,
   ]);
 
   useEffect(() => {
@@ -224,7 +235,8 @@ export const AIDraftDialog = ({
         referenceContent?.id || null,
         wordCount,
         characterCount,
-        estimation
+        estimation,
+        requiredMediaPaths.length ? requiredMediaPaths : undefined
       );
     }
   };
@@ -271,6 +283,28 @@ export const AIDraftDialog = ({
   }, [referenceContent, prompt, limitType, limitValue]);
 
   const isFormValid = language && contentType && prompt.trim().length > 0;
+
+  const handleSelectMedia = (path: string) => {
+    if (requiredMediaPaths.includes(path)) return;
+    if (requiredMediaPaths.length >= MAX_REQUIRED_MEDIA) return;
+    setRequiredMediaPaths((prev) => [...prev, path]);
+  };
+
+  const handleSelectMediaPaths = (paths: string[]) => {
+    setRequiredMediaPaths((prev) => {
+      const next = [...prev];
+      paths.forEach((path) => {
+        if (next.includes(path)) return;
+        if (next.length >= MAX_REQUIRED_MEDIA) return;
+        next.push(path);
+      });
+      return next;
+    });
+  };
+
+  const handleRemoveMedia = (path: string) => {
+    setRequiredMediaPaths((prev) => prev.filter((item) => item !== path));
+  };
 
   return (
     <>
@@ -513,6 +547,79 @@ export const AIDraftDialog = ({
             helperText={`${prompt.length} characters. Be as detailed as possible for best results.`}
           />
 
+          <Box
+            sx={{
+              p: 3,
+              mb: 3,
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "rgba(0, 0, 0, 0.02)",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Media to insert (optional)
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {requiredMediaPaths.length}/{MAX_REQUIRED_MEDIA}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+              Add images that the AI must place inside the article and blend into the content flow.
+            </Typography>
+
+            <Box sx={{ mt: 2 }}>
+              {requiredMediaPaths.length === 0 ? (
+                <Typography variant="caption" color="text.secondary">
+                  No media selected.
+                </Typography>
+              ) : (
+                <Stack spacing={1}>
+                  {requiredMediaPaths.map((path) => (
+                    <Box
+                      key={path}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        p: 1,
+                        border: "1px solid",
+                        borderColor: "grey.200",
+                        borderRadius: 2,
+                        backgroundColor: "common.white",
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={buildAbsoluteUrlWithCacheBust(path)}
+                        alt="Selected media"
+                        sx={{ width: 56, height: 56, objectFit: "cover", borderRadius: 1 }}
+                      />
+                      <Typography variant="body2" sx={{ flex: 1 }}>
+                        {path}
+                      </Typography>
+                      <IconButton size="small" onClick={() => handleRemoveMedia(path)}>
+                        <Trash2 size={16} />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+            </Box>
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ImagePlus size={16} />}
+              onClick={() => setMediaPickerOpen(true)}
+              disabled={requiredMediaPaths.length >= MAX_REQUIRED_MEDIA || isLoading}
+              sx={{ mt: 2 }}
+            >
+              Add from Media Library
+            </Button>
+          </Box>
+
           {/* Output Length Limit Section */}
           <Box
             sx={{
@@ -665,6 +772,21 @@ export const AIDraftDialog = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ImageSelectionDialog
+        open={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={(imageUrl) => {
+          handleSelectMedia(imageUrl);
+          setMediaPickerOpen(false);
+        }}
+        onSelectMultiple={(imageUrls) => {
+          handleSelectMediaPaths(imageUrls);
+          setMediaPickerOpen(false);
+        }}
+        selectionMode="multiple"
+        maxSelection={MAX_REQUIRED_MEDIA}
+      />
     </>
   );
 };
