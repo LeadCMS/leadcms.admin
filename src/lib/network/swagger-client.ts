@@ -8374,7 +8374,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.98.0
+ * @version 1.2.99.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -9567,22 +9567,6 @@ export class Api<
         query: query,
         secure: true,
         format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Content
-     * @name ContentRefreshMediaMetadataCreate
-     * @request POST:/api/content/refresh-media-metadata
-     * @secure
-     */
-    contentRefreshMediaMetadataCreate: (params: RequestParams = {}) =>
-      this.request<void, ProblemDetails>({
-        path: `/api/content/refresh-media-metadata`,
-        method: "POST",
-        secure: true,
         ...params,
       }),
 
@@ -14225,6 +14209,7 @@ export class Api<
         scopeUid?: string;
         /** @default false */
         includeFolders?: boolean;
+        order?: string;
       },
       params: RequestParams = {},
     ) =>
@@ -14274,10 +14259,18 @@ export class Api<
      * @request GET:/api/media/{pathToFile}
      * @secure
      */
-    mediaDetail: (pathToFile: string, params: RequestParams = {}) =>
+    mediaDetail: (
+      pathToFile: string,
+      query?: {
+        /** @default false */
+        original?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, ProblemDetails>({
         path: `/api/media/${pathToFile}`,
         method: "GET",
+        query: query,
         secure: true,
         ...params,
       }),

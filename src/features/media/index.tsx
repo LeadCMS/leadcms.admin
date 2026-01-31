@@ -37,6 +37,10 @@ import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { wrapApiClient } from "@lib/network/wrapApiClient";
 import type { FileUploadStatus } from "./media-upload-dialog";
+import { MediaSortPopup } from "@components/media-sort-popup";
+import useLocalStorage from "use-local-storage";
+import { ToolbarButton } from "@components/tool-bar-button";
+import { SortAsc, SortDesc } from "lucide-react";
 
 // Helper for file size formatting
 function formatFileSize(size: number | undefined) {
@@ -45,6 +49,23 @@ function formatFileSize(size: number | undefined) {
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
   return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`;
+}
+
+// Helper for human-readable folder names
+function formatFolderName(name: string): string {
+  let humanName = name
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/-/g, " ")
+    .replace(/_/g, " ");
+
+  // Convert to title case
+  humanName = humanName
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+  return humanName;
 }
 
 const fileTypeIcons: Record<string, JSX.Element> = {
@@ -85,6 +106,13 @@ type MediaItem = {
 };
 
 type DialogType = "new-folder" | "upload" | null;
+
+type MediaListFilterSettings = {
+  sortField: string;
+  sortDirection: "asc" | "desc";
+};
+
+const MEDIA_FILTERS_KEY = "media-list-filters";
 
 const MediaManagement = () => {
   const { client } = useRequestContext();
@@ -127,6 +155,17 @@ const MediaManagement = () => {
   const [deleteTarget, setDeleteTarget] = useState<MediaItem | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [sortAnchorEl, setSortAnchorEl] = useState<HTMLElement | null>(null);
+
+  const [storedSettings, setStoredSettings] = useLocalStorage<MediaListFilterSettings>(
+    MEDIA_FILTERS_KEY,
+    {
+      sortField: "name",
+      sortDirection: "asc",
+    }
+  );
+  const [sortField, setSortField] = useState(storedSettings.sortField);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(storedSettings.sortDirection);
 
   // For preview navigation - include both images and PDFs
   const previewableItems = items.filter((item) => {
@@ -223,7 +262,13 @@ const MediaManagement = () => {
     const fetchMedia = async () => {
       setLoading(true);
       try {
-        const response = await api.mediaList({ scopeUid: currentScopeUid, includeFolders: true });
+        const order = getOrderParam();
+        const queryParams = {
+          scopeUid: currentScopeUid,
+          includeFolders: true,
+          order,
+        } as Record<string, string | boolean | undefined>;
+        const response = await api.mediaList(queryParams as never);
         const validItems = ((response.data || []) as MediaItem[])
           .filter((item: MediaItem) => item.id !== undefined)
           .map((item: MediaItem) => ({ ...item, id: item.id as number }));
@@ -242,7 +287,7 @@ const MediaManagement = () => {
       }
     };
     fetchMedia();
-  }, [api, currentScopeUid, search]);
+  }, [api, currentScopeUid, search, sortField, sortDirection]);
 
   // Search
   useEffect(() => {
@@ -251,7 +296,12 @@ const MediaManagement = () => {
       setIsSearching(true);
       setLoading(true);
       try {
-        const response = await api.mediaList({ query: search });
+        const order = getOrderParam();
+        const queryParams = {
+          query: search,
+          order,
+        } as Record<string, string | boolean | undefined>;
+        const response = await api.mediaList(queryParams as never);
         const validItems = ((response.data || []) as MediaItem[])
           .filter((item: MediaItem) => item.id !== undefined)
           .map((item: MediaItem) => ({ ...item, id: item.id as number }));
@@ -271,7 +321,7 @@ const MediaManagement = () => {
       }
     };
     searchMedia();
-  }, [api, search]);
+  }, [api, search, sortField, sortDirection]);
 
   // Navigation for folders
   const handleFolderClick = (item: MediaItem) => {
@@ -315,6 +365,43 @@ const MediaManagement = () => {
     handleMenuClose();
   };
 
+  const handleSortButtonClick = (event: React.MouseEvent<HTMLElement>) => {
+    setSortAnchorEl(event.currentTarget);
+  };
+  const handleSortPopupClose = () => setSortAnchorEl(null);
+  const handleSortDirectionToggle = () => setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+
+  const orderFieldMap: Record<string, string> = {
+    name: "Name",
+    size: "Size",
+    usageCount: "UsageCount",
+    updatedAt: "UpdatedAt",
+    createdAt: "CreatedAt",
+  };
+
+  const getOrderParam = () => {
+    const field = orderFieldMap[sortField] || "Name";
+    const direction = sortDirection.toUpperCase();
+    return `${field} ${direction}`;
+  };
+
+  const sortLabel = useMemo(() => {
+    switch (sortField) {
+      case "name":
+        return "Name";
+      case "size":
+        return "Size";
+      case "usageCount":
+        return "Usage";
+      case "updatedAt":
+        return "Updated At";
+      case "createdAt":
+        return "Created At";
+      default:
+        return sortField;
+    }
+  }, [sortField]);
+
   // Delete logic
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
@@ -322,7 +409,13 @@ const MediaManagement = () => {
   const refreshMediaList = async () => {
     setLoading(true);
     try {
-      const response = await api.mediaList({ scopeUid: currentScopeUid, includeFolders: true });
+      const order = getOrderParam();
+      const queryParams = {
+        scopeUid: currentScopeUid,
+        includeFolders: true,
+        order,
+      } as Record<string, string | boolean | undefined>;
+      const response = await api.mediaList(queryParams as never);
       const validItems = ((response.data || []) as MediaItem[])
         .filter((item: MediaItem) => item.id !== undefined)
         .map((item: MediaItem) => ({ ...item, id: item.id as number }));
@@ -471,7 +564,13 @@ const MediaManagement = () => {
       setDialog(null); // Close dialog immediately
       setLoading(true);
       try {
-        const response = await api.mediaList({ scopeUid: currentScopeUid, includeFolders: true });
+        const order = getOrderParam();
+        const queryParams = {
+          scopeUid: currentScopeUid,
+          includeFolders: true,
+          order,
+        } as Record<string, string | boolean | undefined>;
+        const response = await api.mediaList(queryParams as never);
         const validItems = ((response.data || []) as MediaItem[])
           .filter((item: MediaItem) => item.id !== undefined)
           .map((item: MediaItem) => ({ ...item, id: item.id as number }));
@@ -498,6 +597,18 @@ const MediaManagement = () => {
     }
   }, [dialog]);
 
+  useEffect(() => {
+    setStoredSettings({
+      sortField,
+      sortDirection,
+    });
+  }, [sortField, sortDirection, setStoredSettings]);
+
+  useEffect(() => {
+    setSortField(storedSettings.sortField);
+    setSortDirection(storedSettings.sortDirection);
+  }, [storedSettings]);
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: "100%" }}>
       <Grid container spacing={2} alignItems="center" mb={3}>
@@ -522,6 +633,14 @@ const MediaManagement = () => {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 8 }} display="flex" justifyContent="flex-end" gap={2}>
+          <ToolbarButton
+            onClick={handleSortButtonClick}
+            startIcon={sortDirection === "asc" ? <SortAsc size={18} /> : <SortDesc size={18} />}
+            sx={{ gap: 1 }}
+          >
+            <span>Sort:</span>
+            <span>{sortLabel}</span>
+          </ToolbarButton>
           <Button variant="contained" onClick={() => setDialog("upload")}>
             Upload
           </Button>
@@ -534,10 +653,22 @@ const MediaManagement = () => {
         </Button>
         {breadcrumbs.map((bc, idx) => (
           <Button key={bc.scopeUid} size="small" onClick={() => handleBreadcrumbClick(idx)}>
-            {bc.name}
+            {formatFolderName(bc.name)}
           </Button>
         ))}
       </Breadcrumbs>
+      <MediaSortPopup
+        anchorEl={sortAnchorEl}
+        open={!!sortAnchorEl}
+        selectedField={sortField}
+        direction={sortDirection}
+        onClose={handleSortPopupClose}
+        onChangeField={(field) => {
+          setSortField(field);
+          handleSortPopupClose();
+        }}
+        onToggleDirection={handleSortDirectionToggle}
+      />
       {/* Tile (card/grid) mode */}
       {fetchError ? (
         <Box textAlign="center" py={6}>
@@ -562,8 +693,8 @@ const MediaManagement = () => {
             return (
               <Grid
                 key={`${item.scopeUid || "root"}:${item.name}:${item.location || item.id}`}
-                size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}
-                sx={{ mb: 3, minWidth: 290, maxWidth: 330 }}
+                size={{ xs: 9.6, sm: 4.8, md: 3.2, lg: 1.92 }}
+                sx={{ mb: 3, minWidth: 232, maxWidth: 264 }}
               >
                 <Paper
                   elevation={2}
@@ -711,7 +842,7 @@ const MediaManagement = () => {
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>
                           {formatFileSize(item.size)}
                         </Typography>
-                        {!isFolder && typeof item.usageCount === "number" && (
+                        {typeof item.usageCount === "number" && (
                           <Typography
                             variant="caption"
                             color="text.secondary"
@@ -794,7 +925,7 @@ const MediaManagement = () => {
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              You are about to delete "{deleteTarget?.name}".
+              You are about to delete &quot{deleteTarget?.name}&quot.
             </Typography>
             {deleteTarget && (deleteTarget.usageCount ?? 0) > 0 ? (
               <Typography variant="body2" color="text.secondary">
@@ -838,14 +969,14 @@ const MediaManagement = () => {
         file={previewFile}
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        onDownload={handleDownload}
-        onCopyLink={handleCopyLink}
+        onDownload={(file) => handleDownload(file as MediaItem)}
+        onCopyLink={(file) => handleCopyLink(file as MediaItem)}
         onNext={handlePreviewNext}
         onPrev={handlePreviewPrev}
         hasNext={getCurrentPreviewIndex() < previewableItems.length - 1}
         hasPrev={getCurrentPreviewIndex() > 0}
-        onReplace={handleReplaceMedia}
-        onFileUpdate={(updatedFile) => setPreviewFile(updatedFile)}
+        onReplace={(file) => handleReplaceMedia(file as MediaItem)}
+        onFileUpdate={(updatedFile) => setPreviewFile(updatedFile as MediaItem)}
       />
       {/* Dialogs (New Folder, Upload, etc.) */}
       <MediaUploadDialog
