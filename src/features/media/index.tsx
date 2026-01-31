@@ -13,7 +13,11 @@ import {
   Typography,
   CircularProgress,
   Breadcrumbs,
+  ToggleButtonGroup,
+  ToggleButton,
+  Tooltip,
 } from "@mui/material";
+import { DataGrid, GridColDef, GridSortModel, GridRowParams } from "@mui/x-data-grid";
 import FolderIcon from "@mui/icons-material/Folder";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -40,7 +44,8 @@ import type { FileUploadStatus } from "./media-upload-dialog";
 import { MediaSortPopup } from "@components/media-sort-popup";
 import useLocalStorage from "use-local-storage";
 import { ToolbarButton } from "@components/tool-bar-button";
-import { SortAsc, SortDesc } from "lucide-react";
+import { DataTableContainer } from "@components/data-table/index.styled";
+import { SortAsc, SortDesc, LayoutGrid, Table as TableIcon, File } from "lucide-react";
 
 // Helper for file size formatting
 function formatFileSize(size: number | undefined) {
@@ -107,9 +112,12 @@ type MediaItem = {
 
 type DialogType = "new-folder" | "upload" | null;
 
+type ViewMode = "tiles" | "grid" | "files";
+
 type MediaListFilterSettings = {
   sortField: string;
   sortDirection: "asc" | "desc";
+  viewMode: ViewMode;
 };
 
 const MEDIA_FILTERS_KEY = "media-list-filters";
@@ -162,10 +170,17 @@ const MediaManagement = () => {
     {
       sortField: "name",
       sortDirection: "asc",
+      viewMode: "tiles",
     }
   );
   const [sortField, setSortField] = useState(storedSettings.sortField);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">(storedSettings.sortDirection);
+  const [viewMode, setViewMode] = useState<ViewMode>(storedSettings.viewMode || "tiles");
+
+  // Pagination state for files mode
+  const [pageNumber, setPageNumber] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [totalCount, setTotalCount] = useState(0);
 
   // For preview navigation - include both images and PDFs
   const previewableItems = items.filter((item) => {
@@ -263,16 +278,31 @@ const MediaManagement = () => {
       setLoading(true);
       try {
         const order = getOrderParam();
+        const includeFolders = viewMode !== "files";
         const queryParams = {
-          scopeUid: currentScopeUid,
-          includeFolders: true,
+          scopeUid: viewMode === "files" ? undefined : currentScopeUid,
+          includeFolders,
           order,
-        } as Record<string, string | boolean | undefined>;
+        } as Record<string, string | boolean | number | undefined>;
+
+        // Add pagination for files mode
+        if (viewMode === "files") {
+          queryParams.skip = pageNumber * pageSize;
+          queryParams.limit = pageSize;
+        }
+
         const response = await api.mediaList(queryParams as never);
         const validItems = ((response.data || []) as MediaItem[])
           .filter((item: MediaItem) => item.id !== undefined)
           .map((item: MediaItem) => ({ ...item, id: item.id as number }));
         setItems(validItems);
+
+        // Get total count from headers for files mode pagination
+        if (viewMode === "files" && response.headers) {
+          const count = response.headers.get("x-total-count");
+          setTotalCount(count ? parseInt(count, 10) : validItems.length);
+        }
+
         setFetchError(null);
       } catch (error) {
         const apiError = error as { status?: number; message?: string };
@@ -287,7 +317,7 @@ const MediaManagement = () => {
       }
     };
     fetchMedia();
-  }, [api, currentScopeUid, search, sortField, sortDirection]);
+  }, [api, currentScopeUid, search, sortField, sortDirection, viewMode, pageNumber, pageSize]);
 
   // Search
   useEffect(() => {
@@ -297,15 +327,31 @@ const MediaManagement = () => {
       setLoading(true);
       try {
         const order = getOrderParam();
+        const includeFolders = viewMode !== "files";
         const queryParams = {
           query: search,
+          includeFolders,
           order,
-        } as Record<string, string | boolean | undefined>;
+        } as Record<string, string | boolean | number | undefined>;
+
+        // Add pagination for files mode
+        if (viewMode === "files") {
+          queryParams.skip = pageNumber * pageSize;
+          queryParams.limit = pageSize;
+        }
+
         const response = await api.mediaList(queryParams as never);
         const validItems = ((response.data || []) as MediaItem[])
           .filter((item: MediaItem) => item.id !== undefined)
           .map((item: MediaItem) => ({ ...item, id: item.id as number }));
         setItems(validItems);
+
+        // Get total count from headers for files mode pagination
+        if (viewMode === "files" && response.headers) {
+          const count = response.headers.get("x-total-count");
+          setTotalCount(count ? parseInt(count, 10) : validItems.length);
+        }
+
         setFetchError(null);
       } catch (error) {
         const apiError = error as { status?: number; message?: string };
@@ -321,7 +367,7 @@ const MediaManagement = () => {
       }
     };
     searchMedia();
-  }, [api, search, sortField, sortDirection]);
+  }, [api, search, sortField, sortDirection, viewMode, pageNumber, pageSize]);
 
   // Navigation for folders
   const handleFolderClick = (item: MediaItem) => {
@@ -601,13 +647,231 @@ const MediaManagement = () => {
     setStoredSettings({
       sortField,
       sortDirection,
+      viewMode,
     });
-  }, [sortField, sortDirection, setStoredSettings]);
+  }, [sortField, sortDirection, viewMode, setStoredSettings]);
 
   useEffect(() => {
     setSortField(storedSettings.sortField);
     setSortDirection(storedSettings.sortDirection);
+    setViewMode(storedSettings.viewMode || "tiles");
   }, [storedSettings]);
+
+  const handleViewModeChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newMode: ViewMode | null
+  ) => {
+    if (newMode !== null) {
+      setViewMode(newMode);
+      // Reset folder navigation and pagination when switching modes
+      if (newMode === "files") {
+        setCurrentScopeUid("");
+        setBreadcrumbs([]);
+      }
+      setPageNumber(0);
+    }
+  };
+
+  // Format date for table display
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Handle DataGrid sort model change
+  const handleGridSortChange = (sortModel: GridSortModel) => {
+    if (sortModel.length > 0) {
+      const field = sortModel[0].field;
+      const direction = sortModel[0].sort || "asc";
+      setSortField(field);
+      setSortDirection(direction);
+    }
+  };
+
+  // Handle row click for grid/files modes
+  const handleRowClick = (params: GridRowParams<MediaItem>) => {
+    const item = params.row;
+    const type = getFileType(item.mimeType, item.extension);
+    const isFolder = type === "folder";
+    if (isFolder) {
+      handleFolderClick(item);
+    } else {
+      handlePreview(item);
+    }
+  };
+
+  // Grid columns definition
+  const gridColumns: GridColDef<MediaItem>[] = useMemo(() => {
+    const baseColumns: GridColDef<MediaItem>[] = [
+      {
+        field: "thumbnail",
+        headerName: "",
+        width: 60,
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+        renderCell: ({ row }) => {
+          const type = getFileType(row.mimeType, row.extension);
+          const isFolder = type === "folder";
+          return type === "image" ? (
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 1,
+                overflow: "hidden",
+                bgcolor: "#f5f5f5",
+              }}
+            >
+              <img
+                src={
+                  buildAbsoluteUrlWithCacheBust(row.location, row.size, row.updatedAt) ||
+                  "/images/placeholder.svg"
+                }
+                alt={row.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                loading="lazy"
+              />
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: isFolder ? "#FFF8E1" : "#f5f5f5",
+                borderRadius: 1,
+              }}
+            >
+              {fileTypeIcons[type] || fileTypeIcons.other}
+            </Box>
+          );
+        },
+      },
+      {
+        field: "name",
+        headerName: "Name",
+        flex: 1,
+        minWidth: 200,
+        renderCell: ({ row }) => (
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 500,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={row.name}
+          >
+            {row.name}
+          </Typography>
+        ),
+      },
+      {
+        field: "size",
+        headerName: "Size",
+        width: 100,
+        renderCell: ({ row }) => (
+          <Typography variant="body2" color="text.secondary">
+            {formatFileSize(row.size)}
+          </Typography>
+        ),
+      },
+      {
+        field: "usageCount",
+        headerName: "Usage",
+        width: 80,
+        renderCell: ({ row }) => {
+          const type = getFileType(row.mimeType, row.extension);
+          const isFolder = type === "folder";
+          return (
+            <Typography variant="body2" color="text.secondary">
+              {isFolder ? row.id : row.usageCount ?? 0}
+            </Typography>
+          );
+        },
+      },
+      {
+        field: "mimeType",
+        headerName: "Type",
+        width: 140,
+        renderCell: ({ row }) => {
+          const type = getFileType(row.mimeType, row.extension);
+          return (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              title={row.mimeType}
+            >
+              {type === "folder" ? "Folder" : row.mimeType}
+            </Typography>
+          );
+        },
+      },
+      {
+        field: "updatedAt",
+        headerName: "Updated",
+        width: 130,
+        renderCell: ({ row }) => (
+          <Typography variant="body2" color="text.secondary">
+            {formatDate(row.updatedAt || row.createdAt)}
+          </Typography>
+        ),
+      },
+      {
+        field: "actions",
+        headerName: "",
+        width: 60,
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+        renderCell: ({ row }) => {
+          const type = getFileType(row.mimeType, row.extension);
+          const isFolder = type === "folder";
+          return !isFolder ? (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMenuOpen(e, row);
+              }}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+          ) : null;
+        },
+      },
+    ];
+
+    // Add folder column for files mode
+    if (viewMode === "files") {
+      baseColumns.splice(2, 0, {
+        field: "scopeUid",
+        headerName: "Folder",
+        width: 200,
+        renderCell: ({ row }) => (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            title={row.scopeUid}
+          >
+            {formatFolderName(row.scopeUid) || "Root"}
+          </Typography>
+        ),
+      });
+    }
+
+    return baseColumns;
+  }, [viewMode]);
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: "100%" }}>
@@ -632,31 +896,59 @@ const MediaManagement = () => {
             }}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 8 }} display="flex" justifyContent="flex-end" gap={2}>
-          <ToolbarButton
-            onClick={handleSortButtonClick}
-            startIcon={sortDirection === "asc" ? <SortAsc size={18} /> : <SortDesc size={18} />}
-            sx={{ gap: 1 }}
+        <Grid size={{ xs: 12, sm: 4 }} display="flex" alignItems="center" gap={1}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={handleViewModeChange}
+            size="small"
           >
-            <span>Sort:</span>
-            <span>{sortLabel}</span>
-          </ToolbarButton>
+            <ToggleButton value="tiles">
+              <Tooltip title="Tiles View">
+                <LayoutGrid size={18} />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="grid">
+              <Tooltip title="Grid View (with folders)">
+                <TableIcon size={18} />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="files">
+              <Tooltip title="Files Only">
+                <File size={18} />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 4 }} display="flex" justifyContent="flex-end" gap={2}>
+          {viewMode === "tiles" && (
+            <ToolbarButton
+              onClick={handleSortButtonClick}
+              startIcon={sortDirection === "asc" ? <SortAsc size={18} /> : <SortDesc size={18} />}
+              sx={{ gap: 1 }}
+            >
+              <span>Sort:</span>
+              <span>{sortLabel}</span>
+            </ToolbarButton>
+          )}
           <Button variant="contained" onClick={() => setDialog("upload")}>
             Upload
           </Button>
         </Grid>
       </Grid>
-      {/* Breadcrumbs */}
-      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-        <Button size="small" onClick={() => handleBreadcrumbClick(-1)}>
-          Root
-        </Button>
-        {breadcrumbs.map((bc, idx) => (
-          <Button key={bc.scopeUid} size="small" onClick={() => handleBreadcrumbClick(idx)}>
-            {formatFolderName(bc.name)}
+      {/* Breadcrumbs - only show for tiles and grid modes */}
+      {viewMode !== "files" && (
+        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+          <Button size="small" onClick={() => handleBreadcrumbClick(-1)}>
+            Root
           </Button>
-        ))}
-      </Breadcrumbs>
+          {breadcrumbs.map((bc, idx) => (
+            <Button key={bc.scopeUid} size="small" onClick={() => handleBreadcrumbClick(idx)}>
+              {formatFolderName(bc.name)}
+            </Button>
+          ))}
+        </Breadcrumbs>
+      )}
       <MediaSortPopup
         anchorEl={sortAnchorEl}
         open={!!sortAnchorEl}
@@ -669,7 +961,7 @@ const MediaManagement = () => {
         }}
         onToggleDirection={handleSortDirectionToggle}
       />
-      {/* Tile (card/grid) mode */}
+      {/* Content area with loading/error states */}
       {fetchError ? (
         <Box textAlign="center" py={6}>
           <Typography color="error">{fetchError}</Typography>
@@ -681,10 +973,15 @@ const MediaManagement = () => {
       ) : items.length === 0 ? (
         <Box textAlign="center" py={6}>
           <Typography>
-            {isSearching ? "No files found for your search" : "This folder is empty"}
+            {isSearching
+              ? "No files found for your search"
+              : viewMode === "files"
+              ? "No files found"
+              : "This folder is empty"}
           </Typography>
         </Box>
-      ) : (
+      ) : viewMode === "tiles" ? (
+        /* Tiles View */
         <Grid container spacing={4}>
           {items.map((item) => {
             const type = getFileType(item.mimeType, item.extension);
@@ -880,6 +1177,46 @@ const MediaManagement = () => {
             );
           })}
         </Grid>
+      ) : (
+        /* Grid View (with folders) and Files View (files only) - DataGrid layout */
+        <DataTableContainer sx={{ minHeight: 400 }}>
+          <DataGrid
+            rows={items}
+            columns={gridColumns}
+            loading={loading}
+            rowHeight={56}
+            disableColumnFilter
+            disableRowSelectionOnClick
+            onRowClick={handleRowClick}
+            sortingMode="server"
+            onSortModelChange={handleGridSortChange}
+            initialState={{
+              sorting: {
+                sortModel: [{ field: sortField, sort: sortDirection }],
+              },
+            }}
+            pageSizeOptions={[25, 50, 100]}
+            paginationModel={{ page: pageNumber, pageSize }}
+            onPaginationModelChange={(model) => {
+              setPageNumber(model.page);
+              setPageSize(model.pageSize);
+            }}
+            paginationMode={viewMode === "files" ? "server" : "client"}
+            rowCount={viewMode === "files" ? totalCount : undefined}
+            hideFooter={viewMode === "grid"}
+            sx={{
+              "& .MuiDataGrid-row": {
+                cursor: "pointer",
+              },
+              "& .MuiDataGrid-row:hover": {
+                bgcolor: "#fafcff",
+              },
+              "& .MuiDataGrid-columnHeaders": {
+                bgcolor: "#f8faff",
+              },
+            }}
+          />
+        </DataTableContainer>
       )}
       {/* Popup menu for tile actions */}
       <Menu
