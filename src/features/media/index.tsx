@@ -200,6 +200,7 @@ const MediaManagement = () => {
   };
 
   // Add replace media handler
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleReplaceMedia = async (item: MediaItem) => {
     // Refresh the media list after successful replacement
     await refreshMediaList();
@@ -708,71 +709,67 @@ const MediaManagement = () => {
   const gridColumns: GridColDef<MediaItem>[] = useMemo(() => {
     const baseColumns: GridColDef<MediaItem>[] = [
       {
-        field: "thumbnail",
-        headerName: "",
-        width: 60,
-        sortable: false,
-        filterable: false,
-        disableColumnMenu: true,
-        renderCell: ({ row }) => {
-          const type = getFileType(row.mimeType, row.extension);
-          const isFolder = type === "folder";
-          return type === "image" ? (
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 1,
-                overflow: "hidden",
-                bgcolor: "#f5f5f5",
-              }}
-            >
-              <img
-                src={
-                  buildAbsoluteUrlWithCacheBust(row.location, row.size, row.updatedAt) ||
-                  "/images/placeholder.svg"
-                }
-                alt={row.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                loading="lazy"
-              />
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                bgcolor: isFolder ? "#FFF8E1" : "#f5f5f5",
-                borderRadius: 1,
-              }}
-            >
-              {fileTypeIcons[type] || fileTypeIcons.other}
-            </Box>
-          );
-        },
-      },
-      {
         field: "name",
         headerName: "Name",
         flex: 1,
-        minWidth: 200,
-        renderCell: ({ row }) => (
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 500,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-            title={row.name}
-          >
-            {row.name}
-          </Typography>
-        ),
+        minWidth: 250,
+        renderCell: ({ row }) => {
+          const type = getFileType(row.mimeType, row.extension);
+          const isFolder = type === "folder";
+          return (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              {type === "image" ? (
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1,
+                    overflow: "hidden",
+                    bgcolor: "#f5f5f5",
+                    flexShrink: 0,
+                  }}
+                >
+                  <img
+                    src={
+                      buildAbsoluteUrlWithCacheBust(row.location, row.size, row.updatedAt) ||
+                      "/images/placeholder.svg"
+                    }
+                    alt={row.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    loading="lazy"
+                  />
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: isFolder ? "#FFF8E1" : "#f5f5f5",
+                    borderRadius: 1,
+                    flexShrink: 0,
+                  }}
+                >
+                  {fileTypeIcons[type] || fileTypeIcons.other}
+                </Box>
+              )}
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                title={row.name}
+              >
+                {row.name}
+              </Typography>
+            </Box>
+          );
+        },
       },
       {
         field: "size",
@@ -1183,6 +1180,10 @@ const MediaManagement = () => {
           <DataGrid
             rows={items}
             columns={gridColumns}
+            getRowId={(row) =>
+              row.location ||
+              `${row.scopeUid || "root"}:${row.name}:${row.mimeType}:${row.createdAt}`
+            }
             loading={loading}
             rowHeight={56}
             disableColumnFilter
@@ -1213,6 +1214,10 @@ const MediaManagement = () => {
               },
               "& .MuiDataGrid-columnHeaders": {
                 bgcolor: "#f8faff",
+              },
+              "& .MuiDataGrid-cell": {
+                display: "flex",
+                alignItems: "center",
               },
             }}
           />
