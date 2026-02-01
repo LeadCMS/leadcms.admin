@@ -21,7 +21,7 @@ type MenuItem = {
   id: string;
   label: string;
   icon: React.ReactNode;
-  onClick: () => void;
+  onClick: (navigate: (to: string) => void) => void;
   isSelected: boolean;
 };
 
@@ -43,7 +43,11 @@ export const AppLayout = ({
   const { moduleName } = useRouteParams(coreModuleRoute);
   const { config, loading: configLoading } = useConfig();
 
-  const menuItems = buildMenuItems(config?.entities, moduleName) as SidebarMenuSection[];
+  const menuItems = buildMenuItems(
+    config?.entities,
+    moduleName,
+    config?.capabilities
+  ) as SidebarMenuSection[];
   const menuLoading = configLoading;
 
   // Pass drawer state to Sidebar and update container class

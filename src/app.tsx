@@ -35,6 +35,7 @@ export const App = () => {
     "email-templates": { category: "MARKETING", name: "Email templates" },
     unsubscribes: { category: "MARKETING", name: "Unsubscribes" },
     tasks: { category: "OPERATIONS", name: "Tasks" },
+    deployments: { category: "OPERATIONS", name: "Deployments" },
     users: { category: "GENERAL", name: "Users" },
     settings: { category: "GENERAL", name: "Settings" },
     about: { category: "GENERAL", name: "About" },

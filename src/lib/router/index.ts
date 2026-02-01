@@ -19,6 +19,7 @@ export const enum CoreModule {
   activityLogs = "activity-logs",
   settings = "settings",
   tasks = "tasks",
+  deployments = "deployments",
 }
 
 const coreModuleParser: Parser<CoreModule> = {

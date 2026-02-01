@@ -5019,6 +5019,244 @@ export interface DealUpdateDto {
   tags?: string[] | null;
 }
 
+export interface DeploymentDetailsDto {
+  /**
+   * Id
+   * @example "string"
+   */
+  id?: string;
+  /**
+   * Target Id
+   * @example "string"
+   */
+  targetId?: string;
+  /**
+   * Target Name
+   * @example "string"
+   */
+  targetName?: string;
+  /**
+   * Resource
+   * @example "string"
+   */
+  resource?: string | null;
+  /**
+   * Status
+   * @example "Pending"
+   */
+  status?: "Pending" | "InProgress" | "Completed" | "Failed" | "Cancelled";
+  /**
+   * Started At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  startedAt?: string;
+  /**
+   * Completed At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  completedAt?: string | null;
+  duration?: TimeSpan;
+  /**
+   * Triggered By Id
+   * @example "string"
+   */
+  triggeredById?: string | null;
+  /**
+   * Triggered By Name
+   * @example "string"
+   */
+  triggeredByName?: string | null;
+  /** Steps */
+  steps?: DeploymentStepDto[] | null;
+  /** Logs */
+  logs?: string[] | null;
+  /**
+   * Error Message
+   * @example "string"
+   */
+  errorMessage?: string | null;
+}
+
+export interface DeploymentRecordDto {
+  /**
+   * Id
+   * @example "string"
+   */
+  id?: string;
+  /**
+   * Target Id
+   * @example "string"
+   */
+  targetId?: string;
+  /**
+   * Target Name
+   * @example "string"
+   */
+  targetName?: string;
+  /**
+   * Resource
+   * @example "string"
+   */
+  resource?: string | null;
+  /**
+   * Status
+   * @example "Pending"
+   */
+  status?: "Pending" | "InProgress" | "Completed" | "Failed" | "Cancelled";
+  /**
+   * Started At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  startedAt?: string;
+  /**
+   * Completed At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  completedAt?: string | null;
+  duration?: TimeSpan;
+  /**
+   * Triggered By Id
+   * @example "string"
+   */
+  triggeredById?: string | null;
+  /**
+   * Triggered By Name
+   * @example "string"
+   */
+  triggeredByName?: string | null;
+}
+
+export interface DeploymentStatsDto {
+  /**
+   * Total Deployments
+   * @format int32
+   * @example 1
+   */
+  totalDeployments?: number;
+  /**
+   * Successful Deployments
+   * @format int32
+   * @example 1
+   */
+  successfulDeployments?: number;
+  /**
+   * Failed Deployments
+   * @format int32
+   * @example 1
+   */
+  failedDeployments?: number;
+  /**
+   * Pending Deployments
+   * @format int32
+   * @example 1
+   */
+  pendingDeployments?: number;
+  /**
+   * In Progress Deployments
+   * @format int32
+   * @example 1
+   */
+  inProgressDeployments?: number;
+  /**
+   * Success Rate
+   * @format double
+   * @example 1
+   */
+  successRate?: number;
+  averageDuration?: TimeSpan;
+}
+
+export interface DeploymentStepDto {
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+  /**
+   * Status
+   * @example "Pending"
+   */
+  status?: "Pending" | "InProgress" | "Completed" | "Failed" | "Cancelled";
+  /**
+   * Started At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  startedAt?: string | null;
+  /**
+   * Completed At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  completedAt?: string | null;
+  duration?: TimeSpan;
+}
+
+export interface DeploymentTargetDto {
+  /**
+   * Id
+   * @example "string"
+   */
+  id?: string;
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Provider
+   * @example "string"
+   */
+  provider?: string;
+  /**
+   * Resource
+   * @example "string"
+   */
+  resource?: string | null;
+}
+
+export interface DeploymentTriggerRequestDto {
+  /** Target Ids */
+  targetIds?: string[] | null;
+  /**
+   * Trigger All
+   * @example true
+   */
+  triggerAll?: boolean;
+}
+
+export interface DeploymentTriggerResultDto {
+  /**
+   * Success
+   * @example true
+   */
+  success?: boolean;
+  /**
+   * Message
+   * @example "string"
+   */
+  message?: string | null;
+  /** Triggered Deployment Ids */
+  triggeredDeploymentIds?: string[];
+  /** Errors */
+  errors?: string[] | null;
+}
+
 export interface DeviceAuthInitiateDto {
   /**
    * Device Code
@@ -8374,7 +8612,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.2.99.0
+ * @version 1.3.1.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -12991,6 +13229,106 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deployments
+     * @name DeploymentsTargetsList
+     * @request GET:/api/deployments/targets
+     * @secure
+     */
+    deploymentsTargetsList: (params: RequestParams = {}) =>
+      this.request<DeploymentTargetDto[], ProblemDetails>({
+        path: `/api/deployments/targets`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deployments
+     * @name DeploymentsList
+     * @request GET:/api/deployments
+     * @secure
+     */
+    deploymentsList: (
+      query?: {
+        /**
+         * @format int32
+         * @default 20
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<DeploymentRecordDto[], ProblemDetails>({
+        path: `/api/deployments`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deployments
+     * @name DeploymentsDetail
+     * @request GET:/api/deployments/{id}
+     * @secure
+     */
+    deploymentsDetail: (id: string, params: RequestParams = {}) =>
+      this.request<DeploymentDetailsDto, ProblemDetails>({
+        path: `/api/deployments/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deployments
+     * @name DeploymentsStatsList
+     * @request GET:/api/deployments/stats
+     * @secure
+     */
+    deploymentsStatsList: (params: RequestParams = {}) =>
+      this.request<DeploymentStatsDto, ProblemDetails>({
+        path: `/api/deployments/stats`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deployments
+     * @name DeploymentsTriggerCreate
+     * @request POST:/api/deployments/trigger
+     * @secure
+     */
+    deploymentsTriggerCreate: (
+      data: DeploymentTriggerRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<DeploymentTriggerResultDto, ProblemDetails>({
+        path: `/api/deployments/trigger`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 

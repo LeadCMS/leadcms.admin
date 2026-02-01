@@ -1,8 +1,10 @@
 import {
   Drawer,
   ListItemButton,
+  ListItemButtonProps,
   ListItemIcon,
   ListItemText,
+  ListItemTextProps,
   ListSubheader,
   styled,
   IconButton,
@@ -21,7 +23,7 @@ export const SidebarTopContainer = styled("div")<{
   max-height: 64px;
   padding-left: ${isCollapsed ? "10px" : "16px"};
   padding-right: ${isCollapsed ? "8px" : "16px"};
-  width: 100%; 
+  width: 100%;
   border-bottom: 1px solid ${
     theme.palette.mode === "dark" ? theme.palette.secondary.light : theme.palette.divider
   };
@@ -112,17 +114,24 @@ export const ListSubheaderStyled = styled(ListSubheader, {
   font-size: ${({ theme }) => theme.typography.subtitle2.fontSize};
   color: ${({ theme }) => theme.typography.subtitle2.color};
   font-weight: ${({ theme }) => theme.typography.subtitle2.fontWeight};
-  display: ${({ isCollapsed }) => (isCollapsed ? "none" : "block")};
+  display: ${({ isCollapsed }) => (isCollapsed ? "none" : "flex")};
   padding-left: 16px;
-  padding-right: 0px;
-  padding-bottom: 4px;
-  min-height: 0;
+  padding-right: 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  min-height: 32px;
   line-height: ${({ theme }) => theme.typography.subtitle2.lineHeight};
+  border-radius: ${({ theme }) => theme.spacing(1)};
+  transition: background-color 0.2s ease;
 `;
+
+type SidebarLinkProps = ListItemButtonProps & {
+  isCollapsed?: boolean;
+};
 
 export const SidebarLink = styled(ListItemButton, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
-})<{ isCollapsed?: boolean }>`
+})<SidebarLinkProps>`
   border-radius: ${({ theme }) => theme.spacing(2)};
   height: ${({ theme }) => theme.spacing(9)};
   margin-top: ${({ theme }) => theme.spacing(1)};
@@ -140,11 +149,15 @@ export const SidebarLink = styled(ListItemButton, {
     color: ${({ theme: { palette } }) => palette.primary.main};
     background-color: ${({ theme: { palette } }) => palette.primary.light};
   }
-` as typeof ListItemButton;
+`;
+
+type SidebarLinkTextProps = ListItemTextProps & {
+  isCollapsed?: boolean;
+};
 
 export const SidebarLinkText = styled(ListItemText, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
-})<{ isCollapsed?: boolean }>`
+})<SidebarLinkTextProps>`
   .MuiTypography-root {
     font-weight: 500;
     font-size: 14px;
@@ -153,7 +166,7 @@ export const SidebarLinkText = styled(ListItemText, {
   }
 
   display: ${({ isCollapsed }) => (isCollapsed ? "none" : "block")};
-` as typeof ListItemText;
+`;
 
 export const ListItemIconStyled = styled(ListItemIcon)`
   min-width: ${({ theme }) => theme.spacing(8)};

@@ -23,6 +23,7 @@ import { ErrorBoundaryFallbackPage } from "@components/error-boundary-fallback-p
 import { MediaModule } from "@features/media/lazy";
 import { SettingsModule } from "@features/settings/lazy";
 import { TasksModule } from "@features/tasks";
+import { DeploymentsModule } from "@features/deployments";
 
 export const ModuleLoader = () => {
   const { moduleName } = useRouteParams(coreModuleRoute);
@@ -48,6 +49,7 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.media && <MediaModule />}
           {moduleName === CoreModule.settings && <SettingsModule />}
           {moduleName === CoreModule.tasks && <TasksModule />}
+          {moduleName === CoreModule.deployments && <DeploymentsModule />}
           {!moduleName && <Navigate to={defaultModuleRoute} replace />}
         </Suspense>
       </ErrorBoundary>

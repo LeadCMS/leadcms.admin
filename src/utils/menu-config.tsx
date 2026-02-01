@@ -17,6 +17,7 @@ import {
   HelpCircle,
   Settings,
   ListChecks,
+  Rocket,
 } from "lucide-react";
 
 export const MENU_CONFIG = [
@@ -134,6 +135,14 @@ export const MENU_CONFIG = [
   {
     header: "OPERATIONS",
     items: [
+      {
+        id: "deployments",
+        label: "Deployments",
+        icon: <Rocket size={20} />,
+        entity: null,
+        capability: "Deployment",
+        route: getCoreModuleRoute(CoreModule.deployments),
+      },
       {
         id: "tasks",
         label: "Tasks",

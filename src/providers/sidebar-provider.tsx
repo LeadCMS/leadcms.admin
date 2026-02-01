@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+
+const SIDEBAR_STORAGE_KEY = "sidebar-collapsed-state";
 
 interface SidebarContextType {
   isOpen: boolean;
@@ -13,10 +15,27 @@ interface SidebarContextType {
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
+const getInitialCollapsedState = (): boolean => {
+  try {
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : false;
+  } catch {
+    return false;
+  }
+};
+
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(getInitialCollapsedState);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(isCollapsed));
+    } catch (error) {
+      console.error("Failed to save sidebar state:", error);
+    }
+  }, [isCollapsed]);
 
   const toggle = () => setIsOpen((prev) => !prev);
   const toggleCollapse = () => setIsCollapsed((prev) => !prev);
