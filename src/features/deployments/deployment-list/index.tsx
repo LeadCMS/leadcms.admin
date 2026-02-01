@@ -20,6 +20,16 @@ import {
   Checkbox,
   IconButton,
   Tooltip,
+  Link,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Alert,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import {
@@ -34,6 +44,8 @@ import {
   Error as ErrorIcon,
   HourglassEmpty,
   Visibility,
+  Rocket,
+  Warning,
 } from "@mui/icons-material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useRequestContext } from "@providers/request-provider";
@@ -46,6 +58,7 @@ import {
   getStatusColor,
   getStatusLabel,
   getProviderDisplayName,
+  formatRelativeTime,
 } from "../utils";
 import { DEPLOYMENT_HISTORY_LIMIT } from "../constants";
 
@@ -68,6 +81,14 @@ export const DeploymentsList = () => {
 
   const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState(0);
+
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: "single" | "selected" | "all";
+    targetId?: string;
+    targetName?: string;
+  }>({ open: false, type: "single" });
 
   useEffect(() => {
     if (hasInitializedTab.current) return;
@@ -139,76 +160,102 @@ export const DeploymentsList = () => {
     );
   };
 
-  const handleDeploySelected = async () => {
-    if (selectedTargets.length === 0) return;
-
-    const deployPromise = async () => {
-      setDeploying(true);
-      try {
-        const result = await client.api.deploymentsTriggerCreate({
-          targetIds: selectedTargets,
-          triggerAll: false,
-        });
-        setSelectedTargets([]);
-        await loadDeployments();
-        await loadStats();
-        return result;
-      } finally {
-        setDeploying(false);
-      }
-    };
-
-    await notificationsService.promise(deployPromise(), {
-      pending: "Triggering deployment...",
-      success: "Deployment triggered successfully",
-      error: (error) => {
-        const errMessage = "Failed to trigger deployment";
-        const errDetails: string[] = [];
-        const errorWithMessage = error as { message?: string } | undefined;
-        if (errorWithMessage?.message) {
-          errDetails.push(errorWithMessage.message);
-        }
-        return {
-          title: errMessage,
-          onClick: errDetails.length > 0 ? () => showErrorModal(errDetails) : undefined,
-        };
-      },
-    });
+  const openConfirmDialog = (
+    type: "single" | "selected" | "all",
+    targetId?: string,
+    targetName?: string
+  ) => {
+    setConfirmDialog({ open: true, type, targetId, targetName });
   };
 
-  const handleDeployAll = async () => {
+  const closeConfirmDialog = () => {
+    setConfirmDialog({ open: false, type: "single" });
+  };
+
+  const executeDeployment = async (
+    targetIds: string[] | null,
+    triggerAll: boolean,
+    pendingMessage: string,
+    successMessage: string
+  ) => {
+    setDeploying(true);
+
     const deployPromise = async () => {
-      setDeploying(true);
-      try {
-        const result = await client.api.deploymentsTriggerCreate({
-          targetIds: null,
-          triggerAll: true,
-        });
-        setSelectedTargets([]);
-        await loadDeployments();
-        await loadStats();
-        return result;
-      } finally {
-        setDeploying(false);
-      }
+      const result = await client.api.deploymentsTriggerCreate({
+        targetIds,
+        triggerAll,
+      });
+      return result;
     };
 
-    await notificationsService.promise(deployPromise(), {
-      pending: "Triggering all deployments...",
-      success: "All deployments triggered successfully",
-      error: (error) => {
-        const errMessage = "Failed to trigger deployments";
-        const errDetails: string[] = [];
-        const errorWithMessage = error as { message?: string } | undefined;
-        if (errorWithMessage?.message) {
-          errDetails.push(errorWithMessage.message);
-        }
-        return {
-          title: errMessage,
-          onClick: errDetails.length > 0 ? () => showErrorModal(errDetails) : undefined,
-        };
-      },
-    });
+    try {
+      await notificationsService.promise(deployPromise(), {
+        pending: pendingMessage,
+        success: successMessage,
+        error: (error) => {
+          const errMessage = "Deployment failed to start";
+          const errDetails: string[] = [];
+          const errorWithMessage = error as { message?: string } | undefined;
+          if (errorWithMessage?.message) {
+            errDetails.push(errorWithMessage.message);
+          }
+          return {
+            title: errMessage,
+            onClick: errDetails.length > 0 ? () => showErrorModal(errDetails) : undefined,
+          };
+        },
+      });
+
+      // Only refresh after successful deployment trigger
+      if (!triggerAll) {
+        setSelectedTargets([]);
+      }
+      await loadDeployments();
+      await loadStats();
+    } finally {
+      setDeploying(false);
+    }
+  };
+
+  const handleConfirmDeploy = async () => {
+    closeConfirmDialog();
+
+    if (confirmDialog.type === "single" && confirmDialog.targetId) {
+      await executeDeployment(
+        [confirmDialog.targetId],
+        false,
+        `Starting deployment to ${confirmDialog.targetName}...`,
+        `Deployment to ${confirmDialog.targetName} started successfully`
+      );
+    } else if (confirmDialog.type === "selected") {
+      await executeDeployment(
+        selectedTargets,
+        false,
+        `Starting ${selectedTargets.length} deployment(s)...`,
+        `${selectedTargets.length} deployment(s) started successfully`
+      );
+    } else if (confirmDialog.type === "all") {
+      await executeDeployment(
+        null,
+        true,
+        "Starting all deployments...",
+        "All deployments started successfully"
+      );
+    }
+  };
+
+  const handleDeploySelected = () => {
+    if (selectedTargets.length === 0) return;
+    openConfirmDialog("selected");
+  };
+
+  const handleDeployAll = () => {
+    openConfirmDialog("all");
+  };
+
+  const handleQuickDeploy = (targetId: string, targetName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    openConfirmDialog("single", targetId, targetName);
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -221,6 +268,22 @@ export const DeploymentsList = () => {
       navigate(`/deployments/${id}`);
     }
   };
+
+  // Get last deployment status for each target
+  const getLastDeploymentForTarget = (targetId: string | undefined) => {
+    if (!targetId) return null;
+    return deployments.find((d) => d.targetId === targetId) || null;
+  };
+
+  // Get selected target names for confirmation dialog
+  const getSelectedTargetNames = () => {
+    return selectedTargets
+      .map((id) => targets.find((t) => t.id === id)?.name)
+      .filter(Boolean) as string[];
+  };
+
+  const isHttpUrl = (value: string | null | undefined) =>
+    Boolean(value && (value.startsWith("http://") || value.startsWith("https://")));
 
   const successRate = stats?.successRate ?? 0;
   const inProgressCount = stats?.inProgressDeployments ?? 0;
@@ -256,7 +319,7 @@ export const DeploymentsList = () => {
       >
         <Box>
           <Typography variant="body2" color="text.secondary">
-            Manage and monitor your deployment pipelines
+            Deploy your site to production and staging environments
           </Typography>
         </Box>
         <Button
@@ -285,7 +348,7 @@ export const DeploymentsList = () => {
                     {statsLoading ? <Skeleton width={60} /> : stats?.totalDeployments ?? 0}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    All time deployments
+                    Lifetime total
                   </Typography>
                 </Box>
                 <CloudUpload sx={{ color: "text.secondary" }} />
@@ -326,16 +389,28 @@ export const DeploymentsList = () => {
               <Box
                 sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
               >
-                <Box>
+                <Box sx={{ width: "100%" }}>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    In Progress
+                    Active Deployments
                   </Typography>
-                  <Typography variant="h4" color="info.main">
-                    {statsLoading ? <Skeleton width={60} /> : inProgressCount}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {pendingCount} pending
-                  </Typography>
+                  <Box sx={{ display: "flex", gap: 3 }}>
+                    <Box sx={{ textAlign: "center", minWidth: 50 }}>
+                      <Typography variant="h4" color="info.main">
+                        {statsLoading ? <Skeleton width={40} /> : inProgressCount}
+                      </Typography>
+                      <Typography variant="caption" color="info.main">
+                        running
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "center", minWidth: 50 }}>
+                      <Typography variant="h4" color="warning.main">
+                        {statsLoading ? <Skeleton width={40} /> : pendingCount}
+                      </Typography>
+                      <Typography variant="caption" color="warning.main">
+                        queued
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
                 <PlayArrow sx={{ color: "info.main" }} />
               </Box>
@@ -375,8 +450,8 @@ export const DeploymentsList = () => {
       <Paper sx={{ mb: 2 }}>
         <Box sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}>
           <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label="Trigger Deployment" />
-            <Tab label="Deployment History" />
+            <Tab label="Deploy" />
+            <Tab label="History" />
             <Tab label="Targets" />
           </Tabs>
         </Box>
@@ -386,10 +461,11 @@ export const DeploymentsList = () => {
       {activeTab === 0 && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Select Deployments to Trigger
+            Choose Deployment Targets
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Choose one or more deployment targets to execute
+            {"Select one or more targets to start a new deployment. "}
+            {"Each target will build and publish your site independently."}
           </Typography>
 
           {targetsLoading ? (
@@ -406,13 +482,18 @@ export const DeploymentsList = () => {
           ) : targets.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 6 }}>
               <Schedule sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
-              <Typography color="text.secondary">No deployment targets configured</Typography>
+              <Typography color="text.secondary">No deployment targets configured yet</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Configure targets in your deployment settings to get started
+              </Typography>
             </Box>
           ) : (
             <>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {targets.map((target) => {
                   const isSelected = selectedTargets.includes(target.id || "");
+                  const lastDeployment = getLastDeploymentForTarget(target.id);
+                  const lastStatus = lastDeployment?.status;
                   return (
                     <Paper
                       key={target.id}
@@ -439,34 +520,62 @@ export const DeploymentsList = () => {
                       >
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                           <Checkbox checked={isSelected} color="primary" />
-                          <Box
-                            sx={{
-                              p: 1.5,
-                              borderRadius: "50%",
-                              bgcolor: isSelected ? "primary.main" : "grey.200",
-                              color: isSelected ? "white" : "text.secondary",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <CloudUpload fontSize="small" />
-                          </Box>
+                          {lastStatus === "Failed" ? (
+                            <ErrorIcon color="error" />
+                          ) : lastStatus === "Completed" ? (
+                            <CheckCircle color="success" />
+                          ) : (
+                            <CloudUpload color={isSelected ? "primary" : "disabled"} />
+                          )}
                           <Box>
-                            <Typography variant="subtitle1" fontWeight={500}>
-                              {target.name}
-                            </Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography variant="subtitle1" fontWeight={500}>
+                                {target.name}
+                              </Typography>
+                              {lastDeployment && (
+                                <Chip
+                                  size="small"
+                                  label={getStatusLabel(lastDeployment.status)}
+                                  color={getStatusColor(lastDeployment.status)}
+                                  sx={{ height: 20, fontSize: "0.7rem" }}
+                                />
+                              )}
+                            </Box>
                             <Typography variant="body2" color="text.secondary">
                               {getProviderDisplayName(target.provider)}
                               {target.resource && ` • ${target.resource}`}
+                              {lastDeployment?.startedAt &&
+                                ` • ${formatRelativeTime(lastDeployment.startedAt)}`}
                             </Typography>
                           </Box>
                         </Box>
-                        {target.description && (
-                          <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
-                            {target.description}
-                          </Typography>
-                        )}
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          {target.description && (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ mr: 1, display: { xs: "none", md: "block" } }}
+                            >
+                              {target.description}
+                            </Typography>
+                          )}
+                          <Tooltip title="Deploy Now">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={(e) =>
+                                handleQuickDeploy(target.id || "", target.name || "", e)
+                              }
+                              disabled={deploying}
+                              sx={{
+                                bgcolor: "primary.light",
+                                "&:hover": { bgcolor: "primary.main", color: "white" },
+                              }}
+                            >
+                              <PlayArrow fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </Box>
                     </Paper>
                   );
@@ -515,9 +624,9 @@ export const DeploymentsList = () => {
       {activeTab === 1 && (
         <Paper>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-            <Typography variant="h6">Recent Deployments</Typography>
+            <Typography variant="h6">Deployment History</Typography>
             <Typography variant="body2" color="text.secondary">
-              View the history of all deployments
+              Track the status and details of your recent deployments
             </Typography>
           </Box>
           <TableContainer>
@@ -547,7 +656,9 @@ export const DeploymentsList = () => {
                 ) : deployments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} sx={{ textAlign: "center", py: 4 }}>
-                      <Typography color="text.secondary">No deployments found</Typography>
+                      <Typography color="text.secondary">
+                        No deployments yet. Start your first deployment from the Deploy tab.
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -584,9 +695,22 @@ export const DeploymentsList = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          {deployment.resource || "-"}
-                        </Typography>
+                        {isHttpUrl(deployment.resource) ? (
+                          <Link
+                            href={deployment.resource || ""}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            underline="hover"
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                            sx={{ fontSize: "0.875rem" }}
+                          >
+                            {deployment.resource}
+                          </Link>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            {deployment.resource || "-"}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
@@ -599,7 +723,11 @@ export const DeploymentsList = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2">{formatDate(deployment.startedAt)}</Typography>
+                        <Tooltip title={formatDate(deployment.startedAt)}>
+                          <Typography variant="body2">
+                            {formatRelativeTime(deployment.startedAt)}
+                          </Typography>
+                        </Tooltip>
                       </TableCell>
                       <TableCell align="right">
                         <Tooltip title="View Details">
@@ -627,9 +755,9 @@ export const DeploymentsList = () => {
       {activeTab === 2 && (
         <Paper>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-            <Typography variant="h6">Deployment Targets</Typography>
+            <Typography variant="h6">Configured Targets</Typography>
             <Typography variant="body2" color="text.secondary">
-              Configured deployment pipeline targets
+              Available deployment destinations for your site
             </Typography>
           </Box>
           <TableContainer>
@@ -656,7 +784,9 @@ export const DeploymentsList = () => {
                 ) : targets.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} sx={{ textAlign: "center", py: 4 }}>
-                      <Typography color="text.secondary">No targets configured</Typography>
+                      <Typography color="text.secondary">
+                        No deployment targets configured. Add targets in your settings.
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -690,6 +820,99 @@ export const DeploymentsList = () => {
           </TableContainer>
         </Paper>
       )}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialog.open} onClose={closeConfirmDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Rocket color="primary" />
+          Confirm Deployment
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              {"This will start a new deployment pipeline. "}
+              {"The process typically takes 1-3 minutes to complete."}
+            </Typography>
+          </Alert>
+
+          {confirmDialog.type === "single" && (
+            <>
+              <Typography variant="body1" gutterBottom>
+                You are about to deploy to:
+              </Typography>
+              <List dense>
+                <ListItem>
+                  <ListItemIcon>
+                    <CloudUpload color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={confirmDialog.targetName}
+                    secondary="Build and deploy to this target"
+                  />
+                </ListItem>
+              </List>
+            </>
+          )}
+
+          {confirmDialog.type === "selected" && (
+            <>
+              <Typography variant="body1" gutterBottom>
+                You are about to deploy to {selectedTargets.length} target(s):
+              </Typography>
+              <List dense>
+                {getSelectedTargetNames().map((name) => (
+                  <ListItem key={name}>
+                    <ListItemIcon>
+                      <CloudUpload color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary={name} secondary="Build and deploy" />
+                  </ListItem>
+                ))}
+              </List>
+            </>
+          )}
+
+          {confirmDialog.type === "all" && (
+            <>
+              <Typography variant="body1" gutterBottom>
+                You are about to deploy to all {targets.length} configured targets:
+              </Typography>
+              <List dense>
+                {targets.map((target) => (
+                  <ListItem key={target.id}>
+                    <ListItemIcon>
+                      <CloudUpload color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={target.name}
+                      secondary={target.resource || "Build and deploy"}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </>
+          )}
+
+          <Alert severity="warning" icon={<Warning />} sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              Deployments will run in sequence. You can monitor progress in the History tab.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeConfirmDialog} disabled={deploying}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmDeploy}
+            disabled={deploying}
+            startIcon={<Rocket />}
+          >
+            {deploying ? "Starting..." : "Start Deployment"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

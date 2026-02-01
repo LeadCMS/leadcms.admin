@@ -6,4 +6,4 @@ export const DEPLOYMENT_STATUS_COLORS = {
   Cancelled: "#6b7280",
 } as const;
 
-export const DEPLOYMENT_HISTORY_LIMIT = 9;
+export const DEPLOYMENT_HISTORY_LIMIT = 5;
