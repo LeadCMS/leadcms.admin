@@ -33,6 +33,7 @@ export const LogoImg = styled("img")`
 export const LogoContainer = styled("div")`
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 `;
 
 export const LogoComponent = () => (

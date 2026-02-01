@@ -113,22 +113,17 @@ export const Sidebar = ({
       >
         <SidebarTopContainer isMobile={isMobile} isOpen={effectiveOpen} isCollapsed={showCollapsed}>
           {!showCollapsed && (
-            <Box
+            <div
               className="sidebar-logo sidebar-link"
+              style={{ display: "flex", alignItems: "center", cursor: "pointer", flex: 1 }}
               onClick={navigateToDashboard}
               tabIndex={0}
               role="button"
               aria-label="Go to dashboard"
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-                flex: 1,
-              }}
             >
               <LogoComponent />
-              <Typography className="sidebar-app-name">LeadCMS.ai</Typography>
-            </Box>
+              <Typography className="sidebar-app-name">LeadCMS</Typography>
+            </div>
           )}
 
           {!isMobile && (

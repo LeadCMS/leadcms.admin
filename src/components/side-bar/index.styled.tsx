@@ -40,6 +40,7 @@ export const SidebarTopContainer = styled("div")<{
     color: ${theme.palette.primary.main};
     margin-left: ${isMobile && isOpen ? "40px" : "0"};
     transition: margin 0.2s;
+    white-space: nowrap;
   }
   @media (min-width: ${theme.breakpoints.values.md}px) {
     .sidebar-logo {
