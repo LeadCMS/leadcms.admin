@@ -3,7 +3,7 @@ import type {
   DeploymentRecordDto,
   DeploymentStatsDto,
   DeploymentTargetDto,
-  DeploymentStepDto,
+  DeploymentStepDto as ApiDeploymentStepDto,
   TimeSpan,
 } from "@lib/network/swagger-client";
 
@@ -14,8 +14,12 @@ export type {
   DeploymentRecordDto,
   DeploymentStatsDto,
   DeploymentTargetDto,
-  DeploymentStepDto,
   TimeSpan,
+};
+
+export type DeploymentStepDto = ApiDeploymentStepDto & {
+  url?: string | null;
+  logsUrl?: string | null;
 };
 
 // Duration can be either a TimeSpan object or a string from the backend

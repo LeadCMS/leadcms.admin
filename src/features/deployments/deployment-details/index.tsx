@@ -12,6 +12,7 @@ import {
   StepLabel,
   StepContent,
   Alert,
+  Link,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import {
@@ -48,6 +49,9 @@ const getStepIcon = (status: string | undefined) => {
       return <Schedule />;
   }
 };
+
+const isHttpUrl = (value: string | null | undefined) =>
+  Boolean(value && (value.startsWith("http://") || value.startsWith("https://")));
 
 export const DeploymentDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -247,6 +251,22 @@ export const DeploymentDetails = () => {
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Typography variant="body2" color="text.secondary">
+              Deployment Id
+            </Typography>
+            <Typography variant="body1" fontWeight={500}>
+              {deployment.id || "-"}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Typography variant="body2" color="text.secondary">
+              Target Id
+            </Typography>
+            <Typography variant="body1" fontWeight={500}>
+              {deployment.targetId || "-"}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Typography variant="body2" color="text.secondary">
               Target
             </Typography>
             <Typography variant="body1" fontWeight={500}>
@@ -258,7 +278,18 @@ export const DeploymentDetails = () => {
               Resource
             </Typography>
             <Typography variant="body1" fontWeight={500}>
-              {deployment.resource || "-"}
+              {isHttpUrl(deployment.resource) ? (
+                <Link
+                  href={deployment.resource || ""}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                >
+                  {deployment.resource}
+                </Link>
+              ) : (
+                deployment.resource || "-"
+              )}
             </Typography>
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -311,7 +342,7 @@ export const DeploymentDetails = () => {
             activeStep={activeStepIndex >= 0 ? activeStepIndex : steps.length}
           >
             {steps.map((step: DeploymentStepDto, index: number) => (
-              <Step key={index} completed={step.status === "Completed"}>
+              <Step key={index} completed={step.status === "Completed"} expanded>
                 <StepLabel
                   icon={getStepIcon(step.status)}
                   error={step.status === "Failed"}
@@ -339,6 +370,37 @@ export const DeploymentDetails = () => {
                       <Typography variant="body2" color="text.secondary">
                         Completed: {formatDate(step.completedAt)}
                       </Typography>
+                    )}
+                    {(step.url || step.logsUrl) && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 2,
+                          flexWrap: "wrap",
+                          mt: 1,
+                        }}
+                      >
+                        {step.url && (
+                          <Link
+                            href={step.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            underline="hover"
+                          >
+                            Open Step
+                          </Link>
+                        )}
+                        {step.logsUrl && (
+                          <Link
+                            href={step.logsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            underline="hover"
+                          >
+                            View Logs
+                          </Link>
+                        )}
+                      </Box>
                     )}
                   </Box>
                 </StepContent>
