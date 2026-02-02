@@ -17,6 +17,7 @@ import {
   InputAdornment,
   Chip,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
 import { Search, X } from "lucide-react";
 import { ContactDetailsDto } from "lib/network/swagger-client";
@@ -147,6 +148,13 @@ export const ContactPickerModal: React.FC<ContactPickerModalProps> = ({
                   {searchLoading ? <CircularProgress size={20} /> : <Search size={20} />}
                 </InputAdornment>
               ),
+              endAdornment: searchQuery ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setSearchQuery("")} aria-label="Clear">
+                    <X size={18} />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
             }}
             sx={{ mb: 2 }}
           />

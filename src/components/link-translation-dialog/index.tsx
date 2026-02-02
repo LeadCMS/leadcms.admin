@@ -163,6 +163,13 @@ export const LinkTranslationDialog = ({
                 {searching ? <CircularProgress size={20} /> : <Search size={20} />}
               </InputAdornment>
             ),
+            endAdornment: searchTerm ? (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setSearchTerm("")} aria-label="Clear">
+                  <X size={18} />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
           }}
         />
 

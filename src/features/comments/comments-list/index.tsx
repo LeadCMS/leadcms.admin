@@ -998,7 +998,7 @@ export const CommentsList: React.FC = () => {
   // Search bar component
   const searchBar = (
     <SearchBar
-      searchBoxLabel="Search comments"
+      searchBoxLabel="Search comments..."
       setSearchTermOnChange={setSearchQuery}
       initialValue={searchQuery}
     />

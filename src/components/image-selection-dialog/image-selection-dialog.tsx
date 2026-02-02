@@ -13,6 +13,7 @@ import {
   Breadcrumbs,
   Paper,
   IconButton,
+  InputAdornment,
 } from "@mui/material";
 import { Search, X } from "lucide-react";
 import FolderIcon from "@mui/icons-material/Folder";
@@ -225,6 +226,13 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
               onChange={(e) => setSearch(e.target.value)}
               InputProps={{
                 startAdornment: <Search size={20} style={{ marginRight: 8, color: "#666" }} />,
+                endAdornment: search ? (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearch("")} aria-label="Clear">
+                      <X size={18} />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
               }}
             />
           </Grid>

@@ -344,6 +344,13 @@ export const TasksList = () => {
                     <Search fontSize="small" />
                   </InputAdornment>
                 ),
+                endAdornment: searchQuery ? (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchQuery("")} aria-label="Clear">
+                      <Cancel fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
               }}
               sx={{ minWidth: 200 }}
             />

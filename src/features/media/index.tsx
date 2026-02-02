@@ -16,6 +16,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Tooltip,
+  InputAdornment,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridSortModel, GridRowParams } from "@mui/x-data-grid";
 import FolderIcon from "@mui/icons-material/Folder";
@@ -26,7 +27,6 @@ import MovieIcon from "@mui/icons-material/Movie";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ArchiveIcon from "@mui/icons-material/Archive";
-import SearchIcon from "@mui/icons-material/Search";
 import { useRequestContext } from "@providers/request-provider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -45,7 +45,7 @@ import { MediaSortPopup } from "@components/media-sort-popup";
 import useLocalStorage from "use-local-storage";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { DataTableContainer } from "@components/data-table/index.styled";
-import { SortAsc, SortDesc, LayoutGrid, Table as TableIcon, File } from "lucide-react";
+import { SortAsc, SortDesc, LayoutGrid, Table as TableIcon, File, X, Search } from "lucide-react";
 
 // Helper for file size formatting
 function formatFileSize(size: number | undefined) {
@@ -118,6 +118,10 @@ type MediaListFilterSettings = {
   sortField: string;
   sortDirection: "asc" | "desc";
   viewMode: ViewMode;
+  searchTerm?: string;
+  columnVisibilityModel?: Record<string, boolean>;
+  columnWidths?: Record<string, number>;
+  columnOrder?: string[];
 };
 
 const MEDIA_FILTERS_KEY = "media-list-filters";
@@ -139,7 +143,6 @@ const MediaManagement = () => {
           scopeUid: arr.slice(0, idx + 1).join("/"),
         }))
     : [];
-  const [search, setSearch] = useState<string>("");
   const [dialog, setDialog] = useState<DialogType>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -165,17 +168,27 @@ const MediaManagement = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sortAnchorEl, setSortAnchorEl] = useState<HTMLElement | null>(null);
 
-  const [storedSettings, setStoredSettings] = useLocalStorage<MediaListFilterSettings>(
+  // Use undefined as default to distinguish "no stored settings" from "default settings"
+  const [storedSettings, setStoredSettings] = useLocalStorage<MediaListFilterSettings | undefined>(
     MEDIA_FILTERS_KEY,
-    {
-      sortField: "name",
-      sortDirection: "asc",
-      viewMode: "tiles",
-    }
+    undefined
   );
-  const [sortField, setSortField] = useState(storedSettings.sortField);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(storedSettings.sortDirection);
-  const [viewMode, setViewMode] = useState<ViewMode>(storedSettings.viewMode || "tiles");
+
+  const [sortField, setSortField] = useState(storedSettings?.sortField ?? "name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(
+    storedSettings?.sortDirection ?? "asc"
+  );
+  const [viewMode, setViewMode] = useState<ViewMode>(storedSettings?.viewMode ?? "tiles");
+  const [search, setSearch] = useState<string>(storedSettings?.searchTerm ?? "");
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState<Record<string, boolean>>(
+    storedSettings?.columnVisibilityModel ?? {}
+  );
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+    storedSettings?.columnWidths ?? {}
+  );
+
+  // Track initialization to prevent saving before stored values are loaded
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Pagination state for files mode
   const [pageNumber, setPageNumber] = useState(0);
@@ -369,6 +382,48 @@ const MediaManagement = () => {
     };
     searchMedia();
   }, [api, search, sortField, sortDirection, viewMode, pageNumber, pageSize]);
+
+  // Initialize state from stored settings (runs only once on mount)
+  useEffect(() => {
+    if (storedSettings) {
+      // Restore stored values if they exist
+      setSortField(storedSettings.sortField ?? "name");
+      setSortDirection(storedSettings.sortDirection ?? "asc");
+      setViewMode(storedSettings.viewMode ?? "tiles");
+      setSearch(storedSettings.searchTerm ?? "");
+      setColumnVisibilityModel(storedSettings.columnVisibilityModel ?? {});
+      setColumnWidths(storedSettings.columnWidths ?? {});
+    }
+    // Mark initialization as complete
+    setIsInitialized(true);
+  }, []);
+
+  // Save settings to localStorage
+  const saveGridStateInLocalStorage = useCallback(() => {
+    setStoredSettings({
+      sortField,
+      sortDirection,
+      viewMode,
+      searchTerm: search,
+      columnVisibilityModel,
+      columnWidths,
+    });
+  }, [
+    sortField,
+    sortDirection,
+    viewMode,
+    search,
+    columnVisibilityModel,
+    columnWidths,
+    setStoredSettings,
+  ]);
+
+  // Persist settings when they change (only after initialization)
+  useEffect(() => {
+    if (isInitialized) {
+      saveGridStateInLocalStorage();
+    }
+  }, [isInitialized, saveGridStateInLocalStorage]);
 
   // Navigation for folders
   const handleFolderClick = (item: MediaItem) => {
@@ -644,20 +699,6 @@ const MediaManagement = () => {
     }
   }, [dialog]);
 
-  useEffect(() => {
-    setStoredSettings({
-      sortField,
-      sortDirection,
-      viewMode,
-    });
-  }, [sortField, sortDirection, viewMode, setStoredSettings]);
-
-  useEffect(() => {
-    setSortField(storedSettings.sortField);
-    setSortDirection(storedSettings.sortDirection);
-    setViewMode(storedSettings.viewMode || "tiles");
-  }, [storedSettings]);
-
   const handleViewModeChange = (
     _event: React.MouseEvent<HTMLElement>,
     newMode: ViewMode | null
@@ -711,7 +752,7 @@ const MediaManagement = () => {
       {
         field: "name",
         headerName: "Name",
-        flex: 1,
+        ...(columnWidths["name"] ? { width: columnWidths["name"] } : { flex: 1 }),
         minWidth: 250,
         renderCell: ({ row }) => {
           const type = getFileType(row.mimeType, row.extension);
@@ -774,7 +815,7 @@ const MediaManagement = () => {
       {
         field: "size",
         headerName: "Size",
-        width: 100,
+        width: columnWidths["size"] || 100,
         renderCell: ({ row }) => (
           <Typography variant="body2" color="text.secondary">
             {formatFileSize(row.size)}
@@ -784,7 +825,7 @@ const MediaManagement = () => {
       {
         field: "usageCount",
         headerName: "Usage",
-        width: 80,
+        width: columnWidths["usageCount"] || 80,
         renderCell: ({ row }) => {
           const type = getFileType(row.mimeType, row.extension);
           const isFolder = type === "folder";
@@ -798,7 +839,7 @@ const MediaManagement = () => {
       {
         field: "mimeType",
         headerName: "Type",
-        width: 140,
+        width: columnWidths["mimeType"] || 140,
         renderCell: ({ row }) => {
           const type = getFileType(row.mimeType, row.extension);
           return (
@@ -816,7 +857,7 @@ const MediaManagement = () => {
       {
         field: "updatedAt",
         headerName: "Updated",
-        width: 130,
+        width: columnWidths["updatedAt"] || 130,
         renderCell: ({ row }) => (
           <Typography variant="body2" color="text.secondary">
             {formatDate(row.updatedAt || row.createdAt)}
@@ -826,7 +867,7 @@ const MediaManagement = () => {
       {
         field: "actions",
         headerName: "",
-        width: 60,
+        width: columnWidths["actions"] || 60,
         sortable: false,
         filterable: false,
         disableColumnMenu: true,
@@ -868,14 +909,22 @@ const MediaManagement = () => {
     }
 
     return baseColumns;
-  }, [viewMode]);
+  }, [viewMode, columnWidths]);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: "100%" }}>
-      <Grid container spacing={2} alignItems="center" mb={3}>
-        <Grid size={{ xs: 12, sm: 4 }}>
+    <Box sx={{ p: 5, maxWidth: "100%" }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 6,
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <TextField
-            fullWidth
             size="small"
             placeholder="Search media..."
             value={search}
@@ -889,16 +938,48 @@ const MediaManagement = () => {
               // If clearing search, do not reset folder
             }}
             InputProps={{
-              startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
+              startAdornment: (
+                <InputAdornment position="start" sx={{ p: 0 }}>
+                  <IconButton sx={{ p: 0 }}>
+                    <Search size={18} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+              endAdornment: search ? (
+                <InputAdornment position="end" sx={{ p: 0 }}>
+                  <IconButton sx={{ p: 0 }} onClick={() => setSearch("")} aria-label="Clear search">
+                    <X size={18} />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
             }}
+            sx={(theme) => ({
+              minWidth: 400,
+              backgroundColor: theme.palette.background.secondary,
+              "& .MuiInputBase-input": {
+                fontSize: "0.9rem",
+                padding: 2,
+                "&::placeholder": {
+                  fontSize: "0.9rem",
+                  opacity: 0.6,
+                },
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#E4E4E7",
+              },
+            })}
           />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }} display="flex" alignItems="center" gap={1}>
           <ToggleButtonGroup
             value={viewMode}
             exclusive
             onChange={handleViewModeChange}
             size="small"
+            sx={{
+              "& .MuiToggleButton-root": {
+                width: 35,
+                height: 35,
+              },
+            }}
           >
             <ToggleButton value="tiles">
               <Tooltip title="Tiles View">
@@ -916,8 +997,8 @@ const MediaManagement = () => {
               </Tooltip>
             </ToggleButton>
           </ToggleButtonGroup>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }} display="flex" justifyContent="flex-end" gap={2}>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           {viewMode === "tiles" && (
             <ToolbarButton
               onClick={handleSortButtonClick}
@@ -931,8 +1012,8 @@ const MediaManagement = () => {
           <Button variant="contained" onClick={() => setDialog("upload")}>
             Upload
           </Button>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
       {/* Breadcrumbs - only show for tiles and grid modes */}
       {viewMode !== "files" && (
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
@@ -1191,6 +1272,16 @@ const MediaManagement = () => {
             onRowClick={handleRowClick}
             sortingMode="server"
             onSortModelChange={handleGridSortChange}
+            columnVisibilityModel={columnVisibilityModel}
+            onColumnVisibilityModelChange={(newModel) => {
+              setColumnVisibilityModel(newModel);
+            }}
+            onColumnWidthChange={(params) => {
+              setColumnWidths((prev) => ({
+                ...prev,
+                [params.colDef.field]: params.width,
+              }));
+            }}
             initialState={{
               sorting: {
                 sortModel: [{ field: sortField, sort: sortDirection }],
