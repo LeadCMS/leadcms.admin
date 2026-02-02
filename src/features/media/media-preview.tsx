@@ -256,10 +256,6 @@ export const MediaPreview = ({
     currentTags.length === normalizedTagsValue.length &&
     currentTags.every((tag, index) => tag === normalizedTagsValue[index]);
   const mediaSettings = config?.settings ?? {};
-  const optimizeSetting = (mediaSettings["Media.EnableOptimisation"] ?? "true")
-    .toLowerCase()
-    .trim();
-  const optimizeEnabled = optimizeSetting === "true";
   const preferredFormatSetting = mediaSettings["Media.PreferredFormat"]?.trim();
   const preferredFormatLabel = preferredFormatSetting
     ? preferredFormatSetting.toUpperCase()
@@ -275,7 +271,6 @@ export const MediaPreview = ({
   const hasFolderChange = newScopeUid.trim() !== (file.scopeUid || "");
   const isCoverImage = currentTags.some((tag) => tag.toLowerCase() === "cover");
   const isImage = file.mimeType?.startsWith("image/") || false;
-  const showOptimizeTooltip = !optimizeEnabled && isImage;
 
   const parseOptionalNumber = (value: string) => {
     if (!value.trim()) return undefined;
@@ -812,44 +807,15 @@ export const MediaPreview = ({
                           Crop
                         </MenuItem>
                       ))}
-                    <Tooltip
-                      title={
-                        showOptimizeTooltip ? (
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                            <Typography variant="caption" color="inherit">
-                              Optimization is disabled in Media settings.
-                            </Typography>
-                            <Link
-                              href="/settings?tab=media"
-                              underline="always"
-                              target="_blank"
-                              rel="noreferrer"
-                              color="inherit"
-                              sx={{ alignSelf: "flex-start" }}
-                            >
-                              Media settings
-                            </Link>
-                          </Box>
-                        ) : (
-                          ""
-                        )
-                      }
-                      disableHoverListener={!showOptimizeTooltip}
-                      disableFocusListener={!showOptimizeTooltip}
-                      disableTouchListener={!showOptimizeTooltip}
+                    <MenuItem
+                      disabled={!isImage || isOptimizing}
+                      onClick={async () => {
+                        handleMenuClose();
+                        setIsOptimizeDialogOpen(true);
+                      }}
                     >
-                      <span>
-                        <MenuItem
-                          disabled={!isImage || !optimizeEnabled || isOptimizing}
-                          onClick={async () => {
-                            handleMenuClose();
-                            setIsOptimizeDialogOpen(true);
-                          }}
-                        >
-                          {isOptimizing ? "Optimizing..." : "Optimize"}
-                        </MenuItem>
-                      </span>
-                    </Tooltip>
+                      {isOptimizing ? "Optimizing..." : "Optimize"}
+                    </MenuItem>
                   </Menu>
                   {isPdf ? (
                     isLoadingPdf ? (
@@ -1663,7 +1629,7 @@ export const MediaPreview = ({
               setIsOptimizeDialogOpen(false);
             }}
             variant="contained"
-            disabled={isOptimizing || !optimizeEnabled}
+            disabled={isOptimizing}
             startIcon={isOptimizing ? <CircularProgress size={14} /> : undefined}
           >
             {isOptimizing ? "Optimizing..." : "Optimize"}

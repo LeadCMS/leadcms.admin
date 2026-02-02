@@ -58,9 +58,11 @@ interface SettingsFormData {
   "AI.SiteProfile.BlogCover.Instructions": string;
   "AI.SiteProfile.BlogCover.Size": string;
   "Media.Cover.Dimensions": string;
+  "Media.EnableCoverResize": string;
   "Media.MaxDimensions": string;
   "Media.MaxFileSize": string;
   "Media.PreferredFormat": string;
+  "Media.Quality": string;
   "Media.EnableOptimisation": string;
 }
 
@@ -111,9 +113,11 @@ const Settings = () => {
     "AI.SiteProfile.BlogCover.Instructions": "",
     "AI.SiteProfile.BlogCover.Size": "",
     "Media.Cover.Dimensions": "",
+    "Media.EnableCoverResize": "true",
     "Media.MaxDimensions": "",
     "Media.MaxFileSize": "",
     "Media.PreferredFormat": "",
+    "Media.Quality": "",
     "Media.EnableOptimisation": "true",
   });
   const [coverWidth, setCoverWidth] = useState("");
@@ -200,9 +204,11 @@ const Settings = () => {
         "AI.SiteProfile.BlogCover.Instructions": "",
         "AI.SiteProfile.BlogCover.Size": "",
         "Media.Cover.Dimensions": "",
+        "Media.EnableCoverResize": "true",
         "Media.MaxDimensions": "",
         "Media.MaxFileSize": "",
         "Media.PreferredFormat": "",
+        "Media.Quality": "",
         "Media.EnableOptimisation": "true",
       };
 
@@ -256,6 +262,8 @@ const Settings = () => {
             const [widthValue, heightValue] = rawSize.split(/x/i);
             setCoverWidth(widthValue?.trim() || "");
             setCoverHeight(heightValue?.trim() || "");
+          } else if (setting.key === "Media.EnableCoverResize") {
+            newFormData["Media.EnableCoverResize"] = setting.value || "true";
           } else if (setting.key === "Media.Max.Dimensions") {
             newFormData["Media.MaxDimensions"] = setting.value || "";
             const rawSize = setting.value || "";
@@ -267,6 +275,8 @@ const Settings = () => {
             newFormData["Media.MaxFileSize"] = setting.value || "";
           } else if (setting.key === "Media.PreferredFormat") {
             newFormData["Media.PreferredFormat"] = setting.value || "";
+          } else if (setting.key === "Media.Quality") {
+            newFormData["Media.Quality"] = setting.value || "";
           } else if (setting.key === "Media.EnableOptimisation") {
             newFormData["Media.EnableOptimisation"] = setting.value || "true";
           }
@@ -459,9 +469,11 @@ const Settings = () => {
 
         settingsToSave.push(
           { key: "Media.Cover.Dimensions", value: coverDimensionsValue || "" },
+          { key: "Media.EnableCoverResize", value: formData["Media.EnableCoverResize"] },
           { key: "Media.Max.Dimensions", value: maxDimensionsValue || "" },
           { key: "Media.Max.FileSize", value: formData["Media.MaxFileSize"] },
           { key: "Media.PreferredFormat", value: formData["Media.PreferredFormat"] },
+          { key: "Media.Quality", value: formData["Media.Quality"] },
           { key: "Media.EnableOptimisation", value: formData["Media.EnableOptimisation"] }
         );
 
@@ -722,16 +734,236 @@ const Settings = () => {
               <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
                 <Alert severity="info" sx={{ mb: 4 }}>
                   <Typography variant="body2">
-                    Configure media processing settings including cover image dimensions for AI
-                    generation, file size limits, and optimization preferences.
+                    Configure media processing settings including file size limits, optimization
+                    preferences, and cover image handling.
                   </Typography>
                 </Alert>
 
                 <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                  AI Cover Generation
+                  File Management
+                </Typography>
+                <Box sx={{ mb: 5 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Maximum File Size (KB)"
+                    value={formData["Media.MaxFileSize"]}
+                    onChange={handleInputChange("Media.MaxFileSize")}
+                    placeholder="10240"
+                    variant="outlined"
+                    size="small"
+                    helperText="Maximum file size for uploads in kilobytes"
+                    slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                  />
+                </Box>
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Optimization Settings
                 </Typography>
                 <Box
-                  sx={{ mb: 5, p: 2.5, backgroundColor: "rgba(0, 0, 0, 0.02)", borderRadius: 1 }}
+                  sx={{ mb: 3, p: 2.5, backgroundColor: "rgba(0, 0, 0, 0.02)", borderRadius: 1 }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData["Media.EnableOptimisation"] === "true"}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            "Media.EnableOptimisation": e.target.checked ? "true" : "false",
+                          }))
+                        }
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                          Auto-Optimize on Upload
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          When enabled, newly uploaded media files will be automatically optimized
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ width: "100%" }}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1.5, display: "block", pl: 6 }}
+                  >
+                    Manual optimization via the Optimize button in media preview is always
+                    available, regardless of this setting.
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    mb: 3,
+                    p: 2.5,
+                    backgroundColor: "rgba(0, 0, 0, 0.02)",
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 2, fontWeight: 500 }}
+                  >
+                    Maximum Dimensions
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mb: 2, display: "block" }}
+                  >
+                    Maximum dimensions for media resizing during optimization
+                  </Typography>
+                  <Grid container spacing={2} alignItems="flex-end">
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Width"
+                        value={maxWidth}
+                        onChange={(e) => setMaxWidth(e.target.value)}
+                        placeholder="2048"
+                        variant="outlined"
+                        size="small"
+                        slotProps={{ htmlInput: { min: 1 } }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Height"
+                        value={maxHeight}
+                        onChange={(e) => setMaxHeight(e.target.value)}
+                        placeholder="2048"
+                        variant="outlined"
+                        size="small"
+                        slotProps={{ htmlInput: { min: 1 } }}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: "block" }}
+                  >
+                    Saved as WxH. If either value is empty, the setting is cleared.
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    mb: 3,
+                    p: 2.5,
+                    backgroundColor: "rgba(0, 0, 0, 0.02)",
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 2, fontWeight: 500 }}
+                  >
+                    Format & Quality
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mb: 2, display: "block" }}
+                  >
+                    Target format and quality level for optimized images
+                  </Typography>
+                  <Grid container spacing={2} alignItems="flex-start">
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Select
+                        fullWidth
+                        value={formData["Media.PreferredFormat"]}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            "Media.PreferredFormat": e.target.value,
+                          }))
+                        }
+                        displayEmpty
+                        size="small"
+                        disabled={loadingFormats || availableFormats.length === 0}
+                      >
+                        <MenuItem value="">
+                          <em>{loadingFormats ? "Loading..." : "None (use original format)"}</em>
+                        </MenuItem>
+                        {availableFormats.map((format) => (
+                          <MenuItem key={format} value={format}>
+                            {format}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {availableFormats.length === 0 && !loadingFormats && (
+                        <Typography
+                          variant="caption"
+                          color="error"
+                          sx={{ mt: 1, display: "block" }}
+                        >
+                          No formats available. Please check server configuration.
+                        </Typography>
+                      )}
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Quality (%)"
+                        value={formData["Media.Quality"]}
+                        onChange={handleInputChange("Media.Quality")}
+                        placeholder="80"
+                        variant="outlined"
+                        size="small"
+                        helperText="1-100, higher means better quality but larger files"
+                        slotProps={{ htmlInput: { min: 1, max: 100, step: 1 } }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Cover Image Settings
+                </Typography>
+                <Box
+                  sx={{ mb: 3, p: 2.5, backgroundColor: "rgba(0, 0, 0, 0.02)", borderRadius: 1 }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData["Media.EnableCoverResize"] === "true"}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            "Media.EnableCoverResize": e.target.checked ? "true" : "false",
+                          }))
+                        }
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                          Auto-Resize Cover Images
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          When enabled, cover images will be automatically resized and cropped to
+                          the dimensions specified below
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ width: "100%" }}
+                  />
+                </Box>
+
+                <Box
+                  sx={{ mb: 3, p: 2.5, backgroundColor: "rgba(0, 0, 0, 0.02)", borderRadius: 1 }}
                 >
                   <Typography
                     variant="subtitle2"
@@ -745,7 +977,8 @@ const Settings = () => {
                     color="text.secondary"
                     sx={{ mb: 2, display: "block" }}
                   >
-                    Dimensions used for AI cover generation (default: 512x256)
+                    Target dimensions for cover images. Used for both AI generation and automatic
+                    resizing (default: 512x256)
                   </Typography>
                   <Grid container spacing={2} alignItems="flex-end">
                     <Grid size={{ xs: 12, sm: 6 }}>
@@ -783,174 +1016,6 @@ const Settings = () => {
                     Saved as WxH. If either value is empty, the setting is cleared.
                   </Typography>
                 </Box>
-
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                  File Management
-                </Typography>
-                <Box sx={{ mb: 5 }}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Maximum File Size (KB)"
-                    value={formData["Media.MaxFileSize"]}
-                    onChange={handleInputChange("Media.MaxFileSize")}
-                    placeholder="10240"
-                    variant="outlined"
-                    size="small"
-                    helperText="Maximum file size for uploads in kilobytes"
-                    slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                  />
-                </Box>
-
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                  Optimization Settings
-                </Typography>
-                <Box
-                  sx={{ mb: 5, p: 2.5, backgroundColor: "rgba(0, 0, 0, 0.02)", borderRadius: 1 }}
-                >
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData["Media.EnableOptimisation"] === "true"}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            "Media.EnableOptimisation": e.target.checked ? "true" : "false",
-                          }))
-                        }
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                          Enable Media Optimization
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          When enabled, media files will be optimized based on settings below
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ width: "100%" }}
-                  />
-                </Box>
-
-                {formData["Media.EnableOptimisation"] === "true" && (
-                  <>
-                    <Box
-                      sx={{
-                        mb: 5,
-                        p: 2.5,
-                        backgroundColor: "rgba(0, 0, 0, 0.02)",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ mb: 2, fontWeight: 500 }}
-                      >
-                        Maximum Dimensions
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ mb: 2, display: "block" }}
-                      >
-                        Maximum dimensions for media resizing and re-optimization
-                      </Typography>
-                      <Grid container spacing={2} alignItems="flex-end">
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            label="Width"
-                            value={maxWidth}
-                            onChange={(e) => setMaxWidth(e.target.value)}
-                            placeholder="2048"
-                            variant="outlined"
-                            size="small"
-                            slotProps={{ htmlInput: { min: 1 } }}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            label="Height"
-                            value={maxHeight}
-                            onChange={(e) => setMaxHeight(e.target.value)}
-                            placeholder="2048"
-                            variant="outlined"
-                            size="small"
-                            slotProps={{ htmlInput: { min: 1 } }}
-                          />
-                        </Grid>
-                      </Grid>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ mt: 1, display: "block" }}
-                      >
-                        Saved as WxH. If either value is empty, the setting is cleared.
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        mb: 5,
-                        p: 2.5,
-                        backgroundColor: "rgba(0, 0, 0, 0.02)",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ mb: 2, fontWeight: 500 }}
-                      >
-                        Preferred Format
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ mb: 2, display: "block" }}
-                      >
-                        Format to use for media optimization (default: avif)
-                      </Typography>
-                      <Select
-                        fullWidth
-                        value={formData["Media.PreferredFormat"]}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            "Media.PreferredFormat": e.target.value,
-                          }))
-                        }
-                        displayEmpty
-                        size="small"
-                        disabled={loadingFormats || availableFormats.length === 0}
-                      >
-                        <MenuItem value="">
-                          <em>{loadingFormats ? "Loading..." : "None (use original format)"}</em>
-                        </MenuItem>
-                        {availableFormats.map((format) => (
-                          <MenuItem key={format} value={format}>
-                            {format}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {availableFormats.length === 0 && !loadingFormats && (
-                        <Typography
-                          variant="caption"
-                          color="error"
-                          sx={{ mt: 1, display: "block" }}
-                        >
-                          No formats available. Please check server configuration.
-                        </Typography>
-                      )}
-                    </Box>
-                  </>
-                )}
               </Box>
             )}
 
@@ -1220,11 +1285,11 @@ const Settings = () => {
                       multiline
                       minRows={3}
                       maxRows={8}
-                      label="Blog Cover Instructions"
+                      label="Cover Image Instructions"
                       value={formData["AI.SiteProfile.BlogCover.Instructions"]}
                       onChange={handleInputChange("AI.SiteProfile.BlogCover.Instructions")}
-                      placeholder={"Provide guidance for cover image generation."}
-                      helperText="Used for AI cover generation prompts."
+                      placeholder={"Provide guidance for AI-generated cover images."}
+                      helperText="Instructions and context for AI cover image generation."
                       variant="outlined"
                       size="small"
                     />
