@@ -135,6 +135,7 @@ export const MediaPreview = ({
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isResizeDialogOpen, setIsResizeDialogOpen] = useState(false);
   const [isOptimizeDialogOpen, setIsOptimizeDialogOpen] = useState(false);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [cropSelection, setCropSelection] = useState<{
     x: number;
@@ -158,6 +159,7 @@ export const MediaPreview = ({
   const [cropY, setCropY] = useState<string>("");
   const [isCropping, setIsCropping] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [transformError, setTransformError] = useState<string | null>(null);
 
   const isPdf = file ? isPdfFile(file) : false;
@@ -243,6 +245,7 @@ export const MediaPreview = ({
     setIsRenameDialogOpen(false);
     setIsResizeDialogOpen(false);
     setIsOptimizeDialogOpen(false);
+    setIsResetDialogOpen(false);
     setMenuAnchorEl(null);
     setIsEditingName(false);
     setIsEditingFolder(false);
@@ -514,6 +517,40 @@ export const MediaPreview = ({
       notificationsService.error(apiError.message);
     } finally {
       setIsOptimizing(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!file.scopeUid || !file.name) {
+      notificationsService.error("Missing file identifiers");
+      return;
+    }
+
+    setIsResetting(true);
+    setTransformError(null);
+
+    try {
+      const response = await client.api.mediaResetCreate({
+        scopeUid: file.scopeUid,
+        fileName: file.name,
+      });
+
+      if (response.error) {
+        const err = response.error as ProblemDetails;
+        throw new Error(err.detail || err.title || "Reset failed");
+      }
+
+      notificationsService.success("Media reset to original");
+
+      if (response.data && onFileUpdate) {
+        onFileUpdate(response.data);
+      }
+    } catch (error) {
+      const apiError = parseApiError(error, "Failed to reset media");
+      setTransformError(apiError.message);
+      notificationsService.error(apiError.message);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -815,6 +852,15 @@ export const MediaPreview = ({
                       }}
                     >
                       {isOptimizing ? "Optimizing..." : "Optimize"}
+                    </MenuItem>
+                    <MenuItem
+                      disabled={!isImage || isResetting}
+                      onClick={async () => {
+                        handleMenuClose();
+                        setIsResetDialogOpen(true);
+                      }}
+                    >
+                      {isResetting ? "Resetting..." : "Reset"}
                     </MenuItem>
                   </Menu>
                   {isPdf ? (
@@ -1633,6 +1679,52 @@ export const MediaPreview = ({
             startIcon={isOptimizing ? <CircularProgress size={14} /> : undefined}
           >
             {isOptimizing ? "Optimizing..." : "Optimize"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={isResetDialogOpen}
+        onClose={() => setIsResetDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Reset Image</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            {"Reset restores the image to the original uploaded file. Any optimizations, resizes, "}
+            {"or crops will be undone, and we will attempt to update references if the file name "}
+            {"changes."}
+          </Typography>
+          {usageLabel > 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              This image is used in{" "}
+              <Box component="span" sx={{ fontWeight: 600 }}>
+                {usageLabel}
+              </Box>{" "}
+              place(s). We will attempt to refactor those references after the reset.
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              It seems like this image is not used anywhere. We will check again and replace any
+              usages if found.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsResetDialogOpen(false)} variant="text">
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              await handleReset();
+              setIsResetDialogOpen(false);
+            }}
+            variant="contained"
+            disabled={isResetting}
+            startIcon={isResetting ? <CircularProgress size={14} /> : undefined}
+          >
+            {isResetting ? "Resetting..." : "Reset"}
           </Button>
         </DialogActions>
       </Dialog>

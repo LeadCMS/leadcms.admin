@@ -7,6 +7,8 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  Switch,
+  FormControlLabel,
   TextField,
   IconButton,
   Paper,
@@ -27,6 +29,7 @@ import MovieIcon from "@mui/icons-material/Movie";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ArchiveIcon from "@mui/icons-material/Archive";
+import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import { useRequestContext } from "@providers/request-provider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -46,6 +49,8 @@ import useLocalStorage from "use-local-storage";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { DataTableContainer } from "@components/data-table/index.styled";
 import { SortAsc, SortDesc, LayoutGrid, Table as TableIcon, File, X, Search } from "lucide-react";
+import { useConfig } from "@providers/config-provider";
+import { parseApiError } from "@utils/api-error-parser";
 
 // Helper for file size formatting
 function formatFileSize(size: number | undefined) {
@@ -128,6 +133,7 @@ const MEDIA_FILTERS_KEY = "media-list-filters";
 
 const MediaManagement = () => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const navigate = useNavigate();
   const location = useLocation();
   // Wrap the API client for error handling
@@ -152,6 +158,7 @@ const MediaManagement = () => {
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuItem, setMenuItem] = useState<MediaItem | null>(null);
+  const [folderMenuAnchorEl, setFolderMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -167,6 +174,16 @@ const MediaManagement = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [sortAnchorEl, setSortAnchorEl] = useState<HTMLElement | null>(null);
+  const [bulkDialog, setBulkDialog] = useState<"optimize" | "reset" | null>(null);
+  const [includeSubfolders, setIncludeSubfolders] = useState(false);
+  const [isBulkOptimizing, setIsBulkOptimizing] = useState(false);
+  const [isBulkResetting, setIsBulkResetting] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<MediaItem | null>(null);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
+  const [newScopeUid, setNewScopeUid] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   // Use undefined as default to distinguish "no stored settings" from "default settings"
   const [storedSettings, setStoredSettings] = useLocalStorage<MediaListFilterSettings | undefined>(
@@ -194,6 +211,7 @@ const MediaManagement = () => {
   const [pageNumber, setPageNumber] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
+  const paginationKey = viewMode === "files" ? `${pageNumber}:${pageSize}` : "client";
 
   // For preview navigation - include both images and PDFs
   const previewableItems = items.filter((item) => {
@@ -331,7 +349,7 @@ const MediaManagement = () => {
       }
     };
     fetchMedia();
-  }, [api, currentScopeUid, search, sortField, sortDirection, viewMode, pageNumber, pageSize]);
+  }, [api, currentScopeUid, search, sortField, sortDirection, viewMode, paginationKey]);
 
   // Search
   useEffect(() => {
@@ -381,7 +399,7 @@ const MediaManagement = () => {
       }
     };
     searchMedia();
-  }, [api, search, sortField, sortDirection, viewMode, pageNumber, pageSize]);
+  }, [api, search, sortField, sortDirection, viewMode, paginationKey]);
 
   // Initialize state from stored settings (runs only once on mount)
   useEffect(() => {
@@ -430,6 +448,7 @@ const MediaManagement = () => {
     setCurrentScopeUid(item.scopeUid);
     setBreadcrumbs((prev) => [...prev, { name: item.name, scopeUid: item.scopeUid }]);
     setSearch("");
+    setPageNumber(0);
   };
 
   // Breadcrumb navigation
@@ -442,6 +461,7 @@ const MediaManagement = () => {
       setBreadcrumbs(breadcrumbs.slice(0, idx + 1));
     }
     setSearch("");
+    setPageNumber(0);
   };
 
   // Menu handlers
@@ -452,6 +472,9 @@ const MediaManagement = () => {
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
     setMenuItem(null);
+  };
+  const handleFolderMenuClose = () => {
+    setFolderMenuAnchorEl(null);
   };
   const handleCopyLink = (item: MediaItem) => {
     navigator.clipboard.writeText(item.location);
@@ -465,6 +488,14 @@ const MediaManagement = () => {
     setPreviewFile(item);
     setPreviewOpen(true);
     handleMenuClose();
+  };
+
+  const handleRenameOpen = (item: MediaItem) => {
+    setRenameTarget(item);
+    setNewFileName(item.name || "");
+    setNewScopeUid(item.scopeUid || "");
+    setRenameError(null);
+    setIsRenameDialogOpen(true);
   };
 
   const handleSortButtonClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -533,6 +564,76 @@ const MediaManagement = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkOptimize = async () => {
+    setIsBulkOptimizing(true);
+    try {
+      const response = await api.mediaOptimizeAllCreate({
+        folder: currentScopeUid || undefined,
+        includeSubfolders,
+      });
+      const updatedCount = response.data?.updated ?? 0;
+      notificationsService.success(`Optimized ${updatedCount} image(s)`);
+      await refreshMediaList();
+    } catch (error) {
+      const apiError = parseApiError(error, "Failed to optimize folder");
+      notificationsService.error(apiError.message);
+    } finally {
+      setIsBulkOptimizing(false);
+    }
+  };
+
+  const handleBulkReset = async () => {
+    setIsBulkResetting(true);
+    try {
+      const response = await api.mediaResetAllCreate({
+        folder: currentScopeUid || undefined,
+        includeSubfolders,
+      });
+      const updatedCount = response.data?.updated ?? 0;
+      notificationsService.success(`Reset ${updatedCount} image(s)`);
+      await refreshMediaList();
+    } catch (error) {
+      const apiError = parseApiError(error, "Failed to reset folder");
+      notificationsService.error(apiError.message);
+    } finally {
+      setIsBulkResetting(false);
+    }
+  };
+
+  const handleRenameConfirm = async () => {
+    if (!renameTarget) return;
+    if (!newFileName.trim() || !newScopeUid.trim()) {
+      setRenameError("New name and folder are required");
+      return;
+    }
+
+    setIsRenaming(true);
+    setRenameError(null);
+
+    try {
+      const response = await api.mediaRenameCreate({
+        scopeUid: renameTarget.scopeUid,
+        fileName: renameTarget.name,
+        newScopeUid: newScopeUid.trim(),
+        newFileName: newFileName.trim(),
+      });
+
+      notificationsService.success("Media updated");
+      await refreshMediaList();
+      if (previewFile?.id === renameTarget.id && response.data) {
+        setPreviewFile(response.data as MediaItem);
+      }
+      setIsRenameDialogOpen(false);
+      setRenameTarget(null);
+    } catch (error) {
+      const apiError = parseApiError(error, "Failed to rename media");
+      setRenameError(apiError.message);
+      notificationsService.error(apiError.message);
+    } finally {
+      setIsRenaming(false);
     }
   };
 
@@ -911,6 +1012,17 @@ const MediaManagement = () => {
     return baseColumns;
   }, [viewMode, columnWidths]);
 
+  const mediaSettings = config?.settings ?? {};
+  const preferredFormatSetting = mediaSettings["Media.PreferredFormat"]?.trim();
+  const preferredFormatLabel = preferredFormatSetting
+    ? preferredFormatSetting.toUpperCase()
+    : "the preferred format";
+  const maxDimensionsSetting = mediaSettings["Media.Max.Dimensions"]?.trim();
+  const maxDimensionsLabel = maxDimensionsSetting || "configured max dimensions";
+  const coverDimensionsSetting = mediaSettings["Media.Cover.Dimensions"]?.trim();
+  const coverDimensionsLabel = coverDimensionsSetting || "configured cover dimensions";
+  const folderLabel = currentScopeUid ? `/${currentScopeUid}` : "root folder";
+
   return (
     <Box sx={{ p: 5, maxWidth: "100%" }}>
       <Box
@@ -1009,6 +1121,13 @@ const MediaManagement = () => {
               <span>{sortLabel}</span>
             </ToolbarButton>
           )}
+          <IconButton
+            size="small"
+            onClick={(event) => setFolderMenuAnchorEl(event.currentTarget)}
+            aria-label="Folder actions"
+          >
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
           <Button variant="contained" onClick={() => setDialog("upload")}>
             Upload
           </Button>
@@ -1295,7 +1414,6 @@ const MediaManagement = () => {
             }}
             paginationMode={viewMode === "files" ? "server" : "client"}
             rowCount={viewMode === "files" ? totalCount : undefined}
-            hideFooter={viewMode === "grid"}
             sx={{
               "& .MuiDataGrid-row": {
                 cursor: "pointer",
@@ -1337,12 +1455,46 @@ const MediaManagement = () => {
             <FileCopyIcon fontSize="small" sx={{ mr: 1 }} /> Copy Link
           </MenuItem>
         )}
+        {menuItem && menuItem.mimeType !== "inode/directory" && (
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              handleRenameOpen(menuItem);
+            }}
+          >
+            <DriveFileRenameOutlineIcon fontSize="small" sx={{ mr: 1 }} /> Move / Rename
+          </MenuItem>
+        )}
         {/* Only show Rename/Delete for files, not folders */}
         {menuItem && menuItem.mimeType !== "inode/directory" && (
           <MenuItem onClick={() => handleDelete(menuItem)}>
             <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Delete
           </MenuItem>
         )}
+      </Menu>
+      <Menu
+        anchorEl={folderMenuAnchorEl}
+        open={Boolean(folderMenuAnchorEl)}
+        onClose={handleFolderMenuClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <MenuItem
+          onClick={() => {
+            handleFolderMenuClose();
+            setBulkDialog("optimize");
+          }}
+        >
+          Optimize Folder
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleFolderMenuClose();
+            setBulkDialog("reset");
+          }}
+        >
+          Reset Folder
+        </MenuItem>
       </Menu>
       <Dialog
         open={isDeleteDialogOpen}
@@ -1394,6 +1546,142 @@ const MediaManagement = () => {
             startIcon={isDeleting ? <CircularProgress size={14} /> : undefined}
           >
             {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={isRenameDialogOpen}
+        onClose={() => {
+          if (isRenaming) return;
+          setIsRenameDialogOpen(false);
+          setRenameTarget(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Move / Rename</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            This will update the file name and/or folder and attempt to update references. The file
+            appears in at least {renameTarget?.usageCount ?? 0} place(s).
+          </Typography>
+          <TextField
+            label="New name"
+            value={newFileName}
+            onChange={(e) => setNewFileName(e.target.value)}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="New folder (scope uid)"
+            value={newScopeUid}
+            onChange={(e) => setNewScopeUid(e.target.value)}
+            size="small"
+            fullWidth
+          />
+          {renameError && (
+            <Typography variant="body2" color="error">
+              {renameError}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setIsRenameDialogOpen(false);
+              setRenameTarget(null);
+            }}
+            variant="text"
+            disabled={isRenaming}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRenameConfirm}
+            variant="contained"
+            disabled={isRenaming}
+            startIcon={isRenaming ? <CircularProgress size={14} /> : undefined}
+          >
+            {isRenaming ? "Updating..." : "Update"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={bulkDialog !== null}
+        onClose={() => {
+          if (isBulkOptimizing || isBulkResetting) return;
+          setBulkDialog(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{bulkDialog === "reset" ? "Reset Folder" : "Optimize Folder"}</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+          {bulkDialog === "reset" ? (
+            <Typography variant="body2" color="text.secondary">
+              {"Reset restores all images in "}
+              {folderLabel}
+              {" to the original uploaded files. Any optimizations, resizes, or crops will be "}
+              {"undone, and we will attempt to update references if file names change."}
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              {"We will optimize all images in "}
+              {folderLabel}
+              {". Images are converted to "}
+              {preferredFormatLabel}
+              {" and resized to stay within "}
+              {maxDimensionsLabel}
+              {" while keeping aspect ratio. Cover images are fit into a fixed size "}
+              {coverDimensionsLabel}
+              {"."}
+            </Typography>
+          )}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={includeSubfolders}
+                onChange={(e) => setIncludeSubfolders(e.target.checked)}
+              />
+            }
+            label="Include subfolders"
+          />
+          <Typography variant="caption" color="text.secondary">
+            {includeSubfolders
+              ? "All nested folders will be included in this action."
+              : "Only the current folder will be affected."}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setBulkDialog(null)}
+            variant="text"
+            disabled={isBulkOptimizing || isBulkResetting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              if (bulkDialog === "reset") {
+                await handleBulkReset();
+              } else {
+                await handleBulkOptimize();
+              }
+              setBulkDialog(null);
+            }}
+            variant="contained"
+            disabled={isBulkOptimizing || isBulkResetting}
+            startIcon={
+              isBulkOptimizing || isBulkResetting ? <CircularProgress size={14} /> : undefined
+            }
+          >
+            {bulkDialog === "reset"
+              ? isBulkResetting
+                ? "Resetting..."
+                : "Reset"
+              : isBulkOptimizing
+              ? "Optimizing..."
+              : "Optimize"}
           </Button>
         </DialogActions>
       </Dialog>

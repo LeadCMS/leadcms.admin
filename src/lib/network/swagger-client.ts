@@ -5176,6 +5176,11 @@ export interface DeploymentStatsDto {
 
 export interface DeploymentStepDto {
   /**
+   * Id
+   * @example "string"
+   */
+  id?: string | null;
+  /**
    * Name
    * @example "string"
    */
@@ -5200,6 +5205,16 @@ export interface DeploymentStepDto {
    */
   completedAt?: string | null;
   duration?: TimeSpan;
+  /**
+   * Url
+   * @example "string"
+   */
+  url?: string | null;
+  /**
+   * Logs Url
+   * @example "string"
+   */
+  logsUrl?: string | null;
 }
 
 export interface DeploymentTargetDto {
@@ -6480,6 +6495,32 @@ export interface MdxComponentPropertyDto {
   exampleValues?: string[];
 }
 
+export interface MediaBulkOptimizeRequestDto {
+  /**
+   * Folder
+   * @example "string"
+   */
+  folder?: string | null;
+  /**
+   * Include Subfolders
+   * @example true
+   */
+  includeSubfolders?: boolean;
+}
+
+export interface MediaBulkResetRequestDto {
+  /**
+   * Folder
+   * @example "string"
+   */
+  folder?: string | null;
+  /**
+   * Include Subfolders
+   * @example true
+   */
+  includeSubfolders?: boolean;
+}
+
 export interface MediaCropRequestDto {
   /**
    * Scope Uid
@@ -6636,6 +6677,20 @@ export interface MediaDetailsDto {
   updatedAt?: string | null;
 }
 
+export interface MediaOptimizeResponseDto {
+  /**
+   * Updated
+   * @format int32
+   * @example 1
+   */
+  updated?: number;
+  /**
+   * Message
+   * @example "string"
+   */
+  message?: string | null;
+}
+
 export interface MediaRenameRequestDto {
   /**
    * Scope Uid
@@ -6661,20 +6716,6 @@ export interface MediaRenameRequestDto {
    * @example "string"
    */
   newFileName: string;
-}
-
-export interface MediaReoptimizeResponseDto {
-  /**
-   * Updated
-   * @format int32
-   * @example 1
-   */
-  updated?: number;
-  /**
-   * Message
-   * @example "string"
-   */
-  message?: string | null;
 }
 
 export interface MediaResizeRequestDto {
@@ -8612,7 +8653,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.3.1.0
+ * @version 1.3.4.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -14633,15 +14674,64 @@ export class Api<
      * No description
      *
      * @tags Media
-     * @name MediaReoptimizeCreate
-     * @request POST:/api/media/reoptimize
+     * @name MediaOptimizeAllCreate
+     * @request POST:/api/media/optimize-all
      * @secure
      */
-    mediaReoptimizeCreate: (params: RequestParams = {}) =>
-      this.request<MediaReoptimizeResponseDto, void | ProblemDetails>({
-        path: `/api/media/reoptimize`,
+    mediaOptimizeAllCreate: (
+      data: MediaBulkOptimizeRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaOptimizeResponseDto, void | ProblemDetails>({
+        path: `/api/media/optimize-all`,
         method: "POST",
+        body: data,
         secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaResetCreate
+     * @request POST:/api/media/reset
+     * @secure
+     */
+    mediaResetCreate: (
+      data: MediaTransformRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaDetailsDto, void | ProblemDetails>({
+        path: `/api/media/reset`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaResetAllCreate
+     * @request POST:/api/media/reset-all
+     * @secure
+     */
+    mediaResetAllCreate: (
+      data: MediaBulkResetRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaOptimizeResponseDto, void | ProblemDetails>({
+        path: `/api/media/reset-all`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
