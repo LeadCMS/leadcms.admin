@@ -107,6 +107,7 @@ type MediaItem = {
   name: string;
   location: string;
   scopeUid: string;
+  description?: string | null;
   size: number;
   extension: string;
   mimeType: string;
@@ -877,6 +878,7 @@ const MediaManagement = () => {
                       "/images/placeholder.svg"
                     }
                     alt={row.name}
+                    title={row.description || ""}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     loading="lazy"
                   />
@@ -1257,6 +1259,7 @@ const MediaManagement = () => {
                             ) || "/images/placeholder.svg"
                           }
                           alt={item.name}
+                          title={item.description || ""}
                           style={{
                             width: "100%",
                             height: "100%",

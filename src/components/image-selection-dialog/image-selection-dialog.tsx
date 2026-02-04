@@ -395,6 +395,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                                   item.updatedAt
                                 )}
                                 alt={item.name}
+                                title={item.description || ""}
                                 sx={{
                                   position: "absolute",
                                   top: 0,
