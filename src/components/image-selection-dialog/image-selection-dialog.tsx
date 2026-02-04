@@ -21,11 +21,12 @@ import { useRequestContext } from "@providers/request-provider";
 import { wrapApiClient } from "@lib/network/wrapApiClient";
 import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 
-type MediaItem = {
+export type MediaItem = {
   id: number;
   name: string;
   location: string;
   scopeUid: string;
+  description?: string | null;
   size: number;
   extension: string;
   mimeType: string;
@@ -37,6 +38,7 @@ interface ImageSelectionDialogProps {
   open: boolean;
   onClose: () => void;
   onSelect: (imageUrl: string) => void;
+  onSelectItem?: (item: MediaItem) => void;
   onSelectMultiple?: (imageUrls: string[]) => void;
   initialFolder?: string;
   selectionMode?: "single" | "multiple";
@@ -56,6 +58,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
   open,
   onClose,
   onSelect,
+  onSelectItem,
   onSelectMultiple,
   initialFolder = "",
   selectionMode = "single",
@@ -197,6 +200,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
 
     if (selectedItem) {
       onSelect(selectedItem.location);
+      onSelectItem?.(selectedItem);
     }
   };
 

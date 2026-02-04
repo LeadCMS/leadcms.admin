@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import React from "react";
 import { Box, Grid, IconButton, Drawer, Typography, Chip } from "@mui/material";
-import { Component } from "lucide-react";
+import { Component, ImagePlus } from "lucide-react";
 import {
   MDXEditor,
+  type MDXEditorMethods,
   headingsPlugin,
   quotePlugin,
   listsPlugin,
@@ -42,6 +43,10 @@ import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { parseApiError } from "@utils/api-error-parser";
 import { buildAbsoluteUrl } from "@lib/network/utils";
+import {
+  ImageSelectionDialog,
+  type MediaItem,
+} from "@components/image-selection-dialog/image-selection-dialog";
 import { toast } from "react-toastify";
 import "@mdxeditor/editor/style.css";
 import "./styles.css";
@@ -63,10 +68,12 @@ const MDXEditorNew = ({
   const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
+  const mdxEditorRef = useRef<MDXEditorMethods>(null);
   const [initialContent, setInitialContent] = useState<string>("");
   const [previewKey, setPreviewKey] = useState<number>(Date.now());
   const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
   const [componentsPanelOpen, setComponentsPanelOpen] = useState<boolean>(false);
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState<boolean>(false);
   // Track currently uploading image files by name
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
@@ -79,6 +86,14 @@ const MDXEditorNew = ({
 
     return imageSource;
   };
+
+  const insertImageFromLibrary = useCallback((item: MediaItem) => {
+    const altText = item.description?.trim() || item.name || "";
+    const markdown = `![${altText}](${item.location})`;
+    mdxEditorRef.current?.focus(() => {
+      mdxEditorRef.current?.insertMarkdown(`${markdown}\n`);
+    });
+  }, []);
 
   // Fetch custom MDX components for the current content type
   const { components: mdxComponents } = useMdxComponents({
@@ -358,6 +373,27 @@ const MDXEditorNew = ({
     );
   };
 
+  const InsertLibraryImageControl = () => (
+    <>
+      <IconButton
+        size="small"
+        onClick={() => setIsMediaPickerOpen(true)}
+        title="Insert image from media library"
+        sx={{
+          minWidth: "auto",
+          padding: "4px",
+          color: "text.secondary",
+          "&:hover": {
+            backgroundColor: "action.hover",
+          },
+        }}
+      >
+        <ImagePlus size={16} />
+      </IconButton>
+      <Separator />
+    </>
+  );
+
   // Render preview for live preview mode only
   const renderPreview = () => {
     if (livePreview && livePreviewTemplate) {
@@ -418,6 +454,7 @@ const MDXEditorNew = ({
           >
             <MDXEditor
               key={`editor-${isReadOnly}-${mdxComponents.length}`} // Re-render on load
+              ref={mdxEditorRef}
               markdown={value}
               onChange={handleContentChange}
               readOnly={isReadOnly}
@@ -503,6 +540,7 @@ const MDXEditorNew = ({
                             options={["rich-text", "diff", "source"]}
                             SourceToolbar={
                               <>
+                                <InsertLibraryImageControl />
                                 <MdxComponentsControl />
                               </>
                             }
@@ -515,6 +553,7 @@ const MDXEditorNew = ({
                             <CreateLink />
                             <InsertImage />
                             <Separator />
+                            <InsertLibraryImageControl />
                             <InsertTable />
                             <InsertThematicBreak />
                             <Separator />
@@ -589,6 +628,17 @@ const MDXEditorNew = ({
           onClosePanel={() => setComponentsPanelOpen(false)}
         />
       </Drawer>
+
+      <ImageSelectionDialog
+        open={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        onSelect={() => setIsMediaPickerOpen(false)}
+        onSelectItem={(item) => {
+          insertImageFromLibrary(item);
+          setIsMediaPickerOpen(false);
+        }}
+        initialFolder={contentDetails.slug.replace(/^\/+|\/+$/g, "")}
+      />
     </div>
   );
 };
