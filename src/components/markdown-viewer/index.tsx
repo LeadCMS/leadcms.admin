@@ -9,6 +9,7 @@ import remarkDirective from "remark-directive";
 import rehypeRaw from "rehype-raw";
 import { visit } from "unist-util-visit";
 import { h } from "hastscript";
+import { buildAbsoluteUrl } from "@lib/network/utils";
 //Styles
 import "./styles.css";
 
@@ -17,12 +18,8 @@ import "./styles.css";
 // HUGE performance drop when typing something
 
 const ImageUriTransformer = (src: string) => {
-  if (src.startsWith("/api")) {
-    const coreApi = process.env.CORE_API;
-    if (coreApi && coreApi.trim().length > 0) {
-      return new URL(src, coreApi).href;
-    }
-    return src;
+  if (src && src.startsWith("/api")) {
+    return buildAbsoluteUrl(src);
   }
   return src;
 };

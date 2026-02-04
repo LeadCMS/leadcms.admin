@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { Api, ApiConfig } from "lib/network/swagger-client";
+import { buildAbsoluteUrl } from "lib/network/utils";
 import { useAuthState } from "./auth-provider";
 
 type getTokenFn = () => Promise<string | undefined>;
@@ -34,7 +35,7 @@ class ApiExtended<getTokenFn> extends Api<getTokenFn> {
             }
             throw e;
           }
-            throw e;
+          throw e;
         }
       };
     });
@@ -43,7 +44,7 @@ class ApiExtended<getTokenFn> extends Api<getTokenFn> {
 }
 
 const client = new ApiExtended<getTokenFn>({
-  baseUrl: process.env.CORE_API,
+  baseUrl: buildAbsoluteUrl("/").replace(/\/$/, ""),
   securityWorker: async (getToken) => {
     const token = await getToken?.();
     if (token) {

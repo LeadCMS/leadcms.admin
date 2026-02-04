@@ -28,7 +28,7 @@ import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import MovieIcon from "@mui/icons-material/Movie";
-import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
+import { buildAbsoluteUrl, buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { MediaDetailsDto, ProblemDetails } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useAuthState } from "@providers/auth-provider";
@@ -597,7 +597,7 @@ export const MediaPreview = ({
     tags.forEach((tag) => formData.append("Tags", tag));
 
     const token = await getToken?.();
-    const baseUrl = client.baseUrl || process.env.CORE_API || "";
+    const baseUrl = (client.baseUrl || buildAbsoluteUrl("/")).replace(/\/$/, "");
     const response = await fetch(`${baseUrl}/api/media`, {
       method: "PATCH",
       headers: token ? { authorization: `Bearer ${token}` } : {},

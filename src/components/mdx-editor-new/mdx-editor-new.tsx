@@ -41,6 +41,7 @@ import { isCodeEditorLineNumbersEnabled } from "@utils/config-helpers";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { parseApiError } from "@utils/api-error-parser";
+import { buildAbsoluteUrl } from "@lib/network/utils";
 import { toast } from "react-toastify";
 import "@mdxeditor/editor/style.css";
 import "./styles.css";
@@ -70,6 +71,14 @@ const MDXEditorNew = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
   const [pendingChanges, setPendingChanges] = useState<boolean>(false);
+
+  const resolveImagePreviewUrl = (imageSource: string) => {
+    if (imageSource && imageSource.startsWith("/api")) {
+      return buildAbsoluteUrl(imageSource);
+    }
+
+    return imageSource;
+  };
 
   // Fetch custom MDX components for the current content type
   const { components: mdxComponents } = useMdxComponents({
@@ -478,11 +487,7 @@ const MDXEditorNew = ({
                 imagePlugin({
                   imageUploadHandler,
                   imagePreviewHandler: async (imageSource: string) => {
-                    // Transform relative API URLs to full URLs with CORE_API prefix
-                    if (imageSource.startsWith("/api")) {
-                      return new URL(imageSource, process.env.CORE_API).href;
-                    }
-                    return imageSource;
+                    return resolveImagePreviewUrl(imageSource);
                   },
                 }),
                 tablePlugin(),
