@@ -64,6 +64,13 @@ interface SettingsFormData {
   "Media.PreferredFormat": string;
   "Media.Quality": string;
   "Media.EnableOptimisation": string;
+  "LeadCapture.Email.Enabled": string;
+  "LeadCapture.Email.To": string;
+  "LeadCapture.Telegram.Enabled": string;
+  "LeadCapture.Telegram.BotId": string;
+  "LeadCapture.Telegram.ChatId": string;
+  "LeadCapture.Slack.Enabled": string;
+  "LeadCapture.Slack.WebhookUrl": string;
 }
 
 const availableVariables = [
@@ -73,6 +80,37 @@ const availableVariables = [
   { name: "{lang+slug}", description: "Language code combined with slug" },
 ];
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const parseEmailListInput = (value: string): string[] => {
+  if (!value || !value.trim()) {
+    return [];
+  }
+
+  const trimmedValue = value.trim();
+
+  try {
+    const parsed = JSON.parse(trimmedValue) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed
+        .filter((item) => typeof item === "string")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+    }
+  } catch {
+    // Ignore JSON parsing errors and fall back to splitting
+  }
+
+  return trimmedValue
+    .split(/[,;\n]+/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+};
+
+const formatEmailListValue = (emails: string[]): string => {
+  return emails.join(", ");
+};
+
 const Settings = () => {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
@@ -80,6 +118,7 @@ const Settings = () => {
   const { setFullWidth } = useLayout();
   const { config, reloadConfig } = useConfig();
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
+  const hasSiteCapability = config?.capabilities?.includes("Site") || false;
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>(() => {
     // Initialize from URL or default
@@ -119,6 +158,13 @@ const Settings = () => {
     "Media.PreferredFormat": "",
     "Media.Quality": "",
     "Media.EnableOptimisation": "true",
+    "LeadCapture.Email.Enabled": "true",
+    "LeadCapture.Email.To": "",
+    "LeadCapture.Telegram.Enabled": "false",
+    "LeadCapture.Telegram.BotId": "",
+    "LeadCapture.Telegram.ChatId": "",
+    "LeadCapture.Slack.Enabled": "false",
+    "LeadCapture.Slack.WebhookUrl": "",
   });
   const [coverWidth, setCoverWidth] = useState("");
   const [coverHeight, setCoverHeight] = useState("");
@@ -157,6 +203,9 @@ const Settings = () => {
         // AI not available but siteProfile tab requested, redirect to preview
         setActiveTab("preview");
         setSearchParams({ tab: "preview" }, { replace: true });
+      } else if (!hasSiteCapability && tabFromUrl === "leadCapture") {
+        setActiveTab("preview");
+        setSearchParams({ tab: "preview" }, { replace: true });
       }
       hasInitializedTab.current = true;
       return;
@@ -167,7 +216,11 @@ const Settings = () => {
       setActiveTab("preview");
       setSearchParams({ tab: "preview" }, { replace: true });
     }
-  }, [activeTab, hasAIAssistance, searchParams, setSearchParams]);
+    if (!hasSiteCapability && activeTab === "leadCapture") {
+      setActiveTab("preview");
+      setSearchParams({ tab: "preview" }, { replace: true });
+    }
+  }, [activeTab, hasAIAssistance, hasSiteCapability, searchParams, setSearchParams]);
 
   // Handler for tab changes
   const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
@@ -210,6 +263,13 @@ const Settings = () => {
         "Media.PreferredFormat": "",
         "Media.Quality": "",
         "Media.EnableOptimisation": "true",
+        "LeadCapture.Email.Enabled": "true",
+        "LeadCapture.Email.To": "",
+        "LeadCapture.Telegram.Enabled": "false",
+        "LeadCapture.Telegram.BotId": "",
+        "LeadCapture.Telegram.ChatId": "",
+        "LeadCapture.Slack.Enabled": "false",
+        "LeadCapture.Slack.WebhookUrl": "",
       };
 
       if (settings) {
@@ -279,6 +339,21 @@ const Settings = () => {
             newFormData["Media.Quality"] = setting.value || "";
           } else if (setting.key === "Media.EnableOptimisation") {
             newFormData["Media.EnableOptimisation"] = setting.value || "true";
+          } else if (setting.key === "LeadCapture.Email.Enabled") {
+            newFormData["LeadCapture.Email.Enabled"] = setting.value || "true";
+          } else if (setting.key === "LeadCapture.Email.To") {
+            const emailList = parseEmailListInput(setting.value || "");
+            newFormData["LeadCapture.Email.To"] = formatEmailListValue(emailList);
+          } else if (setting.key === "LeadCapture.Telegram.Enabled") {
+            newFormData["LeadCapture.Telegram.Enabled"] = setting.value || "false";
+          } else if (setting.key === "LeadCapture.Telegram.BotId") {
+            newFormData["LeadCapture.Telegram.BotId"] = setting.value || "";
+          } else if (setting.key === "LeadCapture.Telegram.ChatId") {
+            newFormData["LeadCapture.Telegram.ChatId"] = setting.value || "";
+          } else if (setting.key === "LeadCapture.Slack.Enabled") {
+            newFormData["LeadCapture.Slack.Enabled"] = setting.value || "false";
+          } else if (setting.key === "LeadCapture.Slack.WebhookUrl") {
+            newFormData["LeadCapture.Slack.WebhookUrl"] = setting.value || "";
           }
         });
       }
@@ -355,6 +430,37 @@ const Settings = () => {
           }
         }
         break;
+      case "LeadCapture.Email.To": {
+        if (formData["LeadCapture.Email.Enabled"] !== "true") {
+          return null;
+        }
+
+        const emails = parseEmailListInput(value);
+        if (value.trim() !== "" && emails.length === 0) {
+          return "Enter at least one valid email";
+        }
+
+        const invalidEmails = emails.filter((email) => !emailRegex.test(email));
+        if (invalidEmails.length > 0) {
+          return "One or more emails are invalid";
+        }
+        break;
+      }
+      case "LeadCapture.Telegram.BotId":
+        if (formData["LeadCapture.Telegram.Enabled"] === "true" && !value.trim()) {
+          return "Bot ID is required when Telegram is enabled";
+        }
+        break;
+      case "LeadCapture.Telegram.ChatId":
+        if (formData["LeadCapture.Telegram.Enabled"] === "true" && !value.trim()) {
+          return "Chat ID is required when Telegram is enabled";
+        }
+        break;
+      case "LeadCapture.Slack.WebhookUrl":
+        if (formData["LeadCapture.Slack.Enabled"] === "true" && !value.trim()) {
+          return "Webhook URL is required when Slack is enabled";
+        }
+        break;
     }
     return null;
   };
@@ -370,6 +476,17 @@ const Settings = () => {
         hasErrors = true;
       }
     });
+
+    if (hasSiteCapability) {
+      const emailEnabled = formData["LeadCapture.Email.Enabled"] === "true";
+      const telegramEnabled = formData["LeadCapture.Telegram.Enabled"] === "true";
+      const slackEnabled = formData["LeadCapture.Slack.Enabled"] === "true";
+
+      if (!emailEnabled && !telegramEnabled && !slackEnabled) {
+        errors["LeadCapture.Email.To"] = "Enable at least one lead capture channel";
+        hasErrors = true;
+      }
+    }
 
     setValidationErrors(errors);
     return !hasErrors;
@@ -394,12 +511,23 @@ const Settings = () => {
       "Identity.RequiredUniqueChars",
     ];
 
+    const leadCaptureFields: Array<keyof SettingsFormData> = [
+      "LeadCapture.Email.To",
+      "LeadCapture.Telegram.BotId",
+      "LeadCapture.Telegram.ChatId",
+      "LeadCapture.Slack.WebhookUrl",
+    ];
+
     if (contentFields.some((field) => validationErrors[field])) {
       tabsWithErrors.push("content");
     }
 
     if (passwordFields.some((field) => validationErrors[field])) {
       tabsWithErrors.push("password");
+    }
+
+    if (leadCaptureFields.some((field) => validationErrors[field])) {
+      tabsWithErrors.push("leadCapture");
     }
 
     return tabsWithErrors;
@@ -420,6 +548,35 @@ const Settings = () => {
         [field]: error || undefined,
       }));
     };
+
+  const handleToggleChange = (field: keyof SettingsFormData, enabled: boolean) => {
+    const value = enabled ? "true" : "false";
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    if (!enabled) {
+      setValidationErrors((prev) => {
+        const nextErrors = { ...prev };
+
+        if (field === "LeadCapture.Email.Enabled") {
+          nextErrors["LeadCapture.Email.To"] = undefined;
+        }
+
+        if (field === "LeadCapture.Telegram.Enabled") {
+          nextErrors["LeadCapture.Telegram.BotId"] = undefined;
+          nextErrors["LeadCapture.Telegram.ChatId"] = undefined;
+        }
+
+        if (field === "LeadCapture.Slack.Enabled") {
+          nextErrors["LeadCapture.Slack.WebhookUrl"] = undefined;
+        }
+
+        return nextErrors;
+      });
+    }
+  };
 
   const handleSave = async () => {
     const savePromise = async () => {
@@ -490,6 +647,31 @@ const Settings = () => {
             {
               key: "AI.SiteProfile.BlogCover.Instructions",
               value: formData["AI.SiteProfile.BlogCover.Instructions"],
+            }
+          );
+        }
+
+        if (hasSiteCapability) {
+          const emailList = parseEmailListInput(formData["LeadCapture.Email.To"]);
+          settingsToSave.push(
+            { key: "LeadCapture.Email.Enabled", value: formData["LeadCapture.Email.Enabled"] },
+            { key: "LeadCapture.Email.To", value: JSON.stringify(emailList) },
+            {
+              key: "LeadCapture.Telegram.Enabled",
+              value: formData["LeadCapture.Telegram.Enabled"],
+            },
+            {
+              key: "LeadCapture.Telegram.BotId",
+              value: formData["LeadCapture.Telegram.BotId"],
+            },
+            {
+              key: "LeadCapture.Telegram.ChatId",
+              value: formData["LeadCapture.Telegram.ChatId"],
+            },
+            { key: "LeadCapture.Slack.Enabled", value: formData["LeadCapture.Slack.Enabled"] },
+            {
+              key: "LeadCapture.Slack.WebhookUrl",
+              value: formData["LeadCapture.Slack.WebhookUrl"],
             }
           );
         }
@@ -595,6 +777,28 @@ const Settings = () => {
                 {hasAIAssistance && <Tab label="Site Profile" value="siteProfile" />}
                 <Tab label="Preview" value="preview" />
                 <Tab label="Media" value="media" />
+                {hasSiteCapability && (
+                  <Tab
+                    label={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        Lead Capture
+                        {getTabsWithErrors().includes("leadCapture") && (
+                          <Box
+                            component="span"
+                            sx={{
+                              color: "error.main",
+                              fontWeight: "bold",
+                              fontSize: "1.2em",
+                            }}
+                          >
+                            *
+                          </Box>
+                        )}
+                      </Box>
+                    }
+                    value="leadCapture"
+                  />
+                )}
                 <Tab
                   label={
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -1015,6 +1219,201 @@ const Settings = () => {
                   >
                     Saved as WxH. If either value is empty, the setting is cleared.
                   </Typography>
+                </Box>
+              </Box>
+            )}
+
+            {/* Lead Capture Settings Tab */}
+            {activeTab === "leadCapture" && hasSiteCapability && (
+              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
+                <Alert severity="info" sx={{ mb: 4 }}>
+                  <Typography variant="body2">
+                    Configure lead capture notifications for email, Telegram, and Slack.
+                  </Typography>
+                </Alert>
+
+                {validationErrors["LeadCapture.Email.To"] ===
+                  "Enable at least one lead capture channel" && (
+                  <Alert severity="error" sx={{ mb: 4 }}>
+                    <Typography variant="body2">
+                      Enable at least one lead capture channel to save settings.
+                    </Typography>
+                  </Alert>
+                )}
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Email
+                </Typography>
+                <Box
+                  sx={{
+                    mb: 4,
+                    p: 2.5,
+                    backgroundColor: "rgba(0, 0, 0, 0.02)",
+                    borderRadius: 1,
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData["LeadCapture.Email.Enabled"] === "true"}
+                        onChange={(e) =>
+                          handleToggleChange("LeadCapture.Email.Enabled", e.target.checked)
+                        }
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                          Enable Email Notifications
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Send lead capture notifications via email
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ width: "100%" }}
+                  />
+
+                  <Box sx={{ mt: 2 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={2}
+                      label="Recipient Emails"
+                      value={formData["LeadCapture.Email.To"]}
+                      onChange={handleInputChange("LeadCapture.Email.To")}
+                      placeholder="name@example.com, team@example.com"
+                      helperText={
+                        validationErrors["LeadCapture.Email.To"] ||
+                        "Comma-separated list. Leave empty to use Contact Us recipients."
+                      }
+                      variant="outlined"
+                      size="small"
+                      error={Boolean(validationErrors["LeadCapture.Email.To"])}
+                      disabled={formData["LeadCapture.Email.Enabled"] !== "true"}
+                    />
+                  </Box>
+                </Box>
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Telegram
+                </Typography>
+                <Box
+                  sx={{
+                    mb: 4,
+                    p: 2.5,
+                    backgroundColor: "rgba(0, 0, 0, 0.02)",
+                    borderRadius: 1,
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData["LeadCapture.Telegram.Enabled"] === "true"}
+                        onChange={(e) =>
+                          handleToggleChange("LeadCapture.Telegram.Enabled", e.target.checked)
+                        }
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                          Enable Telegram Notifications
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Send lead capture notifications to a Telegram chat
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ width: "100%" }}
+                  />
+                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Bot ID"
+                        value={formData["LeadCapture.Telegram.BotId"]}
+                        onChange={handleInputChange("LeadCapture.Telegram.BotId")}
+                        placeholder="123456:ABC-DEF"
+                        helperText={
+                          validationErrors["LeadCapture.Telegram.BotId"] ||
+                          "Required when Telegram is enabled"
+                        }
+                        variant="outlined"
+                        size="small"
+                        error={Boolean(validationErrors["LeadCapture.Telegram.BotId"])}
+                        disabled={formData["LeadCapture.Telegram.Enabled"] !== "true"}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Chat ID"
+                        value={formData["LeadCapture.Telegram.ChatId"]}
+                        onChange={handleInputChange("LeadCapture.Telegram.ChatId")}
+                        placeholder="-1001234567890"
+                        helperText={
+                          validationErrors["LeadCapture.Telegram.ChatId"] ||
+                          "Required when Telegram is enabled"
+                        }
+                        variant="outlined"
+                        size="small"
+                        error={Boolean(validationErrors["LeadCapture.Telegram.ChatId"])}
+                        disabled={formData["LeadCapture.Telegram.Enabled"] !== "true"}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Slack
+                </Typography>
+                <Box
+                  sx={{
+                    mb: 2,
+                    p: 2.5,
+                    backgroundColor: "rgba(0, 0, 0, 0.02)",
+                    borderRadius: 1,
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData["LeadCapture.Slack.Enabled"] === "true"}
+                        onChange={(e) =>
+                          handleToggleChange("LeadCapture.Slack.Enabled", e.target.checked)
+                        }
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                          Enable Slack Notifications
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Send lead capture notifications via Slack webhook
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ width: "100%" }}
+                  />
+                  <Box sx={{ mt: 2 }}>
+                    <TextField
+                      fullWidth
+                      label="Webhook URL"
+                      value={formData["LeadCapture.Slack.WebhookUrl"]}
+                      onChange={handleInputChange("LeadCapture.Slack.WebhookUrl")}
+                      placeholder="https://hooks.slack.com/services/..."
+                      helperText={
+                        validationErrors["LeadCapture.Slack.WebhookUrl"] ||
+                        "Required when Slack is enabled"
+                      }
+                      variant="outlined"
+                      size="small"
+                      error={Boolean(validationErrors["LeadCapture.Slack.WebhookUrl"])}
+                      disabled={formData["LeadCapture.Slack.Enabled"] !== "true"}
+                    />
+                  </Box>
                 </Box>
               </Box>
             )}
