@@ -36,6 +36,8 @@ import MenuItem from "@mui/material/MenuItem";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import RestoreIcon from "@mui/icons-material/Restore";
 import { useNavigate, useLocation } from "react-router-dom";
 import { buildAbsoluteUrl, buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { MediaPreview } from "./media-preview";
@@ -76,6 +78,21 @@ function formatFolderName(name: string): string {
     .join(" ");
 
   return humanName;
+}
+
+function normalizeFolderPath(value: string): string {
+  return value.trim().replace(/^\/+|\/+$/g, "");
+}
+
+function buildBreadcrumbs(folder: string): { name: string; scopeUid: string }[] {
+  if (!folder) return [];
+  return folder
+    .split("/")
+    .filter(Boolean)
+    .map((name, idx, arr) => ({
+      name,
+      scopeUid: arr.slice(0, idx + 1).join("/"),
+    }));
 }
 
 const fileTypeIcons: Record<string, JSX.Element> = {
@@ -141,15 +158,7 @@ const MediaManagement = () => {
   const api = useMemo(() => wrapApiClient(client.api), [client.api]);
   const params = new URLSearchParams(location.search);
   const initialFolder = params.get("folder") || "";
-  const initialBreadcrumbs = initialFolder
-    ? initialFolder
-        .split("/")
-        .filter(Boolean)
-        .map((name, idx, arr) => ({
-          name,
-          scopeUid: arr.slice(0, idx + 1).join("/"),
-        }))
-    : [];
+  const initialBreadcrumbs = buildBreadcrumbs(initialFolder);
   const [dialog, setDialog] = useState<DialogType>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -160,6 +169,7 @@ const MediaManagement = () => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuItem, setMenuItem] = useState<MediaItem | null>(null);
   const [folderMenuAnchorEl, setFolderMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [folderMenuItem, setFolderMenuItem] = useState<MediaItem | null>(null);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -173,12 +183,21 @@ const MediaManagement = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MediaItem | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteFolderDialogOpen, setIsDeleteFolderDialogOpen] = useState(false);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingFolder, setIsDeletingFolder] = useState(false);
   const [sortAnchorEl, setSortAnchorEl] = useState<HTMLElement | null>(null);
   const [bulkDialog, setBulkDialog] = useState<"optimize" | "reset" | null>(null);
+  const [bulkOperationFolder, setBulkOperationFolder] = useState<string>("");
   const [includeSubfolders, setIncludeSubfolders] = useState(false);
   const [isBulkOptimizing, setIsBulkOptimizing] = useState(false);
   const [isBulkResetting, setIsBulkResetting] = useState(false);
+  const [isRenameFolderDialogOpen, setIsRenameFolderDialogOpen] = useState(false);
+  const [renameFolderSource, setRenameFolderSource] = useState("");
+  const [renameFolderTarget, setRenameFolderTarget] = useState("");
+  const [renameFolderError, setRenameFolderError] = useState<string | null>(null);
+  const [isRenamingFolder, setIsRenamingFolder] = useState(false);
   const [renameTarget, setRenameTarget] = useState<MediaItem | null>(null);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
@@ -280,17 +299,7 @@ const MediaManagement = () => {
     const params = new URLSearchParams(location.search);
     const folder = params.get("folder") || "";
     setCurrentScopeUid(folder);
-    setBreadcrumbs(
-      folder
-        ? folder
-            .split("/")
-            .filter(Boolean)
-            .map((name, idx, arr) => ({
-              name,
-              scopeUid: arr.slice(0, idx + 1).join("/"),
-            }))
-        : []
-    );
+    setBreadcrumbs(buildBreadcrumbs(folder));
   }, [location.search]);
 
   // When currentScopeUid changes, update the URL
@@ -476,6 +485,7 @@ const MediaManagement = () => {
   };
   const handleFolderMenuClose = () => {
     setFolderMenuAnchorEl(null);
+    setFolderMenuItem(null);
   };
   const handleCopyLink = (item: MediaItem) => {
     navigator.clipboard.writeText(item.location);
@@ -540,12 +550,13 @@ const MediaManagement = () => {
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
 
-  const refreshMediaList = async () => {
+  const refreshMediaList = async (overrideScopeUid?: string) => {
     setLoading(true);
     try {
       const order = getOrderParam();
+      const targetScopeUid = overrideScopeUid ?? currentScopeUid;
       const queryParams = {
-        scopeUid: currentScopeUid,
+        scopeUid: targetScopeUid,
         includeFolders: true,
         order,
       } as Record<string, string | boolean | undefined>;
@@ -572,7 +583,7 @@ const MediaManagement = () => {
     setIsBulkOptimizing(true);
     try {
       const response = await api.mediaOptimizeAllCreate({
-        folder: currentScopeUid || undefined,
+        folder: bulkOperationFolder || undefined,
         includeSubfolders,
       });
       const updatedCount = response.data?.updated ?? 0;
@@ -590,7 +601,7 @@ const MediaManagement = () => {
     setIsBulkResetting(true);
     try {
       const response = await api.mediaResetAllCreate({
-        folder: currentScopeUid || undefined,
+        folder: bulkOperationFolder || undefined,
         includeSubfolders,
       });
       const updatedCount = response.data?.updated ?? 0;
@@ -601,6 +612,74 @@ const MediaManagement = () => {
       notificationsService.error(apiError.message);
     } finally {
       setIsBulkResetting(false);
+    }
+  };
+
+  const getRenameFolderClientError = (source: string, target: string) => {
+    const normalizedSource = normalizeFolderPath(source);
+    const normalizedTarget = normalizeFolderPath(target);
+    if (!normalizedSource) return "Current folder is required.";
+    if (!normalizedTarget) return "New folder path is required.";
+    if (normalizedSource.toLowerCase() === normalizedTarget.toLowerCase()) {
+      return "New folder path must be different from current folder.";
+    }
+    const sourcePrefix = `${normalizedSource.toLowerCase()}/`;
+    if (normalizedTarget.toLowerCase().startsWith(sourcePrefix)) {
+      return "New folder path cannot be within the current folder.";
+    }
+    return null;
+  };
+
+  const handleRenameFolderOpen = () => {
+    const folderPath = folderMenuItem?.scopeUid || currentScopeUid;
+    setRenameFolderSource(folderPath);
+    setRenameFolderTarget(folderPath);
+    setRenameFolderError(null);
+    setIsRenameFolderDialogOpen(true);
+  };
+
+  const handleRenameFolderConfirm = async () => {
+    const clientError = getRenameFolderClientError(renameFolderSource, renameFolderTarget);
+    if (clientError) {
+      setRenameFolderError(clientError);
+      return;
+    }
+
+    setIsRenamingFolder(true);
+    setRenameFolderError(null);
+
+    const source = normalizeFolderPath(renameFolderSource);
+    const target = normalizeFolderPath(renameFolderTarget);
+
+    try {
+      const response = await api.mediaRenameFolderCreate({
+        folder: source,
+        newFolder: target,
+      });
+      const updatedCount = response.data?.updated ?? 0;
+      notificationsService.success(`Renamed ${updatedCount} files.`);
+      setIsRenameFolderDialogOpen(false);
+      setRenameFolderSource("");
+      setRenameFolderTarget("");
+      // If we renamed the current folder we're viewing, update to the new path
+      // Otherwise, stay in the current parent folder
+      if (source === currentScopeUid) {
+        setCurrentScopeUid(target);
+        setBreadcrumbs(buildBreadcrumbs(target));
+        await refreshMediaList(target);
+      } else {
+        await refreshMediaList(currentScopeUid);
+      }
+    } catch (error) {
+      const apiError = parseApiError(error, "Failed to rename folder");
+      const message =
+        apiError.status === 422 && apiError.details.length > 0
+          ? apiError.details.join(" ")
+          : apiError.message;
+      setRenameFolderError(message);
+      notificationsService.error(message);
+    } finally {
+      setIsRenamingFolder(false);
     }
   };
 
@@ -642,6 +721,32 @@ const MediaManagement = () => {
     handleMenuClose();
     setDeleteTarget(item);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteFolderOpen = () => {
+    const targetFolder = folderMenuItem?.scopeUid || currentScopeUid;
+    setDeleteFolderTarget(targetFolder);
+    setIsDeleteFolderDialogOpen(true);
+  };
+
+  const handleDeleteFolderConfirm = async () => {
+    if (!deleteFolderTarget) return;
+    setIsDeletingFolder(true);
+    try {
+      const response = await api.mediaDeleteFolderCreate({
+        folder: deleteFolderTarget,
+      });
+      const deletedCount = response.data?.updated ?? 0;
+      notificationsService.success(`Deleted ${deletedCount} file(s)`);
+      setIsDeleteFolderDialogOpen(false);
+      setDeleteFolderTarget(null);
+      await refreshMediaList();
+    } catch (error) {
+      const apiError = parseApiError(error, "Failed to delete folder");
+      notificationsService.error(apiError.message);
+    } finally {
+      setIsDeletingFolder(false);
+    }
   };
 
   const confirmDelete = async () => {
@@ -1023,7 +1128,13 @@ const MediaManagement = () => {
   const maxDimensionsLabel = maxDimensionsSetting || "configured max dimensions";
   const coverDimensionsSetting = mediaSettings["Media.Cover.Dimensions"]?.trim();
   const coverDimensionsLabel = coverDimensionsSetting || "configured cover dimensions";
-  const folderLabel = currentScopeUid ? `/${currentScopeUid}` : "root folder";
+
+  const bulkOperationFolderLabel = bulkOperationFolder ? `/${bulkOperationFolder}` : "root folder";
+  const renameFolderClientError = getRenameFolderClientError(
+    renameFolderSource,
+    renameFolderTarget
+  );
+  const renameFolderDisplayError = renameFolderError || renameFolderClientError;
 
   return (
     <Box sx={{ p: 5, maxWidth: "100%" }}>
@@ -1289,25 +1400,28 @@ const MediaManagement = () => {
                     )}
                   </Box>
                   {/* Actions (hover only) */}
-                  {!isFolder && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        opacity: 0.7,
-                        zIndex: 2,
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      opacity: 0.7,
+                      zIndex: 2,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isFolder) {
+                        setFolderMenuAnchorEl(e.currentTarget);
+                        setFolderMenuItem(item);
+                      } else {
                         handleMenuOpen(e, item);
-                      }}
-                    >
-                      <IconButton size="small" sx={{ bgcolor: "white", borderRadius: "50%" }}>
-                        <MoreVertIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  )}
+                      }
+                    }}
+                  >
+                    <IconButton size="small" sx={{ bgcolor: "white", borderRadius: "50%" }}>
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                   {/* Info */}
                   <Box sx={{ p: 3, pt: 2, flexGrow: 1, display: "flex", flexDirection: "column" }}>
                     <Typography
@@ -1485,20 +1599,132 @@ const MediaManagement = () => {
         <MenuItem
           onClick={() => {
             handleFolderMenuClose();
-            setBulkDialog("optimize");
+            handleRenameFolderOpen();
           }}
+          disabled={!(folderMenuItem?.scopeUid || currentScopeUid)}
         >
-          Optimize Folder
+          <DriveFileRenameOutlineIcon fontSize="small" sx={{ mr: 1 }} /> Rename Folder
         </MenuItem>
         <MenuItem
           onClick={() => {
+            const targetFolder = folderMenuItem?.scopeUid || currentScopeUid;
+            setBulkOperationFolder(targetFolder);
+            handleFolderMenuClose();
+            setBulkDialog("optimize");
+          }}
+        >
+          <AutoFixHighIcon fontSize="small" sx={{ mr: 1 }} /> Optimize Folder
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            const targetFolder = folderMenuItem?.scopeUid || currentScopeUid;
+            setBulkOperationFolder(targetFolder);
             handleFolderMenuClose();
             setBulkDialog("reset");
           }}
         >
-          Reset Folder
+          <RestoreIcon fontSize="small" sx={{ mr: 1 }} /> Reset Folder
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleFolderMenuClose();
+            handleDeleteFolderOpen();
+          }}
+          disabled={!(folderMenuItem?.scopeUid || currentScopeUid)}
+        >
+          <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Delete Folder
         </MenuItem>
       </Menu>
+      <Dialog
+        open={isRenameFolderDialogOpen}
+        onClose={() => {
+          if (isRenamingFolder) return;
+          setIsRenameFolderDialogOpen(false);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Rename Folder</DialogTitle>
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2, overflow: "visible" }}
+        >
+          <TextField
+            label="Current folder"
+            value={renameFolderSource || "Root"}
+            size="small"
+            fullWidth
+            InputProps={{ readOnly: true }}
+          />
+          <TextField
+            label="New folder path"
+            value={renameFolderTarget}
+            onChange={(e) => {
+              setRenameFolderTarget(e.target.value);
+              setRenameFolderError(null);
+            }}
+            size="small"
+            fullWidth
+            error={Boolean(renameFolderDisplayError)}
+            helperText={renameFolderDisplayError || " "}
+          />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+            }}
+          >
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "grey.200",
+                bgcolor: "grey.50",
+              }}
+            >
+              <Typography variant="body2" color="text.primary">
+                Renaming updates folder references in content. The CMS will attempt to update them.
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "grey.200",
+                bgcolor: "grey.50",
+              }}
+            >
+              <Typography variant="body2" color="text.primary">
+                Renaming is recursive and affects all nested folders.
+              </Typography>
+              {renameFolderSource.includes("/") && (
+                <Typography variant="body2" color="text.primary" sx={{ mt: 1 }}>
+                  To rename a subfolder, use its full path: folder/subfolder → folder/subfolder2.
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setIsRenameFolderDialogOpen(false)}
+            variant="text"
+            disabled={isRenamingFolder}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRenameFolderConfirm}
+            variant="contained"
+            disabled={isRenamingFolder || Boolean(renameFolderClientError)}
+            startIcon={isRenamingFolder ? <CircularProgress size={14} /> : undefined}
+          >
+            {isRenamingFolder ? "Renaming..." : "Rename"}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={isDeleteDialogOpen}
         onClose={() => {
@@ -1549,6 +1775,54 @@ const MediaManagement = () => {
             startIcon={isDeleting ? <CircularProgress size={14} /> : undefined}
           >
             {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={isDeleteFolderDialogOpen}
+        onClose={() => {
+          if (isDeletingFolder) return;
+          setIsDeleteFolderDialogOpen(false);
+          setDeleteFolderTarget(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete Folder</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              You are about to delete the folder &quot;{deleteFolderTarget || "Root"}&quot; and all
+              its contents.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              This will permanently delete all media files in this folder and its subfolders. Any
+              content linking to these files will return 404 errors.
+            </Typography>
+            <Typography variant="body2" color="error" sx={{ fontWeight: 600 }}>
+              This action cannot be undone.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setIsDeleteFolderDialogOpen(false);
+              setDeleteFolderTarget(null);
+            }}
+            variant="text"
+            disabled={isDeletingFolder}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteFolderConfirm}
+            variant="contained"
+            color="error"
+            disabled={isDeletingFolder}
+            startIcon={isDeletingFolder ? <CircularProgress size={14} /> : undefined}
+          >
+            {isDeletingFolder ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1620,17 +1894,31 @@ const MediaManagement = () => {
       >
         <DialogTitle>{bulkDialog === "reset" ? "Reset Folder" : "Optimize Folder"}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "grey.200",
+              bgcolor: "grey.50",
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
+              Target Folder
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {bulkOperationFolderLabel}
+            </Typography>
+          </Box>
           {bulkDialog === "reset" ? (
             <Typography variant="body2" color="text.secondary">
-              {"Reset restores all images in "}
-              {folderLabel}
+              {"Reset restores all images in this folder"}
               {" to the original uploaded files. Any optimizations, resizes, or crops will be "}
               {"undone, and we will attempt to update references if file names change."}
             </Typography>
           ) : (
             <Typography variant="body2" color="text.secondary">
-              {"We will optimize all images in "}
-              {folderLabel}
+              {"We will optimize all images in this folder"}
               {". Images are converted to "}
               {preferredFormatLabel}
               {" and resized to stay within "}

@@ -6495,6 +6495,15 @@ export interface MdxComponentPropertyDto {
   exampleValues?: string[];
 }
 
+export interface MediaBulkDeleteRequestDto {
+  /**
+   * Folder
+   * @minLength 1
+   * @example "string"
+   */
+  folder: string;
+}
+
 export interface MediaBulkOptimizeRequestDto {
   /**
    * Folder
@@ -6506,6 +6515,21 @@ export interface MediaBulkOptimizeRequestDto {
    * @example true
    */
   includeSubfolders?: boolean;
+}
+
+export interface MediaBulkRenameRequestDto {
+  /**
+   * Folder
+   * @minLength 1
+   * @example "string"
+   */
+  folder: string;
+  /**
+   * New Folder
+   * @minLength 1
+   * @example "string"
+   */
+  newFolder: string;
 }
 
 export interface MediaBulkResetRequestDto {
@@ -7946,6 +7970,29 @@ export interface StringStringValuesKeyValuePair {
   value?: string[];
 }
 
+export interface SubscribeDto {
+  /**
+   * Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  email: string;
+  /**
+   * Time Zone Offset
+   * @format int32
+   * @example 1
+   */
+  timeZoneOffset: number;
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language: string;
+}
+
 export interface TaskDetailsDto {
   /**
    * Name
@@ -8157,6 +8204,29 @@ export interface TopContentItemDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   createdAt?: string;
+}
+
+export interface UnsibscribeDto {
+  /**
+   * Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  email: string;
+  /**
+   * Time Zone Offset
+   * @format int32
+   * @example 1
+   */
+  timeZoneOffset: number;
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language: string;
 }
 
 export interface UnsubscribeDetailsDto {
@@ -8653,7 +8723,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.3.4.0
+ * @version 1.3.12.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -9337,6 +9407,46 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContactUs
+     * @name ContactUsCreate
+     * @request POST:/api/contact-us
+     * @secure
+     */
+    contactUsCreate: (
+      data: {
+        /** @format binary */
+        Attachment?: File;
+        Title?: string;
+        NotificationType?: string;
+        AcknowledgmentType?: string;
+        PageUrl?: string;
+        FirstName: string;
+        LastName?: string;
+        Company?: string;
+        Subject?: string;
+        ExtraData?: Record<string, string | null>;
+        Message: string;
+        /** @format email */
+        Email: string;
+        /** @format int32 */
+        TimeZoneOffset: number;
+        Language: string;
+        RecaptchaToken?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void>({
+        path: `/api/contact-us`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.FormData,
         ...params,
       }),
 
@@ -14740,6 +14850,50 @@ export class Api<
      * No description
      *
      * @tags Media
+     * @name MediaRenameFolderCreate
+     * @request POST:/api/media/rename-folder
+     * @secure
+     */
+    mediaRenameFolderCreate: (
+      data: MediaBulkRenameRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaOptimizeResponseDto, void | ProblemDetails>({
+        path: `/api/media/rename-folder`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaDeleteFolderCreate
+     * @request POST:/api/media/delete-folder
+     * @secure
+     */
+    mediaDeleteFolderCreate: (
+      data: MediaBulkDeleteRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<MediaOptimizeResponseDto, void | ProblemDetails>({
+        path: `/api/media/delete-folder`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
      * @name MediaRenameCreate
      * @request POST:/api/media/rename
      * @secure
@@ -16015,6 +16169,42 @@ export class Api<
         path: `/api/statistics`,
         method: "POST",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Subscribes
+     * @name SubscribeCreate
+     * @request POST:/api/subscribe
+     * @secure
+     */
+    subscribeCreate: (data: SubscribeDto, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/subscribe`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Subscribes
+     * @name UnsubscribeCreate
+     * @request POST:/api/unsubscribe
+     * @secure
+     */
+    unsubscribeCreate: (data: UnsibscribeDto, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/unsubscribe`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
