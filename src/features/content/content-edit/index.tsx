@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";
 import { useUserInfo } from "@providers/user-provider";
@@ -168,6 +168,9 @@ export const ContentEdit = (props: ContentEditProps) => {
   // Translation state
   const [targetLanguageForTranslation, setTargetLanguageForTranslation] = useState<string>("");
   // removed unused states processedTranslationUrl and shouldOpenTranslationDialog
+
+  // Track which content type has already been preloaded to avoid duplicate API calls
+  const preloadedTypeRef = useRef<string | null>(null);
   // removed isCreatingTranslation state as creation is route-driven now
 
   // AI form state for recovery
@@ -550,6 +553,18 @@ export const ContentEdit = (props: ContentEditProps) => {
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Validate the form first
+    const errors = await contentFormOps.formik.validateForm();
+    if (Object.keys(errors).length > 0) {
+      // Touch all fields to show validation errors
+      const touchedFields = Object.keys(contentFormOps.formik.values).reduce(
+        (acc, key) => ({ ...acc, [key]: true }),
+        {}
+      );
+      contentFormOps.formik.setTouched(touchedFields);
+      return;
+    }
+
     // Check if we should show the publication dialog
     const publicationInfo = shouldShowPublicationDialog(contentFormOps.formik.values.publishedAt);
 
@@ -660,6 +675,12 @@ export const ContentEdit = (props: ContentEditProps) => {
     if (!typeUid) {
       contentDataOps.setContentType(null);
       contentDataOps.setPreloadedMdxComponents(undefined);
+      preloadedTypeRef.current = null;
+      return;
+    }
+
+    // Skip if already preloaded for this type
+    if (preloadedTypeRef.current === typeUid) {
       return;
     }
 
@@ -677,6 +698,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     const isMdxLike = ct.format === "MDX" || ct.format === "MD";
     if (!isMdxLike) {
       contentDataOps.setPreloadedMdxComponents(undefined);
+      preloadedTypeRef.current = typeUid;
       return;
     }
     try {
@@ -686,6 +708,7 @@ export const ContentEdit = (props: ContentEditProps) => {
         maxCacheAgeHours: 1,
       });
       contentDataOps.setPreloadedMdxComponents(resp.data);
+      preloadedTypeRef.current = typeUid;
     } finally {
       contentDataOps.setContentTypeLoading(false);
     }
@@ -899,9 +922,16 @@ export const ContentEdit = (props: ContentEditProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCreateMode, contentDataOps.contentTypes, preferredLanguage, urlContentType]);
 
-  // Keep content type object and MDX components in sync when 'type' changes
+  // Keep content type object in sync when 'type' changes (but don't preload again)
   useEffect(() => {
-    setContentTypeAndMaybePreload(contentFormOps.formik.values.type);
+    const typeUid = contentFormOps.formik.values.type;
+    if (!typeUid || contentDataOps.contentTypes.length === 0) return;
+
+    // Only update contentType object if it doesn't match current
+    const ct = contentDataOps.contentTypes.find((t) => t.uid === typeUid) || null;
+    if (ct && contentDataOps.contentType?.uid !== typeUid) {
+      contentDataOps.setContentType(ct);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentFormOps.formik.values.type, contentDataOps.contentTypes]);
 
@@ -997,10 +1027,13 @@ export const ContentEdit = (props: ContentEditProps) => {
                   language={contentFormOps.formik.values.language}
                   onTitleChange={contentFormOps.valueUpdate}
                   onDescriptionChange={contentFormOps.valueUpdate}
-                  onTypeChange={(type) => {
+                  onTypeChange={async (type) => {
                     if (type !== contentFormOps.formik.values.type) {
+                      // Reset preloadedTypeRef to allow new type to be preloaded
+                      preloadedTypeRef.current = null;
                       contentFormOps.formik.setFieldValue("type", type);
-                      setContentTypeDefaults(type);
+                      await setContentTypeAndMaybePreload(type);
+                      await setContentTypeDefaults(type);
                     }
                   }}
                   contentTypes={contentDataOps.contentTypes}

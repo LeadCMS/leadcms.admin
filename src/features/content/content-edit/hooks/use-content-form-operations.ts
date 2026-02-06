@@ -32,12 +32,6 @@ import { ValidateFrontmatterError } from "utils/frontmatter-validator";
 import { validateContentSyntax } from "@utils/syntax-validators";
 import { isRealtimeSyntaxValidationEnabled } from "@utils/config-helpers";
 
-import {
-  getContentLengthSettings,
-  validateTitleLength,
-  validateDescriptionLength,
-} from "@utils/content-validation-helper";
-
 export interface ContentFormOperations {
   // Form management
   formik: ReturnType<typeof useFormik<ContentDetails>>;
@@ -225,19 +219,10 @@ export const useContentFormOperations = (
     setIsSaving(true);
 
     if (frontmatterState !== null) {
-      throw Error("Frontmatter validation error. Check preview window for details");
-    }
-
-    // Check for real-time validation errors before submitting
-    const lengthSettings = getContentLengthSettings(config);
-    const titleError = validateTitleLength(values.title, lengthSettings);
-    const descriptionError = validateDescriptionLength(values.description, lengthSettings);
-
-    if (titleError || descriptionError) {
-      const errors: string[] = [];
-      if (titleError) errors.push(`Title: ${titleError}`);
-      if (descriptionError) errors.push(`Description: ${descriptionError}`);
-      throw Error(`Content validation failed: ${errors.join("; ")}`);
+      helpers.setFieldError("body", "Frontmatter validation error. Check preview window.");
+      setIsSaving(false);
+      helpers.setSubmitting(false);
+      return;
     }
 
     const trimmedSlug = values.slug ? values.slug.replace(/^\/+|\/+$/g, "") : values.slug;

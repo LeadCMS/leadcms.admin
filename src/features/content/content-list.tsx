@@ -33,6 +33,7 @@ import {
   SortDesc,
   Languages,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
@@ -46,6 +47,7 @@ import { idToDisplayName } from "./content-types";
 import { getContentStatus } from "@utils/content-status-helper";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
+import { parseApiError } from "@utils/api-error-parser";
 import { execDeleteWithToast } from "utils/general-helper";
 import { GhostLink } from "@components/ghost-link";
 import { openSitePreview } from "utils/preview-helper";
@@ -95,6 +97,7 @@ export const ContentList = () => {
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const scrollTargetRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef(false);
   const [sortAnchorEl, setSortAnchorEl] = useState<HTMLElement | null>(null);
@@ -242,6 +245,7 @@ export const ContentList = () => {
     }
 
     try {
+      setLoadError(null);
       const { data, headers } = await client.api.contentWithStatisticsList(filter);
 
       // Extract content and statistics from response
@@ -270,7 +274,8 @@ export const ContentList = () => {
       }
       setContentItemsCount(totalCount);
     } catch (e) {
-      console.log(e);
+      const apiError = parseApiError(e, "Failed to load content");
+      setLoadError(apiError.message);
     } finally {
       setIsLoading(false);
     }
@@ -483,8 +488,66 @@ export const ContentList = () => {
           statistics={statistics}
         />
       </Box>
+
+      {/* Error Display */}
+      {loadError && !isLoading && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 300,
+            py: 6,
+            px: 2,
+          }}
+        >
+          <Box
+            sx={{
+              p: 6,
+              textAlign: "center",
+              backgroundColor: "grey.50",
+              borderRadius: 3,
+              border: "2px dashed",
+              borderColor: "grey.300",
+              maxWidth: 500,
+              width: "100%",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mb: 3,
+                color: "error.main",
+              }}
+            >
+              <AlertCircle size={48} />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 2,
+                fontWeight: 600,
+                color: "grey.700",
+              }}
+            >
+              Error loading content
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "grey.600",
+                lineHeight: 1.6,
+              }}
+            >
+              {loadError}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <NoRecordsDisplay
-        visible={!isLoading && contentItemsCount === 0}
+        visible={!isLoading && contentItemsCount === 0 && !loadError}
         message="No content found"
         activeFilters={{
           searchTerm: searchTerm.trim() || undefined,

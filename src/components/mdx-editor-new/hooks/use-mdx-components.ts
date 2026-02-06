@@ -17,7 +17,8 @@ interface UseMdxComponentsResult {
 }
 
 /**
- * Hook to fetch MDX components for a specific content type
+ * Hook to fetch MDX components for a specific content type.
+ * When preloadedData prop is provided, the hook will use it instead of fetching.
  */
 export const useMdxComponents = ({
   contentType,
@@ -40,10 +41,8 @@ export const useMdxComponents = ({
   }, [preloadedData]);
 
   const fetchComponents = async (forceRefresh = false) => {
-    // Skip fetching if we have preloaded data for the same content type and it's not a
-    // forced refresh
+    // Skip fetching if we have preloaded data for the same content type
     if (preloadedData && preloadedData.contentType === contentType && !forceRefresh) {
-      console.log("Using preloaded MDX components for content type:", contentType);
       return;
     }
 
@@ -56,7 +55,6 @@ export const useMdxComponents = ({
 
     // Don't fetch if we already have data for this content type
     if (data && data.contentType === contentType && !forceRefresh) {
-      console.log("Using cached MDX components for content type:", contentType);
       return;
     }
 
@@ -64,7 +62,6 @@ export const useMdxComponents = ({
     setError(null);
 
     try {
-      console.log("Fetching MDX components for content type:", contentType);
       const response = await client.api.contentMdxComponentsDetail(contentType, {
         useCache: forceRefresh ? false : useCache,
         maxCacheAgeHours,
@@ -79,9 +76,9 @@ export const useMdxComponents = ({
     }
   };
 
-  // Fetch components when contentType changes (only if no suitable data exists)
+  // Fetch components when contentType changes (only if no preloaded data is expected)
   useEffect(() => {
-    // If we have preloaded data for the current content type, use it
+    // If preloaded data was provided for the current content type, use it
     if (preloadedData && preloadedData.contentType === contentType) {
       setData(preloadedData);
       setLoading(false);
@@ -94,10 +91,13 @@ export const useMdxComponents = ({
       return;
     }
 
-    // Only fetch if we don't have preloaded data
-    if (!preloadedData) {
-      fetchComponents();
+    // If preloadedData prop is being used (even if not yet available), wait for parent
+    if (preloadedData !== undefined) {
+      return;
     }
+
+    // Only fetch if preloadedData is not being used at all
+    fetchComponents();
   }, [contentType, useCache, maxCacheAgeHours]);
 
   // Memoize the components array to prevent unnecessary re-renders
