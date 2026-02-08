@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useFormik, FormikHelpers } from "formik";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService, useCoreModuleNavigation } from "@hooks";
@@ -56,6 +56,7 @@ export interface ContentFormOperations {
     data: { values: ContentDetails; helpers: FormikHelpers<ContentDetails> } | null
   ) => void;
   completePendingSubmit: (publishedAt: string | null) => Promise<void>;
+  setNextSaveMode: (mode: "stay" | "close") => void;
   // Form helpers
   valueUpdate: (event: React.SyntheticEvent<Element, Event>) => void;
   valueUpdateGeneric: (field: string, value: unknown) => void;
@@ -89,6 +90,7 @@ export const useContentFormOperations = (
     values: ContentDetails;
     helpers: FormikHelpers<ContentDetails>;
   } | null>(null);
+  const saveModeRef = useRef<"stay" | "close">("close");
 
   const { setSaving } = useModuleWrapperContext();
   const { Show: showErrorModal } = useErrorDetailsModal();
@@ -259,7 +261,10 @@ export const useContentFormOperations = (
     setEditorLocalStorage(localStorageSnapshot);
     setIsSaving(false);
     helpers.setSubmitting(false);
-    handleNavigation(CoreModule.content);
+    if (saveModeRef.current === "close") {
+      handleNavigation(CoreModule.content);
+    }
+    saveModeRef.current = "close";
   };
 
   const submit = async (values: ContentDetails, helpers: FormikHelpers<ContentDetails>) => {
@@ -385,5 +390,8 @@ export const useContentFormOperations = (
     pendingSubmitData,
     setPendingSubmitData,
     completePendingSubmit,
+    setNextSaveMode: (mode: "stay" | "close") => {
+      saveModeRef.current = mode;
+    },
   };
 };

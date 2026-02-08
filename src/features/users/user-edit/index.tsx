@@ -1,4 +1,9 @@
-import { useCoreModuleNavigation, useNotificationsService, usePasswordPolicy } from "@hooks";
+import {
+  useCoreModuleNavigation,
+  useNotificationsService,
+  usePasswordPolicy,
+  useSaveShortcut,
+} from "@hooks";
 import {
   HttpResponse,
   ProblemDetails,
@@ -12,7 +17,7 @@ import { FormikHelpers, useFormik } from "formik";
 import { useParams } from "react-router-dom";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { createUserEditValidationScheme } from "./validation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { UserEditBreadcrumbLinks } from "../constants";
 import { StyledAvatar } from "./styled";
@@ -68,6 +73,7 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
   const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult | null>(
     null
   );
+  const saveModeRef = useRef<"stay" | "close">("close");
 
   const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
     <Box
@@ -104,7 +110,10 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
       userInfo?.refresh();
     }
     helpers.setSubmitting(false);
-    handleNavigation(CoreModule.users);
+    if (saveModeRef.current === "close") {
+      handleNavigation(CoreModule.users);
+    }
+    saveModeRef.current = "close";
   };
 
   const submit = async (
@@ -139,6 +148,18 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
     onSubmit: submit,
     validateOnChange: false,
   });
+
+  const handleSaveStay = () => {
+    saveModeRef.current = "stay";
+    formik.submitForm();
+  };
+
+  const handleSaveAndClose = () => {
+    saveModeRef.current = "close";
+    formik.submitForm();
+  };
+
+  useSaveShortcut(handleSaveStay, !readonly && !formik.isSubmitting);
 
   // Set browser language on mount if not set
   useEffect(() => {
@@ -227,13 +248,22 @@ export const UserEdit = ({ readonly }: UserEditProps) => {
             Cancel
           </Button>
           <Button
+            type="button"
+            variant="outlined"
+            size="medium"
+            startIcon={<Save />}
+            onClick={handleSaveStay}
+          >
+            {isCreateMode ? "Add" : "Save"}
+          </Button>
+          <Button
             type="submit"
             variant="contained"
             size="medium"
             startIcon={<Save />}
-            onClick={formik.submitForm}
+            onClick={handleSaveAndClose}
           >
-            {isCreateMode ? "Add" : "Save"}
+            {isCreateMode ? "Add and Close" : "Save and Close"}
           </Button>
         </>
       )}

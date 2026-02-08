@@ -1,6 +1,6 @@
-import { SyntheticEvent, useEffect, useState } from "react";
+import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { ModuleWrapper } from "@components/module-wrapper";
-import { useNotificationsService } from "@hooks";
+import { useNotificationsService, useSaveShortcut } from "@hooks";
 import { ContactDetailsDto, OrderDetailsDto } from "@lib/network/swagger-client";
 import { defaultFilterLimit } from "@providers/query-provider";
 import { CoreModule } from "@lib/router";
@@ -52,6 +52,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
   const [contactList, setContactList] = useState<ContactDetailsDto[]>([]);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
   const [open, setOpen] = useState(false);
+  const saveModeRef = useRef<"stay" | "close">("close");
   const loading = open && isLoading;
   const header = isEdit ? orderEditHeader : orderAddHeader;
 
@@ -117,7 +118,10 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
   const submitFunc = async (values: OrderDetailsDto) => {
     try {
       await handleSave(values);
-      handleNavigation(CoreModule.orders);
+      if (saveModeRef.current === "close") {
+        handleNavigation(CoreModule.orders);
+      }
+      saveModeRef.current = "close";
     } catch (error) {
       formik.setSubmitting(false);
       throw error;
@@ -163,6 +167,18 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     validateOnChange: false,
   });
 
+  const handleSaveStay = () => {
+    saveModeRef.current = "stay";
+    formik.submitForm();
+  };
+
+  const handleSaveAndClose = () => {
+    saveModeRef.current = "close";
+    formik.submitForm();
+  };
+
+  useSaveShortcut(handleSaveStay, !formik.isSubmitting);
+
   const actionButtons = (
     <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
       <Button
@@ -177,15 +193,26 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
         Cancel
       </Button>
       <Button
+        type="button"
+        disabled={formik.isSubmitting}
+        variant="outlined"
+        color="primary"
+        size="large"
+        startIcon={<Save size={22} />}
+        onClick={handleSaveStay}
+      >
+        Save
+      </Button>
+      <Button
         type="submit"
         disabled={formik.isSubmitting}
         variant="contained"
         color="primary"
         size="large"
         startIcon={<Save size={22} />}
-        onClick={formik.submitForm}
+        onClick={handleSaveAndClose}
       >
-        Save
+        Save and Close
       </Button>
     </Box>
   );

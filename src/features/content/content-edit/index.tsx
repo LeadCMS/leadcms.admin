@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";
 import { useUserInfo } from "@providers/user-provider";
-import { useNavigationGuard, usePublicationDialogPreference } from "@hooks";
+import { useNavigationGuard, usePublicationDialogPreference, useSaveShortcut } from "@hooks";
 import { TranslationType } from "@components/translate-dialog";
 import { useRequestContext } from "@providers/request-provider";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
@@ -550,13 +550,9 @@ export const ContentEdit = (props: ContentEditProps) => {
   };
 
   // Publication status dialog handlers
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // Validate the form first
+  const submitContent = async () => {
     const errors = await contentFormOps.formik.validateForm();
     if (Object.keys(errors).length > 0) {
-      // Touch all fields to show validation errors
       const touchedFields = Object.keys(contentFormOps.formik.values).reduce(
         (acc, key) => ({ ...acc, [key]: true }),
         {}
@@ -565,21 +561,40 @@ export const ContentEdit = (props: ContentEditProps) => {
       return;
     }
 
-    // Check if we should show the publication dialog
     const publicationInfo = shouldShowPublicationDialog(contentFormOps.formik.values.publishedAt);
 
     if (publicationInfo.shouldShowDialog && publicationDialogPreference.shouldShowDialog()) {
-      // Store the pending submit data and show dialog
       contentFormOps.setPendingSubmitData({
         values: contentFormOps.formik.values,
         helpers: contentFormOps.formik,
       });
       setPublicationStatusDialogOpen(true);
     } else {
-      // Submit directly
-      contentFormOps.formik.handleSubmit(e);
+      await contentFormOps.formik.submitForm();
     }
   };
+
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await submitContent();
+  };
+
+  const handleSaveStay = async () => {
+    contentFormOps.setNextSaveMode("stay");
+    await submitContent();
+  };
+
+  const handleSaveAndClose = async () => {
+    contentFormOps.setNextSaveMode("close");
+    await submitContent();
+  };
+
+  useSaveShortcut(() => {
+    if (props.readonly) {
+      return;
+    }
+    void handleSaveStay();
+  }, !props.readonly);
 
   const handlePublicationStatusConfirm = async (
     status: PublicationStatus,
@@ -1001,6 +1016,8 @@ export const ContentEdit = (props: ContentEditProps) => {
             hasAIAssistance={hasAIAssistance}
             onTranslate={() => setTranslateDialogOpen(true)}
             onEditWithAI={() => setAiEditDialogOpen(true)}
+            onSave={handleSaveStay}
+            onSaveAndClose={handleSaveAndClose}
           />
         }
       >

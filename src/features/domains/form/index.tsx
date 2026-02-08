@@ -44,20 +44,24 @@ export const DomainForm = (
   formProps: GenericFormProps<DomainDetailsDto, DomainCreateDto, DomainUpdateDto>
 ) => {
   const [triggerSave, setTriggerSave] = useState(false);
+  const [triggerSaveAndClose, setTriggerSaveAndClose] = useState(false);
   const [triggerCancel, setTriggerCancel] = useState(false);
 
   const genericForm = (
     <GenericForm<DomainDetailsDto, DomainCreateDto, DomainUpdateDto>
       {...formProps}
       triggerSave={triggerSave}
+      triggerSaveAndClose={triggerSaveAndClose}
       triggerCancel={triggerCancel}
       onSaveHandled={() => setTriggerSave(false)}
+      onSaveAndCloseHandled={() => setTriggerSaveAndClose(false)}
       onCancelHandled={() => setTriggerCancel(false)}
       fieldSections={fieldSections}
     />
   );
 
   const handleSaveClick = () => setTriggerSave(true);
+  const handleSaveAndCloseClick = () => setTriggerSaveAndClose(true);
   const handleCancelClick = () => setTriggerCancel(true);
 
   const actionButtons = formProps.editable ? (
@@ -73,12 +77,21 @@ export const DomainForm = (
       </Button>
       <Button
         type="button"
-        variant="contained"
+        variant="outlined"
         onClick={handleSaveClick}
         size="large"
         startIcon={<Save size={22} />}
       >
         Save
+      </Button>
+      <Button
+        type="button"
+        variant="contained"
+        onClick={handleSaveAndCloseClick}
+        size="large"
+        startIcon={<Save size={22} />}
+      >
+        Save and Close
       </Button>
     </Box>
   ) : formProps.deleteOptionProps ? (

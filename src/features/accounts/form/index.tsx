@@ -1,5 +1,5 @@
 import { ModuleWrapper } from "@components/module-wrapper";
-import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
+import { useCoreModuleNavigation, useNotificationsService, useSaveShortcut } from "@hooks";
 import { AccountDetailsDto } from "@lib/network/swagger-client";
 import { CoreModule } from "@lib/router";
 import {
@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRequestContext } from "@providers/request-provider";
-import { ChangeEvent, Fragment, SyntheticEvent, useEffect, useState } from "react";
+import { ChangeEvent, Fragment, SyntheticEvent, useEffect, useRef, useState } from "react";
 import { getContinentList, getCountryList } from "utils/general-helper";
 import { accountAddHeader, accountEditHeader, accountFormBreadcrumbLinks } from "../constants";
 import { useFormik, FormikHelpers } from "formik";
@@ -55,6 +55,7 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
   const [isLoading, setIsLoading] = useState(true);
   const [newSocialMediaKey, setNewSocialMediaKey] = useState("");
   const [newSocialMediaValue, setNewSocialMediaValue] = useState("");
+  const saveModeRef = useRef<"stay" | "close">("close");
 
   const header = isEdit ? accountEditHeader : accountAddHeader;
 
@@ -154,7 +155,10 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
     try {
       await handleSave(values);
       console.log("handleSave completed successfully");
-      handleNavigation(CoreModule.accounts);
+      if (saveModeRef.current === "close") {
+        handleNavigation(CoreModule.accounts);
+      }
+      saveModeRef.current = "close";
     } catch (error) {
       console.error("Error in submitFunc:", error);
       formik.setSubmitting(false);
@@ -232,6 +236,18 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
     enableReinitialize: true,
   });
 
+  const handleSaveStay = () => {
+    saveModeRef.current = "stay";
+    formik.submitForm();
+  };
+
+  const handleSaveAndClose = () => {
+    saveModeRef.current = "close";
+    formik.submitForm();
+  };
+
+  useSaveShortcut(handleSaveStay, !isLoading && !formik.isSubmitting);
+
   const actionButtons = (
     <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
       <Button
@@ -247,18 +263,27 @@ export const AccountForm = ({ account, handleSave, isEdit }: AccountFormProps) =
       </Button>
       <Button
         form="accountForm"
+        type="button"
+        disabled={isLoading || formik.isSubmitting}
+        variant="outlined"
+        color="primary"
+        size="large"
+        startIcon={isEdit ? <Save size={22} /> : <Plus size={22} />}
+        onClick={handleSaveStay}
+      >
+        {isEdit ? "Save" : "Add"}
+      </Button>
+      <Button
+        form="accountForm"
         type="submit"
         disabled={isLoading || formik.isSubmitting}
         variant="contained"
         color="primary"
         size="large"
         startIcon={isEdit ? <Save size={22} /> : <Plus size={22} />}
-        onClick={() => {
-          console.log("Save button clicked");
-          formik.submitForm();
-        }}
+        onClick={handleSaveAndClose}
       >
-        {isEdit ? "Save" : "Add"}
+        {isEdit ? "Save and Close" : "Add and Close"}
       </Button>
     </Box>
   );

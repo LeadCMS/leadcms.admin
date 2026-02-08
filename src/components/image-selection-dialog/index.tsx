@@ -392,21 +392,34 @@ export const CoverImageEditor: React.FC<CoverImageEditorProps> = ({
       ) : (
         <>
           <Box
-            component="img"
-            src={previewUrl}
-            alt="Cover image"
             sx={{
               width: "100%",
               height: "100%",
-              objectFit: "cover",
-              display: "block",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: "grey.50",
             }}
-            onError={(e) => {
-              // Handle broken image
-              e.currentTarget.style.display = "none";
-              onError?.("Failed to load image");
-            }}
-          />
+          >
+            <Box
+              component="img"
+              src={previewUrl}
+              alt="Cover image"
+              sx={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
+                display: "block",
+              }}
+              onError={(e) => {
+                // Handle broken image
+                e.currentTarget.style.display = "none";
+                onError?.("Failed to load image");
+              }}
+            />
+          </Box>
 
           {/* Overlay controls */}
           <Box

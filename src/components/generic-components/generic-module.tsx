@@ -89,8 +89,10 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
   const [importIsOpen, setImportIsOpen] = useState(false);
   const genericDataGridRef = useRef<GenericDataGridRef>(null);
   const [triggerSave, setTriggerSave] = useState(false);
+  const [triggerSaveAndClose, setTriggerSaveAndClose] = useState(false);
   const [triggerCancel, setTriggerCancel] = useState(false);
   const handleSaveClick = () => setTriggerSave(true);
+  const handleSaveAndCloseClick = () => setTriggerSaveAndClose(true);
   const handleCancelClick = () => setTriggerCancel(true);
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
@@ -151,6 +153,11 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
 
   const handleSaveHandled = () => {
     setTriggerSave(false);
+    setRefreshFlag((f) => f + 1);
+  };
+
+  const handleSaveAndCloseHandled = () => {
+    setTriggerSaveAndClose(false);
     setRefreshFlag((f) => f + 1);
   };
 
@@ -313,8 +320,10 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
       <GenericForm<TView, TCreate, TUpdate>
         {...formProps}
         triggerSave={triggerSave}
+        triggerSaveAndClose={triggerSaveAndClose}
         triggerCancel={triggerCancel}
         onSaveHandled={handleSaveHandled}
+        onSaveAndCloseHandled={handleSaveAndCloseHandled}
         onCancelHandled={() => setTriggerCancel(false)}
       />
     );
@@ -332,12 +341,21 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         </Button>
         <Button
           type="button"
-          variant="contained"
+          variant="outlined"
           onClick={handleSaveClick}
           size="large"
           startIcon={<Save size={22} />}
         >
           Save
+        </Button>
+        <Button
+          type="button"
+          variant="contained"
+          onClick={handleSaveAndCloseClick}
+          size="large"
+          startIcon={<Save size={22} />}
+        >
+          Save and Close
         </Button>
       </Box>
     ) : formProps.deleteOptionProps ? (

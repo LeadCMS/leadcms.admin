@@ -34,6 +34,8 @@ export interface ContentEditActionButtonsProps {
   onDuplicate?: () => void;
   onTranslate?: () => void;
   onEditWithAI?: () => void;
+  onSave?: () => void;
+  onSaveAndClose?: () => void;
 }
 
 export const ContentEditActionButtons = ({
@@ -51,6 +53,8 @@ export const ContentEditActionButtons = ({
   onDuplicate,
   onTranslate,
   onEditWithAI,
+  onSave,
+  onSaveAndClose,
 }: ContentEditActionButtonsProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
@@ -178,14 +182,24 @@ export const ContentEditActionButtons = ({
           Cancel
         </Button>
         <Button
-          type="submit"
+          variant="outlined"
+          color="primary"
+          disabled={!(wasModified || coverWasModified) || isSubmitting}
+          startIcon={isSaving ? <CircularProgress size={16} /> : <Save />}
+          size="medium"
+          onClick={onSave}
+        >
+          {isSaving ? "Saving..." : "Save"}
+        </Button>
+        <Button
           variant="contained"
           color="primary"
           disabled={!(wasModified || coverWasModified) || isSubmitting}
           startIcon={isSaving ? <CircularProgress size={16} /> : <Save />}
           size="medium"
+          onClick={onSaveAndClose}
         >
-          {isSaving ? "Saving..." : "Save"}
+          {isSaving ? "Saving..." : "Save and Close"}
         </Button>
       </Box>
     </Box>

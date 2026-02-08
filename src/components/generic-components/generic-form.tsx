@@ -21,7 +21,7 @@ import {
 import { validate } from "@components/generic-components/edit-components/validator";
 import { ArrayEdit } from "./edit-components/array-edit";
 import { StyledDivider } from "./index.styled";
-import { useCoreModuleNavigation } from "@hooks";
+import { useCoreModuleNavigation, useSaveShortcut } from "@hooks";
 import { TextView } from "./view-components/text-view";
 import { BoolView } from "./view-components/bool-view";
 import { DateTimeView } from "./view-components/datetime-view";
@@ -86,8 +86,10 @@ export interface GenericFormProps<TView extends BasicTypeForGeneric, TCreate, TU
 
   customDictionaries?: CustomFieldSourceDictionaries;
   triggerSave?: boolean;
+  triggerSaveAndClose?: boolean;
   triggerCancel?: boolean;
   onSaveHandled?: () => void;
+  onSaveAndCloseHandled?: () => void;
   onCancelHandled?: () => void;
   fieldSections?: { sections: FieldSection[] };
 }
@@ -105,8 +107,10 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
   onSaved,
   customDictionaries,
   triggerSave,
+  triggerSaveAndClose,
   triggerCancel,
   onSaveHandled,
+  onSaveAndCloseHandled,
   onCancelHandled,
   fieldSections,
 }: GenericFormProps<TView, TCreate, TUpdate>) {
@@ -117,10 +121,17 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
 
   useEffect(() => {
     if (triggerSave) {
-      save();
+      save(false);
       onSaveHandled?.();
     }
   }, [triggerSave]);
+
+  useEffect(() => {
+    if (triggerSaveAndClose) {
+      save(true);
+      onSaveAndCloseHandled?.();
+    }
+  }, [triggerSaveAndClose]);
 
   useEffect(() => {
     if (triggerCancel) {
@@ -232,7 +243,7 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
     }
   }, [values]);
 
-  const save = () => {
+  const save = (shouldClose: boolean) => {
     setSaving(async () => {
       const saveData: any = {};
       (itemId ? updateFields : createFields).forEach((field) => {
@@ -245,13 +256,17 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
         if (!validationResult || !validationResult.errors) {
           const { data } = await updateItemFn(itemId, saveData, {});
           setValues((values) => ({ ...values, ...data }));
-          onSaved && onSaved(data);
+          if (shouldClose) {
+            onSaved && onSaved(data);
+          }
         }
       } else {
         if (!validationResult || !validationResult.errors) {
           const { data } = await createItemFn(saveData, {});
           setValues((values) => ({ ...values, ...data }));
-          onSaved && onSaved(data);
+          if (shouldClose) {
+            onSaved && onSaved(data);
+          }
         }
       }
     });
@@ -401,6 +416,8 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
 
   const moduleName = getModuleNameFromUrl();
   const SectionIcon = moduleName ? getSectionIcon(moduleName) : null;
+
+  useSaveShortcut(() => save(false), editable);
 
   return (
     <>

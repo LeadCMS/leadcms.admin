@@ -28,6 +28,7 @@ import {
 import { useRequestContext } from "providers/request-provider";
 import { RuleBuilder } from "../components/rule-builder";
 import { ContactPickerModal } from "../components/contact-picker-modal";
+import { useSaveShortcut } from "@hooks";
 
 const defaultRuleGroup: RuleGroup = {
   id: "default-group",
@@ -265,7 +266,7 @@ export const SegmentForm = ({
     setStaticContactIds(contactIds.map(Number));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (shouldClose: boolean) => {
     try {
       const payload: SegmentCreateDto | SegmentUpdateDto = isEdit
         ? {
@@ -295,11 +296,23 @@ export const SegmentForm = ({
           };
 
       await onSave(payload);
-      onSaveSuccess?.();
+      if (shouldClose) {
+        onSaveSuccess?.();
+      }
     } catch (error) {
       console.error("Failed to save segment:", error);
     }
   };
+
+  const handleSaveStay = () => {
+    void handleSave(false);
+  };
+
+  const handleSaveAndClose = () => {
+    void handleSave(true);
+  };
+
+  useSaveShortcut(handleSaveStay, true);
 
   const currentBreadcrumb = isEdit ? "Edit Segment" : "Create Segment";
 
@@ -320,13 +333,22 @@ export const SegmentForm = ({
             Cancel
           </Button>
           <Button
-            variant="contained"
+            variant="outlined"
             startIcon={<Save size={18} />}
-            onClick={handleSave}
+            onClick={handleSaveStay}
             disabled={!name.trim()}
             size="medium"
           >
             {isEdit ? "Save" : "Save"}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Save size={18} />}
+            onClick={handleSaveAndClose}
+            disabled={!name.trim()}
+            size="medium"
+          >
+            {isEdit ? "Save and Close" : "Save and Close"}
           </Button>
         </Box>
       }

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
+import { useCoreModuleNavigation, useNotificationsService, useSaveShortcut } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useRequestContext } from "@providers/request-provider";
 import { useParams } from "react-router-dom";
@@ -74,6 +74,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     EmailTemplateEditRestoreState.Idle
   );
   const [wasModified, setWasModified] = useState<boolean>(false);
+  const saveModeRef = useRef<"stay" | "close">("close");
 
   const autoSave = useDebouncedCallback((value) => {
     if (!wasModified) {
@@ -113,7 +114,10 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     setEditorLocalStorage(localStorageSnapshot);
     helpers.setValues(response.data as ExtendedEmailTemplateDetailsDto);
     helpers.setSubmitting(false);
-    handleNavigation(CoreModule.emailTemplates);
+    if (saveModeRef.current === "close") {
+      handleNavigation(CoreModule.emailTemplates);
+    }
+    saveModeRef.current = "close";
   };
   const submit = async (
     values: ExtendedEmailTemplateDetailsDto,
@@ -145,6 +149,18 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     onSubmit: submit,
     validateOnChange: false,
   });
+
+  const handleSaveStay = () => {
+    saveModeRef.current = "stay";
+    formik.submitForm();
+  };
+
+  const handleSaveAndClose = () => {
+    saveModeRef.current = "close";
+    formik.submitForm();
+  };
+
+  useSaveShortcut(handleSaveStay, !readonly && !formik.isSubmitting);
 
   const valueUpdate = (event: React.SyntheticEvent<Element, Event>) => {
     setWasModified(true);
@@ -226,13 +242,22 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                   Cancel
                 </Button>
                 <Button
+                  type="button"
+                  variant="outlined"
+                  size="large"
+                  startIcon={<Save />}
+                  onClick={handleSaveStay}
+                >
+                  Save
+                </Button>
+                <Button
                   type="submit"
                   variant="contained"
                   size="large"
                   startIcon={<Save />}
-                  onClick={formik.submitForm}
+                  onClick={handleSaveAndClose}
                 >
-                  Save
+                  Save and Close
                 </Button>
               </Box>
             )}
@@ -355,7 +380,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                         toolbar: `undo redo | bold italic underline strikethrough | fontselect
                         fontsizeselect formatselect | alignleft aligncenter alignright
                         alignjustify | outdent indent |  numlist bullist | forecolor
-                        backcolor removeformat | pagebreak | charmap emoticons | 
+                        backcolor removeformat | pagebreak | charmap emoticons |
                         fullscreen  preview save print | insertfile image media template
                         link anchor codesample | ltr rtl`,
                         content_style: `body { font-family:Helvetica,Arial,sans-serif;
