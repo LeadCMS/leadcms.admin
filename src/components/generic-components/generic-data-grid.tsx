@@ -30,6 +30,8 @@ import dayjs from "dayjs";
 import useLocalStorage from "use-local-storage";
 import { GridDataFilterState } from "types";
 import React from "react";
+import { BulkDeleteToolbar } from "@components/bulk-delete-toolbar";
+import { useNotificationsService } from "@hooks";
 
 export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
   key: string;
@@ -44,6 +46,8 @@ export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
   setSearchText?: (text: string) => void;
   initiallyShownColumns?: string[];
   refreshFlag?: number;
+  onBulkDelete?: (ids: (string | number)[]) => Promise<void>;
+  bulkDeleteEntityName?: string;
 }
 
 export interface GenericDataGridRef {
@@ -86,10 +90,13 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     setSearchText,
     initiallyShownColumns,
     refreshFlag,
+    onBulkDelete,
+    bulkDeleteEntityName = "record",
   }: GenericDataGridProps<T>,
   ref: Ref<GenericDataGridRef>
 ) {
   const { setBusy, isBusy } = useModuleWrapperContext();
+  const { notificationsService } = useNotificationsService();
 
   const [gridSettings, setGridSettings] = useLocalStorage<GenericDataGridSettings>(
     `data-grid-${key}`,
@@ -177,6 +184,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
   );
 
   const selectedRows = Array.from(rowSelectionModel.ids);
+  const [refreshInternalFlag, setRefreshInternalFlag] = useState(0);
 
   useEffect(() => {
     if (gridSettings) {
@@ -351,7 +359,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     return () => {
       abortController.abort("canceled");
     };
-  }, [getItemsFn, searchText, filterState, refreshFlag]);
+  }, [getItemsFn, searchText, filterState, refreshFlag, refreshInternalFlag]);
 
   useEffect(() => {
     saveGridStateInLocalStorage();
@@ -459,6 +467,41 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
 
   return (
     <DataTableContainer>
+      {onBulkDelete && selectedRows.length > 0 && (
+        <BulkDeleteToolbar
+          selectedCount={selectedRows.length}
+          totalCount={(items || []).length}
+          entityName={bulkDeleteEntityName}
+          onDelete={() => onBulkDelete(selectedRows)}
+          onDeleteSuccess={() => {
+            setRowSelectionModel({
+              type: "include",
+              ids: new Set(),
+            });
+            setRefreshInternalFlag((f) => f + 1);
+          }}
+          onClearSelection={() =>
+            setRowSelectionModel({
+              type: "include",
+              ids: new Set(),
+            })
+          }
+          onToggleSelectAll={() => {
+            if (selectedRows.length === (items || []).length) {
+              setRowSelectionModel({
+                type: "include",
+                ids: new Set(),
+              });
+            } else {
+              setRowSelectionModel({
+                type: "include",
+                ids: new Set((items || []).map((row) => (row as any).id)),
+              });
+            }
+          }}
+          notificationsService={notificationsService}
+        />
+      )}
       <DataGrid
         columns={columns || []}
         rows={items || []}

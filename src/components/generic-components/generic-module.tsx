@@ -59,6 +59,10 @@ interface ExtraActions {
   };
   showColumnsPanel?: boolean;
   showFiltersPanel?: boolean;
+  bulkDelete?: {
+    onBulkDelete: (ids: (string | number)[]) => Promise<void>;
+    entityName?: string;
+  };
 }
 
 interface GenericModuleProps<TView extends BasicTypeForGeneric, TCreate, TUpdate> {
@@ -168,6 +172,8 @@ export function GenericModule<TView extends BasicTypeForGeneric, TCreate, TUpdat
         searchText: searchText,
         refreshFlag: refreshFlag,
         setSearchText: setSearchText,
+        onBulkDelete: extraActions?.bulkDelete?.onBulkDelete,
+        bulkDeleteEntityName: extraActions?.bulkDelete?.entityName,
       },
       genericDataGridRef
     );

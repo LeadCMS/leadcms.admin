@@ -95,24 +95,24 @@ export function CustomFilterBar({
 
   return (
     <>
-      <Box display="flex" sx={{ backgroundColor: "#fafbfd", mb: 2 }}>
-        {whereFilters.map((f, idx) => (
-          <Chip
-            key={idx}
-            label={
-              <span style={{ fontWeight: 600 }}>
-                {`${f.whereField} ${f.whereOperator} ${f.whereFieldValue}`}{" "}
-              </span>
-            }
-            onClick={() => onChipClick(idx)}
-            onDelete={() => removeFilter(idx)}
-            deleteIcon={<X size={15} />}
-            sx={{ ml: 2 }}
-            color={editIdx === idx ? "primary" : "default"}
-            variant={editIdx === idx ? "filled" : "outlined"}
-          />
-        ))}
-        {whereFilters.length > 0 && (
+      {whereFilters.length > 0 && (
+        <Box display="flex" sx={{ backgroundColor: "#fafbfd", mb: 2 }}>
+          {whereFilters.map((f, idx) => (
+            <Chip
+              key={idx}
+              label={
+                <span style={{ fontWeight: 600 }}>
+                  {`${f.whereField} ${f.whereOperator} ${f.whereFieldValue}`}{" "}
+                </span>
+              }
+              onClick={() => onChipClick(idx)}
+              onDelete={() => removeFilter(idx)}
+              deleteIcon={<X size={15} />}
+              sx={{ ml: 2 }}
+              color={editIdx === idx ? "primary" : "default"}
+              variant={editIdx === idx ? "filled" : "outlined"}
+            />
+          ))}
           <Button
             sx={{
               ml: 2,
@@ -135,8 +135,8 @@ export function CustomFilterBar({
           >
             Clear All
           </Button>
-        )}
-      </Box>
+        </Box>
+      )}
       <Dialog
         open={filterPanelOpen ?? false}
         onClose={handleClose}

@@ -8723,7 +8723,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.3.12.0
+ * @version 1.3.15.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -8886,6 +8886,24 @@ export class Api<
         query: query,
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Accounts
+     * @name AccountsBulkDelete
+     * @request DELETE:/api/accounts/bulk
+     * @secure
+     */
+    accountsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/accounts/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -9170,6 +9188,24 @@ export class Api<
      * No description
      *
      * @tags Comments
+     * @name CommentsBulkDelete
+     * @request DELETE:/api/comments/bulk
+     * @secure
+     */
+    commentsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/comments/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
      * @name CommentsExportList
      * @request GET:/api/comments/export
      * @secure
@@ -9362,6 +9398,24 @@ export class Api<
         secure: true,
         type: ContentType.Json,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
+     * @name ContactsBulkDelete
+     * @request DELETE:/api/contacts/bulk
+     * @secure
+     */
+    contactsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/contacts/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -9985,6 +10039,24 @@ export class Api<
      * No description
      *
      * @tags Content
+     * @name ContentBulkDelete
+     * @request DELETE:/api/content/bulk
+     * @secure
+     */
+    contentBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/content/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
      * @name ContentExportList
      * @request GET:/api/content/export
      * @secure
@@ -10015,7 +10087,7 @@ export class Api<
       data: ContentGenerationRequest,
       params: RequestParams = {},
     ) =>
-      this.request<ContentDetailsDto, any>({
+      this.request<ContentCreateDto, any>({
         path: `/api/content/ai-draft`,
         method: "POST",
         body: data,
@@ -10037,7 +10109,7 @@ export class Api<
       data: ContentEditRequest,
       params: RequestParams = {},
     ) =>
-      this.request<ContentDetailsDto, any>({
+      this.request<ContentCreateDto, any>({
         path: `/api/content/ai-edit`,
         method: "POST",
         body: data,
@@ -10188,6 +10260,24 @@ export class Api<
         secure: true,
         type: ContentType.Json,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
+     * @name ContentTypesBulkDelete
+     * @request DELETE:/api/content-types/bulk
+     * @secure
+     */
+    contentTypesBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/content-types/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -13053,6 +13143,24 @@ export class Api<
      * No description
      *
      * @tags DealPipelines
+     * @name DealPipelinesBulkDelete
+     * @request DELETE:/api/deal-pipelines/bulk
+     * @secure
+     */
+    dealPipelinesBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/deal-pipelines/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags DealPipelines
      * @name DealPipelinesExportList
      * @request GET:/api/deal-pipelines/export
      * @secure
@@ -13199,6 +13307,27 @@ export class Api<
      * No description
      *
      * @tags DealPipelineStages
+     * @name DealPipelineStagesBulkDelete
+     * @request DELETE:/api/deal-pipeline-stages/bulk
+     * @secure
+     */
+    dealPipelineStagesBulkDelete: (
+      data: number[],
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/deal-pipeline-stages/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags DealPipelineStages
      * @name DealPipelineStagesExportList
      * @request GET:/api/deal-pipeline-stages/export
      * @secure
@@ -13335,6 +13464,24 @@ export class Api<
         path: `/api/deals/${id}`,
         method: "DELETE",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deals
+     * @name DealsBulkDelete
+     * @request DELETE:/api/deals/bulk
+     * @secure
+     */
+    dealsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/deals/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -13632,6 +13779,24 @@ export class Api<
      * No description
      *
      * @tags Domains
+     * @name DomainsBulkDelete
+     * @request DELETE:/api/domains/bulk
+     * @secure
+     */
+    domainsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/domains/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Domains
      * @name DomainsExportList
      * @request GET:/api/domains/export
      * @secure
@@ -13830,6 +13995,24 @@ export class Api<
         query: query,
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailGroups
+     * @name EmailGroupsBulkDelete
+     * @request DELETE:/api/email-groups/bulk
+     * @secure
+     */
+    emailGroupsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/email-groups/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -14089,6 +14272,24 @@ export class Api<
         query: query,
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesBulkDelete
+     * @request DELETE:/api/email-templates/bulk
+     * @secure
+     */
+    emailTemplatesBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/email-templates/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -14530,6 +14731,24 @@ export class Api<
      * No description
      *
      * @tags Links
+     * @name LinksBulkDelete
+     * @request DELETE:/api/links/bulk
+     * @secure
+     */
+    linksBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/links/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Links
      * @name LinksExportList
      * @request GET:/api/links/export
      * @secure
@@ -14777,6 +14996,24 @@ export class Api<
         path: `/api/media/${pathToFile}`,
         method: "DELETE",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
+     * @name MediaBulkDelete
+     * @request DELETE:/api/media/bulk
+     * @secure
+     */
+    mediaBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/media/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -15117,6 +15354,24 @@ export class Api<
      * No description
      *
      * @tags OrderItems
+     * @name OrderItemsBulkDelete
+     * @request DELETE:/api/order-items/bulk
+     * @secure
+     */
+    orderItemsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/order-items/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags OrderItems
      * @name OrderItemsImportCreate
      * @request POST:/api/order-items/import
      * @secure
@@ -15341,6 +15596,24 @@ export class Api<
      * No description
      *
      * @tags Orders
+     * @name OrdersBulkDelete
+     * @request DELETE:/api/orders/bulk
+     * @secure
+     */
+    ordersBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/orders/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Orders
      * @name OrdersExportList
      * @request GET:/api/orders/export
      * @secure
@@ -15477,6 +15750,24 @@ export class Api<
         query: query,
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Promotions
+     * @name PromotionsBulkDelete
+     * @request DELETE:/api/promotions/bulk
+     * @secure
+     */
+    promotionsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/promotions/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -15702,6 +15993,24 @@ export class Api<
         method: "POST",
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
+     * @name SegmentsBulkDelete
+     * @request DELETE:/api/segments/bulk
+     * @secure
+     */
+    segmentsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/segments/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -16032,6 +16341,24 @@ export class Api<
         query: query,
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsBulkDelete
+     * @request DELETE:/api/settings/bulk
+     * @secure
+     */
+    settingsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/settings/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -16440,6 +16767,24 @@ export class Api<
      * No description
      *
      * @tags Unsubscribes
+     * @name UnsubscribesBulkDelete
+     * @request DELETE:/api/unsubscribes/bulk
+     * @secure
+     */
+    unsubscribesBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/unsubscribes/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Unsubscribes
      * @name UnsubscribesExportList
      * @request GET:/api/unsubscribes/export
      * @secure
@@ -16576,6 +16921,24 @@ export class Api<
         path: `/api/users/${id}`,
         method: "DELETE",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersBulkDelete
+     * @request DELETE:/api/users/bulk
+     * @secure
+     */
+    usersBulkDelete: (data: string[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/users/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 

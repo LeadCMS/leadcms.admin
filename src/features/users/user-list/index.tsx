@@ -160,6 +160,10 @@ export const UserList = () => {
         setFilterPanelOpen={setFilterPanelOpen}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
+        onBulkDelete={async (ids) => {
+          await client.api.usersBulkDelete(ids.map(String));
+        }}
+        bulkDeleteEntityName="user"
       />
     </ModuleWrapper>
   );

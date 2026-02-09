@@ -362,6 +362,10 @@ export const Accounts = () => {
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
         exportApiCall={accountsExportApi}
+        onBulkDelete={async (ids) => {
+          await client.api.accountsBulkDelete(ids.map(Number));
+        }}
+        bulkDeleteEntityName="account"
       ></DataList>
     </ModuleWrapper>
   );

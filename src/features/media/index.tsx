@@ -19,8 +19,16 @@ import {
   ToggleButton,
   Tooltip,
   InputAdornment,
+  Checkbox,
+  Chip,
 } from "@mui/material";
-import { DataGrid, GridColDef, GridSortModel, GridRowParams } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridColDef,
+  GridSortModel,
+  GridRowParams,
+  GridRowSelectionModel,
+} from "@mui/x-data-grid";
 import FolderIcon from "@mui/icons-material/Folder";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -204,6 +212,11 @@ const MediaManagement = () => {
   const [newScopeUid, setNewScopeUid] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Use undefined as default to distinguish "no stored settings" from "default settings"
   const [storedSettings, setStoredSettings] = useLocalStorage<MediaListFilterSettings | undefined>(
@@ -459,6 +472,7 @@ const MediaManagement = () => {
     setBreadcrumbs((prev) => [...prev, { name: item.name, scopeUid: item.scopeUid }]);
     setSearch("");
     setPageNumber(0);
+    setSelectedIds(new Set());
   };
 
   // Breadcrumb navigation
@@ -472,6 +486,7 @@ const MediaManagement = () => {
     }
     setSearch("");
     setPageNumber(0);
+    setSelectedIds(new Set());
   };
 
   // Menu handlers
@@ -782,6 +797,51 @@ const MediaManagement = () => {
     }
   };
 
+  // Multi-select helpers
+  const selectableItems = items.filter(
+    (item) => getFileType(item.mimeType, item.extension) !== "folder"
+  );
+
+  const toggleSelection = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === selectableItems.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectableItems.map((i) => i.id)));
+    }
+  };
+
+  const selectedItemsList = items.filter((i) => selectedIds.has(i.id));
+  const totalUsageCount = selectedItemsList.reduce((sum, i) => sum + (i.usageCount ?? 0), 0);
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      await api.mediaBulkDelete(Array.from(selectedIds));
+      notificationsService.success(`Deleted ${selectedIds.size} file(s)`);
+      setSelectedIds(new Set());
+      setIsBulkDeleteDialogOpen(false);
+      await refreshMediaList();
+    } catch (error) {
+      const apiError = parseApiError(error, "Failed to delete selected files");
+      notificationsService.error(apiError.message);
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   // Upload logic
   const handleDropFiles = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -918,6 +978,7 @@ const MediaManagement = () => {
         setBreadcrumbs([]);
       }
       setPageNumber(0);
+      setSelectedIds(new Set());
     }
   };
 
@@ -1271,6 +1332,44 @@ const MediaManagement = () => {
         }}
         onToggleDirection={handleSortDirectionToggle}
       />
+      {/* Selection toolbar */}
+      {selectedIds.size > 0 && (
+        <Paper
+          elevation={0}
+          sx={{
+            mb: 2,
+            p: 1.5,
+            px: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            bgcolor: "primary.50",
+            border: "1px solid",
+            borderColor: "primary.200",
+            borderRadius: 2,
+          }}
+        >
+          <Checkbox
+            checked={selectedIds.size === selectableItems.length}
+            indeterminate={selectedIds.size > 0 && selectedIds.size < selectableItems.length}
+            onChange={toggleSelectAll}
+            size="small"
+          />
+          <Chip label={`${selectedIds.size} selected`} size="small" color="primary" />
+          <Button
+            size="small"
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setIsBulkDeleteDialogOpen(true)}
+          >
+            Delete Selected
+          </Button>
+          <Button size="small" variant="text" onClick={() => setSelectedIds(new Set())}>
+            Clear Selection
+          </Button>
+        </Paper>
+      )}
       {/* Content area with loading/error states */}
       {fetchError ? (
         <Box textAlign="center" py={6}>
@@ -1399,6 +1498,39 @@ const MediaManagement = () => {
                       </Box>
                     )}
                   </Box>
+                  {/* Selection checkbox for files */}
+                  {!isFolder && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        left: 4,
+                        zIndex: 3,
+                        opacity: selectedIds.has(item.id) ? 1 : 0,
+                        transition: "opacity 0.15s",
+                        ".MuiPaper-root:hover &": {
+                          opacity: 1,
+                        },
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelection(item.id);
+                      }}
+                    >
+                      <Checkbox
+                        checked={selectedIds.has(item.id)}
+                        size="small"
+                        sx={{
+                          bgcolor: "rgba(255,255,255,0.85)",
+                          borderRadius: 1,
+                          p: 0.25,
+                          "&:hover": {
+                            bgcolor: "rgba(255,255,255,1)",
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
                   {/* Actions (hover only) */}
                   <Box
                     sx={{
@@ -1504,7 +1636,35 @@ const MediaManagement = () => {
             loading={loading}
             rowHeight={56}
             disableColumnFilter
+            checkboxSelection
             disableRowSelectionOnClick
+            isRowSelectable={(params) =>
+              getFileType(params.row.mimeType, params.row.extension) !== "folder"
+            }
+            rowSelectionModel={{
+              type: "include",
+              ids: new Set(
+                Array.from(selectedIds).map((id) => {
+                  const row = items.find((i) => i.id === id);
+                  return row
+                    ? row.location ||
+                        `${row.scopeUid || "root"}:${row.name}:${row.mimeType}:${row.createdAt}`
+                    : id;
+                })
+              ),
+            }}
+            onRowSelectionModelChange={(model: GridRowSelectionModel) => {
+              const ids = new Set<number>();
+              model.ids.forEach((rowId) => {
+                const row = items.find(
+                  (i) =>
+                    (i.location ||
+                      `${i.scopeUid || "root"}:${i.name}:${i.mimeType}:${i.createdAt}`) === rowId
+                );
+                if (row) ids.add(row.id);
+              });
+              setSelectedIds(ids);
+            }}
             onRowClick={handleRowClick}
             sortingMode="server"
             onSortModelChange={handleGridSortChange}
@@ -1739,7 +1899,7 @@ const MediaManagement = () => {
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              You are about to delete &quot{deleteTarget?.name}&quot.
+              You are about to delete "{deleteTarget?.name}".
             </Typography>
             {deleteTarget && (deleteTarget.usageCount ?? 0) > 0 ? (
               <Typography variant="body2" color="text.secondary">
@@ -1976,6 +2136,69 @@ const MediaManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Bulk Delete Dialog */}
+      <Dialog
+        open={isBulkDeleteDialogOpen}
+        onClose={() => {
+          if (isBulkDeleting) return;
+          setIsBulkDeleteDialogOpen(false);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete Selected Files</DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              You are about to delete{" "}
+              <Box component="span" sx={{ fontWeight: 600 }}>
+                {selectedIds.size}
+              </Box>{" "}
+              file(s).
+            </Typography>
+            {totalUsageCount > 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                These files are collectively used in{" "}
+                <Box component="span" sx={{ fontWeight: 600 }}>
+                  {totalUsageCount}
+                </Box>{" "}
+                place(s). Deleting them may cause broken links.
+              </Typography>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                These files do not appear to be used anywhere and can likely be deleted safely.
+              </Typography>
+            )}
+            <Typography variant="body2" color="error" sx={{ fontWeight: 600 }}>
+              This action cannot be undone.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setIsBulkDeleteDialogOpen(false)}
+            variant="text"
+            disabled={isBulkDeleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleBulkDeleteConfirm}
+            variant="contained"
+            color="error"
+            disabled={isBulkDeleting}
+            startIcon={isBulkDeleting ? <CircularProgress size={14} /> : undefined}
+          >
+            {isBulkDeleting ? "Deleting..." : `Delete ${selectedIds.size} File(s)`}
+          </Button>
+        </DialogActions>
+      </Dialog>
       {/* Media Preview Dialog */}
       <MediaPreview
         file={previewFile}
@@ -1988,7 +2211,51 @@ const MediaManagement = () => {
         hasNext={getCurrentPreviewIndex() < previewableItems.length - 1}
         hasPrev={getCurrentPreviewIndex() > 0}
         onReplace={(file) => handleReplaceMedia(file as MediaItem)}
-        onFileUpdate={(updatedFile) => setPreviewFile(updatedFile as MediaItem)}
+        onFileUpdate={(updatedFile) => {
+          const updated = updatedFile as MediaItem;
+          setPreviewFile(updated);
+          setItems((prev) => {
+            const idx = prev.findIndex((item) => item.id === updated.id);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = { ...next[idx], ...updated };
+              return next;
+            }
+            // File was renamed/moved — refresh list in background
+            refreshMediaList();
+            return prev;
+          });
+        }}
+        onDelete={async (file) => {
+          setPreviewOpen(false);
+          const item = file as MediaItem;
+          const deletePromise = async () => {
+            const pathToFile = `${item.scopeUid}/${item.name}`;
+            const result = await api.mediaDelete(pathToFile);
+            await refreshMediaList();
+            return result;
+          };
+          try {
+            await notificationsService.promise(deletePromise(), {
+              pending: "Deleting media file",
+              success: "Media file deleted successfully",
+              error: (error) => {
+                const errMessage = "Unable to delete media file. An error occurred.";
+                const errDetails: string[] = [];
+                const errorWithMessage = error as { message?: string } | undefined;
+                if (errorWithMessage?.message) {
+                  errDetails.push(errorWithMessage.message);
+                }
+                return {
+                  title: errMessage,
+                  onClick: errDetails.length > 0 ? () => showErrorModal(errDetails) : undefined,
+                };
+              },
+            });
+          } catch {
+            // error already handled by notificationsService
+          }
+        }}
       />
       {/* Dialogs (New Folder, Upload, etc.) */}
       <MediaUploadDialog

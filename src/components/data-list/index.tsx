@@ -27,6 +27,7 @@ import React from "react";
 import { buildExportQueryString } from "@components/export";
 import { getModuleNameFromUrl } from "@utils/general-helper";
 import { downloadExportFile } from "@components/download";
+import { BulkDeleteToolbar } from "@components/bulk-delete-toolbar";
 
 // Define response type for API model data
 interface ModelDataResponse<TModel> {
@@ -56,6 +57,8 @@ type dataListProps<TModel extends GridValidRowModel> = {
   onExportClose?: () => void;
   exportApiCall?: (finalQueryString: string, accept: string) => Promise<Response>;
   refreshFlag?: number;
+  onBulkDelete?: (ids: (string | number)[]) => Promise<void>;
+  bulkDeleteEntityName?: string;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -77,6 +80,8 @@ export const DataList = <TModel extends GridValidRowModel>({
   onExportClose = () => {},
   exportApiCall,
   refreshFlag = 0,
+  onBulkDelete,
+  bulkDeleteEntityName = "record",
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -448,6 +453,41 @@ export const DataList = <TModel extends GridValidRowModel>({
           errorMessage={exportError}
           hasActiveFilters={!!filterState?.whereFilters?.length}
           hasSearchText={!!(searchTerm && searchTerm.trim() !== "")}
+        />
+      )}
+      {onBulkDelete && selectedRows.length > 0 && (
+        <BulkDeleteToolbar
+          selectedCount={selectedRows.length}
+          totalCount={(modelData || []).length}
+          entityName={bulkDeleteEntityName}
+          onDelete={() => onBulkDelete(selectedRows)}
+          onDeleteSuccess={() => {
+            setRowSelectionModel({
+              type: "include",
+              ids: new Set(),
+            });
+            getDataListAsync();
+          }}
+          onClearSelection={() =>
+            setRowSelectionModel({
+              type: "include",
+              ids: new Set(),
+            })
+          }
+          onToggleSelectAll={() => {
+            if (selectedRows.length === (modelData || []).length) {
+              setRowSelectionModel({
+                type: "include",
+                ids: new Set(),
+              });
+            } else {
+              setRowSelectionModel({
+                type: "include",
+                ids: new Set((modelData || []).map((row) => (row as any).id)),
+              });
+            }
+          }}
+          notificationsService={notificationsService}
         />
       )}
       <DataTableGrid

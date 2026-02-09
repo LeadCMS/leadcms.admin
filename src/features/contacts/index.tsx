@@ -40,7 +40,7 @@ export const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");
   const [openImport, setOpenImport] = useState(false);
   const [openExport, setOpenExport] = useState(false);
-  const [importFieldsObject, setImportFieldsObject] = useState<any>();
+  const [importFieldsObject, setImportFieldsObject] = useState<ReturnType<typeof getModelByName>>();
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -349,6 +349,10 @@ export const Contacts = () => {
         onExportClose={handleExportOpen}
         exportApiCall={contactsExportApi}
         refreshFlag={refreshTrigger}
+        onBulkDelete={async (ids) => {
+          await client.api.contactsBulkDelete(ids.map(Number));
+        }}
+        bulkDeleteEntityName="contact"
       ></DataList>
     </ModuleWrapper>
   );

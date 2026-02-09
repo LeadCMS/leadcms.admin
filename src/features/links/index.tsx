@@ -64,6 +64,12 @@ export const LinksModule = () => {
       },
       showColumnsPanel: true,
       showFiltersPanel: true,
+      bulkDelete: {
+        onBulkDelete: async (ids) => {
+          await client.api.linksBulkDelete(ids.map(Number));
+        },
+        entityName: "link",
+      },
     },
     viewFormProps: {
       ...formProps,

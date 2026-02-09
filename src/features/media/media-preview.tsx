@@ -20,7 +20,6 @@ import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
-import Link from "@mui/material/Link";
 import Tooltip from "@mui/material/Tooltip";
 import DownloadIcon from "@mui/icons-material/Download";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
@@ -28,6 +27,7 @@ import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import MovieIcon from "@mui/icons-material/Movie";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { buildAbsoluteUrl, buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { MediaDetailsDto, ProblemDetails } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
@@ -50,6 +50,7 @@ interface MediaPreviewProps {
   hasPrev?: boolean;
   onReplace?: (file: MediaDetailsDto) => void;
   onFileUpdate?: (updatedFile: MediaDetailsDto) => void;
+  onDelete?: (file: MediaDetailsDto) => void;
 }
 
 const formatFileSize = (size: number | undefined) => {
@@ -108,6 +109,7 @@ export const MediaPreview = ({
   hasPrev,
   onReplace,
   onFileUpdate,
+  onDelete,
 }: MediaPreviewProps) => {
   const [tab, setTab] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -136,6 +138,7 @@ export const MediaPreview = ({
   const [isResizeDialogOpen, setIsResizeDialogOpen] = useState(false);
   const [isOptimizeDialogOpen, setIsOptimizeDialogOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [cropSelection, setCropSelection] = useState<{
     x: number;
@@ -246,6 +249,7 @@ export const MediaPreview = ({
     setIsResizeDialogOpen(false);
     setIsOptimizeDialogOpen(false);
     setIsResetDialogOpen(false);
+    setIsDeleteConfirmOpen(false);
     setMenuAnchorEl(null);
     setIsEditingName(false);
     setIsEditingFolder(false);
@@ -622,6 +626,69 @@ export const MediaPreview = ({
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
+  const handleSaveDescription = async () => {
+    try {
+      setIsSavingDescription(true);
+      if (!file.scopeUid || !file.name) {
+        notificationsService.error("Missing file identifiers");
+        return;
+      }
+
+      const response = await client.api.mediaPartialUpdate({
+        ScopeUid: file.scopeUid,
+        FileName: file.name,
+        Description: description,
+      });
+
+      if (response.error) {
+        const err = response.error as ProblemDetails;
+        throw new Error(err.detail || err.title || "Save failed");
+      }
+
+      notificationsService.success("Description saved");
+      setIsEditingDescription(false);
+      setJustSavedDescription(true);
+      setTimeout(() => setJustSavedDescription(false), 2000);
+
+      if (response.data && onFileUpdate) {
+        onFileUpdate(response.data);
+      }
+    } catch (error) {
+      const apiError = error as { message?: string };
+      const errorMessage = apiError.message || "Failed to save description";
+      notificationsService.error(errorMessage);
+    } finally {
+      setIsSavingDescription(false);
+    }
+  };
+
+  const handleSaveTags = async () => {
+    try {
+      setIsSavingTags(true);
+      if (!file.scopeUid || !file.name) {
+        notificationsService.error("Missing file identifiers");
+        return;
+      }
+
+      const responseData = await saveTags(normalizedTagsValue);
+
+      notificationsService.success("Tags saved");
+      setIsEditingTags(false);
+      setJustSavedTags(true);
+      setTimeout(() => setJustSavedTags(false), 2000);
+
+      if (responseData && onFileUpdate) {
+        onFileUpdate(responseData);
+      }
+    } catch (error) {
+      const apiError = error as { message?: string };
+      const errorMessage = apiError.message || "Failed to save tags";
+      notificationsService.error(errorMessage);
+    } finally {
+      setIsSavingTags(false);
+    }
+  };
+
   const handleReplaceMedia = async () => {
     // Get file extension for filtering - ensure no leading dot
     const currentExtension = (file.extension || (file.name ?? "").split(".").pop() || "")
@@ -743,10 +810,23 @@ export const MediaPreview = ({
           </Box>
           {/* Main content */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <DialogTitle
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
               {isPdf && <PictureAsPdfIcon color="error" />}
               {isVideo && <MovieIcon color="secondary" />}
               {file.name}
+              <Chip
+                label={usageCount > 0 ? `Used in ${usageCount} place(s)` : "Not used"}
+                size="small"
+                color={usageCount > 0 ? "primary" : "default"}
+                variant={usageCount > 0 ? "filled" : "outlined"}
+                sx={{ ml: "auto", flexShrink: 0 }}
+              />
             </DialogTitle>
             <DialogContent>
               <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
@@ -862,6 +942,19 @@ export const MediaPreview = ({
                     >
                       {isResetting ? "Resetting..." : "Reset"}
                     </MenuItem>
+                    {onDelete && <Divider />}
+                    {onDelete && (
+                      <MenuItem
+                        onClick={() => {
+                          handleMenuClose();
+                          setIsDeleteConfirmOpen(true);
+                        }}
+                        sx={{ color: "error.main" }}
+                      >
+                        <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                        Delete
+                      </MenuItem>
+                    )}
                   </Menu>
                   {isPdf ? (
                     isLoadingPdf ? (
@@ -1082,6 +1175,13 @@ export const MediaPreview = ({
                                 onChange={(e) => setNewFileName(e.target.value)}
                                 size="small"
                                 fullWidth
+                                onKeyDown={async (e) => {
+                                  if (e.key === "Enter" && hasNameChange && !isRenaming) {
+                                    e.preventDefault();
+                                    await handleRename();
+                                    setIsEditingName(false);
+                                  }
+                                }}
                               />
                               <Typography variant="caption" color="text.secondary">
                                 Renaming updates file references. This file appears in at least
@@ -1142,6 +1242,13 @@ export const MediaPreview = ({
                                 onChange={(e) => setNewScopeUid(e.target.value)}
                                 size="small"
                                 fullWidth
+                                onKeyDown={async (e) => {
+                                  if (e.key === "Enter" && hasFolderChange && !isRenaming) {
+                                    e.preventDefault();
+                                    await handleRename();
+                                    setIsEditingFolder(false);
+                                  }
+                                }}
                               />
                               <Typography variant="caption" color="text.secondary">
                                 Moving updates file references. This file appears in at least
@@ -1216,47 +1323,24 @@ export const MediaPreview = ({
                                 minRows={2}
                                 maxRows={6}
                                 fullWidth
+                                helperText="Enter to confirm, Shift+Enter for new line"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    if (
+                                      !isSavingDescription &&
+                                      description !== (file.description || "")
+                                    ) {
+                                      handleSaveDescription();
+                                    }
+                                  }
+                                }}
                               />
                               <Box sx={{ display: "flex", gap: 1 }}>
                                 <Button
                                   variant="contained"
                                   size="small"
-                                  onClick={async () => {
-                                    try {
-                                      setIsSavingDescription(true);
-                                      if (!file.scopeUid || !file.name) {
-                                        notificationsService.error("Missing file identifiers");
-                                        return;
-                                      }
-
-                                      const response = await client.api.mediaPartialUpdate({
-                                        ScopeUid: file.scopeUid,
-                                        FileName: file.name,
-                                        Description: description,
-                                      });
-
-                                      if (response.error) {
-                                        const err = response.error as ProblemDetails;
-                                        throw new Error(err.detail || err.title || "Save failed");
-                                      }
-
-                                      notificationsService.success("Description saved");
-                                      setIsEditingDescription(false);
-                                      setJustSavedDescription(true);
-                                      setTimeout(() => setJustSavedDescription(false), 2000);
-
-                                      if (response.data && onFileUpdate) {
-                                        onFileUpdate(response.data);
-                                      }
-                                    } catch (error) {
-                                      const apiError = error as { message?: string };
-                                      const errorMessage =
-                                        apiError.message || "Failed to save description";
-                                      notificationsService.error(errorMessage);
-                                    } finally {
-                                      setIsSavingDescription(false);
-                                    }
-                                  }}
+                                  onClick={handleSaveDescription}
                                   disabled={
                                     isSavingDescription || description === (file.description || "")
                                   }
@@ -1337,40 +1421,31 @@ export const MediaPreview = ({
                                   })
                                 }
                                 renderInput={(params) => (
-                                  <TextField {...params} placeholder="Add tag" size="small" />
+                                  <TextField
+                                    {...params}
+                                    placeholder="Add tag"
+                                    size="small"
+                                    helperText="Ctrl+Enter to confirm"
+                                    onKeyDown={(e) => {
+                                      if (
+                                        e.key === "Enter" &&
+                                        (e.ctrlKey || e.metaKey) &&
+                                        !isSavingTags &&
+                                        !areTagsUnchanged
+                                      ) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleSaveTags();
+                                      }
+                                    }}
+                                  />
                                 )}
                               />
                               <Box sx={{ display: "flex", gap: 1 }}>
                                 <Button
                                   variant="contained"
                                   size="small"
-                                  onClick={async () => {
-                                    try {
-                                      setIsSavingTags(true);
-                                      if (!file.scopeUid || !file.name) {
-                                        notificationsService.error("Missing file identifiers");
-                                        return;
-                                      }
-
-                                      const responseData = await saveTags(normalizedTagsValue);
-
-                                      notificationsService.success("Tags saved");
-                                      setIsEditingTags(false);
-                                      setJustSavedTags(true);
-                                      setTimeout(() => setJustSavedTags(false), 2000);
-
-                                      if (responseData && onFileUpdate) {
-                                        onFileUpdate(responseData);
-                                      }
-                                    } catch (error) {
-                                      const apiError = error as { message?: string };
-                                      const errorMessage =
-                                        apiError.message || "Failed to save tags";
-                                      notificationsService.error(errorMessage);
-                                    } finally {
-                                      setIsSavingTags(false);
-                                    }
-                                  }}
+                                  onClick={handleSaveTags}
                                   disabled={isSavingTags || areTagsUnchanged}
                                   startIcon={
                                     isSavingTags ? <CircularProgress size={14} /> : undefined
@@ -1728,6 +1803,57 @@ export const MediaPreview = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {onDelete && (
+        <Dialog
+          open={isDeleteConfirmOpen}
+          onClose={() => setIsDeleteConfirmOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Delete media</DialogTitle>
+          <DialogContent
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              pt: 2,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              You are about to delete &quot;{file.name}&quot;.
+            </Typography>
+            {usageCount > 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                This media is used in{" "}
+                <Box component="span" sx={{ fontWeight: 600 }}>
+                  {usageCount}
+                </Box>{" "}
+                place(s). Deleting it may cause broken links.
+              </Typography>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                It seems this media is not used anywhere and can likely be deleted safely.
+              </Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsDeleteConfirmOpen(false)} variant="text">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setIsDeleteConfirmOpen(false);
+                onDelete(file);
+              }}
+              variant="contained"
+              color="error"
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </>
   );
 };

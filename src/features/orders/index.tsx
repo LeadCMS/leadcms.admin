@@ -319,6 +319,10 @@ export const Orders = () => {
         onExportClose={handleExportOpen}
         exportApiCall={ordersExportApi}
         refreshFlag={refreshTrigger}
+        onBulkDelete={async (ids) => {
+          await client.api.ordersBulkDelete(ids.map(Number));
+        }}
+        bulkDeleteEntityName="order"
       ></DataList>
     </ModuleWrapper>
   );

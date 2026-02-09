@@ -59,7 +59,7 @@ export const DataListContainer = styled("div")`
   flex-flow: column;
   height: 100%;
   width: 100%;
-  gap: ${({ theme }) => theme.spacing(6)};
+  gap: ${({ theme }) => theme.spacing(2)};
 
   .MuiDataGrid-root {
     width: 100%;
