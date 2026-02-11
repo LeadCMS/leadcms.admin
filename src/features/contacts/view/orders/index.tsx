@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { Box, Card, CardContent, Chip, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Box, Card, CardContent, CircularProgress, IconButton, Typography } from "@mui/material";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useNotificationsService } from "@hooks";
+import { DateValueFormatter, DateValueGetter } from "@components/data-list";
+import { ActionButtonContainer } from "@features/contacts/index.styled";
 import { OrderDetailsDto } from "@lib/network/swagger-client";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { useRequestContext } from "@providers/request-provider";
@@ -44,39 +47,58 @@ export const ContactOrders = () => {
     loadOrders();
   }, [client, contactId, notificationsService]);
 
-  const formatCurrency = useMemo(
-    () => (amount?: number, currency?: string) => {
-      if (amount === null || amount === undefined) return "-";
-      const code = currency || "USD";
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: code,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    },
-    []
-  );
-
-  const getStatusColor = (status?: OrderDetailsDto["status"]) => {
-    switch (status) {
-      case "Paid":
-        return "success" as const;
-      case "Pending":
-        return "warning" as const;
-      case "Cancelled":
-      case "Failed":
-        return "error" as const;
-      case "Refunded":
-        return "info" as const;
-      default:
-        return "default" as const;
-    }
-  };
-
-  const handleOpenOrder = (row: OrderDetailsDto) => {
+  const handleForwardClick = (row: OrderDetailsDto) => {
     if (!row.id) return;
     navigate(`/orders/${getViewFormRoute(row.id)}`, { state: row });
   };
+
+  const columns: GridColDef<OrderDetailsDto>[] = [
+    {
+      field: "orderNumber",
+      headerName: "Order No",
+      flex: 2,
+    },
+    {
+      field: "refNo",
+      headerName: "Ref No",
+      flex: 2,
+    },
+    {
+      field: "createdAt",
+      headerName: "Created Date",
+      flex: 2,
+      type: "date",
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+    },
+    {
+      field: "total",
+      headerName: "Amount",
+      flex: 2,
+    },
+    {
+      field: "quantity",
+      headerName: "Quantity",
+      flex: 2,
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1,
+      align: "right",
+      headerAlign: "right",
+      filterable: false,
+      sortable: false,
+      disableColumnMenu: true,
+      renderCell: ({ row }) => (
+        <ActionButtonContainer>
+          <IconButton onClick={() => handleForwardClick(row)}>
+            <ArrowRight size={20} />
+          </IconButton>
+        </ActionButtonContainer>
+      ),
+    },
+  ];
 
   return (
     <Box sx={{ mt: 3 }}>
@@ -89,73 +111,25 @@ export const ContactOrders = () => {
             Purchase history for this contact.
           </Typography>
           {isLoading ? (
-            <Typography variant="body2" color="text.secondary">
-              Loading orders...
-            </Typography>
+            <Box
+              sx={{
+                py: 6,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <CircularProgress size={32} />
+            </Box>
           ) : orders && orders.length > 0 ? (
-            <Box sx={{ display: "grid", gap: 1.5 }}>
-              {orders.map((order) => (
-                <Card
-                  key={order.id}
-                  variant="outlined"
-                  sx={{
-                    cursor: "pointer",
-                    transition: "background-color 0.15s",
-                    "&:hover": {
-                      bgcolor: "action.hover",
-                    },
-                  }}
-                  onClick={() => handleOpenOrder(order)}
-                >
-                  <CardContent sx={{ p: 2.5 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: { xs: "column", sm: "row" },
-                        alignItems: { xs: "flex-start", sm: "center" },
-                        justifyContent: "space-between",
-                        gap: 1.5,
-                      }}
-                    >
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="subtitle2" fontWeight={600} noWrap>
-                          {order.orderNumber || order.refNo || "Order"}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {order.refNo ? `Ref: ${order.refNo}` : ""}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Chip
-                          size="small"
-                          color={getStatusColor(order.status)}
-                          label={order.status || "Unknown"}
-                        />
-                        <ArrowRight size={18} />
-                      </Box>
-                    </Box>
-                    <Box
-                      sx={{
-                        mt: 1.5,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 1.5,
-                        color: "text.secondary",
-                      }}
-                    >
-                      <Typography variant="caption">
-                        {formatCurrency(order.total, order.currency)}
-                      </Typography>
-                      <Typography variant="caption">•</Typography>
-                      <Typography variant="caption">Qty: {order.quantity ?? "-"}</Typography>
-                      <Typography variant="caption">•</Typography>
-                      <Typography variant="caption">
-                        {order.createdAt ? new Date(order.createdAt).toLocaleString() : "-"}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
+            <Box sx={{ display: "flex", flexDirection: "column", height: 420 }}>
+              <DataGrid
+                columns={columns}
+                rows={orders}
+                checkboxSelection={false}
+                pagination={undefined}
+                hideFooter={true}
+                sx={{ flex: 1 }}
+              />
             </Box>
           ) : (
             <Box

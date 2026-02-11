@@ -5,6 +5,7 @@ import {
   CardActionArea,
   CardContent,
   Chip,
+  CircularProgress,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -16,7 +17,6 @@ import { ChevronLeft, ChevronRight, Mail, MessageSquare, X } from "lucide-react"
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { ContactEmailCommunicationListItemDto } from "lib/network/swagger-client";
-import { getFormattedDateTime } from "utils/general-helper";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { ContactViewOutletContext } from "../types";
@@ -76,6 +76,60 @@ export const ContactCommunications = () => {
       }),
     [communications]
   );
+
+  const localDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    []
+  );
+
+  const utcDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "UTC",
+      }),
+    []
+  );
+
+  const formatLocalTime = (iso?: string | null) => {
+    if (!iso) return "-";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "-";
+    return localDateFormatter.format(date);
+  };
+
+  const formatContactTime = (iso?: string | null) => {
+    if (!iso || contact?.timezone == null) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    const adjusted = new Date(date.getTime() + contact.timezone * 60 * 1000);
+    return utcDateFormatter.format(adjusted);
+  };
+
+  const formatTimezoneOffset = (offsetMinutes?: number | null) => {
+    if (offsetMinutes == null) return "";
+    const utcMinutes = -offsetMinutes;
+    const sign = utcMinutes >= 0 ? "+" : "-";
+    const absoluteMinutes = Math.abs(utcMinutes);
+    const hours = Math.floor(absoluteMinutes / 60)
+      .toString()
+      .padStart(2, "0");
+    const minutes = (absoluteMinutes % 60).toString().padStart(2, "0");
+    return `UTC${sign}${hours}:${minutes}`;
+  };
 
   useEffect(() => {
     if (selectedIndex >= sortedCommunications.length) {
@@ -182,7 +236,17 @@ export const ContactCommunications = () => {
             Latest conversations and messages with this contact.
           </Typography>
 
-          {!isLoading && sortedCommunications.length === 0 ? (
+          {isLoading ? (
+            <Box
+              sx={{
+                py: 6,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <CircularProgress size={32} />
+            </Box>
+          ) : sortedCommunications.length === 0 ? (
             <Box
               sx={{
                 py: 8,
@@ -260,9 +324,16 @@ export const ContactCommunications = () => {
                             },
                           }}
                         >
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            {communication.subject || "(No subject)"}
-                          </Typography>
+                          <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                            {communication.id != null && (
+                              <Typography variant="caption" fontWeight={700} color="text.secondary">
+                                #{communication.id}
+                              </Typography>
+                            )}
+                            <Typography variant="subtitle2" fontWeight={600}>
+                              {communication.subject || "(No subject)"}
+                            </Typography>
+                          </Box>
                           <Chip
                             size="small"
                             color={getEmailStatusColor(communication.status)}
@@ -275,41 +346,59 @@ export const ContactCommunications = () => {
                         <Box
                           sx={{
                             mt: 1.25,
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 1,
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", sm: "auto 1fr" },
+                            columnGap: 1.5,
+                            rowGap: 0.5,
                             color: "text.secondary",
                           }}
                         >
                           {communication.fromEmail && (
-                            <Typography variant="caption">
-                              From: {communication.fromEmail}
-                            </Typography>
+                            <>
+                              <Typography variant="caption" fontWeight={600}>
+                                From
+                              </Typography>
+                              <Typography variant="caption">{communication.fromEmail}</Typography>
+                            </>
                           )}
                           {communication.recipients && (
-                            <Typography variant="caption">
-                              To: {communication.recipients}
+                            <>
+                              <Typography variant="caption" fontWeight={600}>
+                                To
+                              </Typography>
+                              <Typography variant="caption">{communication.recipients}</Typography>
+                            </>
+                          )}
+                          <>
+                            <Typography variant="caption" fontWeight={600}>
+                              Your time
                             </Typography>
+                            <Typography variant="caption">
+                              {formatLocalTime(
+                                communication.updatedAt || communication.createdAt || ""
+                              )}
+                            </Typography>
+                          </>
+                          {contact?.timezone != null && (
+                            <>
+                              <Typography variant="caption" fontWeight={600}>
+                                Contact time ({formatTimezoneOffset(contact.timezone)})
+                              </Typography>
+                              <Typography variant="caption">
+                                {formatContactTime(
+                                  communication.updatedAt || communication.createdAt || ""
+                                )}
+                              </Typography>
+                            </>
                           )}
                           {communication.source && (
-                            <Typography variant="caption">
-                              Source: {communication.source}
-                            </Typography>
+                            <>
+                              <Typography variant="caption" fontWeight={600}>
+                                Source
+                              </Typography>
+                              <Typography variant="caption">{communication.source}</Typography>
+                            </>
                           )}
-                        </Box>
-                        <Box
-                          sx={{
-                            mt: 1,
-                            display: "flex",
-                            gap: 1.5,
-                            color: "text.secondary",
-                          }}
-                        >
-                          <Typography variant="caption">
-                            {getFormattedDateTime(
-                              communication.updatedAt || communication.createdAt || ""
-                            )}
-                          </Typography>
                         </Box>
                       </CardContent>
                     </CardActionArea>
@@ -358,19 +447,27 @@ export const ContactCommunications = () => {
             <IconButton size="small" onClick={openNext} disabled={!hasNext}>
               <ChevronRight size={18} />
             </IconButton>
-            <Typography variant="subtitle1" fontWeight={600} noWrap>
-              {selectedCommunication?.subject || "(No subject)"}
-            </Typography>
-            <Chip
-              size="small"
-              color={getEmailStatusColor(selectedCommunication?.status)}
-              label={formatStatusLabel(selectedCommunication?.status || "Unknown")}
-            />
-            <Typography variant="caption" color="text.secondary">
-              {getFormattedDateTime(
-                selectedCommunication?.updatedAt || selectedCommunication?.createdAt || ""
-              )}
-            </Typography>
+            <Box sx={{ minWidth: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                  {selectedCommunication?.id != null && (
+                    <Typography variant="caption" fontWeight={700} color="text.secondary">
+                      #{selectedCommunication.id}
+                    </Typography>
+                  )}
+                  <Typography variant="subtitle1" fontWeight={600} noWrap>
+                    {selectedCommunication?.subject || "(No subject)"}
+                  </Typography>
+                </Box>
+                <Box sx={{ ml: 0.5 }}>
+                  <Chip
+                    size="small"
+                    color={getEmailStatusColor(selectedCommunication?.status)}
+                    label={formatStatusLabel(selectedCommunication?.status || "Unknown")}
+                  />
+                </Box>
+              </Box>
+            </Box>
           </Box>
           <IconButton onClick={() => setSelectedIndex(-1)} size="small">
             <X size={18} />
@@ -394,6 +491,26 @@ export const ContactCommunications = () => {
               To
             </Typography>
             <Typography variant="body2">{selectedCommunication?.recipients || "-"}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Your time
+            </Typography>
+            <Typography variant="body2">
+              {formatLocalTime(
+                selectedCommunication?.updatedAt || selectedCommunication?.createdAt || ""
+              )}
+            </Typography>
+            {contact?.timezone != null && (
+              <>
+                <Typography variant="caption" color="text.secondary">
+                  Contact time ({formatTimezoneOffset(contact.timezone)})
+                </Typography>
+                <Typography variant="body2">
+                  {formatContactTime(
+                    selectedCommunication?.updatedAt || selectedCommunication?.createdAt || ""
+                  )}
+                </Typography>
+              </>
+            )}
             {selectedCommunication?.source && (
               <>
                 <Typography variant="caption" color="text.secondary">
