@@ -7628,21 +7628,52 @@ export interface OrderSummaryDto {
 
 export interface OrderUpdateDto {
   /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number | null;
+  /**
    * Ref No
-   * @minLength 1
    * @example "string"
    */
-  refNo: string;
+  refNo?: string | null;
+  /**
+   * Order Number
+   * @example "string"
+   */
+  orderNumber?: string | null;
   /**
    * Affiliate Name
    * @example "string"
    */
   affiliateName?: string | null;
   /**
+   * Exchange Rate
+   * @format double
+   * @example 1
+   */
+  exchangeRate?: number | null;
+  /**
+   * Currency
+   * @example "string"
+   */
+  currency?: string | null;
+  /**
+   * Test Order
+   * @example true
+   */
+  testOrder?: boolean | null;
+  /**
    * Data
    * @example "string"
    */
   data?: string | null;
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
   /**
    * Status
    * @example "Pending"
@@ -7653,6 +7684,18 @@ export interface OrderUpdateDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Commission
+   * @format double
+   * @example 1
+   */
+  commission?: number | null;
+  /**
+   * Refund
+   * @format double
+   * @example 1
+   */
+  refund?: number | null;
 }
 
 export interface ProblemDetails {
@@ -8925,7 +8968,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.3.15.0
+ * @version 1.3.16.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -15703,6 +15746,23 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Orders
+     * @name OrdersCurrenciesList
+     * @request GET:/api/orders/currencies
+     * @secure
+     */
+    ordersCurrenciesList: (params: RequestParams = {}) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/orders/currencies`,
+        method: "GET",
+        secure: true,
         format: "json",
         ...params,
       }),

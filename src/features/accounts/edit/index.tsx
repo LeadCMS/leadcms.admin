@@ -30,5 +30,16 @@ export const AccountEdit = () => {
     await client.api.accountsPartialUpdate(id, updateDto!);
   };
 
-  return <AccountForm account={account} handleSave={handleSave} isEdit={true} />;
+  const handleDelete = async (accountId: number) => {
+    await client.api.accountsDelete(accountId);
+  };
+
+  return (
+    <AccountForm
+      account={account}
+      handleSave={handleSave}
+      handleDelete={handleDelete}
+      isEdit={true}
+    />
+  );
 };

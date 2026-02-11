@@ -5,6 +5,7 @@ import { OrderEdit } from "./edit";
 import { OrdersLazy } from "./lazy";
 import { OrderViewBase } from "./view";
 import { OrderView } from "./view/details";
+import { OrderItems } from "./view/items";
 
 export const OrdersModule = () => {
   return (
@@ -15,6 +16,7 @@ export const OrdersModule = () => {
         <Route path={viewFormRoute.template} element={<OrderViewBase />}>
           <Route index element={<OrderView />} />
           <Route path={detailsRoute.template} element={<OrderView />} />
+          <Route path="items" element={<OrderItems />} />
         </Route>
         <Route path={addFormRoute.template} element={<OrderAdd />} />
       </Routes>

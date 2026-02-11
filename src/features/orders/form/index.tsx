@@ -3,21 +3,33 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { useNotificationsService, useSaveShortcut } from "@hooks";
 import { ContactDetailsDto, OrderDetailsDto } from "@lib/network/swagger-client";
 import { defaultFilterLimit } from "@providers/query-provider";
-import { CoreModule } from "@lib/router";
+import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "@lib/router";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Autocomplete,
+  Avatar,
+  Box,
   Button,
+  Card,
   CardContent,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControl,
   Grid,
+  InputLabel,
+  MenuItem,
+  Select,
   TextField,
   Tooltip,
   Typography,
-  Box,
-  Card,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
 } from "@mui/material";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useRequestContext } from "@providers/request-provider";
@@ -28,21 +40,36 @@ import zod from "zod";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
-import { Receipt, CircleDollarSign, Link, XCircle, Save } from "lucide-react";
+import { execDeleteWithToast } from "utils/general-helper";
+import {
+  ChevronDown,
+  CircleDollarSign,
+  Eye,
+  Hash,
+  Link,
+  Receipt,
+  Save,
+  ShoppingCart,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface OrderFormProps {
   order: OrderDetailsDto | undefined;
   updateOrder: (order: OrderDetailsDto) => void;
   handleSave: (order: OrderDetailsDto) => Promise<void>;
+  handleDelete?: (orderId: number) => Promise<void>;
   isEdit: boolean;
 }
 
-export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
+export const OrderForm = ({ order, handleSave, handleDelete, isEdit }: OrderFormProps) => {
   const { notificationsService } = useNotificationsService();
   const { client } = useRequestContext();
   const { setBusy } = useModuleWrapperContext();
   const handleNavigation = useCoreModuleNavigation();
   const { Show: showErrorModal } = useErrorDetailsModal();
+  const navigate = useNavigate();
 
   const noopErrorHandler = (errors: string[]) => {
     console.log("Error occurred but error modal is not available:", errors);
@@ -50,10 +77,14 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [contactList, setContactList] = useState<ContactDetailsDto[]>([]);
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-  const [open, setOpen] = useState(false);
+  const [contactSearchOpen, setContactSearchOpen] = useState(false);
+  const [contactSearchLoading, setContactSearchLoading] = useState(false);
+  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [currencies, setCurrencies] = useState<string[]>([]);
+  const [currenciesLoaded, setCurrenciesLoaded] = useState(false);
+  const [currenciesLoading, setCurrenciesLoading] = useState(false);
   const saveModeRef = useRef<"stay" | "close">("close");
-  const loading = open && isLoading;
   const header = isEdit ? orderEditHeader : orderAddHeader;
 
   useEffect(() => {
@@ -61,8 +92,9 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
       setBusy(async () => {
         try {
           formik.setValues(order);
-          const { data } = await client.api.contactsDetail(order.contactId);
-          formik.setFieldValue("contact", data);
+          if (order.contactId) {
+            await loadContactById(order.contactId);
+          }
           setIsLoading(false);
         } catch (e) {
           console.log(e);
@@ -71,48 +103,108 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     }
   }, [order]);
 
-  useEffect(() => {
-    if (!open) {
-      setContactList([]);
+  const loadCurrencies = async () => {
+    if (currenciesLoaded) return;
+    setCurrenciesLoading(true);
+    try {
+      const { data } = await client.api.ordersCurrenciesList();
+      setCurrencies(data || []);
+      setCurrenciesLoaded(true);
+    } catch (error) {
+      console.error("Error loading currencies:", error);
+    } finally {
+      setCurrenciesLoading(false);
     }
-  }, [open]);
+  };
 
-  const loadContacts = async (e: SyntheticEvent<Element, Event>, text: string) => {
-    if (e.type != "change") return;
-
-    if (timer) {
-      clearTimeout(timer);
+  const loadInitialContacts = async (force = false) => {
+    if (!force && contactList.length > 0) return;
+    setContactSearchLoading(true);
+    try {
+      const { data } = await client.api.contactsList({
+        query: `&filter[limit]=${defaultFilterLimit}&filter[order]=email ASC&filter[skip]=0`,
+      });
+      setContactList(data);
+    } catch (error) {
+      console.error("Error loading contacts:", error);
+    } finally {
+      setContactSearchLoading(false);
     }
-    setIsLoading(true);
-    setTimer(
-      setTimeout(async () => {
-        if (text) {
-          const { data } = await client.api.contactsList({
-            query: `${text}&filter[limit]=${defaultFilterLimit}`,
-          });
-          setContactList(data);
+  };
+
+  const handleContactSearch = async (searchTerm: string) => {
+    if (!searchTerm) {
+      loadInitialContacts(true);
+      return;
+    }
+    setContactSearchLoading(true);
+    try {
+      const { data } = await client.api.contactsList({
+        query: `${searchTerm}&filter[limit]=${defaultFilterLimit}`,
+      });
+      const selectedId = formik.values.contactId;
+      if (selectedId) {
+        const selected = contactList.find((c) => c.id === selectedId);
+        if (selected && !data.find((c: ContactDetailsDto) => c.id === selectedId)) {
+          setContactList([selected, ...data]);
         } else {
-          setContactList([]);
+          setContactList(data);
         }
-        setIsLoading(false);
-      }, 800)
-    );
+      } else {
+        setContactList(data);
+      }
+    } catch (error) {
+      console.error("Error searching contacts:", error);
+    } finally {
+      setContactSearchLoading(false);
+    }
+  };
+
+  const loadContactById = async (contactId: number) => {
+    try {
+      const { data } = await client.api.contactsDetail(contactId);
+      if (data) {
+        setContactList((prev) => {
+          const exists = prev.find((c) => c.id === data.id);
+          return exists ? prev : [...prev, data];
+        });
+      }
+    } catch (error) {
+      console.error("Error loading contact:", error);
+    }
   };
 
   const handleCancel = () => {
     handleNavigation(CoreModule.orders);
   };
 
-  const handleContactChange = (value: ContactDetailsDto) => {
-    if (value) {
-      formik.setFieldValue("contactId", value.id);
-      formik.setFieldValue("contact", value);
+  const handleView = () => {
+    if (formik.values.id) {
+      const viewRoute = `${getCoreModuleRoute(CoreModule.orders)}/${getViewFormRoute(
+        Number(formik.values.id)
+      )}`;
+      navigate(viewRoute);
     }
   };
 
-  const getOptionLabel = (contact: ContactDetailsDto) => {
-    if (contact.firstName || contact.lastName) return `${contact.firstName} ${contact.lastName}`;
-    else return contact.email;
+  const handleContactChange = (
+    e: SyntheticEvent<Element, Event>,
+    value: ContactDetailsDto | null
+  ) => {
+    if (value) {
+      formik.setFieldValue("contactId", value.id);
+    } else {
+      formik.setFieldValue("contactId", null);
+    }
+  };
+
+  const getContactLabel = (contact: ContactDetailsDto) => {
+    const name =
+      contact.firstName || contact.lastName
+        ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
+        : "";
+    if (name && contact.email) return `${name} (${contact.email})`;
+    return name || contact.email || "";
   };
 
   const submitFunc = async (values: OrderDetailsDto) => {
@@ -120,6 +212,8 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
       await handleSave(values);
       if (saveModeRef.current === "close") {
         handleNavigation(CoreModule.orders);
+      } else {
+        formik.setSubmitting(false);
       }
       saveModeRef.current = "close";
     } catch (error) {
@@ -148,6 +242,11 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     affiliateName: zod.string().nullable().optional(),
     source: zod.string().nullable().optional(),
     status: zod.enum(["Pending", "Paid", "Cancelled", "Refunded", "Failed"]).nullable().optional(),
+    testOrder: zod.boolean().nullable().optional(),
+    data: zod.string().nullable().optional(),
+    tags: zod.array(zod.string()).nullable().optional(),
+    commission: zod.number().nullable().optional(),
+    refund: zod.number().nullable().optional(),
   });
 
   const formik = useFormik<OrderDetailsDto>({
@@ -161,7 +260,11 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
       affiliateName: "",
       source: "",
       status: "Pending",
-      contact: undefined as unknown as ContactDetailsDto,
+      testOrder: false,
+      data: "",
+      tags: [],
+      commission: 0,
+      refund: 0,
     } as OrderDetailsDto,
     onSubmit: submit,
     validateOnChange: false,
@@ -179,59 +282,124 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
 
   useSaveShortcut(handleSaveStay, !formik.isSubmitting);
 
-  const actionButtons = (
-    <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
-      <Button
-        disabled={formik.isSubmitting}
-        type="button"
-        variant="outlined"
-        color="primary"
-        onClick={handleCancel}
-        size="large"
-        startIcon={<XCircle size={22} />}
-      >
-        Cancel
-      </Button>
-      <Button
-        type="button"
-        disabled={formik.isSubmitting}
-        variant="outlined"
-        color="primary"
-        size="large"
-        startIcon={<Save size={22} />}
-        onClick={handleSaveStay}
-      >
-        Save
-      </Button>
-      <Button
-        type="submit"
-        disabled={formik.isSubmitting}
-        variant="contained"
-        color="primary"
-        size="large"
-        startIcon={<Save size={22} />}
-        onClick={handleSaveAndClose}
-      >
-        Save and Close
-      </Button>
-    </Box>
-  );
+  const handleDeleteClick = () => {
+    if (!isEdit || !handleDelete || !formik.values.id) {
+      return;
+    }
+    setOpenDeleteConfirmation(true);
+  };
 
-  const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
+  const closeDeleteConfirmation = () => {
+    if (isDeleting) return;
+    setOpenDeleteConfirmation(false);
+  };
+
+  const deleteOrder = async () => {
+    if (!isEdit || !handleDelete || !formik.values.id) {
+      setOpenDeleteConfirmation(false);
+      return;
+    }
+
+    await execDeleteWithToast(
+      async () => {
+        setIsDeleting(true);
+        try {
+          await handleDelete(formik.values.id as number);
+          handleNavigation(CoreModule.orders);
+        } finally {
+          setIsDeleting(false);
+        }
+      },
+      notificationsService,
+      "order",
+      showErrorModal
+    );
+  };
+
+  const getOrderLabel = () => {
+    const orderNo = formik.values.orderNumber;
+    const refNo = formik.values.refNo;
+    if (orderNo) return `Order #${orderNo}`;
+    if (refNo) return `Ref: ${refNo}`;
+    return isEdit ? "Edit Order" : "New Order";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+        return "warning";
+      case "paid":
+        return "success";
+      case "cancelled":
+        return "error";
+      case "refunded":
+        return "info";
+      case "failed":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
+  const actionButtons = (
     <Box
       sx={{
         display: "flex",
+        width: "100%",
+        gap: 2,
+        justifyContent: "space-between",
         alignItems: "center",
-        mb: 3,
-        mt: 4,
-        pb: 1,
-        borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+        flexWrap: "wrap",
       }}
     >
-      <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>{icon}</Box>
-      <Typography variant="subtitle1" fontWeight="500" color="primary.main">
-        {title}
-      </Typography>
+      <Box>
+        {isEdit && handleDelete && formik.values.id ? (
+          <Button
+            disabled={isLoading || formik.isSubmitting || isDeleting}
+            variant="outlined"
+            color="error"
+            onClick={handleDeleteClick}
+            startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : <Trash2 />}
+            size="medium"
+          >
+            Delete
+          </Button>
+        ) : null}
+      </Box>
+      <Box sx={{ display: "flex", gap: 2 }}>
+        <Button
+          disabled={isLoading || formik.isSubmitting || isDeleting}
+          variant="outlined"
+          color="primary"
+          onClick={handleCancel}
+          startIcon={<XCircle />}
+          size="medium"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          disabled={isLoading || formik.isSubmitting || isDeleting}
+          variant="outlined"
+          color="primary"
+          startIcon={<Save />}
+          size="medium"
+          onClick={handleSaveStay}
+        >
+          Save
+        </Button>
+        <Button
+          type="submit"
+          disabled={isLoading || formik.isSubmitting || isDeleting}
+          variant="contained"
+          color="primary"
+          startIcon={<Save />}
+          size="medium"
+          onClick={handleSaveAndClose}
+        >
+          Save and Close
+        </Button>
+      </Box>
     </Box>
   );
 
@@ -239,51 +407,146 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
     <ModuleWrapper
       breadcrumbs={orderFormBreadcrumbLinks}
       currentBreadcrumb={header}
+      isForm={true}
       actionButtons={actionButtons}
     >
       {order && (
         <form onSubmit={formik.handleSubmit}>
-          <Card>
-            <CardContent>
-              <Grid container spacing={4} marginBottom={4}>
+          <Card sx={{ mb: 4 }}>
+            <CardContent
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                alignItems: "center",
+                gap: 3,
+                p: 3,
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 80,
+                  height: 80,
+                  bgcolor: "primary.main",
+                  fontSize: "2rem",
+                  fontWeight: "bold",
+                }}
+              >
+                <ShoppingCart size={36} />
+              </Avatar>
+              <Box
+                sx={{
+                  textAlign: { xs: "center", md: "left" },
+                  flex: 1,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                  <Typography variant="h5" fontWeight="bold">
+                    {getOrderLabel()}
+                  </Typography>
+                  <Chip
+                    label={formik.values.status || "Pending"}
+                    color={
+                      getStatusColor(formik.values.status || "Pending") as
+                        | "warning"
+                        | "success"
+                        | "error"
+                        | "info"
+                        | "default"
+                    }
+                    size="small"
+                  />
+                  {formik.values.testOrder && (
+                    <Chip label="Test Order" color="secondary" size="small" variant="outlined" />
+                  )}
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  {formik.values.currency || "No currency"}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 1.5,
+                  justifyContent: {
+                    xs: "center",
+                    md: "flex-end",
+                  },
+                  mt: { xs: 2, md: 0 },
+                }}
+              >
+                {isEdit && formik.values.id && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Eye size={16} />}
+                    onClick={handleView}
+                    disabled={isLoading || formik.isSubmitting || isDeleting}
+                  >
+                    View
+                  </Button>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ mb: 2 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  mb: 3,
+                }}
+              >
+                <Box
+                  sx={{
+                    mr: 1.5,
+                    display: "flex",
+                    color: "primary.main",
+                  }}
+                >
+                  <Receipt size={20} />
+                </Box>
+                <Typography variant="h6" fontWeight="600">
+                  Order Information
+                </Typography>
+              </Box>
+              <Grid container spacing={3}>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Autocomplete
                     disabled={formik.isSubmitting}
-                    disablePortal
-                    open={open}
-                    onOpen={() => {
-                      setOpen(true);
-                    }}
-                    onClose={() => {
-                      setOpen(false);
-                    }}
                     options={contactList}
-                    getOptionLabel={(option) => getOptionLabel(option)}
-                    value={formik.values.contact}
-                    onChange={(event, value) => value && handleContactChange(value)}
-                    onInputChange={(event, value) => {
-                      loadContacts(event, value);
-                    }}
-                    loading={loading}
-                    filterOptions={(x) => x}
-                    fullWidth
+                    getOptionLabel={(option) => getContactLabel(option)}
                     size="small"
+                    fullWidth
+                    open={contactSearchOpen}
+                    onOpen={() => {
+                      setContactSearchOpen(true);
+                      loadInitialContacts();
+                    }}
+                    onClose={() => setContactSearchOpen(false)}
+                    loading={contactSearchLoading}
+                    value={contactList.find((c) => c.id === formik.values.contactId) || null}
+                    onChange={handleContactChange}
+                    onInputChange={(e, value, reason) => {
+                      if (reason === "input") {
+                        handleContactSearch(value);
+                      }
+                    }}
+                    filterOptions={(x) => x}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         label="Contact"
+                        placeholder="Search contact..."
                         error={formik.touched.contactId && Boolean(formik.errors.contactId)}
                         helperText={formik.touched.contactId && formik.errors.contactId}
                       />
                     )}
                   />
                 </Grid>
-              </Grid>
-              <Grid container spacing={4} marginTop={2} marginBottom={4}>
-                <Grid size={{ xs: 12, sm: 12 }}>
-                  <SectionHeader icon={<Receipt size={22} />} title="Orders" />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     disabled={formik.isSubmitting}
                     label="Ref No"
@@ -298,7 +561,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     size="small"
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     disabled={formik.isSubmitting}
                     label="Order No"
@@ -311,7 +574,7 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     size="small"
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Status</InputLabel>
                     <Select
@@ -330,80 +593,263 @@ export const OrderForm = ({ order, handleSave, isEdit }: OrderFormProps) => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    disabled={formik.isSubmitting}
-                    label="Affiliate Name"
-                    name="affiliateName"
-                    value={formik.values.affiliateName || ""}
-                    placeholder="Enter Affiliate Name"
-                    variant="outlined"
-                    onChange={formik.handleChange}
-                    fullWidth
-                    size="small"
-                  />
-                </Grid>
               </Grid>
-              <Grid container spacing={4} marginTop={2} marginBottom={4}>
-                <Grid size={{ xs: 12, sm: 12 }}>
-                  <SectionHeader icon={<CircleDollarSign size={22} />} title="Currency" />
-                </Grid>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ mb: 2 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  mb: 3,
+                }}
+              >
+                <Box
+                  sx={{
+                    mr: 1.5,
+                    display: "flex",
+                    color: "primary.main",
+                  }}
+                >
+                  <Hash size={20} />
+                </Box>
+                <Typography variant="h6" fontWeight="600">
+                  Financial Details
+                </Typography>
+              </Box>
+              <Grid container spacing={3}>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                  <Tooltip title="Exchange Rate field must contain only numbers">
+                  <Tooltip title="Commission amount">
                     <TextField
                       disabled={formik.isSubmitting}
-                      label="Exchange Rate"
-                      name="exchangeRate"
+                      label="Commission"
+                      name="commission"
                       type="number"
-                      value={formik.values.exchangeRate || ""}
-                      placeholder="Enter Exchange Rate"
+                      value={formik.values.commission ?? ""}
+                      placeholder="Enter Commission"
                       variant="outlined"
-                      error={formik.touched.exchangeRate && Boolean(formik.errors.exchangeRate)}
-                      helperText={formik.touched.exchangeRate && formik.errors.exchangeRate}
                       onChange={formik.handleChange}
                       fullWidth
                       size="small"
-                    ></TextField>
+                    />
                   </Tooltip>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    disabled={formik.isSubmitting}
-                    label="Currency"
-                    name="currency"
-                    value={formik.values.currency || ""}
-                    placeholder="Enter Currency"
-                    variant="outlined"
-                    error={formik.touched.currency && Boolean(formik.errors.currency)}
-                    helperText={formik.touched.currency && formik.errors.currency}
-                    onChange={formik.handleChange}
-                    fullWidth
-                    size="small"
-                  ></TextField>
-                </Grid>
-              </Grid>
-              <Grid container spacing={4} marginTop={2} marginBottom={4}>
-                <Grid size={{ xs: 12, sm: 12 }}>
-                  <SectionHeader icon={<Link size={22} />} title="Other" />
+                  <Tooltip title="Refund amount">
+                    <TextField
+                      disabled={formik.isSubmitting}
+                      label="Refund"
+                      name="refund"
+                      type="number"
+                      value={formik.values.refund ?? ""}
+                      placeholder="Enter Refund"
+                      variant="outlined"
+                      onChange={formik.handleChange}
+                      fullWidth
+                      size="small"
+                    />
+                  </Tooltip>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    disabled={formik.isSubmitting}
-                    label="Source"
-                    name="source"
-                    value={formik.values.source || ""}
-                    placeholder="Enter Source"
-                    variant="outlined"
-                    onChange={formik.handleChange}
-                    fullWidth
-                    size="small"
-                  ></TextField>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      height: "100%",
+                    }}
+                  >
+                    <Checkbox
+                      disabled={formik.isSubmitting}
+                      checked={formik.values.testOrder || false}
+                      onChange={(e) => formik.setFieldValue("testOrder", e.target.checked)}
+                    />
+                    <Typography variant="body2">Test Order</Typography>
+                  </Box>
                 </Grid>
               </Grid>
             </CardContent>
           </Card>
+
+          <Box sx={{ "& .MuiAccordion-root": { mb: 2 } }}>
+            <Accordion defaultExpanded={false}>
+              <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ py: 2 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      mr: 1.5,
+                      display: "flex",
+                      color: "primary.main",
+                    }}
+                  >
+                    <CircleDollarSign size={20} />
+                  </Box>
+                  <Typography variant="subtitle1" fontWeight="600">
+                    Currency
+                  </Typography>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Autocomplete
+                      disabled={formik.isSubmitting}
+                      options={currencies}
+                      freeSolo
+                      autoSelect
+                      size="small"
+                      fullWidth
+                      loading={currenciesLoading}
+                      onOpen={() => loadCurrencies()}
+                      value={formik.values.currency || ""}
+                      onChange={(e, val) => formik.setFieldValue("currency", val || "")}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Currency"
+                          placeholder="Enter Currency"
+                          error={formik.touched.currency && Boolean(formik.errors.currency)}
+                          helperText={formik.touched.currency && formik.errors.currency}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Tooltip title="Exchange Rate field must contain only numbers">
+                      <TextField
+                        disabled={formik.isSubmitting}
+                        label="Exchange Rate"
+                        name="exchangeRate"
+                        type="number"
+                        value={formik.values.exchangeRate || ""}
+                        placeholder="Enter Exchange Rate"
+                        variant="outlined"
+                        error={formik.touched.exchangeRate && Boolean(formik.errors.exchangeRate)}
+                        helperText={formik.touched.exchangeRate && formik.errors.exchangeRate}
+                        onChange={formik.handleChange}
+                        fullWidth
+                        size="small"
+                      />
+                    </Tooltip>
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion defaultExpanded={false}>
+              <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ py: 2 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      mr: 1.5,
+                      display: "flex",
+                      color: "primary.main",
+                    }}
+                  >
+                    <Link size={20} />
+                  </Box>
+                  <Typography variant="subtitle1" fontWeight="600">
+                    Other
+                  </Typography>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      disabled={formik.isSubmitting}
+                      label="Affiliate Name"
+                      name="affiliateName"
+                      value={formik.values.affiliateName || ""}
+                      placeholder="Enter Affiliate Name"
+                      variant="outlined"
+                      onChange={formik.handleChange}
+                      fullWidth
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      disabled={formik.isSubmitting}
+                      label="Source"
+                      name="source"
+                      value={formik.values.source || ""}
+                      placeholder="Enter Source"
+                      variant="outlined"
+                      onChange={formik.handleChange}
+                      fullWidth
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Autocomplete
+                      disabled={formik.isSubmitting}
+                      options={[]}
+                      freeSolo
+                      multiple
+                      size="small"
+                      fullWidth
+                      value={formik.values.tags || []}
+                      onChange={(e, val) => formik.setFieldValue("tags", val)}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Tags" placeholder="Add tag" />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      disabled={formik.isSubmitting}
+                      label="Data"
+                      name="data"
+                      value={formik.values.data || ""}
+                      placeholder="Enter Data"
+                      variant="outlined"
+                      onChange={formik.handleChange}
+                      fullWidth
+                      size="small"
+                      multiline
+                      minRows={2}
+                    />
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Box>
         </form>
       )}
+      <Dialog open={openDeleteConfirmation} onClose={closeDeleteConfirmation}>
+        <DialogTitle>Delete order</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This action cannot be undone. The order and associated data will be permanently removed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteConfirmation} disabled={isDeleting} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={deleteOrder}
+            disabled={isDeleting}
+            color="error"
+            variant="contained"
+            startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : <Trash2 />}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ModuleWrapper>
   );
 };

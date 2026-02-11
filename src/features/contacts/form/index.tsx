@@ -1,4 +1,4 @@
-import { ChangeEvent, SyntheticEvent, useEffect, useState } from "react";
+import { ChangeEvent, SyntheticEvent, useEffect, useRef, useState } from "react";
 import {
   Autocomplete,
   Button,
@@ -25,7 +25,7 @@ import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "lib/router";
 import { contactAddHeader, contactEditHeader, contactFormBreadcrumbLinks } from "../constants";
 import { getContinentList, getCountryList } from "utils/general-helper";
 import { useRequestContext } from "@providers/request-provider";
-import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
+import { useCoreModuleNavigation, useNotificationsService, useSaveShortcut } from "@hooks";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { useFormik, FormikHelpers } from "formik";
@@ -105,6 +105,7 @@ export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: Conta
   const [isLoading, setIsLoading] = useState(true);
   const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const saveModeRef = useRef<"stay" | "close">("close");
 
   const header = isEdit ? contactEditHeader : contactAddHeader;
 
@@ -151,7 +152,12 @@ export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: Conta
   const submitFunc = async (values: ContactDetailsDto) => {
     try {
       await handleSave(values);
-      handleNavigation(CoreModule.contacts);
+      if (saveModeRef.current === "close") {
+        handleNavigation(CoreModule.contacts);
+      } else {
+        formik.setSubmitting(false);
+      }
+      saveModeRef.current = "close";
     } catch (error) {
       formik.setSubmitting(false);
       throw error;
@@ -398,6 +404,18 @@ export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: Conta
     return `${prefix}${firstName} ${middleName}${lastName}`.trim() || "New Contact";
   };
 
+  const handleSaveStay = () => {
+    saveModeRef.current = "stay";
+    formik.submitForm();
+  };
+
+  const handleSaveAndClose = () => {
+    saveModeRef.current = "close";
+    formik.submitForm();
+  };
+
+  useSaveShortcut(handleSaveStay, !formik.isSubmitting);
+
   const actionButtons = (
     <Box
       sx={{
@@ -435,15 +453,26 @@ export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: Conta
           Cancel
         </Button>
         <Button
+          type="button"
+          disabled={isLoading || formik.isSubmitting || isDeleting}
+          variant="outlined"
+          color="primary"
+          startIcon={<Save />}
+          size="medium"
+          onClick={handleSaveStay}
+        >
+          Save
+        </Button>
+        <Button
           type="submit"
           disabled={isLoading || formik.isSubmitting || isDeleting}
           variant="contained"
           color="primary"
           startIcon={<Save />}
           size="medium"
-          onClick={() => formik.handleSubmit()}
+          onClick={handleSaveAndClose}
         >
-          {isEdit ? "Save" : "Add"}
+          Save and Close
         </Button>
       </Box>
     </Box>

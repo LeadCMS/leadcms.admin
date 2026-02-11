@@ -30,5 +30,17 @@ export const OrderEdit = () => {
     await client.api.ordersPartialUpdate(id, updateDto!);
   };
 
-  return <OrderForm order={order} updateOrder={setOrder} handleSave={handleSave} isEdit={true} />;
+  const handleDelete = async (orderId: number) => {
+    await client.api.ordersDelete(orderId);
+  };
+
+  return (
+    <OrderForm
+      order={order}
+      updateOrder={setOrder}
+      handleSave={handleSave}
+      handleDelete={handleDelete}
+      isEdit={true}
+    />
+  );
 };

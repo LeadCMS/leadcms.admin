@@ -1,493 +1,553 @@
-import { useEffect, useState } from "react";
-import { useNotificationsService } from "@hooks";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
-  ContactDetailsDto,
-  OrderDetailsDto,
-  OrderItemDetailsDto,
-} from "@lib/network/swagger-client";
-import { getWhereFilterQuery } from "@providers/query-provider";
-import { CoreModule, getCoreModuleRoute, getViewFormRoute, viewFormRoute } from "@lib/router";
-import {
-  Button,
+  Box,
   Card,
+  CardActionArea,
   CardContent,
   Chip,
+  Divider,
   Grid,
-  IconButton,
-  Link,
-  TextField,
-  Tooltip,
   Typography,
+  useTheme,
 } from "@mui/material";
-import { DataGrid, GridCellParams, GridColDef } from "@mui/x-data-grid";
+import {
+  Banknote,
+  Building,
+  Calendar,
+  DollarSign,
+  ExternalLink,
+  Hash,
+  MapPin,
+  Package,
+  ShoppingCart,
+  Tag,
+  TrendingUp,
+  User,
+} from "lucide-react";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { CoreModule, getViewFormRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
-import { DataView } from "components/data-view";
-import { useRouteParams } from "typesafe-routes";
-import { execDeleteWithToast, getCountryByCode, getFormattedDateTime } from "utils/general-helper";
-import { GhostLink } from "@components/ghost-link";
-import { ActionButtonContainer } from "@components/data-table/index.styled";
-import { Edit, XCircle } from "lucide-react";
-import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
-import { useFormik, FormikHelpers } from "formik";
-import zod from "zod";
-import { toFormikValidationSchema } from "zod-formik-adapter";
-import { execSubmitWithToast } from "utils/formik-helper";
-import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
-import { DataManagementBlock, DataDeleteConfirmation } from "@components/data-management";
+import { getCountryByCode, getFormattedDateTime } from "utils/general-helper";
+import { OrderViewOutletContext } from "../types";
 
-export const OrderView = () => {
-  const context = useRequestContext();
-  const { client } = context;
-  const { id } = useRouteParams(viewFormRoute);
-  const { notificationsService } = useNotificationsService();
-  const { setBusy } = useModuleWrapperContext();
-  const { Show: showErrorModal } = useErrorDetailsModal();
+type DetailRow = {
+  label: string;
+  value: ReactNode;
+};
 
-  const [order, setOrder] = useState<OrderDetailsDto | undefined>();
-  const [contact, setContact] = useState<ContactDetailsDto>();
-  const [contactCountry, setContactCountry] = useState<string>("");
-  const [orderItems, setOrderItems] = useState<OrderItemDetailsDto[] | undefined>();
-  const [isEdit, setIsEdit] = useState<boolean>(false);
-  const [orderItem, setOrderItem] = useState<OrderItemDetailsDto>();
-  const [openConfirmation, setOpenConfirmation] = useState(false);
-  const [isConfirmed, setIsConfirmed] = useState(false);
+type SectionProps = {
+  title: ReactNode;
+  icon?: ReactNode;
+  rows: DetailRow[];
+  linkTo?: string;
+};
 
-  useEffect(() => {
-    setBusy(async () => {
-      try {
-        const { data } = await client.api.ordersDetail(id);
-        setContactState(data.contactId);
-        setOrder(data);
-        setOrderItems(await getOrderItems(data.id!));
-      } catch (e) {
-        console.log(e);
-      }
-    });
-  }, [client]);
+type StatItemProps = {
+  label: string;
+  value: ReactNode;
+  icon: ReactNode;
+};
 
-  useEffect(() => {
-    if (isConfirmed) {
-      (async () => {
-        await execDeleteWithToast(deleteRecord, notificationsService, "order item", showErrorModal);
-      })();
-    }
-  }, [isConfirmed]);
+const hasRenderableValue = (value: unknown) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+};
 
-  const deleteRecord = async () => {
-    await client.api.orderItemsDelete(orderItem!.id!);
-    setOrderItems(await getOrderItems(order!.id!));
-    setIsConfirmed(false);
-  };
+const compactRows = (rows: Array<DetailRow | null | undefined>) =>
+  rows.filter((row): row is DetailRow => !!row && hasRenderableValue(row.value));
 
-  const setContactState = async (id: number) => {
-    try {
-      const { data } = await client.api.contactsDetail(id);
-      setContact(data);
-      if (data.countryCode) {
-        setContactCountryState(data.countryCode);
-      }
-    } catch (error) {
-      console.log(error);
-      notificationsService.error("Server error: could not retrieve contact details.");
-    }
-  };
-
-  const setContactCountryState = async (code: string) => {
-    const country = await getCountryByCode(context, code);
-    if (country) {
-      setContactCountry(country);
-    } else {
-      notificationsService.error("Server error: country is not available.");
-    }
-  };
-
-  const getOrderItems = async (orderId: number) => {
-    try {
-      const { data } = await client.api.orderItemsList({
-        query: getWhereFilterQuery("orderId", orderId.toString(), "equals"),
-      });
-      if (data.length > 0) {
-        return data;
-      } else {
-        return [];
-      }
-    } catch (error) {
-      console.log(error);
-      notificationsService.error("Server error: could not retrieve order items.");
-    }
-  };
-
-  const handleDelete = (row: any) => {
-    setOpenConfirmation(true);
-    setOrderItem(orderItems?.find((x) => x.id === row.id));
-  };
-
-  const contactRef =
-    contact?.firstName || contact?.lastName
-      ? `${contact.firstName || ""} ${contact.lastName || ""}`
-      : contact?.email;
-
-  const contactAddress = contact && (
-    <div>
-      <div>{contact.address1 || ""}</div>
-      <div>{contact.cityName || ""}</div>
-      <div>{contactCountry || ""}</div>
-    </div>
-  );
-
-  const contactName = contact && (
-    <div>
-      <Link
-        to={`${getCoreModuleRoute(CoreModule.contacts)}/${getViewFormRoute(contact.id!)}`}
-        state={contact}
-        component={GhostLink}
-        underline="hover"
+const StatCard = ({ label, value, icon }: StatItemProps) => {
+  const theme = useTheme();
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        p: 2,
+        borderRadius: 1,
+        bgcolor: theme.palette.mode === "dark" ? "action.hover" : "grey.50",
+      }}
+    >
+      <Box
+        sx={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 40,
+          height: 40,
+          borderRadius: 1.5,
+          flexShrink: 0,
+        }}
       >
-        {contactRef}
-      </Link>
-    </div>
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "inherit",
+            bgcolor: "primary.main",
+            opacity: 0.12,
+          }}
+        />
+        <Box
+          sx={{
+            color: "primary.main",
+            display: "flex",
+            position: "relative",
+          }}
+        >
+          {icon}
+        </Box>
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+          {value}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+      </Box>
+    </Box>
   );
+};
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "pending":
-        return "warning";
-      case "paid":
-        return "success";
-      case "cancelled":
-        return "error";
-      case "refunded":
-        return "info";
-      case "failed":
-        return "error";
-      default:
-        return "default";
-    }
-  };
+const SectionCard = ({ title, icon, rows, linkTo }: SectionProps) => {
+  const navigate = useNavigate();
+  if (rows.length === 0) return null;
 
-  const StatusChip = ({ status }: { status: string }) => (
-    <Chip
-      label={status || "Pending"}
-      color={getStatusColor(status)}
-      size="small"
-      variant="filled"
-    />
+  const content = (
+    <CardContent sx={{ p: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+          mb: 2.5,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          {icon && (
+            <Box
+              sx={{
+                color: "text.secondary",
+                display: "flex",
+              }}
+            >
+              {icon}
+            </Box>
+          )}
+          {typeof title === "string" ? (
+            <Typography variant="subtitle1" fontWeight={600}>
+              {title}
+            </Typography>
+          ) : (
+            title
+          )}
+        </Box>
+        {linkTo && (
+          <Box sx={{ color: "text.secondary", display: "flex" }}>
+            <ExternalLink size={16} />
+          </Box>
+        )}
+      </Box>
+      <Box sx={{ display: "grid", rowGap: 1.5 }}>
+        {rows.map((row) => (
+          <Box
+            key={`${title}-${row.label}`}
+            sx={{
+              display: "flex",
+              gap: 2,
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary" component="div">
+              {row.label}
+            </Typography>
+            <Typography
+              variant="body2"
+              fontWeight={500}
+              component="div"
+              sx={{
+                textAlign: "right",
+                wordBreak: "break-word",
+              }}
+            >
+              {row.value}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    </CardContent>
   );
-
-  const orderViewData = [
-    { label: "Order Id", value: order?.orderNumber || "" },
-    { label: "Reference no", value: order?.refNo || "" },
-    { label: "Order date", value: order?.createdAt ? getFormattedDateTime(order?.createdAt) : "" },
-    { label: "Status", value: <StatusChip status={order?.status || "Pending"} /> },
-    { label: "Quantity", value: order?.quantity || "" },
-    { label: "Total", value: order?.total || "" },
-  ];
-
-  const orderCustomerData = [
-    { label: "Name", value: contactName || "" },
-    { label: "Address", value: contactAddress || "" },
-  ];
-
-  const columns: GridColDef<OrderItemDetailsDto>[] = [
-    {
-      field: "productName",
-      headerName: "Product",
-      flex: 2,
-    },
-    {
-      field: "currency",
-      headerName: "Currency",
-      flex: 2,
-    },
-    {
-      field: "quantity",
-      headerName: "Quantity",
-      flex: 2,
-    },
-    {
-      field: "total",
-      headerName: "Total",
-      flex: 2,
-    },
-  ];
-
-  const actionsColumn: GridColDef | any = {
-    field: "actions",
-    headerName: "Actions",
-    flex: 1,
-    align: "right",
-    headerAlign: "center",
-    filterable: false,
-    sortable: false,
-    disableColumnMenu: true,
-    renderCell: (params: GridCellParams) => {
-      return (
-        <ActionButtonContainer>
-          <IconButton onClick={() => handleEditClick(params)}>
-            <Edit size={22} />
-          </IconButton>
-          <IconButton disabled={isEdit} onClick={() => handleDelete(params)}>
-            <XCircle size={22} />
-          </IconButton>
-        </ActionButtonContainer>
-      );
-    },
-  };
-
-  const handleEditClick = (row: any) => {
-    setIsEdit(true);
-    const editingOrderItem = orderItems?.find((x) => x.id === row.id);
-    formik.setValues(editingOrderItem!);
-  };
-
-  const handleCancel = () => {
-    setIsEdit(false);
-  };
-
-  const handleAdd = () => {
-    formik.setValues({
-      productName: "",
-      orderId: order!.id!,
-      unitPrice: 0,
-      currency: "",
-      quantity: 0,
-      source: "",
-      id: undefined,
-    });
-    setIsEdit(true);
-  };
-
-  const gridFinalizedColumns = columns.concat(actionsColumn);
-
-  const submitFunc = async (values: OrderItemDetailsDto) => {
-    try {
-      if (values?.id) {
-        await client.api.orderItemsPartialUpdate(values.id!, values!);
-      } else await client.api.orderItemsCreate(values!);
-      setOrderItems(await getOrderItems(order!.id!));
-      setIsEdit(false);
-    } finally {
-      formik.setSubmitting(false);
-    }
-  };
-
-  const submit = (values: OrderItemDetailsDto, helpers: FormikHelpers<OrderItemDetailsDto>) => {
-    execSubmitWithToast<OrderItemDetailsDto>(
-      values,
-      helpers,
-      submitFunc,
-      notificationsService,
-      showErrorModal,
-      "order item"
-    );
-  };
-
-  const OrderItemEditValidationScheme = zod.object({
-    productName: zod.string(),
-    unitPrice: zod.number().positive(),
-    currency: zod.string(),
-    quantity: zod.number().positive(),
-    source: zod.string().optional().nullable(),
-    id: zod.number().optional(),
-  });
-
-  const formik = useFormik<OrderItemDetailsDto>({
-    validationSchema: toFormikValidationSchema(OrderItemEditValidationScheme),
-    initialValues: {
-      orderId: 0,
-      productName: "",
-      unitPrice: 0,
-      currency: "",
-      quantity: 0,
-      source: "",
-      id: undefined,
-    },
-    onSubmit: submit,
-    validateOnChange: false,
-  });
 
   return (
-    <>
-      {order && (
-        <>
-          <Grid container spacing={3} marginTop={4} paddingRight={4}>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <Grid marginBottom={3}>
-                <DataView header="Order Info" rows={orderViewData}></DataView>
-              </Grid>
-              <Grid marginBottom={3}>
-                <DataView header="Customer Info" rows={orderCustomerData}></DataView>
-              </Grid>
-              <Grid marginBottom={3}>
-                <DataManagementBlock
-                  header="Data Management"
-                  description="Please be aware that what
-            has been deleted can never be brought back."
-                  entity="order"
-                  handleDeleteAsync={(id) => client.api.ordersDelete(id as number)}
-                  itemId={id}
-                  successNavigationRoute={CoreModule.orders}
-                ></DataManagementBlock>
-              </Grid>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 8 }}>
-              <Grid marginBottom={3}>
-                <Card>
-                  {orderItems && (
-                    <CardContent>
-                      <Grid marginBottom={3}>
-                        <div
-                          style={{
+    <Card variant="outlined">
+      {linkTo ? (
+        <CardActionArea
+          component="div"
+          role="link"
+          tabIndex={0}
+          onClick={() => navigate(linkTo)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              navigate(linkTo);
+            }
+          }}
+        >
+          {content}
+        </CardActionArea>
+      ) : (
+        content
+      )}
+    </Card>
+  );
+};
+
+export const OrderView = () => {
+  const { order, orderId, contact, orderItems, isLoading } =
+    useOutletContext<OrderViewOutletContext>();
+  const context = useRequestContext();
+  const [contactCountry, setContactCountry] = useState("");
+
+  const currencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2,
+      }),
+    []
+  );
+
+  useEffect(() => {
+    const loadCountry = async () => {
+      if (!contact?.countryCode) {
+        setContactCountry("");
+        return;
+      }
+      const country = await getCountryByCode(context, contact.countryCode);
+      setContactCountry(country || "");
+    };
+    loadCountry();
+  }, [contact, context]);
+
+  if (!order && isLoading) {
+    return (
+      <Box sx={{ mt: 3 }}>
+        <Card>
+          <CardContent>
+            <Typography variant="body2" color="text.secondary">
+              Loading order details...
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
+  if (!order) {
+    return (
+      <Box sx={{ mt: 3 }}>
+        <Card>
+          <CardContent>
+            <Typography variant="body2" color="text.secondary">
+              Order details are not available.
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
+  const formatMoney = (val: number | null | undefined) => {
+    if (val === null || val === undefined) return "$0.00";
+    return currencyFormatter.format(val);
+  };
+
+  const contactLocation = contact
+    ? [contact.cityName, contact.state, contactCountry]
+        .filter((p): p is string => !!p && p.trim().length > 0)
+        .join(", ")
+    : "";
+
+  const contactRoute = contact?.id ? `/${CoreModule.contacts}/${getViewFormRoute(contact.id)}` : "";
+
+  const customerRows = compactRows(
+    contact
+      ? [
+          {
+            label: "Name",
+            value: contact.fullName || "",
+          },
+          {
+            label: "Email",
+            value: contact.email || "",
+          },
+          {
+            label: "Phone",
+            value: contact.phone || "",
+          },
+          {
+            label: "Company",
+            value: contact.companyName || "",
+          },
+          {
+            label: "Location",
+            value: contactLocation,
+          },
+          {
+            label: "Address",
+            value: contact.address1 || "",
+          },
+        ]
+      : []
+  );
+
+  const orderDetailRows = compactRows([
+    {
+      label: "Order number",
+      value: order.orderNumber || "",
+    },
+    {
+      label: "Reference no",
+      value: order.refNo || "",
+    },
+    {
+      label: "Currency",
+      value: order.currency || "",
+    },
+    {
+      label: "Exchange rate",
+      value: order.exchangeRate != null ? String(order.exchangeRate) : "",
+    },
+    {
+      label: "Affiliate",
+      value: order.affiliateName || "",
+    },
+    {
+      label: "Source",
+      value: order.source || "",
+    },
+    {
+      label: "Test order",
+      value: order.testOrder ? (
+        <Chip label="Yes" size="small" color="warning" variant="outlined" />
+      ) : (
+        ""
+      ),
+    },
+    {
+      label: "Tags",
+      value: order.tags?.join(", ") || "",
+    },
+  ]);
+
+  const quickStatRows = compactRows([
+    {
+      label: "Order date",
+      value: order.createdAt ? getFormattedDateTime(order.createdAt) : "",
+    },
+    {
+      label: "Last updated",
+      value: order.updatedAt ? getFormattedDateTime(order.updatedAt) : "",
+    },
+  ]);
+
+  const totalRevenue = formatMoney(order.total);
+  const totalItems = orderItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+  return (
+    <Box sx={{ mt: 3 }}>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12 }}>
+              <Card variant="outlined">
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2.5 }}>
+                    Order Information
+                  </Typography>
+                  <Grid container spacing={3}>
+                    {compactRows([
+                      {
+                        label: "Order No",
+                        value: order.orderNumber || "",
+                      },
+                      {
+                        label: "Reference",
+                        value: order.refNo || "",
+                      },
+                      {
+                        label: "Currency",
+                        value: order.currency || "",
+                      },
+                      {
+                        label: "Status",
+                        value: order.status || "",
+                      },
+                      {
+                        label: "Source",
+                        value: order.source || "",
+                      },
+                      {
+                        label: "Affiliate",
+                        value: order.affiliateName || "",
+                      },
+                    ]).map((item) => (
+                      <Grid key={item.label} size={{ xs: 12, sm: 6 }}>
+                        <Box
+                          sx={{
                             display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            gap: 1.5,
                           }}
                         >
-                          <Typography gutterBottom variant="h6" component="div">
-                            Order Items
-                          </Typography>
-                          <Button variant="contained" color="primary" onClick={handleAdd}>
-                            Add Order Item
-                          </Button>
-                        </div>
-                      </Grid>
-                      <DataGrid
-                        columns={gridFinalizedColumns}
-                        rows={orderItems || []}
-                        loading={!orderItems}
-                        checkboxSelection={false}
-                        autoHeight={true}
-                        pagination={undefined}
-                        hideFooter={true}
-                      />
-                    </CardContent>
-                  )}
-                </Card>
-              </Grid>
-              {isEdit && (
-                <form onSubmit={formik.handleSubmit}>
-                  <Grid marginBottom={3}>
-                    <Card>
-                      <CardContent>
-                        <Grid container spacing={4} marginBottom={4}>
-                          <Grid size={{ xs: 12, sm: 10 }}>
-                            <Typography gutterBottom variant="h6" component="div">
-                              {`${formik.values.id ? "Edit" : "Add"} Order Item`}
+                          <Box
+                            sx={{
+                              color: "text.secondary",
+                              mt: 0.5,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {item.label === "Order No" && <Hash size={18} />}
+                            {item.label === "Reference" && <Tag size={18} />}
+                            {item.label === "Currency" && <DollarSign size={18} />}
+                            {item.label === "Status" && <Package size={18} />}
+                            {item.label === "Source" && <Building size={18} />}
+                            {item.label === "Affiliate" && <User size={18} />}
+                          </Box>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{
+                                textTransform: "uppercase",
+                                letterSpacing: 0.5,
+                              }}
+                            >
+                              {item.label}
                             </Typography>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField
-                              disabled={formik.isSubmitting}
-                              label="Product Name"
-                              name="productName"
-                              value={formik.values.productName || ""}
-                              variant="outlined"
-                              fullWidth
-                              size="small"
-                              error={
-                                formik.touched.productName && Boolean(formik.errors.productName)
-                              }
-                              helperText={formik.touched.productName && formik.errors.productName}
-                              onChange={formik.handleChange}
-                            />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <Tooltip title="Unit Price field must contain only numbers">
-                              <TextField
-                                disabled={formik.isSubmitting}
-                                label="Unit Price"
-                                name="unitPrice"
-                                type="number"
-                                value={formik.values.unitPrice || ""}
-                                fullWidth
-                                size="small"
-                                error={formik.touched.unitPrice && Boolean(formik.errors.unitPrice)}
-                                helperText={formik.touched.unitPrice && formik.errors.unitPrice}
-                                onChange={formik.handleChange}
-                              />
-                            </Tooltip>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField
-                              disabled={formik.isSubmitting}
-                              label="Currency"
-                              name="currency"
-                              value={formik.values.currency || ""}
-                              error={formik.touched.currency && Boolean(formik.errors.currency)}
-                              helperText={formik.touched.currency && formik.errors.currency}
-                              fullWidth
-                              size="small"
-                              onChange={formik.handleChange}
-                            />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <Tooltip title="Quantity field must contain only numbers">
-                              <TextField
-                                disabled={formik.isSubmitting}
-                                label="Quantity"
-                                name="quantity"
-                                type="number"
-                                value={formik.values.quantity || ""}
-                                fullWidth
-                                size="small"
-                                error={formik.touched.quantity && Boolean(formik.errors.quantity)}
-                                helperText={formik.touched.quantity && formik.errors.quantity}
-                                onChange={formik.handleChange}
-                              />
-                            </Tooltip>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField
-                              disabled={formik.isSubmitting}
-                              label="Source"
-                              name="source"
-                              value={formik.values.source || ""}
-                              fullWidth
-                              size="small"
-                              onChange={formik.handleChange}
-                            />
-                          </Grid>
-                        </Grid>
-                        <Grid container spacing={3} justifyContent="flex-end">
-                          <Grid size={{ xs: 1 }}>
-                            <Button
-                              disabled={formik.isSubmitting}
-                              type="submit"
-                              variant="outlined"
-                              color="primary"
-                              onClick={handleCancel}
-                              fullWidth
+                            <Typography
+                              variant="body2"
+                              fontWeight={500}
+                              sx={{
+                                wordBreak: "break-word",
+                              }}
                             >
-                              Cancel
-                            </Button>
-                          </Grid>
-                          <Grid size={{ xs: 1 }}>
-                            <Button
-                              type="submit"
-                              disabled={formik.isSubmitting}
-                              variant="contained"
-                              color="primary"
-                              fullWidth
-                            >
-                              Save
-                            </Button>
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
+                              {item.value}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Grid>
+                    ))}
                   </Grid>
-                </form>
-              )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "repeat(2, minmax(0, 1fr))",
+                  },
+                  gap: 3,
+                  alignItems: "start",
+                  gridAutoFlow: "row dense",
+                }}
+              >
+                <SectionCard
+                  title="Order Details"
+                  icon={<ShoppingCart size={18} />}
+                  rows={orderDetailRows}
+                />
+                {customerRows.length > 0 && (
+                  <SectionCard
+                    title="Customer"
+                    icon={<User size={18} />}
+                    rows={customerRows}
+                    linkTo={contactRoute || undefined}
+                  />
+                )}
+              </Box>
             </Grid>
           </Grid>
-          <DataDeleteConfirmation
-            entity="order item"
-            openConfirmation={openConfirmation}
-            setIsConfirmed={setIsConfirmed}
-            setOpenConfirmation={setOpenConfirmation}
-          ></DataDeleteConfirmation>
-        </>
-      )}
-    </>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12 }}>
+              <Card variant="outlined">
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                    Quick Stats
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 1.5,
+                      mb: 2.5,
+                    }}
+                  >
+                    <StatCard label="Total" value={totalRevenue} icon={<TrendingUp size={18} />} />
+                    <StatCard
+                      label="Items"
+                      value={orderItems.length}
+                      icon={<ShoppingCart size={18} />}
+                    />
+                    <StatCard label="Quantity" value={totalItems} icon={<Package size={18} />} />
+                    <StatCard
+                      label="Commission"
+                      value={formatMoney(order.commission)}
+                      icon={<Banknote size={18} />}
+                    />
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
+                  <Box
+                    sx={{
+                      display: "grid",
+                      rowGap: 1.25,
+                    }}
+                  >
+                    {quickStatRows.map((row) => (
+                      <Box
+                        key={`quick-${row.label}`}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 2,
+                        }}
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          {row.label}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500} sx={{ textAlign: "right" }}>
+                          {row.value}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Box>
   );
 };

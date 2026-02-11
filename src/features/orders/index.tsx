@@ -153,6 +153,16 @@ export const Orders = () => {
       renderCell: (params) => <StatusCell value={params.value} />,
     },
     {
+      field: "testOrder",
+      headerName: "Test Order",
+      width: 120,
+      type: "boolean",
+      renderCell: (params) =>
+        params.value ? (
+          <Chip label="Test" color="secondary" size="small" variant="outlined" />
+        ) : null,
+    },
+    {
       field: "createdAt",
       headerName: "Created At",
       width: 140,
