@@ -1,4 +1,4 @@
-import { Avatar, Button, ListItemAvatar } from "@mui/material";
+import { Avatar, Box, Button, Chip, ListItemAvatar, Tooltip } from "@mui/material";
 import { ContactDetailsDto, ContactImportDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { ContactHref, ContactNameListItem, ContactNameListItemText } from "./index.styled";
@@ -55,7 +55,7 @@ export const Contacts = () => {
   const getContactList = async (mainQuery: string, exportQuery?: string) => {
     try {
       dataExportQuery.current = exportQuery || "";
-      const includeFilter = "filter[include]=Account";
+      const includeFilter = "filter[include]=Account&filter[include]=Domain";
 
       // Add global language filter if active
       let globalLanguageQuery = "";
@@ -106,17 +106,88 @@ export const Contacts = () => {
       headerName: "Contact",
       width: 250,
       type: "string",
-      renderCell: ({ row }) => (
-        <ContactNameListItem sx={{ paddingY: 0 }}>
-          <ListItemAvatar>
-            <Avatar src={row.avatarUrl}></Avatar>
-          </ListItemAvatar>
-          <ContactNameListItemText
-            primary={row.fullName?.trim() || `${row.firstName || ""} ${row.lastName || ""}`.trim()}
-            secondary={<ContactHref href={`mailto:${row.email}`}>{row.email}</ContactHref>}
-          />
-        </ContactNameListItem>
-      ),
+      renderCell: ({ row }) => {
+        const displayName =
+          row.fullName?.trim() || `${row.firstName || ""} ${row.lastName || ""}`.trim();
+        const isDisposable = row.domain?.disposable === true;
+        const isFree = row.domain?.free === true;
+        const isCorporate =
+          row.domain && row.domain.disposable === false && row.domain.free === false;
+        const badgeSx = {
+          height: 18,
+          fontSize: "0.65rem",
+          "& .MuiChip-label": {
+            px: 0.75,
+          },
+        };
+
+        let badge: React.ReactNode = null;
+        let badgeTooltip = "";
+        if (isDisposable) {
+          badge = (
+            <Chip component="span" size="small" color="error" label="Disposable" sx={badgeSx} />
+          );
+          badgeTooltip =
+            "Disposable: identified using publicly available lists of disposable email domains.";
+        } else if (isFree) {
+          badge = (
+            <Chip
+              component="span"
+              size="small"
+              color="info"
+              label="Free"
+              variant="outlined"
+              sx={badgeSx}
+            />
+          );
+          badgeTooltip = "Free: domain matches a known public email provider.";
+        } else if (isCorporate) {
+          badge = (
+            <Chip
+              component="span"
+              size="small"
+              color="success"
+              label="Corporate"
+              variant="outlined"
+              sx={badgeSx}
+            />
+          );
+          badgeTooltip =
+            "Corporate: domain is not on the list of publicly known free providers, " +
+            "so it is likely corporate.";
+        }
+
+        const badgeWithTooltip = badge ? (
+          <Tooltip title={badgeTooltip} arrow>
+            <Box component="span">{badge}</Box>
+          </Tooltip>
+        ) : null;
+
+        return (
+          <ContactNameListItem sx={{ paddingY: 0 }}>
+            <ListItemAvatar>
+              <Avatar src={row.avatarUrl}></Avatar>
+            </ListItemAvatar>
+            <ContactNameListItemText
+              primary={displayName}
+              secondary={
+                <Box
+                  component="span"
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <ContactHref href={`mailto:${row.email}`}>{row.email}</ContactHref>
+                  {badgeWithTooltip}
+                </Box>
+              }
+            />
+          </ContactNameListItem>
+        );
+      },
     },
     {
       field: "account.name",
@@ -261,6 +332,27 @@ export const Contacts = () => {
       width: 100,
       type: "string",
     },
+    {
+      field: "domain.free",
+      headerName: "Free Email",
+      width: 130,
+      type: "singleSelect",
+      align: "left",
+      headerAlign: "left",
+      valueOptions: ["true", "false", "null"],
+      valueGetter: (value, row) => (row.domain?.free == null ? "null" : String(row.domain.free)),
+    },
+    {
+      field: "domain.disposable",
+      headerName: "Disposable Email",
+      width: 150,
+      type: "singleSelect",
+      align: "left",
+      headerAlign: "left",
+      valueOptions: ["true", "false", "null"],
+      valueGetter: (value, row) =>
+        row.domain?.disposable == null ? "null" : String(row.domain.disposable),
+    },
   ]);
 
   const searchBar = (
@@ -336,7 +428,14 @@ export const Contacts = () => {
         searchText={searchTerm}
         getModelDataList={getContactList}
         initialGridState={{
-          columns: { columnVisibilityModel: { lastName: false, email: false } },
+          columns: {
+            columnVisibilityModel: {
+              lastName: false,
+              email: false,
+              "domain.free": false,
+              "domain.disposable": false,
+            },
+          },
           sorting: {
             sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
           },

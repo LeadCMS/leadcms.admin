@@ -33,5 +33,16 @@ export const ContactEdit = () => {
     await client.api.contactsPartialUpdate(id, updateDto);
   };
 
-  return <ContactForm contact={contact} handleSave={handleSave} isEdit={true} />;
+  const handleDelete = async (contactId: number) => {
+    await client.api.contactsDelete(contactId);
+  };
+
+  return (
+    <ContactForm
+      contact={contact}
+      handleSave={handleSave}
+      handleDelete={handleDelete}
+      isEdit={true}
+    />
+  );
 };

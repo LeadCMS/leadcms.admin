@@ -1,3 +1,1 @@
-export const ContactInvoices = () => {
-  return <div>ContactInvoices</div>;
-};
+export { ContactDeals as ContactInvoices } from "../deals";

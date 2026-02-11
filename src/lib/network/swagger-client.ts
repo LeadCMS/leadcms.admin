@@ -2880,6 +2880,254 @@ export interface ContactDetailsDto {
   orders?: OrderDetailsDto[] | null;
 }
 
+export interface ContactEmailCommunicationDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number | null;
+  /**
+   * Schedule Id
+   * @format int32
+   * @example 1
+   */
+  scheduleId?: number | null;
+  /**
+   * Template Id
+   * @format int32
+   * @example 1
+   */
+  templateId?: number | null;
+  /**
+   * Subject
+   * @example "string"
+   */
+  subject?: string;
+  /**
+   * Recipients
+   * @example "string"
+   */
+  recipients?: string;
+  /**
+   * From Email
+   * @example "string"
+   */
+  fromEmail?: string;
+  /**
+   * Body
+   * @example "string"
+   */
+  body?: string | null;
+  /**
+   * Message Id
+   * @example "string"
+   */
+  messageId?: string;
+  /**
+   * Status
+   * @example "NotSent"
+   */
+  status?: "NotSent" | "Sent" | "Received";
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface ContactEmailCommunicationListItemDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number | null;
+  /**
+   * Schedule Id
+   * @format int32
+   * @example 1
+   */
+  scheduleId?: number | null;
+  /**
+   * Template Id
+   * @format int32
+   * @example 1
+   */
+  templateId?: number | null;
+  /**
+   * Subject
+   * @example "string"
+   */
+  subject?: string;
+  /**
+   * Recipients
+   * @example "string"
+   */
+  recipients?: string;
+  /**
+   * From Email
+   * @example "string"
+   */
+  fromEmail?: string;
+  /**
+   * Message Id
+   * @example "string"
+   */
+  messageId?: string;
+  /**
+   * Status
+   * @example "NotSent"
+   */
+  status?: "NotSent" | "Sent" | "Received";
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+  /**
+   * Body
+   * @example "string"
+   */
+  body?: string | null;
+}
+
+export interface ContactEmailCommunicationStatsDto {
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number;
+  /**
+   * From
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  from?: string | null;
+  /**
+   * To
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  to?: string | null;
+  /**
+   * Total Count
+   * @format int64
+   */
+  totalCount?: number;
+  /**
+   * Sent Count
+   * @format int64
+   */
+  sentCount?: number;
+  /**
+   * Received Count
+   * @format int64
+   */
+  receivedCount?: number;
+  /**
+   * Not Sent Count
+   * @format int64
+   */
+  notSentCount?: number;
+  /**
+   * First Communication At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  firstCommunicationAt?: string | null;
+  /**
+   * Last Communication At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  lastCommunicationAt?: string | null;
+  /** Timeline */
+  timeline?: ContactEmailCommunicationTimelinePointDto[];
+}
+
+export interface ContactEmailCommunicationTimelinePointDto {
+  /**
+   * Period Start
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  periodStart?: string;
+  /**
+   * Period End
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  periodEnd?: string;
+  /**
+   * Total Count
+   * @format int64
+   */
+  totalCount?: number;
+  /**
+   * Sent Count
+   * @format int64
+   */
+  sentCount?: number;
+  /**
+   * Received Count
+   * @format int64
+   */
+  receivedCount?: number;
+  /**
+   * Not Sent Count
+   * @format int64
+   */
+  notSentCount?: number;
+}
+
 export interface ContactGrowthPointDto {
   /**
    * Period
@@ -7970,29 +8218,6 @@ export interface StringStringValuesKeyValuePair {
   value?: string[];
 }
 
-export interface SubscribeDto {
-  /**
-   * Email
-   * @format email
-   * @minLength 1
-   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
-   * @example "example@example.com"
-   */
-  email: string;
-  /**
-   * Time Zone Offset
-   * @format int32
-   * @example 1
-   */
-  timeZoneOffset: number;
-  /**
-   * Language
-   * @minLength 1
-   * @example "string"
-   */
-  language: string;
-}
-
 export interface TaskDetailsDto {
   /**
    * Name
@@ -8204,29 +8429,6 @@ export interface TopContentItemDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   createdAt?: string;
-}
-
-export interface UnsibscribeDto {
-  /**
-   * Email
-   * @format email
-   * @minLength 1
-   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
-   * @example "example@example.com"
-   */
-  email: string;
-  /**
-   * Time Zone Offset
-   * @format int32
-   * @example 1
-   */
-  timeZoneOffset: number;
-  /**
-   * Language
-   * @minLength 1
-   * @example "string"
-   */
-  language: string;
 }
 
 export interface UnsubscribeDetailsDto {
@@ -9343,6 +9545,76 @@ export class Api<
      * No description
      *
      * @tags Contacts
+     * @name ContactsEmailCommunicationsList
+     * @request GET:/api/contacts/{id}/email-communications
+     * @secure
+     */
+    contactsEmailCommunicationsList: (id: number, params: RequestParams = {}) =>
+      this.request<
+        ContactEmailCommunicationListItemDto[],
+        void | ProblemDetails
+      >({
+        path: `/api/contacts/${id}/email-communications`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
+     * @name ContactsEmailCommunicationsDetail
+     * @request GET:/api/contacts/{id}/email-communications/{emailLogId}
+     * @secure
+     */
+    contactsEmailCommunicationsDetail: (
+      id: number,
+      emailLogId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContactEmailCommunicationDetailsDto, void | ProblemDetails>({
+        path: `/api/contacts/${id}/email-communications/${emailLogId}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
+     * @name ContactsEmailCommunicationsStatsList
+     * @request GET:/api/contacts/{id}/email-communications/stats
+     * @secure
+     */
+    contactsEmailCommunicationsStatsList: (
+      id: number,
+      query?: {
+        /** @format date-time */
+        from?: string;
+        /** @format date-time */
+        to?: string;
+        /** @default "Day" */
+        groupBy?: "Day" | "Week" | "Month";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ContactEmailCommunicationStatsDto, void | ProblemDetails>({
+        path: `/api/contacts/${id}/email-communications/stats`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
      * @name ContactsCommentsList
      * @request GET:/api/contacts/{id}/comments
      * @secure
@@ -9461,46 +9733,6 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags ContactUs
-     * @name ContactUsCreate
-     * @request POST:/api/contact-us
-     * @secure
-     */
-    contactUsCreate: (
-      data: {
-        /** @format binary */
-        Attachment?: File;
-        Title?: string;
-        NotificationType?: string;
-        AcknowledgmentType?: string;
-        PageUrl?: string;
-        FirstName: string;
-        LastName?: string;
-        Company?: string;
-        Subject?: string;
-        ExtraData?: Record<string, string | null>;
-        Message: string;
-        /** @format email */
-        Email: string;
-        /** @format int32 */
-        TimeZoneOffset: number;
-        Language: string;
-        RecaptchaToken?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void>({
-        path: `/api/contact-us`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.FormData,
         ...params,
       }),
 
@@ -16496,42 +16728,6 @@ export class Api<
         path: `/api/statistics`,
         method: "POST",
         secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Subscribes
-     * @name SubscribeCreate
-     * @request POST:/api/subscribe
-     * @secure
-     */
-    subscribeCreate: (data: SubscribeDto, params: RequestParams = {}) =>
-      this.request<void, void>({
-        path: `/api/subscribe`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Subscribes
-     * @name UnsubscribeCreate
-     * @request POST:/api/unsubscribe
-     * @secure
-     */
-    unsubscribeCreate: (data: UnsibscribeDto, params: RequestParams = {}) =>
-      this.request<void, void>({
-        path: `/api/unsubscribe`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
         ...params,
       }),
 

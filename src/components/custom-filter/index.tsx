@@ -13,14 +13,107 @@ import {
   IconButton,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { X } from "lucide-react";
+
+type OperatorOption = { value: string; label: string };
+
+const textOperators: OperatorOption[] = [
+  { value: "contains", label: "Contains" },
+  { value: "equals", label: "Equals" },
+  { value: "not", label: "Not equal" },
+  { value: "startsWith", label: "Starts with" },
+  { value: "endsWith", label: "Ends with" },
+  { value: "isEmpty", label: "Is empty" },
+  { value: "isNotEmpty", label: "Is not empty" },
+];
+
+const numberOperators: OperatorOption[] = [
+  { value: "equals", label: "=" },
+  { value: "not", label: "!=" },
+  { value: "after", label: ">" },
+  { value: "onOrAfter", label: ">=" },
+  { value: "before", label: "<" },
+  { value: "onOrBefore", label: "<=" },
+  { value: "isEmpty", label: "Is empty" },
+  { value: "isNotEmpty", label: "Is not empty" },
+];
+
+const dateOperators: OperatorOption[] = [
+  { value: "equals", label: "Is" },
+  { value: "not", label: "Is not" },
+  { value: "after", label: "After" },
+  { value: "onOrAfter", label: "On or after" },
+  { value: "before", label: "Before" },
+  { value: "onOrBefore", label: "On or before" },
+  { value: "isEmpty", label: "Is empty" },
+  { value: "isNotEmpty", label: "Is not empty" },
+];
+
+const singleSelectOperators: OperatorOption[] = [
+  { value: "equals", label: "Is" },
+  { value: "not", label: "Is not" },
+  { value: "isEmpty", label: "Is empty" },
+  { value: "isNotEmpty", label: "Is not empty" },
+];
+
+const booleanOperators: OperatorOption[] = [{ value: "equals", label: "Is" }];
+
+function getColumnType(col: GridColDef | undefined): string {
+  return col?.type || "string";
+}
+
+function getOperatorsForType(colType: string): OperatorOption[] {
+  switch (colType) {
+    case "number":
+      return numberOperators;
+    case "date":
+    case "dateTime":
+      return dateOperators;
+    case "singleSelect":
+      return singleSelectOperators;
+    case "boolean":
+      return booleanOperators;
+    default:
+      return textOperators;
+  }
+}
+
+function getDefaultOperator(colType: string): string {
+  switch (colType) {
+    case "number":
+      return "equals";
+    case "date":
+    case "dateTime":
+      return "equals";
+    case "singleSelect":
+      return "equals";
+    case "boolean":
+      return "equals";
+    default:
+      return "contains";
+  }
+}
+
+function getOperatorLabel(operatorValue: string, colType: string): string {
+  const ops = getOperatorsForType(colType);
+  const found = ops.find((o) => o.value === operatorValue);
+  return found?.label ?? operatorValue;
+}
 
 type CustomFilterBarProps = {
   columns: GridColDef[];
-  whereFilters: Array<{ whereField: string; whereOperator: string; whereFieldValue: string }>;
+  whereFilters: Array<{
+    whereField: string;
+    whereOperator: string;
+    whereFieldValue: string;
+  }>;
   addFilter: (
-    args: { whereField?: string; whereOperator?: string; whereFieldValue?: string },
+    args: {
+      whereField?: string;
+      whereOperator?: string;
+      whereFieldValue?: string;
+    },
     removeIdx?: number,
     editIdx?: number
   ) => void;
@@ -40,35 +133,52 @@ export function CustomFilterBar({
   clearAllFilters,
 }: CustomFilterBarProps) {
   const [field, setField] = useState(columns[0]?.field);
-  const [operator, setOperator] = useState("contains");
+  const [operator, setOperator] = useState(getDefaultOperator(getColumnType(columns[0])));
   const [value, setValue] = useState("");
   const [editIdx, setEditIdx] = useState<number | null>(null);
 
-  const operatorOptions = [
-    { value: "contains", label: "Contains" },
-    { value: "equals", label: "Equals" },
-    { value: "startsWith", label: "Starts With" },
-    { value: "endsWith", label: "Ends With" },
-    { value: "isEmpty", label: "Is Empty" },
-    { value: "isNotEmpty", label: "Is Not Empty" },
-    { value: "not", label: "!=" },
-    { value: "after", label: ">" },
-    { value: "onOrAfter", label: "≥" },
-    { value: "before", label: "<" },
-    { value: "onOrBefore", label: "≤" },
-  ];
+  const selectedColumn = useMemo(() => columns.find((c) => c.field === field), [columns, field]);
+  const colType = getColumnType(selectedColumn);
+  const operatorOptions = getOperatorsForType(colType);
 
-  const requiresValue = !["isEmpty", "isNotEmpty"].includes(operator);
+  const valueOptions: string[] = useMemo(() => {
+    if (!selectedColumn) return [];
+    const col = selectedColumn as unknown as Record<string, unknown>;
+    const opts = col.valueOptions;
+    if (Array.isArray(opts)) {
+      return opts.map((o) => (typeof o === "string" ? o : String(o)));
+    }
+    return [];
+  }, [selectedColumn]);
 
-  const canApply =
-    field && (requiresValue ? !!value : ["isEmpty", "isNotEmpty"].includes(operator));
+  const noValueRequired = ["isEmpty", "isNotEmpty"].includes(operator);
+
+  const canApply = field && (noValueRequired || (colType === "boolean" ? true : !!value));
+
+  const resetToDefaults = () => {
+    const defaultField = columns[0]?.field;
+    const defaultColType = getColumnType(columns[0]);
+    setField(defaultField);
+    setOperator(getDefaultOperator(defaultColType));
+    setValue("");
+    setEditIdx(null);
+  };
 
   const handleClose = () => {
     setFilterPanelOpen?.(false);
-    setField(columns[0]?.field);
-    setOperator("contains");
+    resetToDefaults();
+  };
+
+  const handleFieldChange = (newField: string) => {
+    setField(newField);
+    const newCol = columns.find((c) => c.field === newField);
+    const newType = getColumnType(newCol);
+    const newOps = getOperatorsForType(newType);
+    const isCurrentOpValid = newOps.some((o) => o.value === operator);
+    if (!isCurrentOpValid) {
+      setOperator(getDefaultOperator(newType));
+    }
     setValue("");
-    setEditIdx(null);
   };
 
   const onChipClick = (idx: number) => {
@@ -82,15 +192,111 @@ export function CustomFilterBar({
 
   const handleAddOrEdit = () => {
     addFilter(
-      { whereField: field, whereOperator: operator, whereFieldValue: value },
+      {
+        whereField: field,
+        whereOperator: operator,
+        whereFieldValue: value,
+      },
       undefined,
       editIdx !== null ? editIdx : undefined
     );
-    setField(columns[0]?.field);
-    setOperator("contains");
-    setValue("");
-    setEditIdx(null);
+    resetToDefaults();
     setFilterPanelOpen?.(false);
+  };
+
+  const chipLabel = (f: { whereField: string; whereOperator: string; whereFieldValue: string }) => {
+    const col = columns.find((c) => c.field === f.whereField);
+    const cType = getColumnType(col);
+    const fieldLabel = col?.headerName ?? f.whereField;
+    const opLabel = getOperatorLabel(f.whereOperator, cType);
+    if (["isEmpty", "isNotEmpty"].includes(f.whereOperator)) {
+      return `${fieldLabel} ${opLabel}`;
+    }
+    return `${fieldLabel} ${opLabel} "${f.whereFieldValue}"`;
+  };
+
+  const renderValueInput = () => {
+    const isDisabled = noValueRequired;
+
+    if (colType === "singleSelect" && valueOptions.length > 0) {
+      return (
+        <TextField
+          select
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          style={{ minWidth: 180 }}
+          disabled={isDisabled}
+          sx={{
+            "& .MuiSelect-select": {
+              padding: 2.5,
+              minHeight: "unset",
+              fontSize: "0.95rem",
+            },
+          }}
+        >
+          {valueOptions.map((opt) => (
+            <MenuItem key={opt} value={opt}>
+              {opt}
+            </MenuItem>
+          ))}
+        </TextField>
+      );
+    }
+
+    if (colType === "date" || colType === "dateTime") {
+      return (
+        <TextField
+          type="date"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          style={{ minWidth: 180 }}
+          disabled={isDisabled}
+          InputLabelProps={{ shrink: true }}
+          sx={{
+            "& .MuiInputBase-input": {
+              padding: 2.5,
+              minHeight: "unset",
+              fontSize: "0.95rem",
+            },
+          }}
+        />
+      );
+    }
+
+    if (colType === "number") {
+      return (
+        <TextField
+          type="number"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          style={{ minWidth: 180 }}
+          disabled={isDisabled}
+          sx={{
+            "& .MuiInputBase-input": {
+              padding: 2.5,
+              minHeight: "unset",
+              fontSize: "0.95rem",
+            },
+          }}
+        />
+      );
+    }
+
+    return (
+      <TextField
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        style={{ minWidth: 180 }}
+        disabled={isDisabled}
+        sx={{
+          "& .MuiInputBase-input": {
+            padding: 2.5,
+            minHeight: "unset",
+            fontSize: "0.95rem",
+          },
+        }}
+      />
+    );
   };
 
   return (
@@ -100,11 +306,7 @@ export function CustomFilterBar({
           {whereFilters.map((f, idx) => (
             <Chip
               key={idx}
-              label={
-                <span style={{ fontWeight: 600 }}>
-                  {`${f.whereField} ${f.whereOperator} ${f.whereFieldValue}`}{" "}
-                </span>
-              }
+              label={<span style={{ fontWeight: 600 }}>{chipLabel(f)}</span>}
               onClick={() => onChipClick(idx)}
               onDelete={() => removeFilter(idx)}
               deleteIcon={<X size={15} />}
@@ -179,12 +381,27 @@ export function CustomFilterBar({
             }}
           >
             <Stack spacing={5}>
-              <Box sx={{ width: "100%", mb: 2, display: "flex", flexDirection: "column" }}>
-                <FormLabel sx={{ mb: 2, fontWeight: "600", fontSize: "0.9rem" }}>Field</FormLabel>
+              <Box
+                sx={{
+                  width: "100%",
+                  mb: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <FormLabel
+                  sx={{
+                    mb: 2,
+                    fontWeight: "600",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  Field
+                </FormLabel>
                 <TextField
                   select
                   value={field || columns[0]?.field || ""}
-                  onChange={(e) => setField(e.target.value)}
+                  onChange={(e) => handleFieldChange(e.target.value)}
                   style={{ minWidth: 120 }}
                   sx={{
                     "& .MuiSelect-select": {
@@ -201,8 +418,21 @@ export function CustomFilterBar({
                   ))}
                 </TextField>
               </Box>
-              <Box sx={{ width: "100%", mb: 2, display: "flex", flexDirection: "column" }}>
-                <FormLabel sx={{ mb: 2, fontWeight: "600", fontSize: "0.9rem" }}>
+              <Box
+                sx={{
+                  width: "100%",
+                  mb: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <FormLabel
+                  sx={{
+                    mb: 2,
+                    fontWeight: "600",
+                    fontSize: "0.9rem",
+                  }}
+                >
                   Operator
                 </FormLabel>
                 <TextField
@@ -225,22 +455,27 @@ export function CustomFilterBar({
                   ))}
                 </TextField>
               </Box>
-              <Box sx={{ width: "100%", mb: 2, display: "flex", flexDirection: "column" }}>
-                <FormLabel sx={{ mb: 2, fontWeight: "600", fontSize: "0.9rem" }}>Value</FormLabel>
-                <TextField
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  style={{ minWidth: 180 }}
-                  disabled={operator === "isEmpty" || operator === "isNotEmpty"}
+              {!noValueRequired && (
+                <Box
                   sx={{
-                    "& .MuiInputBase-input": {
-                      padding: 2.5,
-                      minHeight: "unset",
-                      fontSize: "0.95rem",
-                    },
+                    width: "100%",
+                    mb: 2,
+                    display: "flex",
+                    flexDirection: "column",
                   }}
-                />
-              </Box>
+                >
+                  <FormLabel
+                    sx={{
+                      mb: 2,
+                      fontWeight: "600",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Value
+                  </FormLabel>
+                  {renderValueInput()}
+                </Box>
+              )}
             </Stack>
           </Box>
         </DialogContent>

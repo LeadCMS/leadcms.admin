@@ -136,6 +136,15 @@ export const Domains = () => {
       valueOptions: ["true", "false", "null"],
     },
     {
+      field: "disposable",
+      headerName: "Disposable",
+      width: 140,
+      type: "singleSelect",
+      align: "left",
+      headerAlign: "left",
+      valueOptions: ["true", "false", "null"],
+    },
+    {
       field: "createdAt",
       headerName: "Created At",
       width: 120,
@@ -223,7 +232,7 @@ export const Domains = () => {
         searchText={searchTerm}
         getModelDataList={getDomainList}
         initialGridState={{
-          columns: { columnVisibilityModel: { dnsCheck: false, free: false } },
+          columns: { columnVisibilityModel: { dnsCheck: false, free: false, disposable: false } },
           sorting: {
             sortModel: [{ field: defaultFilterOrderColumn, sort: defaultFilterOrderDirection }],
           },

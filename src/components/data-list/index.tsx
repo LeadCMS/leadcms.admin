@@ -77,7 +77,9 @@ export const DataList = <TModel extends GridValidRowModel>({
   columnsPanelOpen,
   setColumnsPanelOpen,
   onExportOpen = false,
-  onExportClose = () => {},
+  onExportClose = () => {
+    /* noop */
+  },
   exportApiCall,
   refreshFlag = 0,
   onBulkDelete,
@@ -393,21 +395,12 @@ export const DataList = <TModel extends GridValidRowModel>({
   };
 
   const gridInitialState = gridSettings && {
-    filter:
-      gridSettings.whereFilters && gridSettings.whereFilters.length > 0
-        ? {
-            filterModel: {
-              items: gridSettings.whereFilters.map((f) => ({
-                field: f.whereField,
-                operator: f.whereOperator || "eq",
-                value: f.whereFieldValue,
-              })),
-            },
-          }
-        : undefined,
     sorting: {
       sortModel: [
-        { field: gridSettings.sortColumn, sort: gridSettings.sortOrder as GridSortDirection },
+        {
+          field: gridSettings.sortColumn,
+          sort: gridSettings.sortOrder as GridSortDirection,
+        },
       ],
     },
     pagination: {
@@ -416,7 +409,9 @@ export const DataList = <TModel extends GridValidRowModel>({
         pageSize: gridSettings.filterLimit || defaultFilterLimit,
       },
     },
-    columns: { columnVisibilityModel: gridSettings.columnVisibilityModel || {} },
+    columns: {
+      columnVisibilityModel: gridSettings.columnVisibilityModel || {},
+    },
   };
 
   return filterState && totalRowCount != undefined ? (
@@ -424,7 +419,7 @@ export const DataList = <TModel extends GridValidRowModel>({
       <CustomFilterBar
         columns={columns}
         whereFilters={filterState.whereFilters || []}
-        addFilter={(f, undefined, editIdx) => updateWhereFilters(f, undefined, editIdx)}
+        addFilter={(f, _removeIdx, editIdx) => updateWhereFilters(f, _removeIdx, editIdx)}
         removeFilter={(idx) => updateWhereFilters(undefined, idx)}
         filterPanelOpen={filterPanelOpen}
         setFilterPanelOpen={setFilterPanelOpen}

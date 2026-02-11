@@ -6,7 +6,7 @@ import { ContactForm } from "../form";
 export const ContactAdd = () => {
   const { client } = useRequestContext();
 
-  const [contact, setContact] = useState<ContactDetailsDto>({ email: "" });
+  const [contact] = useState<ContactDetailsDto>({ email: "" });
 
   const handleSave = async (newContact: ContactDetailsDto) => {
     const createDto: ContactCreateDto = {

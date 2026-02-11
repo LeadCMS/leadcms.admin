@@ -2,6 +2,11 @@ import { ChangeEvent, SyntheticEvent, useEffect, useState } from "react";
 import {
   Autocomplete,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   InputAdornment,
   TextField,
   Typography,
@@ -13,9 +18,10 @@ import {
   AccordionDetails,
   Card,
   CardContent,
+  CircularProgress,
 } from "@mui/material";
 import { ContactDetailsDto } from "lib/network/swagger-client";
-import { CoreModule } from "lib/router";
+import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "lib/router";
 import { contactAddHeader, contactEditHeader, contactFormBreadcrumbLinks } from "../constants";
 import { getContinentList, getCountryList } from "utils/general-helper";
 import { useRequestContext } from "@providers/request-provider";
@@ -31,6 +37,7 @@ import { DateField } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { useConfig } from "@providers/config-provider";
 import { prefixOptions, timezones } from "utils/constants";
+import { execDeleteWithToast } from "utils/general-helper";
 
 // Icons
 import {
@@ -45,15 +52,19 @@ import {
   Linkedin,
   Share2,
   Link,
+  Eye,
   Save,
   ChevronDown,
   Phone,
   Mail,
+  Trash2,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ContactFormProps {
   contact: ContactDetailsDto;
   handleSave: (contact: ContactDetailsDto) => Promise<void>;
+  handleDelete?: (contactId: number) => Promise<void>;
   isEdit: boolean;
 }
 
@@ -76,13 +87,14 @@ interface SocialMedia {
   [key: string]: string;
 }
 
-export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) => {
+export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: ContactFormProps) => {
   const { notificationsService } = useNotificationsService();
   const context = useRequestContext();
   const handleNavigation = useCoreModuleNavigation();
   const { setBusy } = useModuleWrapperContext();
   const { Show: showErrorModal } = useErrorDetailsModal();
   const { config } = useConfig();
+  const navigate = useNavigate();
   const languages = config?.languages || [];
 
   const [countryList, setCountryList] = useState<Country[]>([]);
@@ -91,6 +103,8 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
   const [accountSearchOpen, setAccountSearchOpen] = useState(false);
   const [accountSearchLoading, setAccountSearchLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const header = isEdit ? contactEditHeader : contactAddHeader;
 
@@ -309,6 +323,51 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     handleNavigation(CoreModule.contacts);
   };
 
+  const handleView = () => {
+    if (formik.values.id) {
+      const viewRoute = `${getCoreModuleRoute(CoreModule.contacts)}/${getViewFormRoute(
+        Number(formik.values.id)
+      )}`;
+      navigate(viewRoute);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (!isEdit || !handleDelete || !formik.values.id) {
+      return;
+    }
+    setOpenDeleteConfirmation(true);
+  };
+
+  const closeDeleteConfirmation = () => {
+    if (isDeleting) {
+      return;
+    }
+    setOpenDeleteConfirmation(false);
+  };
+
+  const deleteContact = async () => {
+    if (!isEdit || !handleDelete || !formik.values.id) {
+      setOpenDeleteConfirmation(false);
+      return;
+    }
+
+    await execDeleteWithToast(
+      async () => {
+        setIsDeleting(true);
+        try {
+          await handleDelete(formik.values.id as number);
+          handleNavigation(CoreModule.contacts);
+        } finally {
+          setIsDeleting(false);
+        }
+      },
+      notificationsService,
+      "contact",
+      showErrorModal
+    );
+  };
+
   const getSocialMediaIcon = (platform: string) => {
     switch (platform) {
       case "facebook":
@@ -339,36 +398,63 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
     return `${prefix}${firstName} ${middleName}${lastName}`.trim() || "New Contact";
   };
 
+  const actionButtons = (
+    <Box
+      sx={{
+        display: "flex",
+        width: "100%",
+        gap: 2,
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+      }}
+    >
+      <Box>
+        {isEdit && handleDelete && formik.values.id ? (
+          <Button
+            disabled={isLoading || formik.isSubmitting || isDeleting}
+            variant="outlined"
+            color="error"
+            onClick={handleDeleteClick}
+            startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : <Trash2 />}
+            size="medium"
+          >
+            Delete
+          </Button>
+        ) : null}
+      </Box>
+      <Box sx={{ display: "flex", gap: 2 }}>
+        <Button
+          disabled={isLoading || formik.isSubmitting || isDeleting}
+          variant="outlined"
+          color="primary"
+          onClick={handleCancel}
+          startIcon={<XCircle />}
+          size="medium"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={isLoading || formik.isSubmitting || isDeleting}
+          variant="contained"
+          color="primary"
+          startIcon={<Save />}
+          size="medium"
+          onClick={() => formik.handleSubmit()}
+        >
+          {isEdit ? "Save" : "Add"}
+        </Button>
+      </Box>
+    </Box>
+  );
+
   return (
     <ModuleWrapper
       breadcrumbs={contactFormBreadcrumbLinks}
       currentBreadcrumb={header}
       isForm={true}
-      actionButtons={
-        <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
-          <Button
-            disabled={isLoading || formik.isSubmitting}
-            variant="outlined"
-            color="primary"
-            onClick={handleCancel}
-            startIcon={<XCircle />}
-            size="medium"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isLoading || formik.isSubmitting}
-            variant="contained"
-            color="primary"
-            startIcon={<Save />}
-            size="medium"
-            onClick={() => formik.handleSubmit()}
-          >
-            {isEdit ? "Save" : "Add"}
-          </Button>
-        </Box>
-      }
+      actionButtons={actionButtons}
     >
       <form onSubmit={formik.handleSubmit}>
         <Card sx={{ mb: 4 }}>
@@ -432,6 +518,17 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
                   href={`mailto:${formik.values.email}`}
                 >
                   Email
+                </Button>
+              )}
+              {isEdit && formik.values.id && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Eye size={16} />}
+                  onClick={handleView}
+                  disabled={isLoading || formik.isSubmitting || isDeleting}
+                >
+                  View
                 </Button>
               )}
             </Box>
@@ -836,6 +933,29 @@ export const ContactForm = ({ contact, handleSave, isEdit }: ContactFormProps) =
           </Accordion>
         </Box>
       </form>
+      <Dialog open={openDeleteConfirmation} onClose={closeDeleteConfirmation}>
+        <DialogTitle>Delete contact</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This action cannot be undone. The contact and associated data will be permanently
+            removed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteConfirmation} disabled={isDeleting} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={deleteContact}
+            disabled={isDeleting}
+            color="error"
+            variant="contained"
+            startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : <Trash2 />}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ModuleWrapper>
   );
 };

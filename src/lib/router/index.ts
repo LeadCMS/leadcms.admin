@@ -61,6 +61,14 @@ export const contactInvoicesRoute = route("invoices", {}, {});
 
 export const contactLogsRoute = route("logs", {}, {});
 
+export const contactCommunicationsRoute = route("communications", {}, {});
+
+export const contactActivityRoute = route("activity", {}, {});
+
+export const contactOrdersRoute = route("orders", {}, {});
+
+export const contactDealsRoute = route("deals", {}, {});
+
 export const getCoreModuleRoute = (moduleName: CoreModule) => coreModuleRoute({ moduleName }).$;
 
 export const getEditFormRoute = (id: number) => editFormRoute({ id: id }).$;
