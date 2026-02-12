@@ -488,7 +488,6 @@ export const DataList = <TModel extends GridValidRowModel>({
       <DataTableGrid
         columns={columns}
         data={modelData || []}
-        autoHeight={false}
         pageSize={filterState.filterLimit}
         totalRowCount={totalRowCount}
         rowsPerPageOptions={[10, 30, 50, 100]}

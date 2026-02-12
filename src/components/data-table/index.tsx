@@ -20,7 +20,6 @@ import { useEffect, useState } from "react";
 type DataTableProps = {
   columns: GridColDef[];
   data?: GridValidRowModel[];
-  autoHeight: boolean;
   pageSize?: number | undefined;
   totalRowCount: number | undefined;
   rowsPerPageOptions: number[] | undefined;
@@ -47,7 +46,6 @@ type DataTableProps = {
 export const DataTableGrid = ({
   columns,
   data,
-  autoHeight,
   pageSize,
   totalRowCount,
   rowsPerPageOptions,
@@ -172,7 +170,7 @@ export const DataTableGrid = ({
         rows={data ?? empty}
         loading={!data}
         checkboxSelection={true}
-        autoHeight={autoHeight}
+        disableRowSelectionOnClick
         rowHeight={72}
         rowCount={totalRowCount}
         pageSizeOptions={rowsPerPageOptions}

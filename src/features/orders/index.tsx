@@ -208,9 +208,8 @@ export const Orders = () => {
       align: "left",
       headerAlign: "left",
       valueGetter: (value, row) => row.currencyTotal ?? null,
-      valueFormatter: (params) =>
-        params.value ??
-        (typeof params.row?.currencyTotal === "number" ? params.row.currencyTotal : ""),
+      valueFormatter: (value, row) =>
+        value ?? (typeof row.currencyTotal === "number" ? row.currencyTotal : ""),
     },
     {
       field: "contact.language",

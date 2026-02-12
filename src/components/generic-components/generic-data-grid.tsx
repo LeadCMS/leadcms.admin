@@ -253,7 +253,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     query["filter[order]"] = `${filterState.sortColumn ?? "id"} ${filterState.sortOrder ?? "desc"}`;
     query["filter[skip]"] = filterState.skipLimit ?? 0;
 
-    let whereFilterQuery = getWhereFilterQueryString(filterState);
+    const whereFilterQuery = getWhereFilterQueryString(filterState);
 
     if (whereFilterQuery) {
       const queryString = whereFilterQuery.endsWith("&")
@@ -279,7 +279,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     removeIndex?: number,
     editIdx?: number
   ) => {
-    let updatedFilters = [...(filterState.whereFilters ?? [])];
+    const updatedFilters = [...(filterState.whereFilters ?? [])];
     if (typeof removeIndex === "number") {
       updatedFilters.splice(removeIndex, 1);
     } else if (
@@ -508,7 +508,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
         loading={false}
         localeText={customLocaleText}
         checkboxSelection={true}
-        autoHeight={false}
+        disableRowSelectionOnClick
         rowCount={totalItemsCount}
         pageSizeOptions={[10, 25, 50, 100]}
         pagination

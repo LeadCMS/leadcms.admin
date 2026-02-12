@@ -145,6 +145,12 @@ export const Domains = () => {
       valueOptions: ["true", "false", "null"],
     },
     {
+      field: "contactCount",
+      headerName: "Contacts",
+      width: 120,
+      type: "number",
+    },
+    {
       field: "createdAt",
       headerName: "Created At",
       width: 120,
@@ -164,6 +170,7 @@ export const Domains = () => {
 
   const extraActions = [
     <ToolbarButton
+      key="filter-btn"
       startIcon={<Filter size={18} />}
       onClick={() => setFilterPanelOpen(true)}
       sx={{
@@ -174,6 +181,7 @@ export const Domains = () => {
       }}
     ></ToolbarButton>,
     <ToolbarButton
+      key="columns-btn"
       startIcon={<Settings2 size={18} />}
       onClick={() => setColumnsPanelOpen((open) => !open)}
     >

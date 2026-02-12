@@ -242,15 +242,16 @@ export const OrderItems = () => {
               Add Item
             </Button>
           </Box>
-          <DataGrid
-            columns={gridFinalizedColumns}
-            rows={orderItems || []}
-            loading={!orderItems}
-            checkboxSelection={false}
-            autoHeight={true}
-            pagination={undefined}
-            hideFooter={true}
-          />
+          <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
+            <DataGrid
+              columns={gridFinalizedColumns}
+              rows={orderItems || []}
+              loading={!orderItems}
+              checkboxSelection={false}
+              pagination={undefined}
+              hideFooter={true}
+            />
+          </Box>
         </CardContent>
       </Card>
 
