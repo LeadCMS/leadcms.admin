@@ -4926,6 +4926,28 @@ export interface CrmMetricsDto {
    */
   accountsChangePct?: number | null;
   /**
+   * Paid Contacts
+   * @format int64
+   */
+  paidContacts?: number;
+  /**
+   * Paid Contacts Change Pct
+   * @format double
+   * @example 1
+   */
+  paidContactsChangePct?: number | null;
+  /**
+   * Paid Accounts
+   * @format int64
+   */
+  paidAccounts?: number;
+  /**
+   * Paid Accounts Change Pct
+   * @format double
+   * @example 1
+   */
+  paidAccountsChangePct?: number | null;
+  /**
    * Total Orders
    * @format int64
    */
@@ -4948,6 +4970,18 @@ export interface CrmMetricsDto {
    * @example 1
    */
   revenueChangePct?: number | null;
+  /**
+   * Total Refunds
+   * @format double
+   * @example 1
+   */
+  totalRefunds?: number;
+  /**
+   * Total Commissions
+   * @format double
+   * @example 1
+   */
+  totalCommissions?: number;
 }
 
 export interface CurrencyInfoDto {
@@ -7970,6 +8004,18 @@ export interface SalesPerformancePointDto {
    * @example 1
    */
   revenue?: number;
+  /**
+   * Refunds
+   * @format double
+   * @example 1
+   */
+  refunds?: number;
+  /**
+   * Commissions
+   * @format double
+   * @example 1
+   */
+  commissions?: number;
   /**
    * Orders
    * @format int32

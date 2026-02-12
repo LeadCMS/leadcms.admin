@@ -201,37 +201,55 @@ const Card: React.FC<CardProps> = ({ title, subtitle, action, children }) => (
   </Paper>
 );
 
-type LineChartPoint = { label: string; a: number; b: number };
+type LineChartPoint = { label: string; a: number; b: number; c?: number; d?: number };
 
 const RechartsLine = ({
   data,
   height,
   aLabel = "Orders",
   bLabel = "Revenue",
+  cLabel,
+  dLabel,
   aColor,
   bColor,
+  cColor,
+  dColor,
 }: {
   data: LineChartPoint[];
   height?: number;
   aLabel?: string;
   bLabel?: string;
+  cLabel?: string;
+  dLabel?: string;
   aColor?: string;
   bColor?: string;
+  cColor?: string;
+  dColor?: string;
 }) => {
   const theme = useTheme();
   const colorA = aColor || theme.palette.primary.main;
   const colorB = bColor || theme.palette.success.main;
+  const colorC = cColor || theme.palette.warning.main;
+  const colorD = dColor || theme.palette.error.main;
   const tooltipFormatter = React.useCallback(
     (val: number | string, name: string): [number | string, string] => {
-      return [val, name === "a" ? aLabel : bLabel];
+      if (name === "a") return [val, aLabel];
+      if (name === "b") return [val, bLabel];
+      if (name === "c" && cLabel) return [val, cLabel];
+      if (name === "d" && dLabel) return [val, dLabel];
+      return [val, name];
     },
-    [aLabel, bLabel]
+    [aLabel, bLabel, cLabel, dLabel]
   );
   const legendFormatter = React.useCallback(
     (value: string) => {
-      return value === "a" ? aLabel : bLabel;
+      if (value === "a") return aLabel;
+      if (value === "b") return bLabel;
+      if (value === "c" && cLabel) return cLabel;
+      if (value === "d" && dLabel) return dLabel;
+      return value;
     },
-    [aLabel, bLabel]
+    [aLabel, bLabel, cLabel, dLabel]
   );
   const boxSx = height
     ? ({ width: "100%", height } as const)
@@ -277,11 +295,42 @@ const RechartsLine = ({
             dot={false}
             activeDot={{ r: 4, strokeWidth: 1.5 }}
           />
+          {cLabel && (
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="c"
+              stroke={colorC}
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 1.5 }}
+            />
+          )}
+          {dLabel && (
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="d"
+              stroke={colorD}
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 1.5 }}
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </Box>
   );
 };
+
+const tileBaseSx = {
+  p: 6.25,
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  transition: "box-shadow 0.2s, border-color 0.2s",
+  "&:hover": { boxShadow: 6 },
+} as const;
 
 const MetricTile: React.FC<{
   label: string;
@@ -290,47 +339,120 @@ const MetricTile: React.FC<{
   changePct?: number | null;
   loading?: boolean;
 }> = ({ label, value, valueFormatter, changePct, loading }) => (
-  <Paper
-    variant="outlined"
-    sx={{
-      p: 6.25,
-      minHeight: 140,
-      display: "flex",
-      flexDirection: "column",
-      gap: 1.25,
-      transition: "box-shadow 0.2s, border-color 0.2s",
-      "&:hover": { boxShadow: 6 },
-    }}
-  >
-    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+  <Paper variant="outlined" sx={tileBaseSx}>
+    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
       {label}
     </Typography>
     {loading ? (
-      <Box>
-        <Skeleton width={80} height={32} />
-        <Skeleton width={120} height={20} />
+      <Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
+        <Skeleton width={100} height={36} />
       </Box>
     ) : (
-      <>
-        <Box>
-          {typeof value === "number" ? (
-            <NumberBadge value={value} formatter={valueFormatter} />
-          ) : (
-            <Typography variant="h4">{value ?? "—"}</Typography>
-          )}
-        </Box>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <ChangeChip pct={changePct ?? undefined} />
-          {changePct !== null && changePct !== undefined && (
-            <Typography variant="caption" color="text.secondary">
-              {"vs. previous period"}
-            </Typography>
-          )}
-        </Stack>
-      </>
+      <Stack direction="row" spacing={1} sx={{ flex: 1, alignItems: "center" }}>
+        {typeof value === "number" ? (
+          <NumberBadge value={value} formatter={valueFormatter} />
+        ) : (
+          <Typography variant="h4">{value ?? "—"}</Typography>
+        )}
+        <ChangeChip pct={changePct ?? undefined} />
+      </Stack>
     )}
   </Paper>
 );
+
+const DualMetricTile: React.FC<{
+  label: string;
+  leftValue?: number | string | null;
+  leftLabel: string;
+  leftColor?: string;
+  leftChangePct?: number | null;
+  leftFormatter?: (n: number) => string;
+  rightValue?: number | string | null;
+  rightLabel: string;
+  rightColor?: string;
+  rightChangePct?: number | null;
+  rightFormatter?: (n: number) => string;
+  loading?: boolean;
+}> = ({
+  label,
+  leftValue,
+  leftLabel,
+  leftColor = "text.primary",
+  leftChangePct,
+  leftFormatter,
+  rightValue,
+  rightLabel,
+  rightColor = "primary.main",
+  rightChangePct,
+  rightFormatter,
+  loading,
+}) => {
+  const fmtVal = (v: number | string | null | undefined, fmt?: (n: number) => string) => {
+    if (v === null || v === undefined) return "—";
+    if (typeof v === "string") return v;
+    return fmt ? fmt(v) : v.toLocaleString();
+  };
+
+  return (
+    <Paper variant="outlined" sx={tileBaseSx}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        {label}
+      </Typography>
+      {loading ? (
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
+          }}
+        >
+          <Skeleton width={80} height={36} />
+          <Skeleton width={80} height={36} />
+        </Box>
+      ) : (
+        <Stack direction="row" sx={{ flex: 1, gap: 3 }} alignItems="center">
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              {leftLabel}
+            </Typography>
+            <Stack direction="row" spacing={0.75} alignItems="baseline">
+              <Typography
+                sx={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  color: leftColor,
+                }}
+              >
+                {fmtVal(leftValue, leftFormatter)}
+              </Typography>
+              <ChangeChip pct={leftChangePct ?? undefined} />
+            </Stack>
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              {rightLabel}
+            </Typography>
+            <Stack direction="row" spacing={0.75} alignItems="baseline">
+              <Typography
+                sx={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  color: rightColor,
+                }}
+              >
+                {fmtVal(rightValue, rightFormatter)}
+              </Typography>
+              <ChangeChip pct={rightChangePct ?? undefined} />
+            </Stack>
+          </Box>
+        </Stack>
+      )}
+    </Paper>
+  );
+};
 
 const SectionLoader = () => (
   <Stack gap={1}>
@@ -521,10 +643,16 @@ const Dashboard: React.FC = () => {
     contactsChangePct?: number | null;
     totalAccounts?: number;
     accountsChangePct?: number | null;
+    paidContacts?: number;
+    paidContactsChangePct?: number | null;
+    paidAccounts?: number;
+    paidAccountsChangePct?: number | null;
     totalOrders?: number;
     ordersChangePct?: number | null;
     revenue?: number;
     revenueChangePct?: number | null;
+    totalRefunds?: number;
+    totalCommissions?: number;
   } | null>(null);
 
   const [salesLoading, setSalesLoading] = React.useState(true);
@@ -696,7 +824,7 @@ const Dashboard: React.FC = () => {
   const KeyMetrics = (
     <Grid container spacing={2} sx={{ mb: 2, alignItems: "stretch" }}>
       {availability.crm.revenue && (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
           <MetricTile
             label="Revenue"
             value={typeof metrics?.revenue === "number" ? metrics.revenue : undefined}
@@ -707,7 +835,7 @@ const Dashboard: React.FC = () => {
         </Grid>
       )}
       {availability.crm.totalOrders && (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
           <MetricTile
             label="Total Orders"
             value={metrics?.totalOrders ?? undefined}
@@ -717,25 +845,51 @@ const Dashboard: React.FC = () => {
         </Grid>
       )}
       {availability.crm.totalContacts && (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricTile
-            label="Total Contacts"
-            value={metrics?.totalContacts ?? undefined}
-            changePct={metrics?.contactsChangePct ?? null}
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <DualMetricTile
+            label="Contacts"
+            leftValue={metrics?.totalContacts ?? undefined}
+            leftLabel="total"
+            leftChangePct={metrics?.contactsChangePct ?? null}
+            rightValue={metrics?.paidContacts ?? undefined}
+            rightLabel="paid"
+            rightColor="primary.main"
+            rightChangePct={metrics?.paidContactsChangePct ?? null}
             loading={metricsLoading}
           />
         </Grid>
       )}
       {availability.crm.totalAccounts && (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricTile
-            label="Total Accounts"
-            value={metrics?.totalAccounts ?? undefined}
-            changePct={metrics?.accountsChangePct ?? null}
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <DualMetricTile
+            label="Accounts"
+            leftValue={metrics?.totalAccounts ?? undefined}
+            leftLabel="total"
+            leftChangePct={metrics?.accountsChangePct ?? null}
+            rightValue={metrics?.paidAccounts ?? undefined}
+            rightLabel="paid"
+            rightColor="primary.main"
+            rightChangePct={metrics?.paidAccountsChangePct ?? null}
             loading={metricsLoading}
           />
         </Grid>
       )}
+      {availability.crm.revenue &&
+        ((metrics?.totalRefunds ?? 0) !== 0 || (metrics?.totalCommissions ?? 0) !== 0) && (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+            <DualMetricTile
+              label="Refunds & Commissions"
+              leftValue={metrics?.totalRefunds ?? undefined}
+              leftLabel="refunds"
+              leftColor="error.main"
+              leftFormatter={(n) => fmtCurrency(n)}
+              rightValue={metrics?.totalCommissions ?? undefined}
+              rightLabel="commissions"
+              rightFormatter={(n) => fmtCurrency(n)}
+              loading={metricsLoading}
+            />
+          </Grid>
+        )}
       {metricsError && (
         <Grid size={{ xs: 12 }}>
           <Typography color="error" variant="body2">
@@ -755,7 +909,7 @@ const Dashboard: React.FC = () => {
   const CmsKeyMetrics = (
     <Grid container spacing={2} sx={{ mb: 2, alignItems: "stretch" }}>
       {availability.cms.totalContent && (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
           <MetricTile
             label="Total Content"
             value={cmsMetrics?.totalContent}
@@ -765,7 +919,7 @@ const Dashboard: React.FC = () => {
         </Grid>
       )}
       {availability.cms.contentUpdates && (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
           <MetricTile
             label="Content Updates"
             value={cmsMetrics?.contentUpdates}
@@ -775,7 +929,7 @@ const Dashboard: React.FC = () => {
         </Grid>
       )}
       {availability.cms.totalMedia && (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
           <MetricTile
             label="Total Media"
             value={cmsMetrics?.totalMedia}
@@ -785,7 +939,7 @@ const Dashboard: React.FC = () => {
         </Grid>
       )}
       {availability.cms.totalComments && (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
           <MetricTile
             label="Total Comments"
             value={cmsMetrics?.totalComments}
@@ -944,7 +1098,10 @@ const Dashboard: React.FC = () => {
         <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
           {shouldShowSalesPerformanceTile && (
             <Grid size={{ xs: 12, md: 8 }}>
-              <Card title="Sales Performance" subtitle="Revenue and orders over time">
+              <Card
+                title="Sales Performance"
+                subtitle="Revenue, orders, refunds, and commissions over time"
+              >
                 {salesLoading ? (
                   <SectionLoader />
                 ) : salesError ? (
@@ -957,9 +1114,13 @@ const Dashboard: React.FC = () => {
                       label: s.period ?? "",
                       a: s.orders ?? 0,
                       b: s.revenue ?? 0,
+                      c: s.refunds ?? 0,
+                      d: s.commissions ?? 0,
                     }))}
                     aLabel="Orders"
                     bLabel={`Revenue (${primaryCurrency?.code || "USD"})`}
+                    cLabel={`Refunds (${primaryCurrency?.code || "USD"})`}
+                    dLabel={`Commissions (${primaryCurrency?.code || "USD"})`}
                   />
                 ) : (
                   <EmptyState />
