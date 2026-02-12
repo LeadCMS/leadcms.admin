@@ -3,7 +3,7 @@ import { Box, Card, CardContent, CircularProgress, IconButton, Typography } from
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { useNotificationsService } from "@hooks";
+import { useNotificationsService, useCurrencyFormatter } from "@hooks";
 import { DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { ActionButtonContainer } from "@features/contacts/index.styled";
 import { OrderDetailsDto } from "@lib/network/swagger-client";
@@ -16,6 +16,7 @@ export const ContactOrders = () => {
   const { contactId } = useOutletContext<ContactViewOutletContext>();
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
+  const { formatByCode, formatMoney } = useCurrencyFormatter();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderDetailsDto[]>();
   const [isLoading, setIsLoading] = useState(true);
@@ -75,6 +76,12 @@ export const ContactOrders = () => {
       field: "total",
       headerName: "Amount",
       flex: 2,
+      renderCell: ({ value, row }) =>
+        value != null
+          ? row.currency
+            ? formatByCode(value, row.currency)
+            : formatMoney(value)
+          : "",
     },
     {
       field: "quantity",

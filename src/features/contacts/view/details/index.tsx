@@ -29,6 +29,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { ContactHref } from "@features/contacts/index.styled";
 import { CoreModule, getViewFormRoute } from "@lib/router";
 import { useConfig } from "@providers/config-provider";
+import { useCurrencyFormatter } from "@hooks";
 import { useRequestContext } from "@providers/request-provider";
 import {
   getContinentByCode,
@@ -257,28 +258,11 @@ export const ContactView = () => {
   const [countryName, setCountryName] = useState<string>("");
   const [continentName, setContinentName] = useState<string>("");
 
-  const currencyFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 2,
-      }),
-    []
-  );
+  const { formatMoney } = useCurrencyFormatter();
 
   const conversations = useMemo(() => getMockConversationsForContact(contactId), [contactId]);
   const activities = useMemo(() => getMockActivitiesForContact(contactId), [contactId]);
   const latestActivity = activities[0]?.timestamp;
-  const accountRevenueFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 0,
-      }),
-    []
-  );
 
   useEffect(() => {
     const loadLocationNames = async () => {
@@ -409,10 +393,7 @@ export const ContactView = () => {
           },
           {
             label: "Revenue",
-            value:
-              contact.account.revenue != null
-                ? accountRevenueFormatter.format(contact.account.revenue)
-                : "",
+            value: contact.account.revenue != null ? formatMoney(contact.account.revenue, 0) : "",
           },
           { label: "TIN", value: contact.account.tin || "" },
           {
@@ -509,8 +490,8 @@ export const ContactView = () => {
 
   const revenueDisplay =
     contact.totalRevenue !== null && contact.totalRevenue !== undefined
-      ? currencyFormatter.format(contact.totalRevenue)
-      : "$0";
+      ? formatMoney(contact.totalRevenue)
+      : formatMoney(0);
 
   return (
     <Box sx={{ mt: 3 }}>

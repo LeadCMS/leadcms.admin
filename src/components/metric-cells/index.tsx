@@ -1,12 +1,10 @@
 import { Box, Typography } from "@mui/material";
 import { TrendingUp } from "lucide-react";
-import { normalizeNumber, formatCompactCurrency } from "@utils/currency-formatter";
-
-const defaultFormatter = new Intl.NumberFormat("en-US", {
-  style: "decimal",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
+import {
+  normalizeNumber,
+  formatCompactCurrency,
+  PrimaryCurrencyConfig,
+} from "@utils/currency-formatter";
 
 interface CountPillProps {
   value: number | null | undefined;
@@ -38,14 +36,15 @@ export const CountPill = ({ value }: CountPillProps) => (
 
 interface RevenueCellProps {
   value: number | null | undefined;
+  primaryCurrency?: PrimaryCurrencyConfig | null;
 }
 
 /**
  * Renders a revenue value with optional trend indicator
  */
-export const RevenueCell = ({ value }: RevenueCellProps) => {
+export const RevenueCell = ({ value, primaryCurrency }: RevenueCellProps) => {
   const numericValue = normalizeNumber(value);
-  const display = formatCompactCurrency(numericValue, defaultFormatter);
+  const display = formatCompactCurrency(numericValue, primaryCurrency ?? null);
   const highlight = numericValue !== null && numericValue > 0;
   const showTrend = numericValue !== null && numericValue > 1_000_000;
 

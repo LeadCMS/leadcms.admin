@@ -28,9 +28,11 @@ import { DataListSettings } from "types";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { getWhereFilterQuery } from "@providers/query-provider";
+import { useCurrencyFormatter } from "@hooks";
 
 export const Contacts = () => {
   const { client } = useRequestContext();
+  const { primaryCurrency } = useCurrencyFormatter();
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
     contactGridSettingsStorageKey,
@@ -206,7 +208,7 @@ export const Contacts = () => {
       align: "right",
       headerAlign: "right",
       valueGetter: (value, row) => row.totalRevenue ?? null,
-      renderCell: ({ value }) => <RevenueCell value={value} />,
+      renderCell: ({ value }) => <RevenueCell value={value} primaryCurrency={primaryCurrency} />,
     },
     {
       field: "dealsCount",

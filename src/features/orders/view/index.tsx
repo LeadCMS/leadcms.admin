@@ -22,7 +22,7 @@ import { orderFormBreadcrumbLinks } from "../constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { CoreModule, getEditFormRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
-import { useNotificationsService } from "@hooks";
+import { useNotificationsService, useCurrencyFormatter } from "@hooks";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { OrderViewOutletContext } from "./types";
 
@@ -57,21 +57,13 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const formatCurrency = (value: number | null | undefined, currency: string) => {
-  if (value === null || value === undefined) return "$0.00";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency || "USD",
-    maximumFractionDigits: 2,
-  }).format(value);
-};
-
 export const OrderViewBase = () => {
   const { state, pathname } = useLocation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
+  const { formatMoney, formatByCode } = useCurrencyFormatter();
 
   const [order, setOrder] = useState<OrderDetailsDto | null>(null);
   const [contact, setContact] = useState<ContactDetailsDto | null>(null);
@@ -234,7 +226,12 @@ export const OrderViewBase = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               {[
                 contactName && `Customer: ${contactName}`,
-                order?.total != null && `Total: ${formatCurrency(order.total, order.currency)}`,
+                order?.total != null &&
+                  `Total: ${
+                    order.currency
+                      ? formatByCode(order.total, order.currency)
+                      : formatMoney(order.total)
+                  }`,
               ]
                 .filter(Boolean)
                 .join(" · ") || "Loading order details..."}

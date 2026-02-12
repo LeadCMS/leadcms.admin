@@ -1,20 +1,15 @@
 import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import { BriefcaseBusiness, Plus } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
-import { useNotificationsService } from "@hooks";
+import { useNotificationsService, useCurrencyFormatter } from "@hooks";
 import { getFormattedDateOnly } from "utils/general-helper";
 import { getDealStageColor, getMockDealsForContact } from "../mock-data";
 import { ContactViewOutletContext } from "../types";
 
-const amountFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
 export const ContactDeals = () => {
   const { contactId } = useOutletContext<ContactViewOutletContext>();
   const { notificationsService } = useNotificationsService();
+  const { formatMoney } = useCurrencyFormatter();
   const deals = getMockDealsForContact(contactId);
 
   const handleCreateDealClick = () => {
@@ -111,7 +106,7 @@ export const ContactDeals = () => {
                       }}
                     >
                       <Typography variant="body2" color="text.secondary">
-                        Amount: <strong>{amountFormatter.format(deal.amount)}</strong>
+                        Amount: <strong>{formatMoney(deal.amount, 0)}</strong>
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Close date: <strong>{getFormattedDateOnly(deal.closeDate)}</strong>

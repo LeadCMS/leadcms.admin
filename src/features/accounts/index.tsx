@@ -16,7 +16,7 @@ import { CoreModule, getAddFormRoute } from "lib/router";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { SearchBar } from "@components/search-bar";
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import useLocalStorage from "use-local-storage";
@@ -26,9 +26,11 @@ import { Result } from "react-spreadsheet-import/types/types";
 import { GhostLink } from "@components/ghost-link";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { CountPill, RevenueCell } from "@components/metric-cells";
+import { useCurrencyFormatter } from "@hooks";
 
 export const Accounts = () => {
   const { client } = useRequestContext();
+  const { formatMoney, primaryCurrency } = useCurrencyFormatter();
   const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
     accountGridSettingsStorageKey,
     undefined
@@ -76,20 +78,6 @@ export const Accounts = () => {
     await client.api.accountsImportCreate(importDtoCollection);
   };
 
-  const numberFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: 0,
-      }),
-    []
-  );
-
-  const formatNumberValue = (raw?: number | null) => {
-    if (raw === null || raw === undefined) return "";
-    const num = Number(raw);
-    return Number.isNaN(num) ? "" : numberFormatter.format(num);
-  };
-
   const [columns, setColumns] = useState<GridColDef<AccountDetailsDto>[]>([
     {
       field: "name",
@@ -120,7 +108,7 @@ export const Accounts = () => {
       align: "right",
       headerAlign: "right",
       valueGetter: (value, row) => (row as any)?.totalRevenue ?? null,
-      renderCell: ({ value }) => <RevenueCell value={value} />,
+      renderCell: ({ value }) => <RevenueCell value={value} primaryCurrency={primaryCurrency} />,
     },
     {
       field: "dealsCount",
@@ -225,22 +213,14 @@ export const Accounts = () => {
       headerName: "Annual Revenue",
       width: 140,
       type: "number",
-      valueFormatter: (
-        params: GridRenderCellParams<AccountDetailsDto, number | null | undefined>
-      ) => formatNumberValue(params?.value ?? params?.row?.revenue),
-      renderCell: (params: GridRenderCellParams<AccountDetailsDto, number | null | undefined>) =>
-        formatNumberValue(params.value ?? params.row?.revenue),
+      renderCell: ({ value, row }) => formatMoney(value ?? row.revenue, 0),
     },
     {
       field: "profit",
       headerName: "Profit",
       width: 140,
       type: "number",
-      valueFormatter: (
-        params: GridRenderCellParams<AccountDetailsDto, number | null | undefined>
-      ) => formatNumberValue(params?.value ?? params?.row?.profit),
-      renderCell: (params: GridRenderCellParams<AccountDetailsDto, number | null | undefined>) =>
-        formatNumberValue(params.value ?? params.row?.profit),
+      renderCell: ({ value, row }) => formatMoney(value ?? row.profit, 0),
     },
     {
       field: "source",

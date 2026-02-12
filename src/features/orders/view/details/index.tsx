@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -29,6 +29,7 @@ import { CoreModule, getViewFormRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
 import { getCountryByCode, getFormattedDateTime } from "utils/general-helper";
 import { OrderViewOutletContext } from "../types";
+import { useCurrencyFormatter } from "@hooks";
 
 type DetailRow = {
   label: string;
@@ -221,15 +222,14 @@ export const OrderView = () => {
   const context = useRequestContext();
   const [contactCountry, setContactCountry] = useState("");
 
-  const currencyFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 2,
-      }),
-    []
-  );
+  const { formatMoney, formatByCode } = useCurrencyFormatter();
+
+  const fmtMoney = (val: number | null | undefined) => {
+    if (val === null || val === undefined) {
+      return formatMoney(0);
+    }
+    return order?.currency ? formatByCode(val, order.currency) : formatMoney(val);
+  };
 
   useEffect(() => {
     const loadCountry = async () => {
@@ -270,11 +270,6 @@ export const OrderView = () => {
       </Box>
     );
   }
-
-  const formatMoney = (val: number | null | undefined) => {
-    if (val === null || val === undefined) return "$0.00";
-    return currencyFormatter.format(val);
-  };
 
   const contactLocation = contact
     ? [contact.cityName, contact.state, contactCountry]
@@ -365,7 +360,7 @@ export const OrderView = () => {
     },
   ]);
 
-  const totalRevenue = formatMoney(order.total);
+  const totalRevenue = fmtMoney(order.total);
   const totalItems = orderItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
   return (
@@ -513,7 +508,7 @@ export const OrderView = () => {
                     <StatCard label="Quantity" value={totalItems} icon={<Package size={18} />} />
                     <StatCard
                       label="Commission"
-                      value={formatMoney(order.commission)}
+                      value={fmtMoney(order.commission)}
                       icon={<Banknote size={18} />}
                     />
                   </Box>

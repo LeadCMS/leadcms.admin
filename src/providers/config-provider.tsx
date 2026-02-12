@@ -1,18 +1,24 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRequestContext } from "@providers/request-provider";
 import { ConfigDto } from "@lib/network/swagger-client";
+import { PrimaryCurrencyConfig } from "@utils/currency-formatter";
+
+interface ExtendedConfigDto extends ConfigDto {
+  primaryCurrency?: PrimaryCurrencyConfig;
+}
 
 interface ConfigContextType {
-  config: ConfigDto | null;
+  config: ExtendedConfigDto | null;
   loading: boolean;
   error: string | null;
   reloadConfig: () => Promise<void>;
+  primaryCurrency: PrimaryCurrencyConfig | null;
 }
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 
 export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
-  const [config, setConfig] = useState<ConfigDto | null>(null);
+  const [config, setConfig] = useState<ExtendedConfigDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { client } = useRequestContext();
@@ -22,7 +28,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       setError(null);
       const response = await client.api.configList();
-      setConfig(response.data);
+      setConfig(response.data as ExtendedConfigDto);
     } catch (e: unknown) {
       let errorMessage = "Failed to load configuration from /api/config";
 
@@ -68,7 +74,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setError(null);
       const response = await client.api.configList();
-      setConfig(response.data);
+      setConfig(response.data as ExtendedConfigDto);
     } catch (e) {
       // Silent reload - don't update error state to avoid disrupting the UI
       console.warn("Failed to reload config:", e instanceof Error ? e.message : "Unknown error");
@@ -80,7 +86,15 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   }, [client]);
 
   return (
-    <ConfigContext.Provider value={{ config, loading, error, reloadConfig }}>
+    <ConfigContext.Provider
+      value={{
+        config,
+        loading,
+        error,
+        reloadConfig,
+        primaryCurrency: config?.primaryCurrency ?? null,
+      }}
+    >
       {children}
     </ConfigContext.Provider>
   );

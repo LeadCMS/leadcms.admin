@@ -26,9 +26,11 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { getWhereFilterQuery } from "@providers/query-provider";
+import { useCurrencyFormatter } from "@hooks";
 
 export const Orders = () => {
   const { client } = useRequestContext();
+  const { formatMoney, formatByCode } = useCurrencyFormatter();
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const [gridSettings, setGridSettings] = useLocalStorage<DataListSettings | undefined>(
     orderGridSettingsStorageKey,
@@ -144,6 +146,7 @@ export const Orders = () => {
       type: "number",
       align: "left",
       headerAlign: "left",
+      renderCell: ({ value }) => (value != null ? formatMoney(value) : ""),
     },
     {
       field: "status",
@@ -208,8 +211,7 @@ export const Orders = () => {
       align: "left",
       headerAlign: "left",
       valueGetter: (value, row) => row.currencyTotal ?? null,
-      valueFormatter: (value, row) =>
-        value ?? (typeof row.currencyTotal === "number" ? row.currencyTotal : ""),
+      renderCell: ({ value, row }) => (value != null ? formatByCode(value, row.currency) : ""),
     },
     {
       field: "contact.language",

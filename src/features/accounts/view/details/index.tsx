@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Box, Card, CardContent, Chip, Divider, Grid, Typography, useTheme } from "@mui/material";
 import {
   Briefcase,
@@ -19,6 +19,7 @@ import { useRequestContext } from "@providers/request-provider";
 import { getContinentByCode, getCountryByCode, getFormattedDateTime } from "utils/general-helper";
 import { AccountViewOutletContext } from "../types";
 import { AccountUrlHref } from "@features/accounts/index.styled";
+import { useCurrencyFormatter } from "@hooks";
 
 type DetailRow = {
   label: string;
@@ -187,15 +188,7 @@ export const AccountView = () => {
   const [countryName, setCountryName] = useState("");
   const [continentName, setContinentName] = useState("");
 
-  const currencyFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 2,
-      }),
-    []
-  );
+  const { formatMoney } = useCurrencyFormatter();
 
   useEffect(() => {
     const loadLocationNames = async () => {
@@ -266,11 +259,11 @@ export const AccountView = () => {
     },
     {
       label: "Revenue",
-      value: account.revenue != null ? currencyFormatter.format(account.revenue) : "",
+      value: account.revenue != null ? formatMoney(account.revenue) : "",
     },
     {
       label: "Profit",
-      value: account.profit != null ? currencyFormatter.format(account.profit) : "",
+      value: account.profit != null ? formatMoney(account.profit) : "",
     },
     { label: "Source", value: account.source || "" },
   ]);
@@ -354,7 +347,7 @@ export const AccountView = () => {
   ]);
 
   const revenueDisplay =
-    account.totalRevenue != null ? currencyFormatter.format(account.totalRevenue) : "$0";
+    account.totalRevenue != null ? formatMoney(account.totalRevenue) : formatMoney(0);
 
   return (
     <Box sx={{ mt: 3 }}>

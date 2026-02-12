@@ -43,6 +43,7 @@ import {
 } from "recharts";
 import useLocalStorage from "use-local-storage";
 import { useConfig } from "@providers/config-provider";
+import { useCurrencyFormatter } from "@hooks";
 import { getDashboardAvailability } from "@features/dashboard/availability";
 import type {
   SalesPerformancePointDto,
@@ -344,15 +345,6 @@ const EmptyState = ({ message = "No data" }: { message?: string }) => (
   </Typography>
 );
 
-const formatCurrency = (amount?: number) =>
-  typeof amount === "number"
-    ? new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 0,
-      }).format(amount)
-    : "—";
-
 const errMessage = (e: unknown, fallback: string) => {
   if (e && typeof e === "object" && "message" in e) {
     const m = (e as { message?: unknown }).message;
@@ -440,6 +432,9 @@ const RechartsBar = ({
 const Dashboard: React.FC = () => {
   const { client } = useRequestContext();
   const { config } = useConfig();
+  const { formatMoney, primaryCurrency } = useCurrencyFormatter();
+  const fmtCurrency = (amount?: number) =>
+    typeof amount === "number" ? formatMoney(amount, 0) : "\u2014";
   const availability = React.useMemo(
     () => getDashboardAvailability(config?.entities),
     [config?.entities]
@@ -705,7 +700,7 @@ const Dashboard: React.FC = () => {
           <MetricTile
             label="Revenue"
             value={typeof metrics?.revenue === "number" ? metrics.revenue : undefined}
-            valueFormatter={(n) => formatCurrency(n)}
+            valueFormatter={(n) => fmtCurrency(n)}
             changePct={metrics?.revenueChangePct ?? null}
             loading={metricsLoading}
           />
@@ -964,7 +959,7 @@ const Dashboard: React.FC = () => {
                       b: s.revenue ?? 0,
                     }))}
                     aLabel="Orders"
-                    bLabel="Revenue"
+                    bLabel={`Revenue (${primaryCurrency?.code || "USD"})`}
                   />
                 ) : (
                   <EmptyState />
@@ -1015,7 +1010,7 @@ const Dashboard: React.FC = () => {
                               }
                             />
                             <Stack alignItems="flex-end" spacing={0.5}>
-                              <Typography>{formatCurrency(o.amount)}</Typography>
+                              <Typography>{fmtCurrency(o.amount)}</Typography>
                               <Chip
                                 size="small"
                                 variant="filled"
@@ -1108,7 +1103,7 @@ const Dashboard: React.FC = () => {
                                   className: "list-link-text",
                                 },
                               }}
-                              secondary={formatCurrency(a.revenue)}
+                              secondary={fmtCurrency(a.revenue)}
                             />
                           </ListItem>
                         );

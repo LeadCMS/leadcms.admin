@@ -16,7 +16,7 @@ import { Edit, Package, Plus, XCircle } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { OrderItemDetailsDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
-import { useNotificationsService } from "@hooks";
+import { useNotificationsService, useCurrencyFormatter } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useFormik, FormikHelpers } from "formik";
 import zod from "zod";
@@ -33,17 +33,12 @@ export const OrderItems = () => {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
+  const { formatByCode, formatMoney } = useCurrencyFormatter();
 
   const [isEdit, setIsEdit] = useState(false);
   const [orderItem, setOrderItem] = useState<OrderItemDetailsDto | undefined>();
   const [openConfirmation, setOpenConfirmation] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-
-  const currencyFormatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  });
 
   const deleteRecord = async () => {
     if (!orderItem?.id) return;
@@ -65,6 +60,12 @@ export const OrderItems = () => {
 
   const columns: GridColDef<OrderItemDetailsDto>[] = [
     {
+      field: "lineNumber",
+      headerName: "#",
+      width: 80,
+      type: "number",
+    },
+    {
       field: "productName",
       headerName: "Product",
       flex: 2,
@@ -78,7 +79,10 @@ export const OrderItems = () => {
       field: "unitPrice",
       headerName: "Unit Price",
       flex: 1,
-      renderCell: (params) => (params.value != null ? currencyFormatter.format(params.value) : "-"),
+      renderCell: (params) =>
+        params.value != null
+          ? formatByCode(params.value, params.row.currency) || formatMoney(params.value)
+          : "-",
     },
     {
       field: "quantity",
@@ -89,7 +93,10 @@ export const OrderItems = () => {
       field: "total",
       headerName: "Total",
       flex: 1,
-      renderCell: (params) => (params.value != null ? currencyFormatter.format(params.value) : "-"),
+      renderCell: (params) =>
+        params.value != null
+          ? formatByCode(params.value, params.row.currency) || formatMoney(params.value)
+          : "-",
     },
     {
       field: "source",
@@ -250,6 +257,11 @@ export const OrderItems = () => {
               checkboxSelection={false}
               pagination={undefined}
               hideFooter={true}
+              initialState={{
+                sorting: {
+                  sortModel: [{ field: "lineNumber", sort: "asc" }],
+                },
+              }}
             />
           </Box>
         </CardContent>
