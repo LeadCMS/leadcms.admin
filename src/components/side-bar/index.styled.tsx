@@ -112,12 +112,11 @@ export const ListSubheaderStyled = styled(ListSubheader, {
   font-size: ${({ theme }) => theme.typography.subtitle2.fontSize};
   color: ${({ theme }) => theme.typography.subtitle2.color};
   font-weight: ${({ theme }) => theme.typography.subtitle2.fontWeight};
-  display: ${({ isCollapsed }) => (isCollapsed ? "none" : "flex")};
-  padding-left: 16px;
-  padding-right: 8px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  min-height: 32px;
+  display: ${({ isCollapsed }) => (isCollapsed ? "none" : "block")};
+  padding-left: 18px;
+  padding-right: 0px;
+  padding-bottom: 4px;
+  min-height: 0;
   line-height: ${({ theme }) => theme.typography.subtitle2.lineHeight};
   border-radius: ${({ theme }) => theme.spacing(1)};
   transition: background-color 0.2s ease;
@@ -131,48 +130,69 @@ type SidebarLinkProps = ListItemButtonProps & {
 
 export const SidebarLink = styled(ListItemButton, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
-})<SidebarLinkProps>`
-  border-radius: ${({ theme }) => theme.spacing(2)};
-  height: ${({ theme }) => theme.spacing(9)};
-  margin-top: ${({ theme }) => theme.spacing(1)};
-  margin-left: ${({ theme, isCollapsed }) => (isCollapsed ? theme.spacing(1) : "0")};
-  margin-right: ${({ theme, isCollapsed }) => (isCollapsed ? theme.spacing(1) : "10px")};
-  color: ${({ theme: { palette } }) => palette.text.secondary};
-  min-width: ${({ isCollapsed }) => (isCollapsed ? "56px" : "auto")};
-  justify-content: ${({ isCollapsed }) => (isCollapsed ? "center" : "flex-start")};
-  padding-left: ${({ theme, isCollapsed }) => (isCollapsed ? "0" : theme.spacing(2))};
+})<{ isCollapsed?: boolean }>(({ theme, isCollapsed }) => `
+  border-radius: ${theme.spacing(2)};
+  height: ${theme.spacing(9)};
+  margin-top: ${theme.spacing(1)};
+  margin-left: ${isCollapsed ? theme.spacing(1) : "10px"};
+  margin-right: ${isCollapsed ? theme.spacing(1) : "10px"};
+  color: ${theme.palette.text.primary};
+  min-width: ${isCollapsed ? "56px" : "auto"};
+  justify-content: ${isCollapsed ? "center" : "flex-start"};
+  padding-left: ${isCollapsed ? "0" : theme.spacing(2)};
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+
   :hover {
-    background-color: ${({ theme: { palette } }) => palette.secondary.light};
+    background-color: ${theme.palette.background.primaryHover};
+  }
+
+  :focus,
+  :focus-visible {
+    outline: 2px solid ${theme.palette.primary.main};
+    outline-offset: 2px;
+    background-color: ${theme.palette.primary.light};
+    color: ${theme.palette.primary.contrastText};
   }
 
   &.Mui-selected {
-    color: ${({ theme: { palette } }) => palette.primary.main};
-    background-color: ${({ theme: { palette } }) => palette.primary.light};
-  }
-`;
+    color: ${theme.palette.primary.contrastText};
+    background-color: ${theme.palette.primary.main};
+    font-weight: 600;
 
-type SidebarLinkTextProps = ListItemTextProps & {
-  isCollapsed?: boolean;
-};
+    :hover {
+      background-color: ${theme.palette.primary.dark};
+      color: ${theme.palette.primary.contrastText};
+    }
+
+    :focus,
+    :focus-visible {
+      outline: 2px solid ${theme.palette.primary.dark};
+      outline-offset: 2px;
+      background-color: ${theme.palette.primary.main};
+    }
+  }
+`);
 
 export const SidebarLinkText = styled(ListItemText, {
   shouldForwardProp: (prop) => prop !== "isCollapsed",
-})<SidebarLinkTextProps>`
+})<{ isCollapsed?: boolean }>(({ theme, isCollapsed }) => `
   .MuiTypography-root {
     font-weight: 500;
     font-size: 14px;
     line-height: 20px;
-    margin-left: ${({ theme }) => theme.spacing(1)};
+    margin-left: ${theme.spacing(1)};
   }
 
-  display: ${({ isCollapsed }) => (isCollapsed ? "none" : "block")};
-`;
+  display: ${isCollapsed ? "none" : "block"};
+`);
 
 export const ListItemIconStyled = styled(ListItemIcon)`
   min-width: ${({ theme }) => theme.spacing(8)};
-  color: ${({ theme }) => theme.typography.subtitle2.color};
-  margin-left: ${({ theme }) => theme.spacing(3)};
+  color: ${({ theme }) => theme.palette.text.secondary};
+  transition: color 0.2s ease;
+
   .Mui-selected & {
-    color: ${({ theme }) => theme.palette.primary.main};
+    color: ${({ theme }) => theme.palette.primary.contrastText};
   }
 ` as typeof ListItemIcon;

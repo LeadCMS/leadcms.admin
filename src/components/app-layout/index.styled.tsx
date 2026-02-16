@@ -42,3 +42,23 @@ export const MainContent = styled("main")<{ fullWidth?: boolean }>`
   background-color: ${({ theme }) => theme.palette.background.primary};
   box-sizing: border-box;
 `;
+
+export const SkipLink = styled("a")`
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background-color: ${({ theme }) => theme.palette.primary.main};
+  color: ${({ theme }) => theme.palette.primary.contrastText};
+  padding: ${({ theme }) => theme.spacing(1, 2)};
+  text-decoration: none;
+  z-index: 9999;
+  font-weight: 600;
+  border-radius: 0 0 ${({ theme }) => theme.spacing(1)} 0;
+  transition: top 0.2s ease;
+
+  &:focus {
+    top: 0;
+    outline: 2px solid ${({ theme }) => theme.palette.primary.dark};
+    outline-offset: 2px;
+  }
+`;

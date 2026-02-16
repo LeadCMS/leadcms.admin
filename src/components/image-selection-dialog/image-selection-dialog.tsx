@@ -380,11 +380,6 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                                 : "#e0e0e0",
                               borderRadius: 2,
                               overflow: "hidden",
-                              transition: "all 0.2s",
-                              "&:hover": {
-                                elevation: 3,
-                                transform: "translateY(-2px)",
-                              },
                             }}
                             onClick={() => handleImageSelect(item)}
                           >

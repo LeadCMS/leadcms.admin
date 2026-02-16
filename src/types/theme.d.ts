@@ -6,18 +6,22 @@ import "@mui/material/styles";
 // Add custom theme properties
 declare module "@mui/material/styles" {
   interface Theme extends MuiTheme {
-    palette: MuiTheme["palette"];
-    background: {
-      primary: string;
-      primaryHover: string;
+    palette: MuiTheme["palette"] & {
+      background: MuiTheme["palette"]["background"] & {
+        primary?: string;
+        primaryHover?: string;
+        secondary?: string;
+      };
     };
   }
-  interface ThemeOptions extends MuiTheme {
-    background?: {
-      primary?: string;
-      primaryHover?: string;
+  interface ThemeOptions {
+    palette?: {
+      background?: {
+        primary?: string;
+        primaryHover?: string;
+        secondary?: string;
+      };
     };
-    unstable_sx?: Record<string, unknown>; // Use a more specific type for unstable_sx
   }
 }
 

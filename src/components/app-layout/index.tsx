@@ -2,8 +2,9 @@ import { ReactNode, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AppHeader } from "@components/app-header";
 import { Sidebar } from "@components/side-bar";
-import { AppLayoutWrapper, MainColumn, MainContent } from "./index.styled";
-import { useMediaQuery, useTheme } from "@mui/material";
+import { AppLayoutWrapper, MainColumn, MainContent, SkipLink } from "./index.styled";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import { buildMenuItems } from "../../utils/build-menu-items";
 import { ModuleRouteParams } from "@lib/router";
 import { SidebarProvider } from "@providers/sidebar-provider";
@@ -61,6 +62,7 @@ export const AppLayout = ({
 
   return (
     <SidebarProvider>
+      <SkipLink href="#main-content">Skip to main content</SkipLink>
       <AppLayoutWrapper className={`${className} ${sidebarHiddenClass} ${sidebarClass}`}>
         <Sidebar
           onDrawerStateChange={handleDrawerToggle}
@@ -69,7 +71,9 @@ export const AppLayout = ({
         />
         <MainColumn>
           <AppHeader breadcrumbs={breadcrumbs} currentBreadcrumb={currentBreadcrumb} />
-          <MainContent fullWidth={fullWidth}>{children}</MainContent>
+          <MainContent id="main-content" fullWidth={fullWidth} role="main">
+            {children}
+          </MainContent>
         </MainColumn>
       </AppLayoutWrapper>
     </SidebarProvider>

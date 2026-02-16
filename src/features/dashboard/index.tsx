@@ -165,8 +165,6 @@ const Card: React.FC<CardProps> = ({ title, subtitle, action, children }) => (
       gap: 1.25,
       borderRadius: 2,
       borderColor: (t) => t.palette.divider,
-      transition: "box-shadow 0.2s, border-color 0.2s",
-      "&:hover": { boxShadow: 6 },
     }}
   >
     {(title || action) && (

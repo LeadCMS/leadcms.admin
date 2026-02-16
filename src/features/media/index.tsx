@@ -1450,7 +1450,6 @@ const MediaManagement = () => {
                     borderRadius: 3,
                     overflow: "hidden",
                     position: "relative",
-                    transition: "box-shadow 0.2s, border 0.2s",
                     boxShadow: 1,
                     border: "1px solid #e0e0e0",
                     cursor: isFolder ? "pointer" : "default",
@@ -1461,9 +1460,6 @@ const MediaManagement = () => {
                     flexDirection: "column",
                     justifyContent: "flex-start",
                     alignItems: "stretch",
-                    "&:hover": {
-                      boxShadow: 6,
-                    },
                   }}
                   onClick={() => {
                     if (isFolder) {

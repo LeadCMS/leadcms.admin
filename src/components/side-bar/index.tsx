@@ -127,12 +127,19 @@ export const Sidebar = ({
               <IconButton
                 onClick={toggleCollapse}
                 size="small"
+                aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-expanded={!isCollapsed}
+                aria-controls="main-navigation"
                 sx={{
                   ml: showCollapsed ? 2 : 1,
                   pr: showCollapsed ? 2 : 0,
                 }}
               >
-                {isCollapsed ? <PanelLeftOpen /> : <PanelRightOpen />}
+                {isCollapsed ? (
+                  <PanelLeftOpen aria-hidden="true" focusable="false" />
+                ) : (
+                  <PanelRightOpen aria-hidden="true" focusable="false" />
+                )}
               </IconButton>
             </Tooltip>
           )}
