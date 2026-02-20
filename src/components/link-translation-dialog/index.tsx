@@ -19,17 +19,63 @@ import { Search, X, Link as LinkIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useConfig } from "@providers/config-provider";
 import { useRequestContext } from "@providers/request-provider";
-import { ContentDetailsDto } from "@lib/network/swagger-client";
+import { ContentDetailsDto, EmailTemplateDetailsDto } from "@lib/network/swagger-client";
 import { useDebouncedCallback } from "use-debounce";
+
+export type LinkableContentType = "content" | "emailTemplate";
+
+/** Minimal shape shared by both content and email template DTOs */
+export interface LinkableItem {
+  id?: number;
+  language?: string | null;
+  translationKey?: string | null;
+  /** Display label (content title or template name) */
+  displayTitle: string;
+  /** Secondary text (content description or template subject) */
+  displaySubtitle?: string;
+  /** Extra chips (content type/author, or template sender) */
+  chips: { label: string }[];
+}
+
+function contentToLinkable(c: ContentDetailsDto): LinkableItem {
+  return {
+    id: c.id,
+    language: c.language,
+    translationKey: c.translationKey,
+    displayTitle: c.title || "Untitled",
+    displaySubtitle: c.description || undefined,
+    chips: [
+      ...(c.type ? [{ label: c.type }] : []),
+      ...(c.author ? [{ label: `by ${c.author}` }] : []),
+    ],
+  };
+}
+
+function emailTemplateToLinkable(t: EmailTemplateDetailsDto): LinkableItem {
+  return {
+    id: t.id,
+    language: t.language,
+    translationKey: t.translationKey,
+    displayTitle: t.name || "Untitled",
+    displaySubtitle: t.subject || undefined,
+    chips: [
+      ...(t.fromName ? [{ label: t.fromName }] : []),
+      ...(t.fromEmail ? [{ label: t.fromEmail }] : []),
+    ],
+  };
+}
 
 interface LinkTranslationDialogProps {
   open: boolean;
   onClose: () => void;
-  onLink: (linkedContent: ContentDetailsDto) => void;
+  onLink: (linkedItem: LinkableItem) => void;
   currentContentId: number;
   currentLanguage: string;
   isLoading?: boolean;
   error?: string | null;
+  contentType?: LinkableContentType;
+  /** Pre-populated search text when the dialog opens */
+  defaultSearchText?: string;
 }
 
 export const LinkTranslationDialog = ({
@@ -40,12 +86,14 @@ export const LinkTranslationDialog = ({
   currentLanguage,
   isLoading = false,
   error,
+  contentType = "content",
+  defaultSearchText = "",
 }: LinkTranslationDialogProps) => {
   const { config } = useConfig();
   const { client } = useRequestContext();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<ContentDetailsDto[]>([]);
-  const [selectedContent, setSelectedContent] = useState<ContentDetailsDto | null>(null);
+  const [searchTerm, setSearchTerm] = useState(defaultSearchText);
+  const [searchResults, setSearchResults] = useState<LinkableItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<LinkableItem | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
@@ -55,6 +103,8 @@ export const LinkTranslationDialog = ({
   const getLanguageName = (code: string) => {
     return languages.find((lang) => lang.code === code)?.name || code;
   };
+
+  const entityLabel = contentType === "emailTemplate" ? "email template" : "content";
 
   // Debounced search function
   const debouncedSearch = useDebouncedCallback(async (term: string) => {
@@ -67,26 +117,41 @@ export const LinkTranslationDialog = ({
       setSearching(true);
       setSearchError(null);
 
-      // Search for content excluding current content and same language
-      const response = await client.api.contentList({
-        query: term.trim(),
-      });
+      let items: LinkableItem[] = [];
 
-      // Filter out current content and same language content
-      const filteredResults = (response.data || []).filter(
-        (item: ContentDetailsDto) =>
-          item.id !== currentContentId && item.language !== currentLanguage
-      );
+      if (contentType === "emailTemplate") {
+        const response = await client.api.emailTemplatesList({
+          query: term.trim(),
+        });
+        items = (response.data || [])
+          .filter((t) => t.id !== currentContentId && t.language !== currentLanguage)
+          .map(emailTemplateToLinkable);
+      } else {
+        const response = await client.api.contentList({
+          query: term.trim(),
+        });
+        items = (response.data || [])
+          .filter(
+            (c: ContentDetailsDto) => c.id !== currentContentId && c.language !== currentLanguage
+          )
+          .map(contentToLinkable);
+      }
 
-      setSearchResults(filteredResults);
-    } catch (error) {
-      console.error("Search failed:", error);
-      setSearchError("Failed to search content. Please try again.");
+      setSearchResults(items);
+    } catch (err) {
+      console.error("Search failed:", err);
+      setSearchError(`Failed to search ${entityLabel}. Please try again.`);
       setSearchResults([]);
     } finally {
       setSearching(false);
     }
   }, 300);
+
+  useEffect(() => {
+    if (open) {
+      setSearchTerm(defaultSearchText);
+    }
+  }, [open, defaultSearchText]);
 
   useEffect(() => {
     debouncedSearch(searchTerm);
@@ -95,19 +160,19 @@ export const LinkTranslationDialog = ({
   const handleClose = () => {
     setSearchTerm("");
     setSearchResults([]);
-    setSelectedContent(null);
+    setSelectedItem(null);
     setSearchError(null);
     onClose();
   };
 
   const handleLink = () => {
-    if (selectedContent) {
-      onLink(selectedContent);
+    if (selectedItem) {
+      onLink(selectedItem);
     }
   };
 
-  const handleContentSelect = (content: ContentDetailsDto) => {
-    setSelectedContent(content);
+  const handleItemSelect = (item: LinkableItem) => {
+    setSelectedItem(item);
   };
 
   return (
@@ -147,13 +212,17 @@ export const LinkTranslationDialog = ({
         )}
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Search for content to link as a translation. Content in the same language (
+          Search for {entityLabel} to link as a translation. Items in the same language (
           {getLanguageName(currentLanguage)}) will be excluded.
         </Typography>
 
         <TextField
           fullWidth
-          placeholder="Search content by title, description, or body..."
+          placeholder={
+            contentType === "emailTemplate"
+              ? "Search email templates by name or subject..."
+              : "Search content by title, description, or body..."
+          }
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           sx={{ mb: 3 }}
@@ -187,25 +256,25 @@ export const LinkTranslationDialog = ({
 
         {searchTerm.trim().length >= 2 && searchResults.length === 0 && !searching && (
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
-            No content found matching your search
+            No {entityLabel} found matching your search
           </Typography>
         )}
 
         <Box sx={{ maxHeight: 400, overflow: "auto" }}>
-          {searchResults.map((content) => (
+          {searchResults.map((item) => (
             <Card
-              key={content.id}
+              key={item.id}
               sx={{
                 mb: 1,
                 cursor: "pointer",
-                border: selectedContent?.id === content.id ? 2 : 1,
-                borderColor: selectedContent?.id === content.id ? "primary.main" : "divider",
+                border: selectedItem?.id === item.id ? 2 : 1,
+                borderColor: selectedItem?.id === item.id ? "primary.main" : "divider",
                 "&:hover": {
                   borderColor: "primary.main",
                   boxShadow: 1,
                 },
               }}
-              onClick={() => handleContentSelect(content)}
+              onClick={() => handleItemSelect(item)}
             >
               <CardContent sx={{ py: 2 }}>
                 <Box
@@ -217,37 +286,30 @@ export const LinkTranslationDialog = ({
                   }}
                 >
                   <Typography variant="h6" component="div" sx={{ flex: 1, mr: 2 }}>
-                    {content.title || "Untitled"}
+                    {item.displayTitle}
                   </Typography>
                   <Chip
                     size="small"
-                    label={getLanguageName(content.language || "")}
+                    label={getLanguageName(item.language || "")}
                     color="primary"
                     variant="outlined"
                   />
                 </Box>
-                {content.description && (
+                {item.displaySubtitle && (
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    {content.description}
+                    {item.displaySubtitle}
                   </Typography>
                 )}
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                  {content.type && (
+                  {item.chips.map((chip, idx) => (
                     <Chip
+                      key={idx}
                       size="small"
-                      label={content.type}
+                      label={chip.label}
                       variant="outlined"
                       sx={{ fontSize: "0.75rem" }}
                     />
-                  )}
-                  {content.author && (
-                    <Chip
-                      size="small"
-                      label={`by ${content.author}`}
-                      variant="outlined"
-                      sx={{ fontSize: "0.75rem" }}
-                    />
-                  )}
+                  ))}
                 </Box>
               </CardContent>
             </Card>
@@ -262,7 +324,7 @@ export const LinkTranslationDialog = ({
         <Button
           onClick={handleLink}
           variant="contained"
-          disabled={!selectedContent || isLoading}
+          disabled={!selectedItem || isLoading}
           startIcon={isLoading ? <CircularProgress size={16} /> : <LinkIcon size={16} />}
         >
           {isLoading ? "Linking..." : "Link Translation"}

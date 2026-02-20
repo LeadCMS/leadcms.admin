@@ -1,101 +1,51 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import grapesjs, { Editor } from "grapesjs";
 import GjsEditor from "@grapesjs/react";
-import newsletterPreset from "grapesjs-preset-newsletter";
+import gjsMjml from "grapesjs-mjml";
 import "grapesjs/dist/css/grapes.min.css";
 import { Box } from "@mui/material";
 
 export interface GrapesEmailEditorProps {
   value: string;
-  onChange: (html: string) => void;
+  onChange: (mjml: string) => void;
   disabled?: boolean;
   height?: string;
 }
 
-const VOID_ELEMENTS = new Set([
-  "area",
-  "base",
-  "br",
-  "col",
-  "embed",
-  "hr",
-  "img",
-  "input",
-  "link",
-  "meta",
-  "param",
-  "source",
-  "track",
-  "wbr",
-]);
+const mjmlPluginWithOpts = (editor: Editor) => {
+  gjsMjml(editor, {
+    resetBlocks: true,
+    resetStyleManager: true,
+    resetDevices: true,
+  });
+};
+
+const DEFAULT_MJML = [
+  "<mjml>",
+  "  <mj-body>",
+  "    <mj-section>",
+  "      <mj-column>",
+  "        <mj-text>Start editing here</mj-text>",
+  "      </mj-column>",
+  "    </mj-section>",
+  "  </mj-body>",
+  "</mjml>",
+].join("\n");
 
 /**
- * Lightweight HTML formatter that preserves structure
- * with proper indentation and line breaks.
+ * Extract MJML source from GrapesJS editor using grapesjs-mjml
+ * plugin's `mjml-code` command.
  */
-function formatHtml(html: string): string {
-  if (!html) return html;
-
-  let result = "";
-  let indent = 0;
-  const tab = "  ";
-
-  // Normalise: collapse runs of whitespace between tags
-  const normalized = html.replace(/>\s+</g, "><").replace(/\n/g, "").trim();
-
-  // Split into tokens (tags and text nodes)
-  const tokens = normalized.match(/<!--[\s\S]*?-->|<[^>]+>|[^<]+/g);
-  if (!tokens) return html;
-
-  for (const token of tokens) {
-    // HTML comment
-    if (token.startsWith("<!--")) {
-      result += `${tab.repeat(indent)}${token}\n`;
-      continue;
+function getEditorMjml(editor: Editor): string {
+  try {
+    const mjml = editor.runCommand("mjml-code");
+    if (typeof mjml === "string" && mjml.trim()) {
+      return mjml;
     }
-
-    // Closing tag
-    if (token.startsWith("</")) {
-      indent = Math.max(0, indent - 1);
-      result += `${tab.repeat(indent)}${token}\n`;
-      continue;
-    }
-
-    // Opening or self-closing tag
-    if (token.startsWith("<")) {
-      const selfClosing = token.endsWith("/>");
-      const tagMatch = token.match(/^<(\w+)/);
-      const tagName = tagMatch ? tagMatch[1].toLowerCase() : "";
-      const isVoid = VOID_ELEMENTS.has(tagName);
-
-      result += `${tab.repeat(indent)}${token}\n`;
-
-      if (!selfClosing && !isVoid) {
-        indent++;
-      }
-      continue;
-    }
-
-    // Text node — trim and output at current indent
-    const text = token.trim();
-    if (text) {
-      result += `${tab.repeat(indent)}${text}\n`;
-    }
+  } catch {
+    // command not available yet
   }
-
-  return result.trimEnd() + "\n";
-}
-
-/**
- * Get HTML + CSS from GrapesJS preserving the <style> block.
- * This format round-trips correctly through the editor — GrapesJS
- * can parse the <style> block back into its CSS manager on reload.
- */
-function getEditorHtml(editor: Editor): string {
-  const html = editor.getHtml();
-  const css = editor.getCss();
-  const raw = css ? `${html}\n<style>\n${css}\n</style>` : html;
-  return formatHtml(raw);
+  return "";
 }
 
 export const GrapesEmailEditor: React.FC<GrapesEmailEditorProps> = ({
@@ -112,25 +62,25 @@ export const GrapesEmailEditor: React.FC<GrapesEmailEditorProps> = ({
     (editor: Editor) => {
       editorRef.current = editor;
 
-      if (value) {
-        suppressUpdateRef.current = true;
-        editor.setComponents(value);
-        suppressUpdateRef.current = false;
-      }
+      const content = value && value.trim() ? value : DEFAULT_MJML;
+      suppressUpdateRef.current = true;
+      editor.setComponents(content);
+      suppressUpdateRef.current = false;
 
       if (disabled) {
         editor.getModel().set("draftMode", true);
       }
 
-      editor.on("update", () => {
+      const emitChange = () => {
         if (suppressUpdateRef.current) return;
-        onChange(getEditorHtml(editor));
-      });
+        const mjml = getEditorMjml(editor);
+        if (mjml) {
+          onChange(mjml);
+        }
+      };
 
-      editor.on("component:update", () => {
-        if (suppressUpdateRef.current) return;
-        onChange(getEditorHtml(editor));
-      });
+      editor.on("update", emitChange);
+      editor.on("component:update", emitChange);
     },
     [disabled, onChange, value]
   );
@@ -139,7 +89,7 @@ export const GrapesEmailEditor: React.FC<GrapesEmailEditorProps> = ({
     if (editorRef.current && value !== lastExternalValue.current) {
       lastExternalValue.current = value;
       suppressUpdateRef.current = true;
-      editorRef.current.setComponents(value);
+      editorRef.current.setComponents(value || DEFAULT_MJML);
       suppressUpdateRef.current = false;
     }
   }, [value]);
@@ -160,11 +110,8 @@ export const GrapesEmailEditor: React.FC<GrapesEmailEditorProps> = ({
           height: "100%",
           storageManager: false,
           undoManager: { trackSelection: false },
-          canvas: {
-            styles: ["https://fonts.googleapis.com/css?family=Roboto:300,400,500,700"],
-          },
         }}
-        plugins={[newsletterPreset]}
+        plugins={[mjmlPluginWithOpts]}
         onReady={onEditorReady}
       />
     </Box>

@@ -12,6 +12,7 @@ export interface EmailGroupAutoCompleteProps {
 export interface EmailGroupOption {
   id: number;
   label: string;
+  language?: string | null;
 }
 
 export interface CreateNewEmailGroupProps {

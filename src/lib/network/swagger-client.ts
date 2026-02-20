@@ -2070,15 +2070,6 @@ export interface ConfigDto {
   primaryCurrency?: CurrencyInfoDto;
 }
 
-export interface ConfirmSubscribeDto {
-  /**
-   * Token
-   * @minLength 1
-   * @example "string"
-   */
-  token: string;
-}
-
 export interface ContactCreateDto {
   /**
    * Prefix
@@ -6275,6 +6266,43 @@ export interface EmailGroupUpdateDto {
   translationKey?: string | null;
 }
 
+export interface EmailTemplateConvertFormatRequest {
+  /**
+   * Body Template
+   * @minLength 1
+   * @example "string"
+   */
+  bodyTemplate: string;
+  /**
+   * Current Format
+   * @example "Html"
+   */
+  currentFormat: "Html" | "Mjml";
+  /**
+   * Target Format
+   * @example "Html"
+   */
+  targetFormat: "Html" | "Mjml";
+}
+
+export interface EmailTemplateConvertFormatResponse {
+  /**
+   * Body Template
+   * @example "string"
+   */
+  bodyTemplate?: string;
+  /**
+   * Format
+   * @example "Html"
+   */
+  format?: "Html" | "Mjml";
+  /**
+   * Ai Powered
+   * @example true
+   */
+  aiPowered?: boolean;
+}
+
 export interface EmailTemplateCreateDto {
   /**
    * Name
@@ -6294,6 +6322,11 @@ export interface EmailTemplateCreateDto {
    * @example "string"
    */
   bodyTemplate: string;
+  /**
+   * Format
+   * @example "Html"
+   */
+  format?: "Html" | "Mjml";
   /**
    * From Email
    * @format email
@@ -6346,6 +6379,11 @@ export interface EmailTemplateDetailsDto {
    * @example "string"
    */
   bodyTemplate: string;
+  /**
+   * Format
+   * @example "Html"
+   */
+  format?: "Html" | "Mjml";
   /**
    * From Email
    * @format email
@@ -6429,6 +6467,11 @@ export interface EmailTemplateEditRequest {
    */
   bodyTemplate?: string | null;
   /**
+   * Format
+   * @example "Html"
+   */
+  format?: "Html" | "Mjml" | null;
+  /**
    * From Email
    * @format email
    * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
@@ -6463,6 +6506,17 @@ export interface EmailTemplateEditRequest {
    * @example "string"
    */
   prompt: string;
+  /**
+   * Reference Email Template Id
+   * @format int32
+   * @example 1
+   */
+  referenceEmailTemplateId?: number | null;
+  /**
+   * Template Variables
+   * @example {"key1":"value1","key2":"value2"}
+   */
+  templateVariables?: Record<string, string>;
 }
 
 export interface EmailTemplateGenerationRequest {
@@ -6485,6 +6539,22 @@ export interface EmailTemplateGenerationRequest {
    * @example "string"
    */
   prompt: string;
+  /**
+   * Format
+   * @example "Html"
+   */
+  format?: "Html" | "Mjml" | null;
+  /**
+   * Reference Email Template Id
+   * @format int32
+   * @example 1
+   */
+  referenceEmailTemplateId?: number | null;
+  /**
+   * Template Variables
+   * @example {"key1":"value1","key2":"value2"}
+   */
+  templateVariables?: Record<string, string>;
 }
 
 export interface EmailTemplateUpdateDto {
@@ -6506,6 +6576,11 @@ export interface EmailTemplateUpdateDto {
    * @example "string"
    */
   bodyTemplate?: string | null;
+  /**
+   * Format
+   * @example "Html"
+   */
+  format?: "Html" | "Mjml" | null;
   /**
    * From Email
    * @format email
@@ -8630,34 +8705,6 @@ export interface StringStringValuesKeyValuePair {
   value?: string[];
 }
 
-export interface SubscribeDto {
-  /**
-   * Email
-   * @format email
-   * @minLength 1
-   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
-   * @example "example@example.com"
-   */
-  email: string;
-  /**
-   * Group
-   * @example "string"
-   */
-  group?: string;
-  /**
-   * Time Zone Offset
-   * @format int32
-   * @example 1
-   */
-  timeZoneOffset: number;
-  /**
-   * Language
-   * @minLength 1
-   * @example "string"
-   */
-  language: string;
-}
-
 export interface TaskDetailsDto {
   /**
    * Name
@@ -8869,29 +8916,6 @@ export interface TopContentItemDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   createdAt?: string;
-}
-
-export interface UnsibscribeDto {
-  /**
-   * Email
-   * @format email
-   * @minLength 1
-   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
-   * @example "example@example.com"
-   */
-  email: string;
-  /**
-   * Time Zone Offset
-   * @format int32
-   * @example 1
-   */
-  timeZoneOffset: number;
-  /**
-   * Language
-   * @minLength 1
-   * @example "string"
-   */
-  language: string;
 }
 
 export interface UnsubscribeDetailsDto {
@@ -10228,46 +10252,6 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags ContactUs
-     * @name ContactUsCreate
-     * @request POST:/api/contact-us
-     * @secure
-     */
-    contactUsCreate: (
-      data: {
-        /** @format binary */
-        Attachment?: File;
-        Title?: string;
-        NotificationType?: string;
-        AcknowledgmentType?: string;
-        PageUrl?: string;
-        FirstName: string;
-        LastName?: string;
-        Company?: string;
-        Subject?: string;
-        ExtraData?: Record<string, string | null>;
-        Message: string;
-        /** @format email */
-        Email: string;
-        /** @format int32 */
-        TimeZoneOffset: number;
-        Language: string;
-        RecaptchaToken?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void>({
-        path: `/api/contact-us`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.FormData,
         ...params,
       }),
 
@@ -14948,6 +14932,28 @@ export class Api<
      * No description
      *
      * @tags EmailTemplates
+     * @name EmailTemplatesConvertFormatCreate
+     * @request POST:/api/email-templates/convert-format
+     * @secure
+     */
+    emailTemplatesConvertFormatCreate: (
+      data: EmailTemplateConvertFormatRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplateConvertFormatResponse, ProblemDetails>({
+        path: `/api/email-templates/convert-format`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
      * @name EmailTemplatesTranslationDraftDetail
      * @request GET:/api/email-templates/{id}/translation-draft/{language}
      * @secure
@@ -17384,63 +17390,6 @@ export class Api<
         path: `/api/statistics`,
         method: "POST",
         secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Subscribes
-     * @name SubscribeCreate
-     * @request POST:/api/subscribe
-     * @secure
-     */
-    subscribeCreate: (data: SubscribeDto, params: RequestParams = {}) =>
-      this.request<void, void>({
-        path: `/api/subscribe`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Subscribes
-     * @name SubscribeConfirmCreate
-     * @request POST:/api/subscribe/confirm
-     * @secure
-     */
-    subscribeConfirmCreate: (
-      data: ConfirmSubscribeDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void>({
-        path: `/api/subscribe/confirm`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Subscribes
-     * @name UnsubscribeCreate
-     * @request POST:/api/unsubscribe
-     * @secure
-     */
-    unsubscribeCreate: (data: UnsibscribeDto, params: RequestParams = {}) =>
-      this.request<void, void>({
-        path: `/api/unsubscribe`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
         ...params,
       }),
 

@@ -9,7 +9,10 @@ export const EmailTemplatesModule = () => {
       <Route path={"/:id/view"} element={<EmailTemplateEdit readonly />} />
       <Route path={"/:id/edit"} element={<EmailTemplateEdit />} />
       <Route path={"/:sourceId/duplicate"} element={<EmailTemplateEdit />} />
+      <Route path={"/:sourceId/translate/:targetLanguage/:type"} element={<EmailTemplateEdit />} />
+      <Route path={"/:sourceId/translate/:targetLanguage"} element={<EmailTemplateEdit />} />
       <Route path={"/add"} element={<EmailTemplateEdit />} />
+      <Route path={"/ai-draft"} element={<EmailTemplateEdit />} />
     </Routes>
   );
 };

@@ -51,6 +51,8 @@ export interface ContentEditMetadataSectionProps {
   preloadedSourceTranslations?: ContentDetailsDto[];
   // Display helpers
   getContentTypeDisplayName: () => string;
+  /** Slug used as default search text in Link Translation dialog */
+  slug?: string;
 }
 
 export const ContentEditMetadataSection = ({
@@ -78,6 +80,7 @@ export const ContentEditMetadataSection = ({
   preloadedTranslations,
   preloadedSourceTranslations,
   getContentTypeDisplayName,
+  slug,
 }: ContentEditMetadataSectionProps) => {
   const { config } = useConfig();
   const lengthSettings = getContentLengthSettings(config);
@@ -256,6 +259,7 @@ export const ContentEditMetadataSection = ({
                 isTranslationMode={isTranslationMode}
                 preloadedTranslations={preloadedTranslations}
                 preloadedSourceTranslations={preloadedSourceTranslations}
+                linkTranslationSearchText={slug}
               />
             )}
           </Box>
@@ -288,6 +292,7 @@ export const ContentEditMetadataSection = ({
                 isTranslationMode={isTranslationMode}
                 preloadedTranslations={preloadedTranslations}
                 preloadedSourceTranslations={preloadedSourceTranslations}
+                linkTranslationSearchText={slug}
               />
             )}
           </Box>

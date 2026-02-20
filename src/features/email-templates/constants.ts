@@ -27,3 +27,5 @@ export const emailTemplateAddHeader = "Add email teplate";
 export const emailTemplateViewHeader = "View email template";
 
 export const emailTemplateGridSettingsStorageKey = "emailTemplateDataListSettings";
+
+export const emailTemplateGroupFilterStorageKey = "emailTemplateGroupFilter";

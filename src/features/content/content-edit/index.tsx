@@ -34,7 +34,7 @@ import { AIEditDialog } from "@components/ai-edit-dialog";
 import { AICoverDialog } from "@components/ai-cover-dialog";
 import { TranslateDialog } from "@components/translate-dialog";
 import { PublicationStatusDialog, PublicationStatus } from "@components/publication-status-dialog";
-import { RestoreDataModal } from "@components/restore-data";
+
 import { ModuleWrapper } from "@components/module-wrapper";
 
 // Import UI components
@@ -60,7 +60,7 @@ import { RefreshCw, ExternalLink } from "lucide-react";
 
 // Import existing components and utilities
 import { ContentEditContainer } from "../index.styled";
-import { ContentEditRestoreState, ContentDetails } from "./types";
+import { ContentDetails } from "./types";
 import { generateDefaultValues, idToDisplayName, ContentFormat } from "../content-types";
 import MDXEditorNew from "@components/mdx-editor-new";
 import ValidationStatusBubble from "@components/validation-status-bubble";
@@ -133,9 +133,6 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   // UI state
   const [activeTab, setActiveTab] = useState<string>("content");
-  const [restoreDataState, setRestoreDataState] = useState<ContentEditRestoreState>(
-    ContentEditRestoreState.Idle
-  );
   const [storedMetadataCollapsed, setStoredMetadataCollapsed] = useLocalStorage(
     METADATA_COLLAPSED_STORAGE_KEY,
     false
@@ -1021,15 +1018,6 @@ export const ContentEdit = (props: ContentEditProps) => {
           />
         }
       >
-        <RestoreDataModal
-          isOpen={restoreDataState === ContentEditRestoreState.Requested}
-          onClose={(value) =>
-            value
-              ? setRestoreDataState(ContentEditRestoreState.Accepted)
-              : setRestoreDataState(ContentEditRestoreState.Rejected)
-          }
-        />
-
         <ContentEditContainer>
           {shouldShowForm ? (
             <Card sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -1084,6 +1072,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                   preloadedTranslations={contentDataOps.preloadedTranslations}
                   preloadedSourceTranslations={contentDataOps.preloadedTranslations}
                   getContentTypeDisplayName={getContentTypeDisplayName}
+                  slug={contentFormOps.formik.values.slug}
                 />
 
                 {/* Tabs and Preview Controls */}

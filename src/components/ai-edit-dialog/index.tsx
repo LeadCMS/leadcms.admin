@@ -18,7 +18,7 @@ import {
   FormLabel,
   Stack,
 } from "@mui/material";
-import { ImagePlus, Sparkles, Trash2, X } from "lucide-react";
+import { ImagePlus, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useConfig } from "@providers/config-provider";
 import type { Theme } from "@mui/material/styles";
@@ -49,7 +49,8 @@ export interface AIEditDialogProps {
     wordCount?: number | null,
     characterCount?: number | null,
     tokenEstimation?: TokenEstimation | null,
-    requiredMediaPaths?: string[]
+    requiredMediaPaths?: string[],
+    templateVariables?: Record<string, string>
   ) => void;
   isLoading?: boolean;
   error?: string | null;
@@ -58,6 +59,10 @@ export interface AIEditDialogProps {
   contentTitle?: string;
   currentContent?: unknown;
   initialRequiredMediaPaths?: string[];
+  /** "content" shows media picker; "email-template" shows token editor */
+  variant?: "content" | "email-template";
+  /** Pre-filled template variables for email-template variant */
+  initialTemplateVariables?: Record<string, string>;
 }
 
 const MAX_REQUIRED_MEDIA = 10;
@@ -73,13 +78,16 @@ export const AIEditDialog = ({
   contentTitle,
   currentContent,
   initialRequiredMediaPaths,
+  variant = "content",
+  initialTemplateVariables,
 }: AIEditDialogProps) => {
   const { config } = useConfig();
   const [prompt, setPrompt] = useState(initialPrompt);
   const [limitType, setLimitType] = useState<LimitType>("none");
-  const [limitValue, setLimitValue] = useState<number | "">("");
+  const [limitValue, setLimitValue] = useState<number | "">(" ");
   const [requiredMediaPaths, setRequiredMediaPaths] = useState<string[]>([]);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [templateVars, setTemplateVars] = useState<Array<{ key: string; value: string }>>([]);
 
   // Check if AI assistance is available
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
@@ -140,8 +148,19 @@ export const AIEditDialog = ({
       setLimitType("none");
       setLimitValue("");
       setRequiredMediaPaths(initialRequiredMediaPaths || []);
+      // Initialize template variables
+      if (initialTemplateVariables) {
+        setTemplateVars(
+          Object.entries(initialTemplateVariables).map(([key, value]) => ({
+            key,
+            value,
+          }))
+        );
+      } else {
+        setTemplateVars([]);
+      }
     }
-  }, [open, initialPrompt, initialRequiredMediaPaths]);
+  }, [open, initialPrompt, initialRequiredMediaPaths, initialTemplateVariables]);
 
   const handleEdit = () => {
     if (prompt.trim()) {
@@ -155,12 +174,19 @@ export const AIEditDialog = ({
             estimatedCost: tokenEstimation.estimatedCost,
           }
         : null;
+      // Build templateVariables record from the key-value pairs
+      const vars: Record<string, string> = {};
+      templateVars.forEach(({ key, value }) => {
+        const k = key.trim();
+        if (k) vars[k] = value;
+      });
       onEdit(
         prompt.trim(),
         wordCount,
         characterCount,
         estimation,
-        requiredMediaPaths.length ? requiredMediaPaths : undefined
+        requiredMediaPaths.length ? requiredMediaPaths : undefined,
+        Object.keys(vars).length > 0 ? vars : undefined
       );
     }
   };
@@ -316,78 +342,174 @@ export const AIEditDialog = ({
             helperText={`${prompt.length} characters. Be specific about the changes you want.`}
           />
 
-          <Box
-            sx={{
-              p: 3,
-              mb: 3,
-              borderRadius: 2,
-              border: "1px solid",
-              borderColor: "divider",
-              backgroundColor: "rgba(0, 0, 0, 0.02)",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Media to insert (optional)
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {requiredMediaPaths.length}/{MAX_REQUIRED_MEDIA}
-              </Typography>
-            </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-              Add images that the AI must place inside the article and blend into the content flow.
-            </Typography>
-
-            <Box sx={{ mt: 2 }}>
-              {requiredMediaPaths.length === 0 ? (
-                <Typography variant="caption" color="text.secondary">
-                  No media selected.
-                </Typography>
-              ) : (
-                <Stack spacing={1}>
-                  {requiredMediaPaths.map((path) => (
-                    <Box
-                      key={path}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        p: 1,
-                        border: "1px solid",
-                        borderColor: "grey.200",
-                        borderRadius: 2,
-                        backgroundColor: "common.white",
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={buildAbsoluteUrlWithCacheBust(path)}
-                        alt="Selected media"
-                        sx={{ width: 56, height: 56, objectFit: "cover", borderRadius: 1 }}
-                      />
-                      <Typography variant="body2" sx={{ flex: 1 }}>
-                        {path}
-                      </Typography>
-                      <IconButton size="small" onClick={() => handleRemoveMedia(path)}>
-                        <Trash2 size={16} />
-                      </IconButton>
-                    </Box>
-                  ))}
-                </Stack>
-              )}
-            </Box>
-
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ImagePlus size={16} />}
-              onClick={() => setMediaPickerOpen(true)}
-              disabled={requiredMediaPaths.length >= MAX_REQUIRED_MEDIA || isLoading}
-              sx={{ mt: 2 }}
+          {variant === "content" && (
+            <Box
+              sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                backgroundColor: "rgba(0, 0, 0, 0.02)",
+              }}
             >
-              Add from Media Library
-            </Button>
-          </Box>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Media to insert (optional)
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {requiredMediaPaths.length}/{MAX_REQUIRED_MEDIA}
+                </Typography>
+              </Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 0.5 }}
+              >
+                Add images that the AI must place inside the article and blend into the content
+                flow.
+              </Typography>
+
+              <Box sx={{ mt: 2 }}>
+                {requiredMediaPaths.length === 0 ? (
+                  <Typography variant="caption" color="text.secondary">
+                    No media selected.
+                  </Typography>
+                ) : (
+                  <Stack spacing={1}>
+                    {requiredMediaPaths.map((path) => (
+                      <Box
+                        key={path}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          p: 1,
+                          border: "1px solid",
+                          borderColor: "grey.200",
+                          borderRadius: 2,
+                          backgroundColor: "common.white",
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={buildAbsoluteUrlWithCacheBust(path)}
+                          alt="Selected media"
+                          sx={{ width: 56, height: 56, objectFit: "cover", borderRadius: 1 }}
+                        />
+                        <Typography variant="body2" sx={{ flex: 1 }}>
+                          {path}
+                        </Typography>
+                        <IconButton size="small" onClick={() => handleRemoveMedia(path)}>
+                          <Trash2 size={16} />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
+              </Box>
+
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ImagePlus size={16} />}
+                onClick={() => setMediaPickerOpen(true)}
+                disabled={requiredMediaPaths.length >= MAX_REQUIRED_MEDIA || isLoading}
+                sx={{ mt: 2 }}
+              >
+                Add from Media Library
+              </Button>
+            </Box>
+          )}
+
+          {variant === "email-template" && (
+            <Box
+              sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                backgroundColor: "rgba(0, 0, 0, 0.02)",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Template Variables (optional)
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {templateVars.length} defined
+                </Typography>
+              </Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 0.5, mb: 2 }}
+              >
+                Define placeholder tokens the AI must use in the template (e.g. name, resetLink).
+              </Typography>
+
+              <Stack spacing={1.5}>
+                {templateVars.map((tv, idx) => (
+                  <Box
+                    key={idx}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <TextField
+                      size="small"
+                      label="Token name"
+                      placeholder="e.g. name"
+                      value={tv.key}
+                      onChange={(e) => {
+                        const next = [...templateVars];
+                        next[idx] = { ...next[idx], key: e.target.value };
+                        setTemplateVars(next);
+                      }}
+                      disabled={isLoading}
+                      sx={{ flex: 1 }}
+                    />
+                    <TextField
+                      size="small"
+                      label="Description"
+                      placeholder="e.g. Customer name"
+                      value={tv.value}
+                      onChange={(e) => {
+                        const next = [...templateVars];
+                        next[idx] = { ...next[idx], value: e.target.value };
+                        setTemplateVars(next);
+                      }}
+                      disabled={isLoading}
+                      sx={{ flex: 1.5 }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        setTemplateVars((prev) => prev.filter((_, i) => i !== idx));
+                      }}
+                      disabled={isLoading}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Stack>
+
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Plus size={16} />}
+                onClick={() => setTemplateVars((prev) => [...prev, { key: "", value: "" }])}
+                disabled={isLoading}
+                sx={{ mt: 2 }}
+              >
+                Add Variable
+              </Button>
+            </Box>
+          )}
 
           {/* Output Length Limit Section */}
           <Box

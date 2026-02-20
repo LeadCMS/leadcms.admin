@@ -506,6 +506,7 @@ export const DataList = <TModel extends GridValidRowModel>({
           setRowSelectionModel(newRowSelectionModel);
         }}
         rowSelectionModel={rowSelectionModel}
+        columnWidths={columnWidths}
         saveColumnWidths={saveColumnWidths}
       />
     </DataListContainer>

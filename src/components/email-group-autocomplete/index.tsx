@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { TextField, MenuItem, CircularProgress, Grid } from "@mui/material";
+import { TextField, MenuItem, CircularProgress, Grid, Chip, Box } from "@mui/material";
 import { Plus } from "lucide-react";
 import { CreateNewEmailGroup } from "./create-new";
 import { useRequestContext } from "@providers/request-provider";
@@ -31,6 +31,7 @@ export function EmailGroupAutocomplete({
       data = response.data.map((value) => ({
         id: value.id as number,
         label: value.name,
+        language: value.language,
       }));
     } catch (e) {
       const error = e as ProblemDetails;
@@ -87,7 +88,21 @@ export function EmailGroupAutocomplete({
           >
             {options.map((opt) => (
               <MenuItem key={opt.id} value={opt.id}>
-                {opt.label}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  {opt.label}
+                  {opt.language && (
+                    <Chip
+                      label={opt.language}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        height: 18,
+                        fontSize: "0.65rem",
+                        "& .MuiChip-label": { px: 0.75 },
+                      }}
+                    />
+                  )}
+                </Box>
               </MenuItem>
             ))}
             <MenuItem value="__add__">

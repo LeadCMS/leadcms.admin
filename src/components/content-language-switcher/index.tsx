@@ -13,20 +13,26 @@ import { Add, Translate, ExpandMore, Link } from "@mui/icons-material";
 import { ContentDetailsDto, LanguageDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
-import { LinkTranslationDialog } from "@components/link-translation-dialog";
+import {
+  LinkTranslationDialog,
+  LinkableContentType,
+  LinkableItem,
+} from "@components/link-translation-dialog";
 
 interface ContentLanguageSwitcherProps {
   contentId: number;
   currentLanguage: string;
   onLanguageChange: (language: string, translationId?: number) => void;
   onCreateTranslation: (language: string) => void;
-  compact?: boolean; // Add compact mode prop
-  // Translation mode props
-  sourceContentId?: number; // When in translation mode, the original content's ID
-  isTranslationMode?: boolean; // Whether we're in translation mode
-  // Preloaded data props
+  compact?: boolean;
+  sourceContentId?: number;
+  isTranslationMode?: boolean;
   preloadedTranslations?: ContentDetailsDto[];
   preloadedSourceTranslations?: ContentDetailsDto[];
+  /** Which entity type this switcher operates on */
+  contentType?: LinkableContentType;
+  /** Default search text for the Link Translation dialog */
+  linkTranslationSearchText?: string;
 }
 
 interface LanguageWithStatus extends LanguageDto {
@@ -44,6 +50,8 @@ export const ContentLanguageSwitcher = ({
   isTranslationMode = false,
   preloadedTranslations,
   preloadedSourceTranslations,
+  contentType = "content",
+  linkTranslationSearchText = "",
 }: ContentLanguageSwitcherProps) => {
   const [translations, setTranslations] = useState<ContentDetailsDto[]>(
     preloadedTranslations || []
@@ -84,12 +92,17 @@ export const ContentLanguageSwitcher = ({
   ]);
 
   const loadTranslations = async () => {
-    if (!contentId) return; // Don't load if contentId is 0 or falsy
+    if (!contentId) return;
 
     try {
       setLoading(true);
-      const response = await client.api.contentTranslationsList(contentId);
-      setTranslations(response.data || []);
+      if (contentType === "emailTemplate") {
+        const response = await client.api.emailTemplatesTranslationsList(contentId);
+        setTranslations(response.data as never);
+      } else {
+        const response = await client.api.contentTranslationsList(contentId);
+        setTranslations(response.data || []);
+      }
     } catch (error) {
       console.error("Failed to load translations:", error);
     } finally {
@@ -101,15 +114,19 @@ export const ContentLanguageSwitcher = ({
     if (!sourceContentId) return;
 
     try {
-      const response = await client.api.contentTranslationsList(sourceContentId);
-      setSourceTranslations(response.data || []);
+      if (contentType === "emailTemplate") {
+        const response = await client.api.emailTemplatesTranslationsList(sourceContentId);
+        setSourceTranslations(response.data as never);
+      } else {
+        const response = await client.api.contentTranslationsList(sourceContentId);
+        setSourceTranslations(response.data || []);
+      }
     } catch (error) {
       console.error("Failed to load source translations:", error);
     }
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    console.log("ContentLanguageSwitcher: Menu opened");
     setAnchorEl(event.currentTarget);
   };
 
@@ -134,53 +151,67 @@ export const ContentLanguageSwitcher = ({
     return currentLangConfig?.name || currentLanguage?.toUpperCase() || "Unknown";
   };
 
-  const handleLinkTranslation = async (linkedContent: ContentDetailsDto) => {
+  const handleLinkTranslation = async (linkedItem: LinkableItem) => {
     try {
       setLinkingLoading(true);
       setLinkingError(null);
 
-      const currentContentResponse = await client.api.contentDetail(contentId);
-      const currentContent = currentContentResponse.data;
+      let translationKey: string | undefined;
 
-      let translationKey: string;
+      if (contentType === "emailTemplate") {
+        const currentResp = await client.api.emailTemplatesDetail(contentId);
+        const current = currentResp.data;
 
-      // Check if either content has a translationKey
-      if (currentContent.translationKey) {
-        translationKey = currentContent.translationKey;
-        // Update the linked content with the existing translationKey
-        if (linkedContent.id) {
-          await client.api.contentPartialUpdate(linkedContent.id, {
-            translationKey: translationKey,
-          });
-        }
-      } else if (linkedContent.translationKey) {
-        translationKey = linkedContent.translationKey;
-        // Update the current content with the linked content's translationKey
-        await client.api.contentPartialUpdate(contentId, {
-          translationKey: translationKey,
-        });
-      } else {
-        // Neither has a translationKey, create a new draft translation to get one
-        if (linkedContent.language) {
-          const draftResponse = await client.api.contentTranslationDraftDetail(
+        if (current.translationKey) {
+          translationKey = current.translationKey;
+          if (linkedItem.id) {
+            await client.api.emailTemplatesPartialUpdate(linkedItem.id, { translationKey });
+          }
+        } else if (linkedItem.translationKey) {
+          translationKey = linkedItem.translationKey;
+          await client.api.emailTemplatesPartialUpdate(contentId, { translationKey });
+        } else if (linkedItem.language) {
+          const draftResp = await client.api.emailTemplatesTranslationDraftDetail(
             contentId,
-            linkedContent.language,
+            linkedItem.language,
             { transformer: "EmptyCopy" }
           );
-          if (draftResponse.data.translationKey) {
-            translationKey = draftResponse.data.translationKey;
+          if (draftResp.data.translationKey) {
+            translationKey = draftResp.data.translationKey;
+            if (linkedItem.id) {
+              await client.api.emailTemplatesPartialUpdate(linkedItem.id, { translationKey });
+            }
+          }
+        }
+      } else {
+        const currentResp = await client.api.contentDetail(contentId);
+        const current = currentResp.data;
 
-            // Update the linked content with the new translationKey
-            if (linkedContent.id) {
-              await client.api.contentPartialUpdate(linkedContent.id, {
-                translationKey: translationKey,
-              });
+        if (current.translationKey) {
+          translationKey = current.translationKey;
+          if (linkedItem.id) {
+            await client.api.contentPartialUpdate(linkedItem.id, { translationKey });
+          }
+        } else if (linkedItem.translationKey) {
+          translationKey = linkedItem.translationKey;
+          await client.api.contentPartialUpdate(contentId, {
+            translationKey,
+          });
+        } else if (linkedItem.language) {
+          const draftResp = await client.api.contentTranslationDraftDetail(
+            contentId,
+            linkedItem.language,
+            { transformer: "EmptyCopy" }
+          );
+          if (draftResp.data.translationKey) {
+            translationKey = draftResp.data.translationKey;
+            if (linkedItem.id) {
+              await client.api.contentPartialUpdate(linkedItem.id, { translationKey });
             }
           }
         }
       }
 
-      // Reload translations to reflect the changes
       await loadTranslations();
       setLinkDialogOpen(false);
     } catch (error) {
@@ -192,7 +223,6 @@ export const ContentLanguageSwitcher = ({
   };
 
   const handleLinkDialogOpen = () => {
-    console.log("ContentLanguageSwitcher: Link Translation clicked");
     setLinkDialogOpen(true);
     setLinkingError(null);
     handleMenuClose();
@@ -358,6 +388,8 @@ export const ContentLanguageSwitcher = ({
           currentLanguage={currentLanguage}
           isLoading={linkingLoading}
           error={linkingError}
+          contentType={contentType}
+          defaultSearchText={linkTranslationSearchText}
         />
       </>
     );
@@ -484,6 +516,8 @@ export const ContentLanguageSwitcher = ({
         currentLanguage={currentLanguage}
         isLoading={linkingLoading}
         error={linkingError}
+        contentType={contentType}
+        defaultSearchText={linkTranslationSearchText}
       />
     </Box>
   );
@@ -501,6 +535,9 @@ export const LanguageHighlights = ({
   isTranslationMode = false,
   preloadedTranslations,
   preloadedSourceTranslations,
+  contentType = "content",
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  linkTranslationSearchText: _linkTranslationSearchText = "",
 }: ContentLanguageSwitcherProps) => {
   const [translations, setTranslations] = useState<ContentDetailsDto[]>(
     preloadedTranslations || []
@@ -536,12 +573,17 @@ export const LanguageHighlights = ({
   ]);
 
   const loadTranslations = async () => {
-    if (!contentId) return; // Don't load if contentId is 0 or falsy
+    if (!contentId) return;
 
     try {
       setLoading(true);
-      const response = await client.api.contentTranslationsList(contentId);
-      setTranslations(response.data || []);
+      if (contentType === "emailTemplate") {
+        const response = await client.api.emailTemplatesTranslationsList(contentId);
+        setTranslations(response.data as never);
+      } else {
+        const response = await client.api.contentTranslationsList(contentId);
+        setTranslations(response.data || []);
+      }
     } catch (error) {
       console.error("Failed to load translations:", error);
     } finally {
@@ -553,8 +595,13 @@ export const LanguageHighlights = ({
     if (!sourceContentId) return;
 
     try {
-      const response = await client.api.contentTranslationsList(sourceContentId);
-      setSourceTranslations(response.data || []);
+      if (contentType === "emailTemplate") {
+        const response = await client.api.emailTemplatesTranslationsList(sourceContentId);
+        setSourceTranslations(response.data as never);
+      } else {
+        const response = await client.api.contentTranslationsList(sourceContentId);
+        setSourceTranslations(response.data || []);
+      }
     } catch (error) {
       console.error("Failed to load source translations:", error);
     }
