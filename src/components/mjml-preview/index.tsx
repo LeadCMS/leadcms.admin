@@ -156,6 +156,28 @@ function generateSmartDefault(
     };
   }
 
+  // ID patterns — must come before generic name patterns
+  if (lower === "id") {
+    return { value: "1042", type: "text" };
+  }
+  if (lower.includes("orderid") || lower.includes("order_id")) {
+    return { value: "ORD-1042", type: "text" };
+  }
+  if (
+    lower.includes("refid") ||
+    lower.includes("ref_id") ||
+    lower.includes("referenceid") ||
+    lower.includes("reference_id") ||
+    lower.includes("platformref")
+  ) {
+    return { value: "REF-78432", type: "text" };
+  }
+
+  // Order number
+  if (lower.includes("ordernumber") || lower.includes("order_number")) {
+    return { value: "ORD-2024-00158", type: "text" };
+  }
+
   // Name patterns
   if (lower === "name" || lower === "username" || lower === "user_name") {
     return {
@@ -164,10 +186,18 @@ function generateSmartDefault(
     };
   }
   if (
+    lower.includes("customername") ||
+    lower.includes("customer_name") ||
     lower.includes("displayname") ||
     lower.includes("display_name") ||
     lower.includes("fullname") ||
-    lower.includes("full_name")
+    lower.includes("full_name") ||
+    lower.includes("contactname") ||
+    lower.includes("contact_name") ||
+    lower.includes("buyername") ||
+    lower.includes("buyer_name") ||
+    lower.includes("recipientname") ||
+    lower.includes("recipient_name")
   ) {
     return {
       value: user?.displayName || "John Doe",
@@ -228,7 +258,17 @@ function generateSmartDefault(
     };
   }
 
-  // Amount / price / total
+  // Currency
+  if (lower.includes("currency")) {
+    return { value: "USD", type: "text" };
+  }
+
+  // Fee / commission
+  if (lower.includes("fee") || lower.includes("commission")) {
+    return { value: "2.50", type: "text" };
+  }
+
+  // Amount / price / total / cost / unitprice
   if (
     lower.includes("amount") ||
     lower.includes("price") ||
@@ -236,6 +276,26 @@ function generateSmartDefault(
     lower.includes("cost")
   ) {
     return { value: "99.99", type: "text" };
+  }
+
+  // Product / item
+  if (lower.includes("product") || lower.includes("item")) {
+    return { value: "Premium Widget", type: "text" };
+  }
+
+  // Source / platform / provider
+  if (
+    lower.includes("source") ||
+    lower.includes("platform") ||
+    lower.includes("provider") ||
+    lower.includes("gateway")
+  ) {
+    return { value: "Stripe", type: "text" };
+  }
+
+  // Language / locale
+  if (lower.includes("language") || lower.includes("locale")) {
+    return { value: "en", type: "text" };
   }
 
   // Count / number / quantity
