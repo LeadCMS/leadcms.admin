@@ -1,10 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  TextField,
-  MenuItem,
-  CircularProgress,
-  Grid
-} from "@mui/material";
+import { TextField, MenuItem, CircularProgress, Grid } from "@mui/material";
 import { Plus } from "lucide-react";
 import { CreateNewEmailGroup } from "./create-new";
 import { useRequestContext } from "@providers/request-provider";
@@ -17,6 +12,7 @@ export function EmailGroupAutocomplete({
   placeholder,
   value,
   onChange,
+  onChangeWithLabel,
   error,
   helperText,
   disabled,
@@ -53,21 +49,29 @@ export function EmailGroupAutocomplete({
     setDialogOpen(false);
     requestData();
     onChange(newGroup.id);
+    if (onChangeWithLabel) {
+      onChangeWithLabel(newGroup.id, newGroup.label);
+    }
   };
 
   return (
     <>
       <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 12, sm: 12 }} >
+        <Grid size={{ xs: 12, sm: 12 }}>
           <TextField
             select
             label={label || "Group ID"}
             value={value === undefined || value === null ? "" : value}
-            onChange={e => {
+            onChange={(e) => {
               if (e.target.value === "__add__") {
                 setDialogOpen(true);
               } else {
-                onChange(Number(e.target.value));
+                const numVal = Number(e.target.value);
+                onChange(numVal);
+                if (onChangeWithLabel) {
+                  const opt = options.find((o) => o.id === numVal);
+                  onChangeWithLabel(numVal, opt?.label || "");
+                }
               }
             }}
             error={!!error}
@@ -77,13 +81,11 @@ export function EmailGroupAutocomplete({
             disabled={disabled}
             InputProps={{
               endAdornment: (
-                <>
-                  {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                </>
+                <>{isLoading ? <CircularProgress color="inherit" size={20} /> : null}</>
               ),
             }}
           >
-            {options.map(opt => (
+            {options.map((opt) => (
               <MenuItem key={opt.id} value={opt.id}>
                 {opt.label}
               </MenuItem>
@@ -94,7 +96,7 @@ export function EmailGroupAutocomplete({
           </TextField>
         </Grid>
       </Grid>
-     
+
       <CreateNewEmailGroup
         isOpen={dialogOpen}
         onClose={() => setDialogOpen(false)}

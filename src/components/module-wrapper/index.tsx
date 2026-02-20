@@ -16,6 +16,7 @@ import { useModuleWrapperContext } from "@providers/module-wrapper-provider";
 import { BreadcrumbLink } from "../../types";
 import { ResponsiveActions } from "@components/responsive-actions";
 import { useLayout } from "@providers/layout-provider";
+import { useSidebar } from "@providers/sidebar-provider";
 
 export interface ModuleWrapperProps extends PropsWithChildren {
   key?: string;
@@ -40,6 +41,7 @@ export const ModuleWrapper = ({
 }: ModuleWrapperProps) => {
   const { isBusy } = useModuleWrapperContext();
   const { fullWidth: contextFullWidth } = useLayout();
+  const { isCollapsed: sidebarCollapsed } = useSidebar();
 
   // Use prop fullWidth if provided, otherwise use context fullWidth
   const fullWidth = propFullWidth ?? contextFullWidth;
@@ -65,7 +67,9 @@ export const ModuleWrapper = ({
         <ScrollContainer id="scrollTarget">
           {isForm ? <FormContainer>{children}</FormContainer> : children}
         </ScrollContainer>
-        {actionButtons && <FixedActionBar>{actionButtons}</FixedActionBar>}
+        {actionButtons && (
+          <FixedActionBar sidebarCollapsed={sidebarCollapsed}>{actionButtons}</FixedActionBar>
+        )}
         {isBusy && (
           <>
             <LoadingIndicatorContainer />

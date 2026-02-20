@@ -745,6 +745,15 @@ export interface AccountDetailsDto {
   domains?: DomainDetailsDto[] | null;
 }
 
+export interface AccountDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: AccountDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, AccountDetailsDto>;
+}
+
 export interface AccountImportDto {
   /**
    * Id
@@ -1807,6 +1816,15 @@ export interface CommentDetailsDto {
   answerStatus?: "Unanswered" | "Answered" | "Closed";
 }
 
+export interface CommentDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: CommentDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, CommentDetailsDto>;
+}
+
 export interface CommentImportDto {
   /**
    * Id
@@ -2050,6 +2068,15 @@ export interface ConfigDto {
   /** Capabilities */
   capabilities?: string[];
   primaryCurrency?: CurrencyInfoDto;
+}
+
+export interface ConfirmSubscribeDto {
+  /**
+   * Token
+   * @minLength 1
+   * @example "string"
+   */
+  token: string;
 }
 
 export interface ContactCreateDto {
@@ -2879,6 +2906,15 @@ export interface ContactDetailsDto {
   account?: AccountDetailsDto;
   /** Orders */
   orders?: OrderDetailsDto[] | null;
+}
+
+export interface ContactDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: ContactDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, ContactDetailsDto>;
 }
 
 export interface ContactEmailCommunicationDetailsDto {
@@ -4164,6 +4200,15 @@ export interface ContentDetailsDto {
   translations?: Record<string, number | null>;
 }
 
+export interface ContentDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: ContentDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, ContentDetailsDto>;
+}
+
 export interface ContentDistributionItemDto {
   /**
    * Name
@@ -4585,6 +4630,15 @@ export interface ContentTypeDetailsDto {
    * @example 1
    */
   contentCount?: number;
+}
+
+export interface ContentTypeDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: ContentTypeDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, ContentTypeDetailsDto>;
 }
 
 export interface ContentTypeImportDto {
@@ -5062,7 +5116,7 @@ export interface DealCreateDto {
   /**
    * Deal Currency
    * @pattern ^(NAD|ZAR|XAF|JPY|GHS|ETB|USD||AED|BHD|DJF|DZD|EGP|MAD|ERN|ILS|IQD|JOD|KMF|KWD|LBP|LYD|MAD|MRU|OMR|ILS|QAR|SAR|SDG|SOS|SSP|SYP|XAF|TND|YER|CLP|INR|TZS|EUR|AZN|AZN|RUB|XAF|BYN|ZMW|MAD|MAD|TZS|BGN|INR|INR|XOF|XOF|BDT|INR|CNY|INR|EUR|INR|BAM|BAM|ERN|EUR|EUR|EUR|EUR|BDT|INR|RUB|PHP|UGX|USD|USD|USD|IQD|IRR|EUR|CZK|CAD|RUB|GBP|DKK|DKK|KES|EUR|EUR|CHF|EUR|EUR|CHF|EUR|XOF|INR|EUR|XAF|MVR|XOF|BTN|KES|GHS|XOF|EUR|EUR|||AED|XCD|XCD|ALL|ARS|USD|EUR|AUD|BBD|BDT|EUR|BGN|BIF|BMD|BND|BRL|BSD|BWP|BZD|CAD|AUD|CHF|NZD|CLP|XAF|CNY|COP|CVE|AUD|EUR|CZK|EUR|USD|DKK|XCD|EUR|ERN|EUR|FJD|FKP|USD|EUR|GBP|XCD|GBP|GHS|GIP|GMD|EUR|USD|GYD|HKD|HUF|IDR|EUR|ILS|GBP|INR|USD|GBP|JMD|JPY|KES|AUD|XCD|KRW|KYD|XCD|LRD|ZAR|EUR|EUR|MGA|USD|MMK|MOP|USD|XCD|EUR|MUR|MVR|MWK|MXN|MYR|NAD|AUD|NGN|EUR|NOK|AUD|NZD|NZD|PGK|PHP|PKR|PLN|NZD|USD|EUR|USD|RUB|RWF|SAR|SBD|SCR|SDG|SEK|SGD|SHP|EUR|EUR|SLE|SSP|XCG|SZL|USD|THB|NZD|TOP|TRY|TTD|AUD|TWD|TZS|UAH|UGX|USD|USD|USD|XCD|USD|USD|VUV|WST|ZAR|ZMW|ZWG||||XCD|ARS|BBD|BMD|BOB|USD|BRL|BSD|BZD|CAD|CLP|COP|CRC|CUP|XCG|XCD|DOP|EUR|USD|EUR|XCD|XAF|GTQ|GYD|HNL|HTG|EUR|XCD|KYD|XCD|MXN|NIO|PAB|PEN|PHP|USD|PYG|USD|USD|TTD|USD|UYU|XCD|VED|USD|USD|EUR|EUR|XAF|AFN|IRR|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|EUR|PHP|DKK|DKK|EUR|XOF|BIF|XOF|EUR|CAD|CDF|XAF|XAF|CHF|XOF|XAF|DJF|DZD|EUR|XAF|EUR|GNF|EUR|XAF|HTG|KMF|EUR|MAD|EUR|EUR|MGA|XOF|EUR|MRU|MUR|XPF|XOF|XPF|EUR|EUR|RWF|SCR|XOF|SYP|XAF|XOF|TND|VUV|XPF|EUR|EUR|EUR|GBP|EUR|GHS|GBP|ERN|ETB|EUR|PYG|CHF|EUR|CHF|INR|KES|GBP|GHS|XOF|NGN|USD|ILS|INR|INR|CNY|BAM|EUR|EUR|HUF|AMD||IDR|EUR|NGN|CNY||ISK|CHF|EUR|EUR|EUR|CAD|JPY||XAF|TZS|IDR|GEL|DZD|NGN|KES|NGN|TZS|CVE|BRL|XOF|KES|KZT|KZT|XAF|DKK|KES|KHR|INR|CNY|KPW|KRW|INR|INR|GNF|LRD|INR|INR|INR|TZS|XAF|EUR|TRY|GBP|INR|INR|INR|INR|KGS|TZS|EUR|UGX|EUR|USD|EUR|AOA|CDF|XAF|XAF|LAK|IQD|IRR|EUR|CDF|KES|KES|EUR|INR|KES|TZS|KES|MUR|MGA|MZN|XAF|NZD|CAD|IQD|MKD|INR|MNT|INR|INR|CAD|INR|BND|MYR|BND|IDR|MYR|SGD|EUR|XAF|USD|MMK|RUB|IRR|NAD|NOK|NOK|ZWG|EUR|EUR|INR|NPR|AWG|EUR|USD|XCG|EUR|SRD|XCG|XAF|NOK|XAF|INR|GNF|ZAR|ZAR|SSP|USD|MWK|UGX|EUR|EUR|ETB|KES|INR|GEL|RUB|USD|PKR|PKR|INR|NGN|PLN|CAD|PLN|AFN|PKR|AOA|BRL|CHF|CVE|EUR|XAF|XOF|EUR|MOP|MZN|EUR|STN|USD|BOB|USD|PEN|INR|IDR|IDR|BDT|MMK|CHF|BIF|MDL|RON|TZS|BYN|KGS|KZT|MDL|RUB|UAH|RWF|TZS|INR|RUB|KES|INR|INR|TZS|EUR|EUR|PKR|INR|EUR|NOK|SEK|MZN|XOF|XAF|MAD|MAD|LKR|EUR|EUR|USD|WST|EUR|ZWG|DJF|ETB|KES|SOS|ALL|MKD|EUR|BAM|EUR|RSD|EUR|BAM|EUR|RSD|EUR|SZL|ZAR|ZAR|ZAR|IDR|EUR|EUR|SEK|CDF|KES|TZS|UGX|IQD|SYP|PLN|INR|LKR|MYR|SGD|INR|KES|UGX|TJS|THB|ERN|ETB|ERN|TMT|BWP|ZAR|TOP||EUR|TRY|TWD|ZAR|RUB|XOF|MAD|CNY|UAH|INR|PKR|INR|PKR|AFN|UZS|UZS|LRD|LRD|ZAR|EUR|VND|MZN|TZS|EUR|CHF|ETB|XOF|ZAR|INR|UGX|XAF|UAH|XOF|NGN|BRL|COP|VED|CNY|CNY|HKD|CNY|MAD|CNY|HKD|JPY|MOP|MYR|SGD|CNY|HKD|JPY|MOP|MYR|TWD|ZAR)$
-   * @example "RUB"
+   * @example "USD"
    */
   dealCurrency?: string | null;
   /**
@@ -5119,7 +5173,7 @@ export interface DealDetailsDto {
   /**
    * Deal Currency
    * @pattern ^(NAD|ZAR|XAF|JPY|GHS|ETB|USD||AED|BHD|DJF|DZD|EGP|MAD|ERN|ILS|IQD|JOD|KMF|KWD|LBP|LYD|MAD|MRU|OMR|ILS|QAR|SAR|SDG|SOS|SSP|SYP|XAF|TND|YER|CLP|INR|TZS|EUR|AZN|AZN|RUB|XAF|BYN|ZMW|MAD|MAD|TZS|BGN|INR|INR|XOF|XOF|BDT|INR|CNY|INR|EUR|INR|BAM|BAM|ERN|EUR|EUR|EUR|EUR|BDT|INR|RUB|PHP|UGX|USD|USD|USD|IQD|IRR|EUR|CZK|CAD|RUB|GBP|DKK|DKK|KES|EUR|EUR|CHF|EUR|EUR|CHF|EUR|XOF|INR|EUR|XAF|MVR|XOF|BTN|KES|GHS|XOF|EUR|EUR|||AED|XCD|XCD|ALL|ARS|USD|EUR|AUD|BBD|BDT|EUR|BGN|BIF|BMD|BND|BRL|BSD|BWP|BZD|CAD|AUD|CHF|NZD|CLP|XAF|CNY|COP|CVE|AUD|EUR|CZK|EUR|USD|DKK|XCD|EUR|ERN|EUR|FJD|FKP|USD|EUR|GBP|XCD|GBP|GHS|GIP|GMD|EUR|USD|GYD|HKD|HUF|IDR|EUR|ILS|GBP|INR|USD|GBP|JMD|JPY|KES|AUD|XCD|KRW|KYD|XCD|LRD|ZAR|EUR|EUR|MGA|USD|MMK|MOP|USD|XCD|EUR|MUR|MVR|MWK|MXN|MYR|NAD|AUD|NGN|EUR|NOK|AUD|NZD|NZD|PGK|PHP|PKR|PLN|NZD|USD|EUR|USD|RUB|RWF|SAR|SBD|SCR|SDG|SEK|SGD|SHP|EUR|EUR|SLE|SSP|XCG|SZL|USD|THB|NZD|TOP|TRY|TTD|AUD|TWD|TZS|UAH|UGX|USD|USD|USD|XCD|USD|USD|VUV|WST|ZAR|ZMW|ZWG||||XCD|ARS|BBD|BMD|BOB|USD|BRL|BSD|BZD|CAD|CLP|COP|CRC|CUP|XCG|XCD|DOP|EUR|USD|EUR|XCD|XAF|GTQ|GYD|HNL|HTG|EUR|XCD|KYD|XCD|MXN|NIO|PAB|PEN|PHP|USD|PYG|USD|USD|TTD|USD|UYU|XCD|VED|USD|USD|EUR|EUR|XAF|AFN|IRR|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|EUR|PHP|DKK|DKK|EUR|XOF|BIF|XOF|EUR|CAD|CDF|XAF|XAF|CHF|XOF|XAF|DJF|DZD|EUR|XAF|EUR|GNF|EUR|XAF|HTG|KMF|EUR|MAD|EUR|EUR|MGA|XOF|EUR|MRU|MUR|XPF|XOF|XPF|EUR|EUR|RWF|SCR|XOF|SYP|XAF|XOF|TND|VUV|XPF|EUR|EUR|EUR|GBP|EUR|GHS|GBP|ERN|ETB|EUR|PYG|CHF|EUR|CHF|INR|KES|GBP|GHS|XOF|NGN|USD|ILS|INR|INR|CNY|BAM|EUR|EUR|HUF|AMD||IDR|EUR|NGN|CNY||ISK|CHF|EUR|EUR|EUR|CAD|JPY||XAF|TZS|IDR|GEL|DZD|NGN|KES|NGN|TZS|CVE|BRL|XOF|KES|KZT|KZT|XAF|DKK|KES|KHR|INR|CNY|KPW|KRW|INR|INR|GNF|LRD|INR|INR|INR|TZS|XAF|EUR|TRY|GBP|INR|INR|INR|INR|KGS|TZS|EUR|UGX|EUR|USD|EUR|AOA|CDF|XAF|XAF|LAK|IQD|IRR|EUR|CDF|KES|KES|EUR|INR|KES|TZS|KES|MUR|MGA|MZN|XAF|NZD|CAD|IQD|MKD|INR|MNT|INR|INR|CAD|INR|BND|MYR|BND|IDR|MYR|SGD|EUR|XAF|USD|MMK|RUB|IRR|NAD|NOK|NOK|ZWG|EUR|EUR|INR|NPR|AWG|EUR|USD|XCG|EUR|SRD|XCG|XAF|NOK|XAF|INR|GNF|ZAR|ZAR|SSP|USD|MWK|UGX|EUR|EUR|ETB|KES|INR|GEL|RUB|USD|PKR|PKR|INR|NGN|PLN|CAD|PLN|AFN|PKR|AOA|BRL|CHF|CVE|EUR|XAF|XOF|EUR|MOP|MZN|EUR|STN|USD|BOB|USD|PEN|INR|IDR|IDR|BDT|MMK|CHF|BIF|MDL|RON|TZS|BYN|KGS|KZT|MDL|RUB|UAH|RWF|TZS|INR|RUB|KES|INR|INR|TZS|EUR|EUR|PKR|INR|EUR|NOK|SEK|MZN|XOF|XAF|MAD|MAD|LKR|EUR|EUR|USD|WST|EUR|ZWG|DJF|ETB|KES|SOS|ALL|MKD|EUR|BAM|EUR|RSD|EUR|BAM|EUR|RSD|EUR|SZL|ZAR|ZAR|ZAR|IDR|EUR|EUR|SEK|CDF|KES|TZS|UGX|IQD|SYP|PLN|INR|LKR|MYR|SGD|INR|KES|UGX|TJS|THB|ERN|ETB|ERN|TMT|BWP|ZAR|TOP||EUR|TRY|TWD|ZAR|RUB|XOF|MAD|CNY|UAH|INR|PKR|INR|PKR|AFN|UZS|UZS|LRD|LRD|ZAR|EUR|VND|MZN|TZS|EUR|CHF|ETB|XOF|ZAR|INR|UGX|XAF|UAH|XOF|NGN|BRL|COP|VED|CNY|CNY|HKD|CNY|MAD|CNY|HKD|JPY|MOP|MYR|SGD|CNY|HKD|JPY|MOP|MYR|TWD|ZAR)$
-   * @example "RUB"
+   * @example "USD"
    */
   dealCurrency?: string | null;
   /**
@@ -5174,6 +5228,15 @@ export interface DealDetailsDto {
   contacts?: ContactDetailsDto[] | null;
 }
 
+export interface DealDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: DealDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, DealDetailsDto>;
+}
+
 export interface DealPipelineCreateDto {
   /**
    * Name
@@ -5212,6 +5275,15 @@ export interface DealPipelineDetailsDto {
   updatedAt?: string | null;
   /** Pipeline Stages */
   pipelineStages?: DealPipelineStageDetailsDto[] | null;
+}
+
+export interface DealPipelineDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: DealPipelineDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, DealPipelineDetailsDto>;
 }
 
 export interface DealPipelineStageCreateDto {
@@ -5277,6 +5349,15 @@ export interface DealPipelineStageDetailsDto {
   dealPipeline?: DealPipelineDetailsDto;
 }
 
+export interface DealPipelineStageDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: DealPipelineStageDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, DealPipelineStageDetailsDto>;
+}
+
 export interface DealPipelineStageUpdateDto {
   /**
    * Name
@@ -5329,7 +5410,7 @@ export interface DealUpdateDto {
    * Deal Currency
    * @minLength 1
    * @pattern ^(NAD|ZAR|XAF|JPY|GHS|ETB|USD||AED|BHD|DJF|DZD|EGP|MAD|ERN|ILS|IQD|JOD|KMF|KWD|LBP|LYD|MAD|MRU|OMR|ILS|QAR|SAR|SDG|SOS|SSP|SYP|XAF|TND|YER|CLP|INR|TZS|EUR|AZN|AZN|RUB|XAF|BYN|ZMW|MAD|MAD|TZS|BGN|INR|INR|XOF|XOF|BDT|INR|CNY|INR|EUR|INR|BAM|BAM|ERN|EUR|EUR|EUR|EUR|BDT|INR|RUB|PHP|UGX|USD|USD|USD|IQD|IRR|EUR|CZK|CAD|RUB|GBP|DKK|DKK|KES|EUR|EUR|CHF|EUR|EUR|CHF|EUR|XOF|INR|EUR|XAF|MVR|XOF|BTN|KES|GHS|XOF|EUR|EUR|||AED|XCD|XCD|ALL|ARS|USD|EUR|AUD|BBD|BDT|EUR|BGN|BIF|BMD|BND|BRL|BSD|BWP|BZD|CAD|AUD|CHF|NZD|CLP|XAF|CNY|COP|CVE|AUD|EUR|CZK|EUR|USD|DKK|XCD|EUR|ERN|EUR|FJD|FKP|USD|EUR|GBP|XCD|GBP|GHS|GIP|GMD|EUR|USD|GYD|HKD|HUF|IDR|EUR|ILS|GBP|INR|USD|GBP|JMD|JPY|KES|AUD|XCD|KRW|KYD|XCD|LRD|ZAR|EUR|EUR|MGA|USD|MMK|MOP|USD|XCD|EUR|MUR|MVR|MWK|MXN|MYR|NAD|AUD|NGN|EUR|NOK|AUD|NZD|NZD|PGK|PHP|PKR|PLN|NZD|USD|EUR|USD|RUB|RWF|SAR|SBD|SCR|SDG|SEK|SGD|SHP|EUR|EUR|SLE|SSP|XCG|SZL|USD|THB|NZD|TOP|TRY|TTD|AUD|TWD|TZS|UAH|UGX|USD|USD|USD|XCD|USD|USD|VUV|WST|ZAR|ZMW|ZWG||||XCD|ARS|BBD|BMD|BOB|USD|BRL|BSD|BZD|CAD|CLP|COP|CRC|CUP|XCG|XCD|DOP|EUR|USD|EUR|XCD|XAF|GTQ|GYD|HNL|HTG|EUR|XCD|KYD|XCD|MXN|NIO|PAB|PEN|PHP|USD|PYG|USD|USD|TTD|USD|UYU|XCD|VED|USD|USD|EUR|EUR|XAF|AFN|IRR|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|EUR|PHP|DKK|DKK|EUR|XOF|BIF|XOF|EUR|CAD|CDF|XAF|XAF|CHF|XOF|XAF|DJF|DZD|EUR|XAF|EUR|GNF|EUR|XAF|HTG|KMF|EUR|MAD|EUR|EUR|MGA|XOF|EUR|MRU|MUR|XPF|XOF|XPF|EUR|EUR|RWF|SCR|XOF|SYP|XAF|XOF|TND|VUV|XPF|EUR|EUR|EUR|GBP|EUR|GHS|GBP|ERN|ETB|EUR|PYG|CHF|EUR|CHF|INR|KES|GBP|GHS|XOF|NGN|USD|ILS|INR|INR|CNY|BAM|EUR|EUR|HUF|AMD||IDR|EUR|NGN|CNY||ISK|CHF|EUR|EUR|EUR|CAD|JPY||XAF|TZS|IDR|GEL|DZD|NGN|KES|NGN|TZS|CVE|BRL|XOF|KES|KZT|KZT|XAF|DKK|KES|KHR|INR|CNY|KPW|KRW|INR|INR|GNF|LRD|INR|INR|INR|TZS|XAF|EUR|TRY|GBP|INR|INR|INR|INR|KGS|TZS|EUR|UGX|EUR|USD|EUR|AOA|CDF|XAF|XAF|LAK|IQD|IRR|EUR|CDF|KES|KES|EUR|INR|KES|TZS|KES|MUR|MGA|MZN|XAF|NZD|CAD|IQD|MKD|INR|MNT|INR|INR|CAD|INR|BND|MYR|BND|IDR|MYR|SGD|EUR|XAF|USD|MMK|RUB|IRR|NAD|NOK|NOK|ZWG|EUR|EUR|INR|NPR|AWG|EUR|USD|XCG|EUR|SRD|XCG|XAF|NOK|XAF|INR|GNF|ZAR|ZAR|SSP|USD|MWK|UGX|EUR|EUR|ETB|KES|INR|GEL|RUB|USD|PKR|PKR|INR|NGN|PLN|CAD|PLN|AFN|PKR|AOA|BRL|CHF|CVE|EUR|XAF|XOF|EUR|MOP|MZN|EUR|STN|USD|BOB|USD|PEN|INR|IDR|IDR|BDT|MMK|CHF|BIF|MDL|RON|TZS|BYN|KGS|KZT|MDL|RUB|UAH|RWF|TZS|INR|RUB|KES|INR|INR|TZS|EUR|EUR|PKR|INR|EUR|NOK|SEK|MZN|XOF|XAF|MAD|MAD|LKR|EUR|EUR|USD|WST|EUR|ZWG|DJF|ETB|KES|SOS|ALL|MKD|EUR|BAM|EUR|RSD|EUR|BAM|EUR|RSD|EUR|SZL|ZAR|ZAR|ZAR|IDR|EUR|EUR|SEK|CDF|KES|TZS|UGX|IQD|SYP|PLN|INR|LKR|MYR|SGD|INR|KES|UGX|TJS|THB|ERN|ETB|ERN|TMT|BWP|ZAR|TOP||EUR|TRY|TWD|ZAR|RUB|XOF|MAD|CNY|UAH|INR|PKR|INR|PKR|AFN|UZS|UZS|LRD|LRD|ZAR|EUR|VND|MZN|TZS|EUR|CHF|ETB|XOF|ZAR|INR|UGX|XAF|UAH|XOF|NGN|BRL|COP|VED|CNY|CNY|HKD|CNY|MAD|CNY|HKD|JPY|MOP|MYR|SGD|CNY|HKD|JPY|MOP|MYR|TWD|ZAR)$
-   * @example "RUB"
+   * @example "USD"
    */
   dealCurrency?: string | null;
   /**
@@ -5868,6 +5949,15 @@ export interface DomainDetailsDto {
   contacts?: ContactDetailsDto[] | null;
 }
 
+export interface DomainDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: DomainDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, DomainDetailsDto>;
+}
+
 export interface DomainImportDto {
   /**
    * Id
@@ -6157,6 +6247,15 @@ export interface EmailGroupDetailsDto {
   emailTemplates?: EmailTemplateDetailsDto[] | null;
 }
 
+export interface EmailGroupDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: EmailGroupDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, EmailGroupDetailsDto>;
+}
+
 export interface EmailGroupUpdateDto {
   /**
    * Name
@@ -6301,6 +6400,15 @@ export interface EmailTemplateDetailsDto {
   emailGroup?: EmailGroupDetailsDto;
 }
 
+export interface EmailTemplateDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: EmailTemplateDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, EmailTemplateDetailsDto>;
+}
+
 export interface EmailTemplateEditRequest {
   /**
    * Name
@@ -6427,6 +6535,64 @@ export interface EmailTemplateUpdateDto {
    * @example 1
    */
   emailGroupId?: number | null;
+}
+
+export interface EmailTemplateUpdateDtoChangeLogDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Object Type
+   * @example "string"
+   */
+  objectType?: string;
+  /**
+   * Object Id
+   * @format int32
+   * @example 1
+   */
+  objectId?: number;
+  /**
+   * Entity State
+   * @example "Detached"
+   */
+  entityState?: "Detached" | "Unchanged" | "Deleted" | "Modified" | "Added";
+  data?: EmailTemplateUpdateDto;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Created By Id
+   * @example "string"
+   */
+  createdById?: string | null;
+  /**
+   * Updated By Id
+   * @example "string"
+   */
+  updatedById?: string | null;
+  /**
+   * Created By
+   * @example "string"
+   */
+  createdBy?: string | null;
+  /**
+   * Updated By
+   * @example "string"
+   */
+  updatedBy?: string | null;
 }
 
 export interface ExportActionDto {
@@ -6612,6 +6778,15 @@ export interface LinkDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
+}
+
+export interface LinkDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: LinkDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, LinkDetailsDto>;
 }
 
 export interface LinkImportDto {
@@ -6933,6 +7108,19 @@ export interface MediaCropRequestDto {
   y?: number | null;
 }
 
+export interface MediaDeletedDto {
+  /**
+   * Scope Uid
+   * @example "string"
+   */
+  scopeUid?: string;
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+}
+
 export interface MediaDetailsDto {
   /**
    * Location
@@ -7044,6 +7232,15 @@ export interface MediaDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
+}
+
+export interface MediaDetailsDtoMediaDeletedDtoSyncResponseDto {
+  /** Items */
+  items?: MediaDetailsDto[];
+  /** Deleted */
+  deleted?: MediaDeletedDto[];
+  /** Base Items */
+  baseItems?: Record<string, MediaDetailsDto>;
 }
 
 export interface MediaOptimizeResponseDto {
@@ -7333,6 +7530,15 @@ export interface OrderDetailsDto {
   contact?: ContactDetailsDto;
 }
 
+export interface OrderDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: OrderDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, OrderDetailsDto>;
+}
+
 export interface OrderImportDto {
   /**
    * Id
@@ -7480,7 +7686,7 @@ export interface OrderItemCreateDto {
    * Currency
    * @minLength 1
    * @pattern ^(NAD|ZAR|XAF|JPY|GHS|ETB|USD||AED|BHD|DJF|DZD|EGP|MAD|ERN|ILS|IQD|JOD|KMF|KWD|LBP|LYD|MAD|MRU|OMR|ILS|QAR|SAR|SDG|SOS|SSP|SYP|XAF|TND|YER|CLP|INR|TZS|EUR|AZN|AZN|RUB|XAF|BYN|ZMW|MAD|MAD|TZS|BGN|INR|INR|XOF|XOF|BDT|INR|CNY|INR|EUR|INR|BAM|BAM|ERN|EUR|EUR|EUR|EUR|BDT|INR|RUB|PHP|UGX|USD|USD|USD|IQD|IRR|EUR|CZK|CAD|RUB|GBP|DKK|DKK|KES|EUR|EUR|CHF|EUR|EUR|CHF|EUR|XOF|INR|EUR|XAF|MVR|XOF|BTN|KES|GHS|XOF|EUR|EUR|||AED|XCD|XCD|ALL|ARS|USD|EUR|AUD|BBD|BDT|EUR|BGN|BIF|BMD|BND|BRL|BSD|BWP|BZD|CAD|AUD|CHF|NZD|CLP|XAF|CNY|COP|CVE|AUD|EUR|CZK|EUR|USD|DKK|XCD|EUR|ERN|EUR|FJD|FKP|USD|EUR|GBP|XCD|GBP|GHS|GIP|GMD|EUR|USD|GYD|HKD|HUF|IDR|EUR|ILS|GBP|INR|USD|GBP|JMD|JPY|KES|AUD|XCD|KRW|KYD|XCD|LRD|ZAR|EUR|EUR|MGA|USD|MMK|MOP|USD|XCD|EUR|MUR|MVR|MWK|MXN|MYR|NAD|AUD|NGN|EUR|NOK|AUD|NZD|NZD|PGK|PHP|PKR|PLN|NZD|USD|EUR|USD|RUB|RWF|SAR|SBD|SCR|SDG|SEK|SGD|SHP|EUR|EUR|SLE|SSP|XCG|SZL|USD|THB|NZD|TOP|TRY|TTD|AUD|TWD|TZS|UAH|UGX|USD|USD|USD|XCD|USD|USD|VUV|WST|ZAR|ZMW|ZWG||||XCD|ARS|BBD|BMD|BOB|USD|BRL|BSD|BZD|CAD|CLP|COP|CRC|CUP|XCG|XCD|DOP|EUR|USD|EUR|XCD|XAF|GTQ|GYD|HNL|HTG|EUR|XCD|KYD|XCD|MXN|NIO|PAB|PEN|PHP|USD|PYG|USD|USD|TTD|USD|UYU|XCD|VED|USD|USD|EUR|EUR|XAF|AFN|IRR|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|EUR|PHP|DKK|DKK|EUR|XOF|BIF|XOF|EUR|CAD|CDF|XAF|XAF|CHF|XOF|XAF|DJF|DZD|EUR|XAF|EUR|GNF|EUR|XAF|HTG|KMF|EUR|MAD|EUR|EUR|MGA|XOF|EUR|MRU|MUR|XPF|XOF|XPF|EUR|EUR|RWF|SCR|XOF|SYP|XAF|XOF|TND|VUV|XPF|EUR|EUR|EUR|GBP|EUR|GHS|GBP|ERN|ETB|EUR|PYG|CHF|EUR|CHF|INR|KES|GBP|GHS|XOF|NGN|USD|ILS|INR|INR|CNY|BAM|EUR|EUR|HUF|AMD||IDR|EUR|NGN|CNY||ISK|CHF|EUR|EUR|EUR|CAD|JPY||XAF|TZS|IDR|GEL|DZD|NGN|KES|NGN|TZS|CVE|BRL|XOF|KES|KZT|KZT|XAF|DKK|KES|KHR|INR|CNY|KPW|KRW|INR|INR|GNF|LRD|INR|INR|INR|TZS|XAF|EUR|TRY|GBP|INR|INR|INR|INR|KGS|TZS|EUR|UGX|EUR|USD|EUR|AOA|CDF|XAF|XAF|LAK|IQD|IRR|EUR|CDF|KES|KES|EUR|INR|KES|TZS|KES|MUR|MGA|MZN|XAF|NZD|CAD|IQD|MKD|INR|MNT|INR|INR|CAD|INR|BND|MYR|BND|IDR|MYR|SGD|EUR|XAF|USD|MMK|RUB|IRR|NAD|NOK|NOK|ZWG|EUR|EUR|INR|NPR|AWG|EUR|USD|XCG|EUR|SRD|XCG|XAF|NOK|XAF|INR|GNF|ZAR|ZAR|SSP|USD|MWK|UGX|EUR|EUR|ETB|KES|INR|GEL|RUB|USD|PKR|PKR|INR|NGN|PLN|CAD|PLN|AFN|PKR|AOA|BRL|CHF|CVE|EUR|XAF|XOF|EUR|MOP|MZN|EUR|STN|USD|BOB|USD|PEN|INR|IDR|IDR|BDT|MMK|CHF|BIF|MDL|RON|TZS|BYN|KGS|KZT|MDL|RUB|UAH|RWF|TZS|INR|RUB|KES|INR|INR|TZS|EUR|EUR|PKR|INR|EUR|NOK|SEK|MZN|XOF|XAF|MAD|MAD|LKR|EUR|EUR|USD|WST|EUR|ZWG|DJF|ETB|KES|SOS|ALL|MKD|EUR|BAM|EUR|RSD|EUR|BAM|EUR|RSD|EUR|SZL|ZAR|ZAR|ZAR|IDR|EUR|EUR|SEK|CDF|KES|TZS|UGX|IQD|SYP|PLN|INR|LKR|MYR|SGD|INR|KES|UGX|TJS|THB|ERN|ETB|ERN|TMT|BWP|ZAR|TOP||EUR|TRY|TWD|ZAR|RUB|XOF|MAD|CNY|UAH|INR|PKR|INR|PKR|AFN|UZS|UZS|LRD|LRD|ZAR|EUR|VND|MZN|TZS|EUR|CHF|ETB|XOF|ZAR|INR|UGX|XAF|UAH|XOF|NGN|BRL|COP|VED|CNY|CNY|HKD|CNY|MAD|CNY|HKD|JPY|MOP|MYR|SGD|CNY|HKD|JPY|MOP|MYR|TWD|ZAR)$
-   * @example "RUB"
+   * @example "USD"
    */
   currency: string;
   /**
@@ -7527,7 +7733,7 @@ export interface OrderItemDetailsDto {
    * Currency
    * @minLength 1
    * @pattern ^(NAD|ZAR|XAF|JPY|GHS|ETB|USD||AED|BHD|DJF|DZD|EGP|MAD|ERN|ILS|IQD|JOD|KMF|KWD|LBP|LYD|MAD|MRU|OMR|ILS|QAR|SAR|SDG|SOS|SSP|SYP|XAF|TND|YER|CLP|INR|TZS|EUR|AZN|AZN|RUB|XAF|BYN|ZMW|MAD|MAD|TZS|BGN|INR|INR|XOF|XOF|BDT|INR|CNY|INR|EUR|INR|BAM|BAM|ERN|EUR|EUR|EUR|EUR|BDT|INR|RUB|PHP|UGX|USD|USD|USD|IQD|IRR|EUR|CZK|CAD|RUB|GBP|DKK|DKK|KES|EUR|EUR|CHF|EUR|EUR|CHF|EUR|XOF|INR|EUR|XAF|MVR|XOF|BTN|KES|GHS|XOF|EUR|EUR|||AED|XCD|XCD|ALL|ARS|USD|EUR|AUD|BBD|BDT|EUR|BGN|BIF|BMD|BND|BRL|BSD|BWP|BZD|CAD|AUD|CHF|NZD|CLP|XAF|CNY|COP|CVE|AUD|EUR|CZK|EUR|USD|DKK|XCD|EUR|ERN|EUR|FJD|FKP|USD|EUR|GBP|XCD|GBP|GHS|GIP|GMD|EUR|USD|GYD|HKD|HUF|IDR|EUR|ILS|GBP|INR|USD|GBP|JMD|JPY|KES|AUD|XCD|KRW|KYD|XCD|LRD|ZAR|EUR|EUR|MGA|USD|MMK|MOP|USD|XCD|EUR|MUR|MVR|MWK|MXN|MYR|NAD|AUD|NGN|EUR|NOK|AUD|NZD|NZD|PGK|PHP|PKR|PLN|NZD|USD|EUR|USD|RUB|RWF|SAR|SBD|SCR|SDG|SEK|SGD|SHP|EUR|EUR|SLE|SSP|XCG|SZL|USD|THB|NZD|TOP|TRY|TTD|AUD|TWD|TZS|UAH|UGX|USD|USD|USD|XCD|USD|USD|VUV|WST|ZAR|ZMW|ZWG||||XCD|ARS|BBD|BMD|BOB|USD|BRL|BSD|BZD|CAD|CLP|COP|CRC|CUP|XCG|XCD|DOP|EUR|USD|EUR|XCD|XAF|GTQ|GYD|HNL|HTG|EUR|XCD|KYD|XCD|MXN|NIO|PAB|PEN|PHP|USD|PYG|USD|USD|TTD|USD|UYU|XCD|VED|USD|USD|EUR|EUR|XAF|AFN|IRR|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|EUR|PHP|DKK|DKK|EUR|XOF|BIF|XOF|EUR|CAD|CDF|XAF|XAF|CHF|XOF|XAF|DJF|DZD|EUR|XAF|EUR|GNF|EUR|XAF|HTG|KMF|EUR|MAD|EUR|EUR|MGA|XOF|EUR|MRU|MUR|XPF|XOF|XPF|EUR|EUR|RWF|SCR|XOF|SYP|XAF|XOF|TND|VUV|XPF|EUR|EUR|EUR|GBP|EUR|GHS|GBP|ERN|ETB|EUR|PYG|CHF|EUR|CHF|INR|KES|GBP|GHS|XOF|NGN|USD|ILS|INR|INR|CNY|BAM|EUR|EUR|HUF|AMD||IDR|EUR|NGN|CNY||ISK|CHF|EUR|EUR|EUR|CAD|JPY||XAF|TZS|IDR|GEL|DZD|NGN|KES|NGN|TZS|CVE|BRL|XOF|KES|KZT|KZT|XAF|DKK|KES|KHR|INR|CNY|KPW|KRW|INR|INR|GNF|LRD|INR|INR|INR|TZS|XAF|EUR|TRY|GBP|INR|INR|INR|INR|KGS|TZS|EUR|UGX|EUR|USD|EUR|AOA|CDF|XAF|XAF|LAK|IQD|IRR|EUR|CDF|KES|KES|EUR|INR|KES|TZS|KES|MUR|MGA|MZN|XAF|NZD|CAD|IQD|MKD|INR|MNT|INR|INR|CAD|INR|BND|MYR|BND|IDR|MYR|SGD|EUR|XAF|USD|MMK|RUB|IRR|NAD|NOK|NOK|ZWG|EUR|EUR|INR|NPR|AWG|EUR|USD|XCG|EUR|SRD|XCG|XAF|NOK|XAF|INR|GNF|ZAR|ZAR|SSP|USD|MWK|UGX|EUR|EUR|ETB|KES|INR|GEL|RUB|USD|PKR|PKR|INR|NGN|PLN|CAD|PLN|AFN|PKR|AOA|BRL|CHF|CVE|EUR|XAF|XOF|EUR|MOP|MZN|EUR|STN|USD|BOB|USD|PEN|INR|IDR|IDR|BDT|MMK|CHF|BIF|MDL|RON|TZS|BYN|KGS|KZT|MDL|RUB|UAH|RWF|TZS|INR|RUB|KES|INR|INR|TZS|EUR|EUR|PKR|INR|EUR|NOK|SEK|MZN|XOF|XAF|MAD|MAD|LKR|EUR|EUR|USD|WST|EUR|ZWG|DJF|ETB|KES|SOS|ALL|MKD|EUR|BAM|EUR|RSD|EUR|BAM|EUR|RSD|EUR|SZL|ZAR|ZAR|ZAR|IDR|EUR|EUR|SEK|CDF|KES|TZS|UGX|IQD|SYP|PLN|INR|LKR|MYR|SGD|INR|KES|UGX|TJS|THB|ERN|ETB|ERN|TMT|BWP|ZAR|TOP||EUR|TRY|TWD|ZAR|RUB|XOF|MAD|CNY|UAH|INR|PKR|INR|PKR|AFN|UZS|UZS|LRD|LRD|ZAR|EUR|VND|MZN|TZS|EUR|CHF|ETB|XOF|ZAR|INR|UGX|XAF|UAH|XOF|NGN|BRL|COP|VED|CNY|CNY|HKD|CNY|MAD|CNY|HKD|JPY|MOP|MYR|SGD|CNY|HKD|JPY|MOP|MYR|TWD|ZAR)$
-   * @example "RUB"
+   * @example "USD"
    */
   currency: string;
   /**
@@ -7576,6 +7782,15 @@ export interface OrderItemDetailsDto {
    */
   total?: number;
   order?: OrderDetailsDto;
+}
+
+export interface OrderItemDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: OrderItemDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, OrderItemDetailsDto>;
 }
 
 export interface OrderItemImportDto {
@@ -7665,7 +7880,7 @@ export interface OrderItemImportDto {
   /**
    * Currency
    * @pattern ^(NAD|ZAR|XAF|JPY|GHS|ETB|USD||AED|BHD|DJF|DZD|EGP|MAD|ERN|ILS|IQD|JOD|KMF|KWD|LBP|LYD|MAD|MRU|OMR|ILS|QAR|SAR|SDG|SOS|SSP|SYP|XAF|TND|YER|CLP|INR|TZS|EUR|AZN|AZN|RUB|XAF|BYN|ZMW|MAD|MAD|TZS|BGN|INR|INR|XOF|XOF|BDT|INR|CNY|INR|EUR|INR|BAM|BAM|ERN|EUR|EUR|EUR|EUR|BDT|INR|RUB|PHP|UGX|USD|USD|USD|IQD|IRR|EUR|CZK|CAD|RUB|GBP|DKK|DKK|KES|EUR|EUR|CHF|EUR|EUR|CHF|EUR|XOF|INR|EUR|XAF|MVR|XOF|BTN|KES|GHS|XOF|EUR|EUR|||AED|XCD|XCD|ALL|ARS|USD|EUR|AUD|BBD|BDT|EUR|BGN|BIF|BMD|BND|BRL|BSD|BWP|BZD|CAD|AUD|CHF|NZD|CLP|XAF|CNY|COP|CVE|AUD|EUR|CZK|EUR|USD|DKK|XCD|EUR|ERN|EUR|FJD|FKP|USD|EUR|GBP|XCD|GBP|GHS|GIP|GMD|EUR|USD|GYD|HKD|HUF|IDR|EUR|ILS|GBP|INR|USD|GBP|JMD|JPY|KES|AUD|XCD|KRW|KYD|XCD|LRD|ZAR|EUR|EUR|MGA|USD|MMK|MOP|USD|XCD|EUR|MUR|MVR|MWK|MXN|MYR|NAD|AUD|NGN|EUR|NOK|AUD|NZD|NZD|PGK|PHP|PKR|PLN|NZD|USD|EUR|USD|RUB|RWF|SAR|SBD|SCR|SDG|SEK|SGD|SHP|EUR|EUR|SLE|SSP|XCG|SZL|USD|THB|NZD|TOP|TRY|TTD|AUD|TWD|TZS|UAH|UGX|USD|USD|USD|XCD|USD|USD|VUV|WST|ZAR|ZMW|ZWG||||XCD|ARS|BBD|BMD|BOB|USD|BRL|BSD|BZD|CAD|CLP|COP|CRC|CUP|XCG|XCD|DOP|EUR|USD|EUR|XCD|XAF|GTQ|GYD|HNL|HTG|EUR|XCD|KYD|XCD|MXN|NIO|PAB|PEN|PHP|USD|PYG|USD|USD|TTD|USD|UYU|XCD|VED|USD|USD|EUR|EUR|XAF|AFN|IRR|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|XOF|XAF|GHS|GMD|GNF|XOF|LRD|MRU|XOF|NGN|SLE|XOF|EUR|PHP|DKK|DKK|EUR|XOF|BIF|XOF|EUR|CAD|CDF|XAF|XAF|CHF|XOF|XAF|DJF|DZD|EUR|XAF|EUR|GNF|EUR|XAF|HTG|KMF|EUR|MAD|EUR|EUR|MGA|XOF|EUR|MRU|MUR|XPF|XOF|XPF|EUR|EUR|RWF|SCR|XOF|SYP|XAF|XOF|TND|VUV|XPF|EUR|EUR|EUR|GBP|EUR|GHS|GBP|ERN|ETB|EUR|PYG|CHF|EUR|CHF|INR|KES|GBP|GHS|XOF|NGN|USD|ILS|INR|INR|CNY|BAM|EUR|EUR|HUF|AMD||IDR|EUR|NGN|CNY||ISK|CHF|EUR|EUR|EUR|CAD|JPY||XAF|TZS|IDR|GEL|DZD|NGN|KES|NGN|TZS|CVE|BRL|XOF|KES|KZT|KZT|XAF|DKK|KES|KHR|INR|CNY|KPW|KRW|INR|INR|GNF|LRD|INR|INR|INR|TZS|XAF|EUR|TRY|GBP|INR|INR|INR|INR|KGS|TZS|EUR|UGX|EUR|USD|EUR|AOA|CDF|XAF|XAF|LAK|IQD|IRR|EUR|CDF|KES|KES|EUR|INR|KES|TZS|KES|MUR|MGA|MZN|XAF|NZD|CAD|IQD|MKD|INR|MNT|INR|INR|CAD|INR|BND|MYR|BND|IDR|MYR|SGD|EUR|XAF|USD|MMK|RUB|IRR|NAD|NOK|NOK|ZWG|EUR|EUR|INR|NPR|AWG|EUR|USD|XCG|EUR|SRD|XCG|XAF|NOK|XAF|INR|GNF|ZAR|ZAR|SSP|USD|MWK|UGX|EUR|EUR|ETB|KES|INR|GEL|RUB|USD|PKR|PKR|INR|NGN|PLN|CAD|PLN|AFN|PKR|AOA|BRL|CHF|CVE|EUR|XAF|XOF|EUR|MOP|MZN|EUR|STN|USD|BOB|USD|PEN|INR|IDR|IDR|BDT|MMK|CHF|BIF|MDL|RON|TZS|BYN|KGS|KZT|MDL|RUB|UAH|RWF|TZS|INR|RUB|KES|INR|INR|TZS|EUR|EUR|PKR|INR|EUR|NOK|SEK|MZN|XOF|XAF|MAD|MAD|LKR|EUR|EUR|USD|WST|EUR|ZWG|DJF|ETB|KES|SOS|ALL|MKD|EUR|BAM|EUR|RSD|EUR|BAM|EUR|RSD|EUR|SZL|ZAR|ZAR|ZAR|IDR|EUR|EUR|SEK|CDF|KES|TZS|UGX|IQD|SYP|PLN|INR|LKR|MYR|SGD|INR|KES|UGX|TJS|THB|ERN|ETB|ERN|TMT|BWP|ZAR|TOP||EUR|TRY|TWD|ZAR|RUB|XOF|MAD|CNY|UAH|INR|PKR|INR|PKR|AFN|UZS|UZS|LRD|LRD|ZAR|EUR|VND|MZN|TZS|EUR|CHF|ETB|XOF|ZAR|INR|UGX|XAF|UAH|XOF|NGN|BRL|COP|VED|CNY|CNY|HKD|CNY|MAD|CNY|HKD|JPY|MOP|MYR|SGD|CNY|HKD|JPY|MOP|MYR|TWD|ZAR)$
-   * @example "RUB"
+   * @example "USD"
    */
   currency?: string | null;
   /**
@@ -7899,6 +8114,15 @@ export interface PromotionDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
+}
+
+export interface PromotionDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: PromotionDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, PromotionDetailsDto>;
 }
 
 export interface PromotionUpdateDto {
@@ -8139,6 +8363,15 @@ export interface SegmentDetailsDto {
   updatedByUserAgent?: string | null;
 }
 
+export interface SegmentDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: SegmentDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, SegmentDetailsDto>;
+}
+
 export interface SegmentPreviewResultDto {
   /**
    * Contact Count
@@ -8282,6 +8515,15 @@ export interface SettingDetailsDto {
   isUserLevel?: boolean;
 }
 
+export interface SettingDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: SettingDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, SettingDetailsDto>;
+}
+
 export interface SettingImportDto {
   /**
    * Id
@@ -8386,6 +8628,34 @@ export interface SettingValueDto {
 export interface StringStringValuesKeyValuePair {
   key?: string;
   value?: string[];
+}
+
+export interface SubscribeDto {
+  /**
+   * Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  email: string;
+  /**
+   * Group
+   * @example "string"
+   */
+  group?: string;
+  /**
+   * Time Zone Offset
+   * @format int32
+   * @example 1
+   */
+  timeZoneOffset: number;
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language: string;
 }
 
 export interface TaskDetailsDto {
@@ -8601,6 +8871,29 @@ export interface TopContentItemDto {
   createdAt?: string;
 }
 
+export interface UnsibscribeDto {
+  /**
+   * Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  email: string;
+  /**
+   * Time Zone Offset
+   * @format int32
+   * @example 1
+   */
+  timeZoneOffset: number;
+  /**
+   * Language
+   * @minLength 1
+   * @example "string"
+   */
+  language: string;
+}
+
 export interface UnsubscribeDetailsDto {
   /**
    * Contact Id
@@ -8631,6 +8924,15 @@ export interface UnsubscribeDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   createdAt?: string;
+}
+
+export interface UnsubscribeDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: UnsubscribeDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, UnsubscribeDetailsDto>;
 }
 
 export interface UnsubscribeDto {
@@ -8895,6 +9197,7 @@ type CancelToken = Symbol | string | number;
 
 export enum ContentType {
   Json = "application/json",
+  JsonApi = "application/vnd.api+json",
   FormData = "multipart/form-data",
   UrlEncoded = "application/x-www-form-urlencoded",
   Text = "text/plain",
@@ -8961,12 +9264,20 @@ export class HttpClient<SecurityDataType = unknown> {
       input !== null && (typeof input === "object" || typeof input === "string")
         ? JSON.stringify(input)
         : input,
+    [ContentType.JsonApi]: (input: any) =>
+      input !== null && (typeof input === "object" || typeof input === "string")
+        ? JSON.stringify(input)
+        : input,
     [ContentType.Text]: (input: any) =>
       input !== null && typeof input !== "string"
         ? JSON.stringify(input)
         : input,
-    [ContentType.FormData]: (input: any) =>
-      Object.keys(input || {}).reduce((formData, key) => {
+    [ContentType.FormData]: (input: any) => {
+      if (input instanceof FormData) {
+        return input;
+      }
+
+      return Object.keys(input || {}).reduce((formData, key) => {
         const property = input[key];
         formData.append(
           key,
@@ -8977,7 +9288,8 @@ export class HttpClient<SecurityDataType = unknown> {
               : `${property}`,
         );
         return formData;
-      }, new FormData()),
+      }, new FormData());
+    },
     [ContentType.UrlEncoded]: (input: any) => this.toQueryString(input),
   };
 
@@ -9063,13 +9375,14 @@ export class HttpClient<SecurityDataType = unknown> {
             : payloadFormatter(body),
       },
     ).then(async (response) => {
-      const r = response.clone() as HttpResponse<T, E>;
+      const r = response as HttpResponse<T, E>;
       r.data = null as unknown as T;
       r.error = null as unknown as E;
 
+      const responseToParse = responseFormat ? response.clone() : response;
       const data = !responseFormat
         ? r
-        : await response[responseFormat]()
+        : await responseToParse[responseFormat]()
             .then((data) => {
               if (r.ok) {
                 r.data = data;
@@ -9095,7 +9408,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.3.17.0
+ * @version 1.3.18.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -9137,6 +9450,33 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Accounts
+     * @name AccountsSyncList
+     * @request GET:/api/accounts/sync
+     * @secure
+     */
+    accountsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        AccountDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/accounts/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
         format: "json",
         ...params,
       }),
@@ -9295,29 +9635,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/accounts/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Accounts
-     * @name AccountsSyncList
-     * @request GET:/api/accounts/sync
-     * @secure
-     */
-    accountsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/accounts/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -9526,11 +9843,15 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<void, void | ProblemDetails>({
+      this.request<
+        CommentDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
         path: `/api/comments/sync`,
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -9825,6 +10146,33 @@ export class Api<
      * No description
      *
      * @tags Contacts
+     * @name ContactsSyncList
+     * @request GET:/api/contacts/sync
+     * @secure
+     */
+    contactsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        ContactDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/contacts/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
      * @name ContactsImportCreate
      * @request POST:/api/contacts/import
      * @secure
@@ -9886,23 +10234,40 @@ export class Api<
     /**
      * No description
      *
-     * @tags Contacts
-     * @name ContactsSyncList
-     * @request GET:/api/contacts/sync
+     * @tags ContactUs
+     * @name ContactUsCreate
+     * @request POST:/api/contact-us
      * @secure
      */
-    contactsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
+    contactUsCreate: (
+      data: {
+        /** @format binary */
+        Attachment?: File;
+        Title?: string;
+        NotificationType?: string;
+        AcknowledgmentType?: string;
+        PageUrl?: string;
+        FirstName: string;
+        LastName?: string;
+        Company?: string;
+        Subject?: string;
+        ExtraData?: Record<string, string | null>;
+        Message: string;
+        /** @format email */
+        Email: string;
+        /** @format int32 */
+        TimeZoneOffset: number;
+        Language: string;
+        RecaptchaToken?: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/contacts/sync`,
-        method: "GET",
-        query: query,
+      this.request<void, void>({
+        path: `/api/contact-us`,
+        method: "POST",
+        body: data,
         secure: true,
+        type: ContentType.FormData,
         ...params,
       }),
 
@@ -10264,14 +10629,23 @@ export class Api<
       query?: {
         syncToken?: string;
         query?: string;
+        /**
+         * Include base versions of modified items for three-way merge support
+         * @default false
+         */
+        includeBase?: boolean;
       },
       params: RequestParams = {},
     ) =>
-      this.request<void, void | ProblemDetails>({
+      this.request<
+        ContentDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
         path: `/api/content/sync`,
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -10647,6 +11021,33 @@ export class Api<
      * No description
      *
      * @tags ContentTypes
+     * @name ContentTypesSyncList
+     * @request GET:/api/content-types/sync
+     * @secure
+     */
+    contentTypesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        ContentTypeDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/content-types/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags ContentTypes
      * @name ContentTypesImportCreate
      * @request POST:/api/content-types/import
      * @secure
@@ -10699,29 +11100,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/content-types/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags ContentTypes
-     * @name ContentTypesSyncList
-     * @request GET:/api/content-types/sync
-     * @secure
-     */
-    contentTypesSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/content-types/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -13461,6 +13839,33 @@ export class Api<
      * No description
      *
      * @tags DealPipelines
+     * @name DealPipelinesSyncList
+     * @request GET:/api/deal-pipelines/sync
+     * @secure
+     */
+    dealPipelinesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        DealPipelineDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/deal-pipelines/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags DealPipelines
      * @name DealPipelinesDetail
      * @request GET:/api/deal-pipelines/{id}
      * @secure
@@ -13601,29 +14006,6 @@ export class Api<
     /**
      * No description
      *
-     * @tags DealPipelines
-     * @name DealPipelinesSyncList
-     * @request GET:/api/deal-pipelines/sync
-     * @secure
-     */
-    dealPipelinesSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/deal-pipelines/sync`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @tags DealPipelineStages
      * @name DealPipelineStagesCreate
      * @request POST:/api/deal-pipeline-stages
@@ -13726,6 +14108,33 @@ export class Api<
      * No description
      *
      * @tags DealPipelineStages
+     * @name DealPipelineStagesSyncList
+     * @request GET:/api/deal-pipeline-stages/sync
+     * @secure
+     */
+    dealPipelineStagesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        DealPipelineStageDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/deal-pipeline-stages/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags DealPipelineStages
      * @name DealPipelineStagesBulkDelete
      * @request DELETE:/api/deal-pipeline-stages/bulk
      * @secure
@@ -13759,29 +14168,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/deal-pipeline-stages/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags DealPipelineStages
-     * @name DealPipelineStagesSyncList
-     * @request GET:/api/deal-pipeline-stages/sync
-     * @secure
-     */
-    dealPipelineStagesSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/deal-pipeline-stages/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -13890,6 +14276,30 @@ export class Api<
      * No description
      *
      * @tags Deals
+     * @name DealsSyncList
+     * @request GET:/api/deals/sync
+     * @secure
+     */
+    dealsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<DealDetailsDtoInt32SyncResponseDto, void | ProblemDetails>({
+        path: `/api/deals/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deals
      * @name DealsBulkDelete
      * @request DELETE:/api/deals/bulk
      * @secure
@@ -13920,29 +14330,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/deals/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Deals
-     * @name DealsSyncList
-     * @request GET:/api/deals/sync
-     * @secure
-     */
-    dealsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/deals/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -14073,6 +14460,32 @@ export class Api<
         format: "json",
         ...params,
       }),
+
+    /**
+     * No description
+     *
+     * @tags Domains
+     * @name DomainsSyncList
+     * @request GET:/api/domains/sync
+     * @secure
+     */
+    domainsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<DomainDetailsDtoInt32SyncResponseDto, void | ProblemDetails>(
+        {
+          path: `/api/domains/sync`,
+          method: "GET",
+          query: query,
+          secure: true,
+          format: "json",
+          ...params,
+        },
+      ),
 
     /**
      * No description
@@ -14237,29 +14650,6 @@ export class Api<
     /**
      * No description
      *
-     * @tags Domains
-     * @name DomainsSyncList
-     * @request GET:/api/domains/sync
-     * @secure
-     */
-    domainsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/domains/sync`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @tags Email
      * @name EmailVerifyDetail
      * @request GET:/api/email/verify/{email}
@@ -14311,6 +14701,33 @@ export class Api<
       this.request<EmailGroupDetailsDto[], void | ProblemDetails>({
         path: `/api/email-groups/${id}/translations`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailGroups
+     * @name EmailGroupsSyncList
+     * @request GET:/api/email-groups/sync
+     * @secure
+     */
+    emailGroupsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        EmailGroupDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/email-groups/sync`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -14460,29 +14877,6 @@ export class Api<
     /**
      * No description
      *
-     * @tags EmailGroups
-     * @name EmailGroupsSyncList
-     * @request GET:/api/email-groups/sync
-     * @secure
-     */
-    emailGroupsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/email-groups/sync`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @tags EmailTemplates
      * @name EmailTemplatesAiTranslationDraftDetail
      * @request GET:/api/email-templates/{id}/ai-translation-draft/{language}
@@ -14588,6 +14982,65 @@ export class Api<
       this.request<EmailTemplateDetailsDto[], void | ProblemDetails>({
         path: `/api/email-templates/${id}/translations`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesSyncList
+     * @request GET:/api/email-templates/sync
+     * @secure
+     */
+    emailTemplatesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+        /**
+         * Include base versions of modified items for three-way merge support
+         * @default false
+         */
+        includeBase?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        EmailTemplateDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/email-templates/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesChangeLogList
+     * @request GET:/api/email-templates/{id}/change-log
+     * @secure
+     */
+    emailTemplatesChangeLogList: (
+      id: number,
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        EmailTemplateUpdateDtoChangeLogDetailsDto[],
+        void | ProblemDetails
+      >({
+        path: `/api/email-templates/${id}/change-log`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -14728,29 +15181,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/email-templates/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags EmailTemplates
-     * @name EmailTemplatesSyncList
-     * @request GET:/api/email-templates/sync
-     * @secure
-     */
-    emailTemplatesSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/email-templates/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -15075,6 +15505,30 @@ export class Api<
      * No description
      *
      * @tags Links
+     * @name LinksSyncList
+     * @request GET:/api/links/sync
+     * @secure
+     */
+    linksSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<LinkDetailsDtoInt32SyncResponseDto, void | ProblemDetails>({
+        path: `/api/links/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Links
      * @name LinksImportCreate
      * @request POST:/api/links/import
      * @secure
@@ -15180,29 +15634,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/links/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Links
-     * @name LinksSyncList
-     * @request GET:/api/links/sync
-     * @secure
-     */
-    linksSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/links/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -15646,11 +16077,15 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<void, void | ProblemDetails>({
+      this.request<
+        MediaDetailsDtoMediaDeletedDtoSyncResponseDto,
+        void | ProblemDetails
+      >({
         path: `/api/media/sync`,
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -15791,6 +16226,33 @@ export class Api<
      * No description
      *
      * @tags OrderItems
+     * @name OrderItemsSyncList
+     * @request GET:/api/order-items/sync
+     * @secure
+     */
+    orderItemsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        OrderItemDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/order-items/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags OrderItems
      * @name OrderItemsImportCreate
      * @request POST:/api/order-items/import
      * @secure
@@ -15825,29 +16287,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/order-items/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OrderItems
-     * @name OrderItemsSyncList
-     * @request GET:/api/order-items/sync
-     * @secure
-     */
-    orderItemsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/order-items/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -15906,6 +16345,30 @@ export class Api<
       this.request<string[], void | ProblemDetails>({
         path: `/api/orders/currencies`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Orders
+     * @name OrdersSyncList
+     * @request GET:/api/orders/sync
+     * @secure
+     */
+    ordersSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<OrderDetailsDtoInt32SyncResponseDto, void | ProblemDetails>({
+        path: `/api/orders/sync`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -16071,23 +16534,27 @@ export class Api<
     /**
      * No description
      *
-     * @tags Orders
-     * @name OrdersSyncList
-     * @request GET:/api/orders/sync
+     * @tags Promotions
+     * @name PromotionsSyncList
+     * @request GET:/api/promotions/sync
      * @secure
      */
-    ordersSyncList: (
+    promotionsSyncList: (
       query?: {
         syncToken?: string;
         query?: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/orders/sync`,
+      this.request<
+        PromotionDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/promotions/sync`,
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -16223,29 +16690,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/promotions/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Promotions
-     * @name PromotionsSyncList
-     * @request GET:/api/promotions/sync
-     * @secure
-     */
-    promotionsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/promotions/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -16436,6 +16880,33 @@ export class Api<
      * No description
      *
      * @tags Segments
+     * @name SegmentsSyncList
+     * @request GET:/api/segments/sync
+     * @secure
+     */
+    segmentsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        SegmentDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/segments/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Segments
      * @name SegmentsBulkDelete
      * @request DELETE:/api/segments/bulk
      * @secure
@@ -16466,29 +16937,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/segments/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Segments
-     * @name SegmentsSyncList
-     * @request GET:/api/segments/sync
-     * @secure
-     */
-    segmentsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/segments/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -16664,6 +17112,33 @@ export class Api<
      * No description
      *
      * @tags Settings
+     * @name SettingsSyncList
+     * @request GET:/api/settings/sync
+     * @secure
+     */
+    settingsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        SettingDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/settings/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
      * @name SettingsImportCreate
      * @request POST:/api/settings/import
      * @secure
@@ -16823,29 +17298,6 @@ export class Api<
     /**
      * No description
      *
-     * @tags Settings
-     * @name SettingsSyncList
-     * @request GET:/api/settings/sync
-     * @secure
-     */
-    settingsSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/settings/sync`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @tags Sse
      * @name SseSupportedEntitiesList
      * @request GET:/api/sse/supported-entities
@@ -16932,6 +17384,63 @@ export class Api<
         path: `/api/statistics`,
         method: "POST",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Subscribes
+     * @name SubscribeCreate
+     * @request POST:/api/subscribe
+     * @secure
+     */
+    subscribeCreate: (data: SubscribeDto, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/subscribe`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Subscribes
+     * @name SubscribeConfirmCreate
+     * @request POST:/api/subscribe/confirm
+     * @secure
+     */
+    subscribeConfirmCreate: (
+      data: ConfirmSubscribeDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void>({
+        path: `/api/subscribe/confirm`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Subscribes
+     * @name UnsubscribeCreate
+     * @request POST:/api/unsubscribe
+     * @secure
+     */
+    unsubscribeCreate: (data: UnsibscribeDto, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/unsubscribe`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -17036,6 +17545,33 @@ export class Api<
     ) =>
       this.request<TaskExecutionLogDetailsDto[], void | ProblemDetails>({
         path: `/api/tasks/logs`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Unsubscribes
+     * @name UnsubscribesSyncList
+     * @request GET:/api/unsubscribes/sync
+     * @secure
+     */
+    unsubscribesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        UnsubscribeDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/unsubscribes/sync`,
         method: "GET",
         query: query,
         secure: true,
@@ -17197,29 +17733,6 @@ export class Api<
     ) =>
       this.request<any, void | ProblemDetails>({
         path: `/api/unsubscribes/export`,
-        method: "GET",
-        query: query,
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Unsubscribes
-     * @name UnsubscribesSyncList
-     * @request GET:/api/unsubscribes/sync
-     * @secure
-     */
-    unsubscribesSyncList: (
-      query?: {
-        syncToken?: string;
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/unsubscribes/sync`,
         method: "GET",
         query: query,
         secure: true,

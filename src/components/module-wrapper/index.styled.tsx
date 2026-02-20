@@ -55,19 +55,23 @@ export const FormContainer = styled("div")`
   width: 100%;
 `;
 
-export const FixedActionBar = styled("div")`
+export const FixedActionBar = styled("div", {
+  shouldForwardProp: (prop) => prop !== "sidebarCollapsed",
+})<{ sidebarCollapsed?: boolean }>(
+  ({ theme, sidebarCollapsed }) => `
   position: fixed;
   bottom: 0;
   right: 0;
-  left: 260px; /* Match the sidebar width */
-  background: ${({ theme }) => theme.palette.background.paper};
+  left: ${sidebarCollapsed ? "65px" : "260px"};
+  background: ${theme.palette.background.paper};
   display: flex;
   justify-content: flex-end;
-  gap: ${({ theme }) => theme.spacing(3)};
-  padding: ${({ theme }) => theme.spacing(3)};
+  gap: ${theme.spacing(3)};
+  padding: ${theme.spacing(3)};
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   z-index: 10;
-  @media (max-width: ${({ theme }) => theme.breakpoints.values.md}px) {
+  transition: left 0.3s ease;
+  @media (max-width: ${theme.breakpoints.values.md}px) {
     left: 0;
     justify-content: center;
   }
@@ -75,7 +79,8 @@ export const FixedActionBar = styled("div")`
   .sidebar-hidden & {
     left: 0;
   }
-`;
+`
+);
 
 export const LoadingIndicatorContainer = styled("div")`
   position: absolute;

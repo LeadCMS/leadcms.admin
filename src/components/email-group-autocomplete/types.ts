@@ -6,6 +6,7 @@ export interface EmailGroupAutoCompleteProps {
   error: boolean | undefined;
   helperText: string | string[] | false | undefined;
   onChange: (value: number) => void;
+  onChangeWithLabel?: (value: number, label: string) => void;
 }
 
 export interface EmailGroupOption {
