@@ -91,10 +91,34 @@ import { showApiError } from "@utils/api-error-parser";
  */
 const SafeDiffEditor = ({
   onModifiedChange,
+  modified,
   ...props
 }: React.ComponentProps<typeof MonacoDiffEditor> & {
   onModifiedChange?: (value: string) => void;
 }) => {
+  const modifiedEditorRef = useRef<ReturnType<
+    Parameters<
+      NonNullable<React.ComponentProps<typeof MonacoDiffEditor>["onMount"]>
+    >[0]["getModifiedEditor"]
+  > | null>(null);
+
+  // Freeze the initial `modified` value so the underlying DiffEditor
+  // does NOT re-apply it on every render (which would reset the cursor
+  // and cause "Illegal value for lineNumber" errors).
+  // All subsequent syncs go through our controlled useEffect below.
+  const initialModifiedRef = useRef(modified);
+
+  // Sync external value changes (AI edit, data load, etc.) into the
+  // modified editor without resetting cursor while the user is typing.
+  useEffect(() => {
+    const editor = modifiedEditorRef.current;
+    if (!editor || editor.hasTextFocus()) return;
+    const current = editor.getValue();
+    if (current !== (modified ?? "")) {
+      editor.setValue(modified ?? "");
+    }
+  }, [modified]);
+
   const handleMount = useCallback<
     NonNullable<React.ComponentProps<typeof MonacoDiffEditor>["onMount"]>
   >(
@@ -117,12 +141,15 @@ const SafeDiffEditor = ({
         origDispose();
       };
 
+      const modifiedEditor = editor.getModifiedEditor();
+      modifiedEditorRef.current = modifiedEditor;
+
       if (onModifiedChange) {
-        const modifiedEditor = editor.getModifiedEditor();
         modifiedEditor.onDidChangeModelContent(() => {
           onModifiedChange(modifiedEditor.getValue());
         });
       }
+
       props.onMount?.(editor, monaco);
     },
     [onModifiedChange]
@@ -131,6 +158,7 @@ const SafeDiffEditor = ({
   return (
     <MonacoDiffEditor
       {...props}
+      modified={initialModifiedRef.current}
       keepCurrentOriginalModel
       keepCurrentModifiedModel
       onMount={handleMount}
@@ -1232,7 +1260,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                           renderSideBySide: true,
                           minimap: { enabled: false },
                           scrollBeyondLastLine: false,
-                          wordWrap: "on",
                           originalEditable: false,
                         }}
                       />
