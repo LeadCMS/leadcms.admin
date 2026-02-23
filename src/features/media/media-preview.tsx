@@ -654,9 +654,8 @@ export const MediaPreview = ({
         onFileUpdate(response.data);
       }
     } catch (error) {
-      const apiError = error as { message?: string };
-      const errorMessage = apiError.message || "Failed to save description";
-      notificationsService.error(errorMessage);
+      const apiError = parseApiError(error, "Failed to save description");
+      notificationsService.error(apiError.message);
     } finally {
       setIsSavingDescription(false);
     }
@@ -681,9 +680,8 @@ export const MediaPreview = ({
         onFileUpdate(responseData);
       }
     } catch (error) {
-      const apiError = error as { message?: string };
-      const errorMessage = apiError.message || "Failed to save tags";
-      notificationsService.error(errorMessage);
+      const apiError = parseApiError(error, "Failed to save tags");
+      notificationsService.error(apiError.message);
     } finally {
       setIsSavingTags(false);
     }

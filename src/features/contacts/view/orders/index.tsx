@@ -4,6 +4,7 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useNotificationsService, useCurrencyFormatter } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { ActionButtonContainer } from "@features/contacts/index.styled";
 import { OrderDetailsDto } from "@lib/network/swagger-client";
@@ -37,9 +38,8 @@ export const ContactOrders = () => {
         });
         setOrders(data || []);
       } catch (error) {
-        console.log(error);
         setOrders([]);
-        notificationsService.error("Server error: could not retrieve orders.");
+        showApiError(error, notificationsService, undefined, "Could not retrieve orders.");
       } finally {
         setIsLoading(false);
       }

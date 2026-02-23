@@ -5,6 +5,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { SegmentsBreadcrumbLinks } from "../constants";
 import { SegmentCreateDto, SegmentDetailsDto, SegmentUpdateDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
+import { useNotificationsService } from "@hooks";
 import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "lib/router";
 import { SegmentForm } from "./segment-form";
 
@@ -12,6 +13,7 @@ export const SegmentEdit = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { client } = useRequestContext();
+  const { notificationsService } = useNotificationsService();
 
   const [segment, setSegment] = useState<SegmentDetailsDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +57,12 @@ export const SegmentEdit = () => {
     await client.api.segmentsPartialUpdate(segment.id!, payload as SegmentUpdateDto);
   };
 
+  const handleDelete = async () => {
+    await client.api.segmentsDelete(segment.id!);
+    notificationsService.success("Segment deleted.");
+    navigate(getCoreModuleRoute(CoreModule.segments));
+  };
+
   const viewRoute = getCoreModuleRoute(CoreModule.segments) + "/" + getViewFormRoute(Number(id));
 
   return (
@@ -64,6 +72,7 @@ export const SegmentEdit = () => {
       onSave={handleSave}
       onSaveSuccess={() => navigate(viewRoute)}
       onCancel={() => navigate(viewRoute)}
+      onDelete={handleDelete}
     />
   );
 };

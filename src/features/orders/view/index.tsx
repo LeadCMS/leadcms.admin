@@ -23,6 +23,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { CoreModule, getEditFormRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService, useCurrencyFormatter } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { OrderViewOutletContext } from "./types";
 
@@ -94,8 +95,7 @@ export const OrderViewBase = () => {
       });
       setOrderItems(data || []);
     } catch (error) {
-      console.log(error);
-      notificationsService.error("Could not retrieve order items.");
+      showApiError(error, notificationsService, undefined, "Could not retrieve order items.");
     }
   };
 
@@ -141,8 +141,7 @@ export const OrderViewBase = () => {
           }
         }
       } catch (error) {
-        console.log(error);
-        notificationsService.error("Could not retrieve order details.");
+        showApiError(error, notificationsService, undefined, "Could not retrieve order details.");
       } finally {
         setIsLoading(false);
       }

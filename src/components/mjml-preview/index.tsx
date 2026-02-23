@@ -61,6 +61,45 @@ export function normalizePlaceholders(source: string): string {
  */
 function detectVariables(source: string): string[] {
   const vars = new Set<string>();
+  const loopAliases = new Set<string>();
+  const tokenRegex = /\b[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*\b/g;
+  const entityRegex = /&(?:#\d+|#x[0-9a-f]+|[a-z]+);?/gi;
+  const operatorRegex = /[<>!=|&()+\-*/%,:?{}]/g;
+
+  const addTopLevelToken = (token: string) => {
+    const lower = token.toLowerCase();
+    if (
+      lower === "and" ||
+      lower === "or" ||
+      lower === "contains" ||
+      lower === "blank" ||
+      lower === "empty" ||
+      lower === "true" ||
+      lower === "false" ||
+      lower === "nil" ||
+      lower === "null" ||
+      lower === "gt" ||
+      lower === "lt" ||
+      lower === "amp" ||
+      lower === "am" ||
+      lower === "quot" ||
+      lower === "nbsp"
+    ) {
+      return;
+    }
+    const root = token.split(".")[0];
+    if (!loopAliases.has(root)) {
+      vars.add(root);
+    }
+  };
+
+  const extractTokens = (expr: string) => {
+    const sanitized = expr.replace(entityRegex, " ").replace(operatorRegex, " ");
+    const matches = sanitized.match(tokenRegex);
+    if (!matches) return;
+    matches.forEach(addTopLevelToken);
+  };
+
   const patterns = [
     /\{\{\s*(\w+)\s*\}\}/g, // {{ var }}
     /<%\s*(\w+)\s*%>/g, // <%var%>
@@ -75,7 +114,132 @@ function detectVariables(source: string): string[] {
       vars.add(m[1]);
     }
   }
+
+  let tagMatch: RegExpExecArray | null;
+  const tagRegex = /\{%\s*([\s\S]*?)\s*%\}/g;
+  while ((tagMatch = tagRegex.exec(source)) !== null) {
+    const content = tagMatch[1].trim();
+    const forMatch = content.match(
+      /^for\s+(\w+)\s+in\s+([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)/
+    );
+    if (forMatch) {
+      loopAliases.add(forMatch[1]);
+      addTopLevelToken(forMatch[2]);
+      continue;
+    }
+    const conditionMatch = content.match(/^(if|unless|elsif)\s+([\s\S]+)$/);
+    if (conditionMatch) {
+      extractTokens(conditionMatch[2]);
+    }
+  }
+
+  source.replace(/\{\{\s*([\s\S]*?)\s*\}\}/g, (_, expr: string) => {
+    extractTokens(expr);
+    return "";
+  });
+
   return Array.from(vars);
+}
+
+function detectLoopCollections(source: string): string[] {
+  const collections = new Set<string>();
+  const rx = /\{%\s*for\s+\w+\s+in\s+([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*%\}/g;
+  let m: RegExpExecArray | null;
+  while ((m = rx.exec(source)) !== null) {
+    collections.add(m[1].split(".")[0]);
+  }
+  return Array.from(collections);
+}
+
+function getCollectionDefault(key: string): string {
+  const lower = key.toLowerCase();
+  if (lower === "orders" || lower.includes("order")) {
+    return JSON.stringify(
+      [
+        {
+          RefNo: "ORD-2024-00158",
+          OrderNumber: "1001",
+          Status: "Paid",
+          OrderItems: [
+            {
+              ProductName: "Premium Widget",
+              Quantity: 2,
+            },
+          ],
+        },
+      ],
+      null,
+      2
+    );
+  }
+  return JSON.stringify([{ name: "Item 1" }], null, 2);
+}
+
+function parseDynamicValue(value: string): unknown {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    (trimmed.startsWith("[") && trimmed.endsWith("]"))
+  ) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+}
+
+function setContextValue(ctx: Record<string, unknown>, key: string, value: unknown) {
+  const path = key
+    .split(".")
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (path.length === 0 || value === undefined) return;
+
+  let node: Record<string, unknown> = ctx;
+  for (let i = 0; i < path.length - 1; i++) {
+    const segment = path[i];
+    const current = node[segment];
+    if (typeof current !== "object" || current === null || Array.isArray(current)) {
+      node[segment] = {};
+    }
+    node = node[segment] as Record<string, unknown>;
+  }
+  node[path[path.length - 1]] = value;
+}
+
+/**
+ * Decode HTML entities that may appear inside Liquid blocks.
+ *
+ * Editors (e.g. GrapesJS) and storage round-trips can
+ * HTML-encode characters like `>` / `<` inside
+ * `{% … %}` and `{{ … }}` tags, which breaks the Liquid
+ * tokeniser. This function restores the real characters
+ * only within Liquid delimiters, leaving surrounding
+ * HTML untouched.
+ */
+function decodeLiquidBlocks(source: string): string {
+  const DQUOTE = String.fromCharCode(34);
+  // Single decode pass is enough in the current pipeline:
+  // MJML compile (encodes once) → decode Liquid blocks → Liquid render.
+  const decode = (s: string) =>
+    s
+      .replace(/&amp;/g, "&")
+      .replace(/&gt;/g, ">")
+      .replace(/&lt;/g, "<")
+      .replace(/&quot;/g, DQUOTE)
+      .replace(/&#39;/g, "'");
+
+  // Some AI-generated content contains malformed comparator entities
+  // like "&am;" (from broken "&amp;gt;") inside Liquid conditions.
+  // Repair only when the token appears as a standalone operator.
+  const repairBrokenComparators = (s: string) => s.replace(/\s&(?:amp;)?am;?\s/g, " > ");
+
+  return source
+    .replace(/\{%(.*?)%\}/gs, (_, c) => `{%${repairBrokenComparators(decode(c))}%}`)
+    .replace(/\{\{(.*?)\}\}/gs, (_, c) => `{{${decode(c)}}}`);
 }
 
 /**
@@ -83,9 +247,16 @@ function detectVariables(source: string): string[] {
  * liquidjs `parseAndRenderSync` works in browser.
  */
 function renderLiquid(template: string, params: TemplateParam[]): string {
-  const ctx: Record<string, string | boolean> = {};
+  const ctx: Record<string, unknown> = {};
   for (const p of params) {
-    ctx[p.key] = p.type === "boolean" ? p.value === "true" : p.value;
+    if (p.type === "boolean") {
+      setContextValue(ctx, p.key, p.value === "true");
+      continue;
+    }
+    const dynamicValue = parseDynamicValue(p.value);
+    if (dynamicValue !== undefined) {
+      setContextValue(ctx, p.key, dynamicValue);
+    }
   }
   return liquidEngine.parseAndRenderSync(template, ctx);
 }
@@ -347,6 +518,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
 
   // Auto-detect variables from source
   const detectedVars = useMemo(() => detectVariables(source), [source]);
+  const loopCollections = useMemo(() => detectLoopCollections(source), [source]);
 
   // Initialise params from localStorage + smart defaults on first detect
   useEffect(() => {
@@ -362,25 +534,42 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
           type: isBool ? ("boolean" as const) : ("text" as const),
         };
       }
+      if (loopCollections.includes(v)) {
+        return {
+          key: v,
+          value: getCollectionDefault(v),
+          type: "text" as const,
+        };
+      }
       return { key: v, ...generateSmartDefault(v, user) };
     });
     setParams(initial);
     setInitialized(true);
-  }, [detectedVars, user, initialized]);
+  }, [detectedVars, user, initialized, loopCollections]);
 
   // Merge detected vars with user-defined params
   const effectiveParams = useMemo(() => {
     const merged = [...params];
     for (const v of detectedVars) {
       if (!merged.find((p) => p.key === v)) {
+        if (loopCollections.includes(v)) {
+          merged.push({
+            key: v,
+            value: getCollectionDefault(v),
+            type: "text",
+          });
+          continue;
+        }
         const smart = generateSmartDefault(v, user);
         merged.push({ key: v, ...smart });
       }
     }
     return merged;
-  }, [params, detectedVars, user]);
+  }, [params, detectedVars, user, loopCollections]);
 
-  // Render pipeline:  normalise → Liquid → (MJML compile if needed)
+  // Render pipeline
+  // MJML:  normalise → MJML compile → decode entities in Liquid blocks → Liquid
+  // HTML:  normalise → decode entities in Liquid blocks → Liquid
   const preview = useMemo(() => {
     if (!source || !source.trim()) {
       return { html: "", errors: [] as string[] };
@@ -388,18 +577,27 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
 
     try {
       const normalized = normalizePlaceholders(source);
-      const rendered = renderLiquid(normalized, effectiveParams);
+      let htmlToRender: string;
+      let mjmlErrors: string[] = [];
 
       if (format === "Mjml") {
-        const result = mjml2html(rendered, {
+        // Compile MJML first — Liquid tags survive as text but
+        // operators like > get HTML-encoded by MJML's HTML serialiser.
+        const result = mjml2html(normalized, {
           validationLevel: "soft",
         });
-        const errors = (result.errors || []).map((e: { message: string }) => e.message);
-        return { html: result.html || "", errors };
+        mjmlErrors = (result.errors || []).map((e: { message: string }) => e.message);
+        htmlToRender = result.html || "";
+      } else {
+        htmlToRender = normalized;
       }
 
-      // HTML format — render directly
-      return { html: rendered, errors: [] as string[] };
+      // Decode HTML entities inside {% %} and {{ }} blocks so
+      // Liquid sees real operators (>, <, &, etc.).
+      const decoded = decodeLiquidBlocks(htmlToRender);
+      const rendered = renderLiquid(decoded, effectiveParams);
+
+      return { html: rendered, errors: mjmlErrors };
     } catch (e) {
       return { html: "", errors: [String(e)] };
     }
@@ -553,7 +751,17 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                     <TextField
                       size="small"
                       fullWidth
-                      placeholder={`Value for ${param.key}`}
+                      multiline={
+                        loopCollections.includes(param.key) ||
+                        param.value.trim().startsWith("{") ||
+                        param.value.trim().startsWith("[")
+                      }
+                      minRows={loopCollections.includes(param.key) ? 4 : 1}
+                      placeholder={
+                        loopCollections.includes(param.key)
+                          ? `JSON value for ${param.key}`
+                          : `Value for ${param.key}`
+                      }
                       value={param.value}
                       onChange={(e) =>
                         updateParam(param.key, {
@@ -610,6 +818,9 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
               <strong>Liquid syntax:</strong> {"{{ variable }}"} for values,{" "}
               {"{% if variable %}...{% endif %}"} for conditionals,{" "}
               {"{% for item in items %}...{% endfor %}"} for loops.
+              <br />
+              <strong>Nested data:</strong> use JSON for collection/object params (for example,{" "}
+              <strong>Orders</strong> as an array).
               <br />
               <strong>Legacy syntax:</strong> {"<%variable%>"} and {"${variable}"} are
               auto-converted to Liquid.

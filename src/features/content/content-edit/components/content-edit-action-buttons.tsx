@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService, useCoreModuleNavigation } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { CoreModule } from "@lib/router";
 import { Trash2, XCircle, Save, Copy, Languages, Sparkles } from "lucide-react";
 
@@ -69,7 +70,7 @@ export const ContentEditActionButtons = ({
       notificationsService.success("Content deleted successfully");
       handleNavigation(CoreModule.content);
     } catch (error) {
-      notificationsService.error("Failed to delete content");
+      showApiError(error, notificationsService, undefined, "Failed to delete content");
     }
   };
 
@@ -122,7 +123,7 @@ export const ContentEditActionButtons = ({
             Translate
           </Button>
         )}
-        {hasAIAssistance && (
+        {hasAIAssistance && !isCreateMode && !isDuplicateMode && !isTranslationMode && (
           <Button
             variant="outlined"
             color="primary"

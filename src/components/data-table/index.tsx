@@ -30,6 +30,7 @@ type DataTableProps = {
   disablePagination: boolean;
   disableColumnFilter: boolean;
   showActionsColumn: boolean;
+  enableRowSelection: boolean;
   disableEditRoute: boolean;
   disableViewRoute: boolean;
   columnVisibilityModel?: GridColumnVisibilityModel;
@@ -56,6 +57,7 @@ export const DataTableGrid = ({
   disableColumnFilter,
   disablePagination,
   showActionsColumn,
+  enableRowSelection,
   disableEditRoute,
   disableViewRoute,
   columnVisibilityModel,
@@ -169,7 +171,7 @@ export const DataTableGrid = ({
         columns={gridFinalizedColumns}
         rows={data ?? empty}
         loading={!data}
-        checkboxSelection={true}
+        checkboxSelection={enableRowSelection}
         disableRowSelectionOnClick
         rowHeight={72}
         rowCount={totalRowCount}

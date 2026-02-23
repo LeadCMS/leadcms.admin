@@ -1530,6 +1530,474 @@ export interface AuthConfigDto {
   msal?: MsalConfigDto;
 }
 
+export interface CampaignCreateDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId: number;
+  /** Segment Ids */
+  segmentIds: number[];
+  /** Exclude Segment Ids */
+  excludeSegmentIds?: number[] | null;
+  /**
+   * Scheduled At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  scheduledAt?: string | null;
+  /**
+   * Time Zone
+   * @format int32
+   * @example 1
+   */
+  timeZone?: number | null;
+  /**
+   * Use Contact Time Zone
+   * @example true
+   */
+  useContactTimeZone?: boolean;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+}
+
+export interface CampaignDetailsDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId: number;
+  /** Segment Ids */
+  segmentIds: number[];
+  /** Exclude Segment Ids */
+  excludeSegmentIds?: number[] | null;
+  /**
+   * Scheduled At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  scheduledAt?: string | null;
+  /**
+   * Time Zone
+   * @format int32
+   * @example 1
+   */
+  timeZone?: number | null;
+  /**
+   * Use Contact Time Zone
+   * @example true
+   */
+  useContactTimeZone?: boolean;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Status
+   * @example "Draft"
+   */
+  status?: "Draft" | "Scheduled" | "Sending" | "Sent" | "Cancelled" | "Paused";
+  /**
+   * Send Started At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  sendStartedAt?: string | null;
+  /**
+   * Send Completed At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  sendCompletedAt?: string | null;
+  /**
+   * Total Recipients
+   * @format int32
+   * @example 1
+   */
+  totalRecipients?: number;
+  /**
+   * Sent Count
+   * @format int32
+   * @example 1
+   */
+  sentCount?: number;
+  /**
+   * Failed Count
+   * @format int32
+   * @example 1
+   */
+  failedCount?: number;
+  /**
+   * Skipped Count
+   * @format int32
+   * @example 1
+   */
+  skippedCount?: number;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+  emailTemplate?: EmailTemplateDetailsDto;
+}
+
+export interface CampaignLaunchDto {
+  /**
+   * Send Now
+   * @example true
+   */
+  sendNow?: boolean;
+  /**
+   * Scheduled At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  scheduledAt?: string | null;
+  /**
+   * Time Zone
+   * @format int32
+   * @example 1
+   */
+  timeZone?: number | null;
+  /**
+   * Use Contact Time Zone
+   * @example true
+   */
+  useContactTimeZone?: boolean;
+}
+
+export interface CampaignPreviewRequestDto {
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId: number;
+  /** Segment Ids */
+  segmentIds: number[];
+  /** Exclude Segment Ids */
+  excludeSegmentIds?: number[] | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number | null;
+}
+
+export interface CampaignPreviewResultDto {
+  /**
+   * Total Audience Count
+   * @format int32
+   * @example 1
+   */
+  totalAudienceCount?: number;
+  /**
+   * Sendable Count
+   * @format int32
+   * @example 1
+   */
+  sendableCount?: number;
+  /**
+   * Unsubscribed Count
+   * @format int32
+   * @example 1
+   */
+  unsubscribedCount?: number;
+  /**
+   * Invalid Email Count
+   * @format int32
+   * @example 1
+   */
+  invalidEmailCount?: number;
+  /**
+   * Rendered Subject
+   * @example "string"
+   */
+  renderedSubject?: string;
+  /**
+   * Rendered Body
+   * @example "string"
+   */
+  renderedBody?: string;
+  /**
+   * From Email
+   * @example "string"
+   */
+  fromEmail?: string;
+  /**
+   * From Name
+   * @example "string"
+   */
+  fromName?: string;
+  /**
+   * Preview Contact Id
+   * @format int32
+   * @example 1
+   */
+  previewContactId?: number;
+  /**
+   * Preview Contact Name
+   * @example "string"
+   */
+  previewContactName?: string;
+  /**
+   * Preview Contact Email
+   * @example "string"
+   */
+  previewContactEmail?: string;
+}
+
+export interface CampaignRecipientDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Campaign Id
+   * @format int32
+   * @example 1
+   */
+  campaignId?: number;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number;
+  contact?: ContactDetailsDto;
+  /**
+   * Status
+   * @example "Pending"
+   */
+  status?: "Pending" | "Sent" | "Failed" | "Skipped";
+  /**
+   * Skip Reason
+   * @example "None"
+   */
+  skipReason?:
+    | "None"
+    | "Unsubscribed"
+    | "Duplicate"
+    | "Suppressed"
+    | "InvalidEmail";
+  /**
+   * Sent At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  sentAt?: string | null;
+  /**
+   * Expected Send At Utc
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  expectedSendAtUtc?: string | null;
+  /**
+   * Error Message
+   * @example "string"
+   */
+  errorMessage?: string | null;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface CampaignSendTestDto {
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId: number;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId: number;
+  /**
+   * Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  email: string;
+}
+
+export interface CampaignStatisticsDto {
+  /**
+   * Total Recipients
+   * @format int32
+   * @example 1
+   */
+  totalRecipients?: number;
+  /**
+   * Sent Count
+   * @format int32
+   * @example 1
+   */
+  sentCount?: number;
+  /**
+   * Failed Count
+   * @format int32
+   * @example 1
+   */
+  failedCount?: number;
+  /**
+   * Skipped Count
+   * @format int32
+   * @example 1
+   */
+  skippedCount?: number;
+  /**
+   * Pending Count
+   * @format int32
+   * @example 1
+   */
+  pendingCount?: number;
+  /**
+   * Skipped Unsubscribed
+   * @format int32
+   * @example 1
+   */
+  skippedUnsubscribed?: number;
+  /**
+   * Skipped Duplicate
+   * @format int32
+   * @example 1
+   */
+  skippedDuplicate?: number;
+  /**
+   * Skipped Suppressed
+   * @format int32
+   * @example 1
+   */
+  skippedSuppressed?: number;
+  /**
+   * Skipped Invalid Email
+   * @format int32
+   * @example 1
+   */
+  skippedInvalidEmail?: number;
+}
+
+export interface CampaignUpdateDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name?: string | null;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId?: number | null;
+  /** Segment Ids */
+  segmentIds?: number[] | null;
+  /** Exclude Segment Ids */
+  excludeSegmentIds?: number[] | null;
+  /**
+   * Scheduled At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  scheduledAt?: string | null;
+  /**
+   * Time Zone
+   * @format int32
+   * @example 1
+   */
+  timeZone?: number | null;
+  /**
+   * Use Contact Time Zone
+   * @example true
+   */
+  useContactTimeZone?: boolean | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+}
+
 export interface ChangePasswordDto {
   /**
    * Current Password
@@ -5136,6 +5604,12 @@ export interface DealCreateDto {
    */
   tags?: string[] | null;
   /**
+   * Campaign Id
+   * @format int32
+   * @example 1
+   */
+  campaignId?: number | null;
+  /**
    * Contact Ids
    * @uniqueItems true
    */
@@ -5192,6 +5666,12 @@ export interface DealDetailsDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Campaign Id
+   * @format int32
+   * @example 1
+   */
+  campaignId?: number | null;
   /**
    * Id
    * @format int32
@@ -5428,6 +5908,12 @@ export interface DealUpdateDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Campaign Id
+   * @format int32
+   * @example 1
+   */
+  campaignId?: number | null;
 }
 
 export interface DeploymentDetailsDto {
@@ -6328,6 +6814,21 @@ export interface EmailTemplateCreateDto {
    */
   format?: "Html" | "Mjml";
   /**
+   * Category
+   * @example "General"
+   */
+  category?:
+    | "General"
+    | "PlainText"
+    | "SimpleProfessional"
+    | "Newsletter"
+    | "Promotional"
+    | "Transactional"
+    | "Lifecycle"
+    | "Digest"
+    | "Event"
+    | "Alert";
+  /**
    * From Email
    * @format email
    * @minLength 1
@@ -6384,6 +6885,21 @@ export interface EmailTemplateDetailsDto {
    * @example "Html"
    */
   format?: "Html" | "Mjml";
+  /**
+   * Category
+   * @example "General"
+   */
+  category?:
+    | "General"
+    | "PlainText"
+    | "SimpleProfessional"
+    | "Newsletter"
+    | "Promotional"
+    | "Transactional"
+    | "Lifecycle"
+    | "Digest"
+    | "Event"
+    | "Alert";
   /**
    * From Email
    * @format email
@@ -6472,6 +6988,22 @@ export interface EmailTemplateEditRequest {
    */
   format?: "Html" | "Mjml" | null;
   /**
+   * Category
+   * @example "General"
+   */
+  category?:
+    | "General"
+    | "PlainText"
+    | "SimpleProfessional"
+    | "Newsletter"
+    | "Promotional"
+    | "Transactional"
+    | "Lifecycle"
+    | "Digest"
+    | "Event"
+    | "Alert"
+    | null;
+  /**
    * From Email
    * @format email
    * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
@@ -6545,6 +7077,22 @@ export interface EmailTemplateGenerationRequest {
    */
   format?: "Html" | "Mjml" | null;
   /**
+   * Category
+   * @example "General"
+   */
+  category?:
+    | "General"
+    | "PlainText"
+    | "SimpleProfessional"
+    | "Newsletter"
+    | "Promotional"
+    | "Transactional"
+    | "Lifecycle"
+    | "Digest"
+    | "Event"
+    | "Alert"
+    | null;
+  /**
    * Reference Email Template Id
    * @format int32
    * @example 1
@@ -6581,6 +7129,22 @@ export interface EmailTemplateUpdateDto {
    * @example "Html"
    */
   format?: "Html" | "Mjml" | null;
+  /**
+   * Category
+   * @example "General"
+   */
+  category?:
+    | "General"
+    | "PlainText"
+    | "SimpleProfessional"
+    | "Newsletter"
+    | "Promotional"
+    | "Transactional"
+    | "Lifecycle"
+    | "Digest"
+    | "Event"
+    | "Alert"
+    | null;
   /**
    * From Email
    * @format email
@@ -7488,6 +8052,12 @@ export interface OrderCreateDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Campaign Id
+   * @format int32
+   * @example 1
+   */
+  campaignId?: number | null;
 }
 
 export interface OrderDetailsDto {
@@ -7545,6 +8115,12 @@ export interface OrderDetailsDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Campaign Id
+   * @format int32
+   * @example 1
+   */
+  campaignId?: number | null;
   /**
    * Id
    * @format int32
@@ -8089,6 +8665,12 @@ export interface OrderUpdateDto {
    * @example ["string1","string2"]
    */
   tags?: string[] | null;
+  /**
+   * Campaign Id
+   * @format int32
+   * @example 1
+   */
+  campaignId?: number | null;
   /**
    * Commission
    * @format double
@@ -8948,6 +9530,7 @@ export interface UnsubscribeDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   createdAt?: string;
+  contact?: ContactDetailsDto;
 }
 
 export interface UnsubscribeDetailsDtoInt32SyncResponseDto {
@@ -9685,6 +10268,325 @@ export class Api<
         query: query,
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsCreate
+     * @request POST:/api/campaigns
+     * @secure
+     */
+    campaignsCreate: (data: CampaignCreateDto, params: RequestParams = {}) =>
+      this.request<CampaignDetailsDto, void | ProblemDetails>({
+        path: `/api/campaigns`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsList
+     * @request GET:/api/campaigns
+     * @secure
+     */
+    campaignsList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<CampaignDetailsDto[], void | ProblemDetails>({
+        path: `/api/campaigns`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsPartialUpdate
+     * @request PATCH:/api/campaigns/{id}
+     * @secure
+     */
+    campaignsPartialUpdate: (
+      id: number,
+      data: CampaignUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<CampaignDetailsDto, void | ProblemDetails>({
+        path: `/api/campaigns/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsDetail
+     * @request GET:/api/campaigns/{id}
+     * @secure
+     */
+    campaignsDetail: (id: number, params: RequestParams = {}) =>
+      this.request<CampaignDetailsDto, void | ProblemDetails>({
+        path: `/api/campaigns/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsDelete
+     * @request DELETE:/api/campaigns/{id}
+     * @secure
+     */
+    campaignsDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/campaigns/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsLaunchCreate
+     * @request POST:/api/campaigns/{id}/launch
+     * @secure
+     */
+    campaignsLaunchCreate: (
+      id: number,
+      data: CampaignLaunchDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<CampaignDetailsDto, ProblemDetails>({
+        path: `/api/campaigns/${id}/launch`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsCancelCreate
+     * @request POST:/api/campaigns/{id}/cancel
+     * @secure
+     */
+    campaignsCancelCreate: (id: number, params: RequestParams = {}) =>
+      this.request<CampaignDetailsDto, ProblemDetails>({
+        path: `/api/campaigns/${id}/cancel`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsPauseCreate
+     * @request POST:/api/campaigns/{id}/pause
+     * @secure
+     */
+    campaignsPauseCreate: (id: number, params: RequestParams = {}) =>
+      this.request<CampaignDetailsDto, ProblemDetails>({
+        path: `/api/campaigns/${id}/pause`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsResumeCreate
+     * @request POST:/api/campaigns/{id}/resume
+     * @secure
+     */
+    campaignsResumeCreate: (id: number, params: RequestParams = {}) =>
+      this.request<CampaignDetailsDto, ProblemDetails>({
+        path: `/api/campaigns/${id}/resume`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsStatisticsList
+     * @request GET:/api/campaigns/{id}/statistics
+     * @secure
+     */
+    campaignsStatisticsList: (id: number, params: RequestParams = {}) =>
+      this.request<CampaignStatisticsDto, ProblemDetails>({
+        path: `/api/campaigns/${id}/statistics`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsSendTestCreate
+     * @request POST:/api/campaigns/send-test
+     * @secure
+     */
+    campaignsSendTestCreate: (
+      data: CampaignSendTestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, ProblemDetails>({
+        path: `/api/campaigns/send-test`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsPreviewCreate
+     * @request POST:/api/campaigns/preview
+     * @secure
+     */
+    campaignsPreviewCreate: (
+      data: CampaignPreviewRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<CampaignPreviewResultDto, ProblemDetails>({
+        path: `/api/campaigns/preview`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsRecipientsList
+     * @request GET:/api/campaigns/{id}/recipients
+     * @secure
+     */
+    campaignsRecipientsList: (
+      id: number,
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<CampaignRecipientDetailsDto[], ProblemDetails>({
+        path: `/api/campaigns/${id}/recipients`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsBulkDelete
+     * @request DELETE:/api/campaigns/bulk
+     * @secure
+     */
+    campaignsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/campaigns/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsExportList
+     * @request GET:/api/campaigns/export
+     * @secure
+     */
+    campaignsExportList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, void | ProblemDetails>({
+        path: `/api/campaigns/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Campaigns
+     * @name CampaignsSyncList
+     * @request GET:/api/campaigns/sync
+     * @secure
+     */
+    campaignsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/campaigns/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
         ...params,
       }),
 
@@ -14954,6 +15856,107 @@ export class Api<
      * No description
      *
      * @tags EmailTemplates
+     * @name EmailTemplatesCreate
+     * @request POST:/api/email-templates
+     * @secure
+     */
+    emailTemplatesCreate: (
+      data: EmailTemplateCreateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplateDetailsDto, void | ProblemDetails>({
+        path: `/api/email-templates`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesList
+     * @request GET:/api/email-templates
+     * @secure
+     */
+    emailTemplatesList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplateDetailsDto[], void | ProblemDetails>({
+        path: `/api/email-templates`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesPartialUpdate
+     * @request PATCH:/api/email-templates/{id}
+     * @secure
+     */
+    emailTemplatesPartialUpdate: (
+      id: number,
+      data: EmailTemplateUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplateDetailsDto, void | ProblemDetails>({
+        path: `/api/email-templates/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesDetail
+     * @request GET:/api/email-templates/{id}
+     * @secure
+     */
+    emailTemplatesDetail: (id: number, params: RequestParams = {}) =>
+      this.request<EmailTemplateDetailsDto, void | ProblemDetails>({
+        path: `/api/email-templates/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesDelete
+     * @request DELETE:/api/email-templates/{id}
+     * @secure
+     */
+    emailTemplatesDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/email-templates/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
      * @name EmailTemplatesTranslationDraftDetail
      * @request GET:/api/email-templates/{id}/translation-draft/{language}
      * @secure
@@ -15045,107 +16048,6 @@ export class Api<
         void | ProblemDetails
       >({
         path: `/api/email-templates/${id}/change-log`,
-        method: "GET",
-        query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags EmailTemplates
-     * @name EmailTemplatesDetail
-     * @request GET:/api/email-templates/{id}
-     * @secure
-     */
-    emailTemplatesDetail: (id: number, params: RequestParams = {}) =>
-      this.request<EmailTemplateDetailsDto, void | ProblemDetails>({
-        path: `/api/email-templates/${id}`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags EmailTemplates
-     * @name EmailTemplatesPartialUpdate
-     * @request PATCH:/api/email-templates/{id}
-     * @secure
-     */
-    emailTemplatesPartialUpdate: (
-      id: number,
-      data: EmailTemplateUpdateDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<EmailTemplateDetailsDto, void | ProblemDetails>({
-        path: `/api/email-templates/${id}`,
-        method: "PATCH",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags EmailTemplates
-     * @name EmailTemplatesDelete
-     * @request DELETE:/api/email-templates/{id}
-     * @secure
-     */
-    emailTemplatesDelete: (id: number, params: RequestParams = {}) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/email-templates/${id}`,
-        method: "DELETE",
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags EmailTemplates
-     * @name EmailTemplatesCreate
-     * @request POST:/api/email-templates
-     * @secure
-     */
-    emailTemplatesCreate: (
-      data: EmailTemplateCreateDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<EmailTemplateDetailsDto, void | ProblemDetails>({
-        path: `/api/email-templates`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags EmailTemplates
-     * @name EmailTemplatesList
-     * @request GET:/api/email-templates
-     * @secure
-     */
-    emailTemplatesList: (
-      query?: {
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<EmailTemplateDetailsDto[], void | ProblemDetails>({
-        path: `/api/email-templates`,
         method: "GET",
         query: query,
         secure: true,

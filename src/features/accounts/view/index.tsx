@@ -16,6 +16,7 @@ import { AccountDetailsDto } from "@lib/network/swagger-client";
 import { CoreModule, getEditFormRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { accountFormBreadcrumbLinks } from "../constants";
 import { AccountViewOutletContext } from "./types";
@@ -94,8 +95,7 @@ export const AccountViewBase = () => {
         accountDetailsCache.set(accountId, data);
         setAccount(data);
       } catch (error) {
-        console.log(error);
-        notificationsService.error("Could not retrieve account details.");
+        showApiError(error, notificationsService, undefined, "Could not retrieve account details.");
       } finally {
         setIsLoading(false);
       }

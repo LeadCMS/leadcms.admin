@@ -12,7 +12,7 @@ import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useRequestContext } from "@providers/request-provider";
 import { FormikHelpers, useFormik } from "formik";
 import React from "react";
-import { networkErrorToStringArray } from "utils/general-helper";
+import { toPromiseError } from "@utils/api-error-parser";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { EmailGroupEditValidationScheme } from "./validation";
 import { TextField } from "@mui/material";
@@ -53,20 +53,7 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
       pending: "Creating a group...",
       success: "Successfully created group",
       error: (error) => {
-        const errMessage: string =
-          (error.data.error && error.data.error.title) ||
-          (error.data.message && error.data.message) ||
-          "unknown";
-        const errDetails: string[] = [];
-        if (error.data.error && error.data.error.errors) {
-          errDetails.push(...networkErrorToStringArray(error.data.error.errors));
-        }
-        return {
-          title: errMessage,
-          onClick: () => {
-            showErrorModal(errDetails);
-          },
-        };
+        return toPromiseError(error, showErrorModal, "Failed to create group");
       },
     });
   };
@@ -111,7 +98,7 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
               variant="outlined"
               onChange={valueUpdate}
               fullWidth
-              sx={{mt:2}}
+              sx={{ mt: 2 }}
             />
           </DialogContent>
           <DialogActions>

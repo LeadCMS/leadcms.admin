@@ -5,6 +5,7 @@ import { CreateNewEmailGroup } from "./create-new";
 import { useRequestContext } from "@providers/request-provider";
 import { ProblemDetails } from "@lib/network/swagger-client";
 import { useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { EmailGroupAutoCompleteProps, EmailGroupOption } from "./types";
 
 export function EmailGroupAutocomplete({
@@ -34,8 +35,7 @@ export function EmailGroupAutocomplete({
         language: value.language,
       }));
     } catch (e) {
-      const error = e as ProblemDetails;
-      notificationsService.error(`Failed to get options: ${error.detail}`);
+      showApiError(e, notificationsService, undefined, "Failed to get options");
     } finally {
       setOptions(data);
       setIsLoading(false);

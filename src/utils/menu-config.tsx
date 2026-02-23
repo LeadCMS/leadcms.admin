@@ -18,6 +18,7 @@ import {
   Settings,
   ListChecks,
   Rocket,
+  Megaphone,
 } from "lucide-react";
 
 export const MENU_CONFIG = [
@@ -108,6 +109,13 @@ export const MENU_CONFIG = [
         icon: <Users size={20} />,
         entity: "segment",
         route: getCoreModuleRoute(CoreModule.segments),
+      },
+      {
+        id: "campaigns",
+        label: "Campaigns",
+        icon: <Megaphone size={20} />,
+        entity: "campaign",
+        route: getCoreModuleRoute(CoreModule.campaigns),
       },
       {
         id: "emailTemplates",

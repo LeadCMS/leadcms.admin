@@ -45,6 +45,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { CommentDetailsDto } from "@lib/network/swagger-client";
 import { dataListBreadcrumbLinks } from "@utils/constants";
 import { Download, Filter, SortAsc, SortDesc } from "lucide-react";
@@ -293,7 +294,7 @@ export const CommentsList: React.FC = () => {
       }
       setTotalCount(newTotalCount);
     } catch (error) {
-      notificationsService.error("Failed to load comments");
+      showApiError(error, notificationsService, undefined, "Failed to load comments");
     } finally {
       setLoading(false);
     }
@@ -495,7 +496,10 @@ export const CommentsList: React.FC = () => {
       setCommentAnswerStatus(null);
       setCommentLanguage("");
     } catch (error) {
-      notificationsService.error(
+      showApiError(
+        error,
+        notificationsService,
+        undefined,
         `Failed to ${dialogMode === "edit" ? "update comment" : "post reply"}`
       );
     } finally {
@@ -537,8 +541,7 @@ export const CommentsList: React.FC = () => {
       initialLoadRef.current = false;
       loadComments();
     } catch (error) {
-      console.error("Error deleting comment:", error);
-      notificationsService.error("Failed to delete comment");
+      showApiError(error, notificationsService, undefined, "Failed to delete comment");
     } finally {
       setIsDeleting(false);
     }
@@ -563,8 +566,7 @@ export const CommentsList: React.FC = () => {
         notificationsService.success(`Comment status changed to ${newStatus}`);
       }
     } catch (error) {
-      console.error("Error changing status:", error);
-      notificationsService.error("Failed to change comment status");
+      showApiError(error, notificationsService, undefined, "Failed to change comment status");
     } finally {
       setStatusChangeLoading(null);
     }
@@ -591,8 +593,7 @@ export const CommentsList: React.FC = () => {
         notificationsService.success(`Answer status changed to ${newAnswerStatus}`);
       }
     } catch (error) {
-      console.error("Error changing answer status:", error);
-      notificationsService.error("Failed to change answer status");
+      showApiError(error, notificationsService, undefined, "Failed to change answer status");
     } finally {
       setAnswerStatusChangeLoading(null);
     }
@@ -659,8 +660,7 @@ export const CommentsList: React.FC = () => {
       setSelectAll(false);
       setSelectedBulkAction("");
     } catch (error) {
-      console.error("Error in bulk action:", error);
-      notificationsService.error("Failed to apply bulk action");
+      showApiError(error, notificationsService, undefined, "Failed to apply bulk action");
     } finally {
       setIsBulkActionLoading(false);
     }

@@ -17,7 +17,8 @@ import { FormikHelpers, useFormik } from "formik";
 import { EmailTemplateEditValidationScheme } from "./validation";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { ModuleWrapper } from "@components/module-wrapper";
-import { emailTemplateFormBreadcrumbLinks } from "../constants";
+import { emailTemplateFormBreadcrumbLinks, emailTemplateGroupFilterStorageKey } from "../constants";
+import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { EmailTemplateEditContainer } from "./index.styled";
 import {
   Button,
@@ -72,6 +73,12 @@ import { UnifiedAIProgress } from "@components/unified-ai-progress";
 import { AIEmailDraftDialog } from "@components/ai-email-draft-dialog";
 import ContentLanguageSwitcher, { LanguageHighlights } from "@components/content-language-switcher";
 import { EmailTemplateChangeLog } from "./email-template-change-log";
+import {
+  EMAIL_TEMPLATE_CATEGORY_OPTIONS,
+  EmailTemplateCategory,
+  getEmailTemplateCategoryNote,
+} from "@utils/email-template-category";
+import { showApiError } from "@utils/api-error-parser";
 
 /**
  * Wrapper around MonacoDiffEditor that prevents the
@@ -151,6 +158,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
 
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
+  const { selectedLanguage: globalLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
+  const [storedGroupId] = useLocalStorage<number | "">(emailTemplateGroupFilterStorageKey, "");
 
   // Full-width layout
   useEffect(() => {
@@ -182,6 +191,10 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   // Dialog state
   const [translateDialogOpen, setTranslateDialogOpen] = useState(false);
   const [aiEditDialogOpen, setAiEditDialogOpen] = useState(false);
+  const [aiEditPrompt, setAiEditPrompt] = useState("");
+  const [aiEditTemplateVars, setAiEditTemplateVars] = useState<
+    Record<string, string> | undefined
+  >();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [aiProgressOpen, setAiProgressOpen] = useState(false);
   const [aiProgressType, setAiProgressType] = useState<"content" | "translation" | "edit">("edit");
@@ -201,12 +214,13 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const saveModeRef = useRef<"stay" | "close">("close");
 
   // Template format: Html or Mjml
-  const [selectedFormat, setSelectedFormat] = useState<"Html" | "Mjml">("Html");
+  const [selectedFormat, setSelectedFormat] = useState<"Html" | "Mjml">("Mjml");
   const [isConverting, setIsConverting] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [aiDraftDialogOpen, setAiDraftDialogOpen] = useState(false);
   const [aiDraftError, setAiDraftError] = useState<string | null>(null);
   const [aiDraftLoading, setAiDraftLoading] = useState(false);
+  const [aiDraftPrompt, setAiDraftPrompt] = useState("");
 
   // Form
   const submitFunc = async (
@@ -224,6 +238,14 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       setWasModified(false);
       helpers.setValues(response.data);
       helpers.setSubmitting(false);
+
+      // After creating a new template, navigate to its edit URL
+      if (id === undefined && response.data.id) {
+        navigate(`/email-templates/${response.data.id}/edit`, {
+          replace: true,
+        });
+      }
+
       if (saveModeRef.current === "close") {
         handleNavigation(CoreModule.emailTemplates);
       }
@@ -237,7 +259,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     values: EmailTemplateDetailsDto,
     helpers: FormikHelpers<EmailTemplateDetailsDto>
   ) => {
-    execSubmitWithToast<EmailTemplateDetailsDto>(
+    await execSubmitWithToast<EmailTemplateDetailsDto>(
       values,
       helpers,
       submitFunc,
@@ -257,6 +279,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       language: "",
       bodyTemplate: "",
       emailGroupId: 0,
+      category: "General",
     } as EmailTemplateDetailsDto,
     onSubmit: submit,
     validateOnChange: false,
@@ -273,6 +296,19 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
 
   useSaveShortcut(handleSaveStay, !readonly && !formik.isSubmitting);
 
+  // Sync external bodyTemplate changes (AI edit, data load, etc.) into
+  // the Monaco editor without resetting cursor on every keystroke.
+  // When the editor has focus the user is actively typing — skip sync
+  // to avoid cursor jumps from the async formik state lag.
+  useEffect(() => {
+    const editor = monacoEditorRef.current;
+    if (!editor || editor.hasTextFocus()) return;
+    const formikValue = formik.values.bodyTemplate || "";
+    if (editor.getValue() !== formikValue) {
+      editor.setValue(formikValue);
+    }
+  }, [formik.values.bodyTemplate]);
+
   // Detect template format (Html vs Mjml) from content or API field
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const apiFormat = (formik.values as any).format as string | undefined;
@@ -281,13 +317,28 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     [formik.values.bodyTemplate, apiFormat]
   );
 
-  // Set default language for new templates
+  // Set defaults for new templates (create or AI draft)
   useEffect(() => {
-    if (isCreateMode && config?.defaultLanguage && !formik.values.language) {
-      formik.setFieldValue("language", config.defaultLanguage);
+    if (!isCreateMode && !isAIDraftRoute) return;
+    const lang =
+      (isLanguageFilterActive && globalLanguage !== "all" ? globalLanguage : "") ||
+      config?.defaultLanguage ||
+      "";
+    if (lang && !formik.values.language) {
+      formik.setFieldValue("language", lang);
+    }
+    if (storedGroupId && !formik.values.emailGroupId) {
+      formik.setFieldValue("emailGroupId", Number(storedGroupId));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCreateMode, config?.defaultLanguage]);
+  }, [
+    isCreateMode,
+    isAIDraftRoute,
+    config?.defaultLanguage,
+    globalLanguage,
+    isLanguageFilterActive,
+    storedGroupId,
+  ]);
 
   const valueUpdate = (event: React.SyntheticEvent<Element, Event>) => {
     setWasModified(true);
@@ -405,9 +456,9 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
             setAiProgressOpen(false);
             setAiOperationComplete(false);
           }, 500);
-        } catch {
+        } catch (error) {
           setAiProgressOpen(false);
-          notificationsService.error("AI translation failed");
+          showApiError(error, notificationsService, showErrorModal, "AI translation failed");
         }
       } else {
         try {
@@ -428,8 +479,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
           if (resp.data.emailGroup?.name) {
             setEmailGroupDisplayName(resp.data.emailGroup.name);
           }
-        } catch {
-          notificationsService.error("Translation failed");
+        } catch (error) {
+          showApiError(error, notificationsService, showErrorModal, "Translation failed");
         }
       }
     };
@@ -444,8 +495,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       await client.api.emailTemplatesDelete(Number(id));
       notificationsService.success("Email template deleted successfully");
       handleNavigation(CoreModule.emailTemplates);
-    } catch {
-      notificationsService.error("Failed to delete email template");
+    } catch (error) {
+      showApiError(error, notificationsService, showErrorModal, "Failed to delete email template");
     }
   };
 
@@ -472,6 +523,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     _requiredMediaPaths?: string[],
     templateVariables?: Record<string, string>
   ) => {
+    setAiEditPrompt(prompt);
+    setAiEditTemplateVars(templateVariables);
     setAiEditDialogOpen(false);
     setAiProgressType("edit");
     setAiOperationComplete(false);
@@ -485,6 +538,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         name: formik.values.name,
         subject: formik.values.subject,
         bodyTemplate: formik.values.bodyTemplate,
+        format: selectedFormat,
+        category: formik.values.category || "General",
         fromEmail: formik.values.fromEmail,
         fromName: formik.values.fromName,
         language: formik.values.language,
@@ -497,13 +552,15 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       setAiOperationComplete(true);
       await formik.setValues(resp.data);
       setWasModified(true);
+      setAiEditPrompt("");
+      setAiEditTemplateVars(undefined);
       setTimeout(() => {
         setAiProgressOpen(false);
         setAiOperationComplete(false);
       }, 500);
-    } catch {
+    } catch (error) {
       setAiProgressOpen(false);
-      notificationsService.error("AI edit failed");
+      showApiError(error, notificationsService, showErrorModal, "AI edit failed");
       setAiEditDialogOpen(true);
     }
   };
@@ -561,9 +618,9 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         setAiOperationComplete(false);
         notificationsService.success(`Converted to ${fmt} successfully`);
       }, 500);
-    } catch {
+    } catch (error) {
       setAiProgressOpen(false);
-      notificationsService.error("Format conversion failed");
+      showApiError(error, notificationsService, showErrorModal, "Format conversion failed");
     } finally {
       setIsConverting(false);
     }
@@ -575,6 +632,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     emailGroupId: number,
     prompt: string,
     format: "Html" | "Mjml",
+    category: EmailTemplateCategory,
     referenceTemplateId?: number | null,
     templateVariables?: Record<string, string>,
     wordCount?: number | null,
@@ -582,6 +640,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   ) => {
     setAiDraftError(null);
     setAiDraftLoading(true);
+    setAiDraftPrompt(prompt);
     setAiDraftDialogOpen(false);
     setAiProgressType("content");
     setAiOperationComplete(false);
@@ -599,6 +658,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         emailGroupId,
         prompt: enrichedPrompt,
         format,
+        category,
         referenceEmailTemplateId: referenceTemplateId ?? undefined,
         templateVariables: templateVariables ?? undefined,
       };
@@ -611,14 +671,21 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       const apiFmt = (resp.data as any).format as string | undefined;
       setSelectedFormat(detectFormat(body, apiFmt));
       setWasModified(true);
+      setAiDraftPrompt("");
       setTimeout(() => {
         setAiProgressOpen(false);
         setAiOperationComplete(false);
-        navigate("/email-templates/new", { replace: true });
+        navigate("/email-templates/add", { replace: true });
       }, 500);
-    } catch {
+    } catch (error) {
       setAiProgressOpen(false);
-      setAiDraftError("AI draft generation failed. Please try again.");
+      const parsed = showApiError(
+        error,
+        notificationsService,
+        showErrorModal,
+        "AI draft generation failed. Please try again."
+      );
+      setAiDraftError(parsed.message);
       setAiDraftDialogOpen(true);
     } finally {
       setAiDraftLoading(false);
@@ -690,7 +757,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                   Translate
                 </Button>
               )}
-              {hasAIAssistance && !readonly && (
+              {hasAIAssistance && !!id && !readonly && (
                 <Button
                   variant="outlined"
                   color="primary"
@@ -1078,7 +1145,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                       <MonacoEditor
                         height={editorHeight}
                         defaultLanguage={templateFormat === "Mjml" ? "xml" : "html"}
-                        value={formik.values.bodyTemplate || ""}
+                        defaultValue={formik.values.bodyTemplate || ""}
                         onMount={(editor) => {
                           monacoEditorRef.current = editor;
                           setTimeout(() => {
@@ -1190,6 +1257,30 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                         fullWidth
                       />
                     </Grid>
+                    {hasAIAssistance && (
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <FormControl fullWidth>
+                          <InputLabel>Category</InputLabel>
+                          <Select
+                            value={formik.values.category || "General"}
+                            label="Category"
+                            disabled={readonly}
+                            onChange={(e: SelectChangeEvent) => {
+                              autoCompleteValueUpdate("category", e.target.value);
+                            }}
+                          >
+                            {EMAIL_TEMPLATE_CATEGORY_OPTIONS.map((option) => (
+                              <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75 }}>
+                          {getEmailTemplateCategoryNote(formik.values.category)}
+                        </Typography>
+                      </Grid>
+                    )}
                   </Grid>
                 )}
               </Box>
@@ -1240,11 +1331,17 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       {hasAIAssistance && (
         <AIEditDialog
           open={aiEditDialogOpen}
-          onClose={() => setAiEditDialogOpen(false)}
+          onClose={() => {
+            setAiEditDialogOpen(false);
+            setAiEditPrompt("");
+            setAiEditTemplateVars(undefined);
+          }}
           onEdit={handleAIEdit}
           contentTitle={formik.values.name || "Untitled"}
           currentContent={formik.values}
           variant="email-template"
+          initialPrompt={aiEditPrompt}
+          initialTemplateVariables={aiEditTemplateVars}
         />
       )}
 
@@ -1381,6 +1478,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         open={aiDraftDialogOpen}
         onClose={() => {
           setAiDraftDialogOpen(false);
+          setAiDraftPrompt("");
           if (isAIDraftRoute) {
             navigate("/email-templates", { replace: true });
           }
@@ -1389,6 +1487,13 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         isLoading={aiDraftLoading}
         error={aiDraftError}
         onErrorClear={() => setAiDraftError(null)}
+        initialValues={{
+          language: formik.values.language || "",
+          emailGroupId: formik.values.emailGroupId || undefined,
+          format: selectedFormat,
+          category: (formik.values.category || "General") as EmailTemplateCategory,
+          prompt: aiDraftPrompt || undefined,
+        }}
       />
     </form>
   );

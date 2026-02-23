@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 export interface NotificationOptions {
   autoClose?: number;
   closeOnClick?: boolean;
+  onClick?: () => void;
 }
 
 export interface ErrorData {
@@ -46,6 +47,7 @@ export class NotificationsService {
 
     toast.error(errorMessage, {
       autoClose: options.autoClose ?? this.defaultAutoClose,
+      onClick: options.onClick,
     });
   }
 

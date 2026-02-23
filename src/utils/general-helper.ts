@@ -96,6 +96,8 @@ export const networkErrorToStringArray = (error: unknown) => {
   return output;
 };
 
+import { toPromiseError } from "./api-error-parser";
+
 export const execDeleteWithToast = async (
   deleteFunc: () => Promise<void>,
   notificationsService: NotificationsService,
@@ -107,23 +109,8 @@ export const execDeleteWithToast = async (
   notificationsService.promise(deleteFunc(), {
     pending: `Deleting ${entity}`,
     success: `${entityNameWithCapFirstLetter} deleted successfully`,
-    error: (error) => {
-      const errMessage = `Unable to delete ${entity}. An error occurred.`;
-      const errDetails: string[] = [];
-      if (error.data?.error?.title) {
-        errDetails.push(error.data.error.title);
-      }
-      if (error.data?.message) {
-        errDetails.push(error.data.message);
-      }
-      if (error.data?.error?.errors) {
-        errDetails.push(...networkErrorToStringArray(error.data.error.errors));
-      }
-      return {
-        title: errMessage,
-        onClick: errDetails.length > 0 ? () => showErrorModalFunc(errDetails) : undefined,
-      };
-    },
+    error: (error) =>
+      toPromiseError(error, showErrorModalFunc, `Unable to delete ${entity}. An error occurred.`),
   });
 };
 
@@ -134,6 +121,6 @@ export function getModuleNameFromUrl(): string {
   return moduleRaw
     .split("-")
     .filter(Boolean)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 }

@@ -19,6 +19,7 @@ import { useOutletContext } from "react-router-dom";
 import { ContactEmailCommunicationListItemDto } from "lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { ContactViewOutletContext } from "../types";
 
 type EmailStatus = "NotSent" | "Sent" | "Received";
@@ -58,8 +59,7 @@ export const ContactCommunications = () => {
         const { data } = await client.api.contactsEmailCommunicationsList(contactId);
         setCommunications(data || []);
       } catch (error) {
-        console.log(error);
-        notificationsService.error("Server error: could not retrieve communications.");
+        showApiError(error, notificationsService, undefined, "Could not retrieve communications.");
         setCommunications([]);
       } finally {
         setIsLoading(false);

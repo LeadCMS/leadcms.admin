@@ -7,13 +7,18 @@ import {
   CardContent,
   CardHeader,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   MenuItem,
   Tab,
   Tabs,
   TextField,
   Typography,
 } from "@mui/material";
-import { Save, Users, Plus, X } from "lucide-react";
+import { Save, Trash2, Users, Plus, X } from "lucide-react";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SegmentsBreadcrumbLinks } from "../constants";
 import { SegmentType, contactFields } from "../types";
@@ -125,6 +130,7 @@ interface SegmentFormProps {
   onSave: (payload: SegmentCreateDto | SegmentUpdateDto) => Promise<void>;
   onSaveSuccess?: () => void;
   onCancel: () => void;
+  onDelete?: () => Promise<void>;
 }
 
 export const SegmentForm = ({
@@ -133,6 +139,7 @@ export const SegmentForm = ({
   onSave,
   onSaveSuccess,
   onCancel,
+  onDelete,
 }: SegmentFormProps) => {
   const { client } = useRequestContext();
 
@@ -151,6 +158,8 @@ export const SegmentForm = ({
   // Static segment state
   const [staticContactIds, setStaticContactIds] = useState<number[]>([]);
   const [isContactPickerOpen, setIsContactPickerOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const clearPreviewResults = () => {
     setMatchingCount(null);
@@ -314,6 +323,17 @@ export const SegmentForm = ({
 
   useSaveShortcut(handleSaveStay, true);
 
+  const handleDeleteConfirm = async () => {
+    if (!onDelete) return;
+    setDeleting(true);
+    try {
+      await onDelete();
+    } catch {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   const currentBreadcrumb = isEdit ? "Edit Segment" : "Create Segment";
 
   return (
@@ -322,34 +342,70 @@ export const SegmentForm = ({
       currentBreadcrumb={currentBreadcrumb}
       isForm={true}
       actionButtons={
-        <Box sx={{ display: "flex", width: "100%", gap: 4, justifyContent: "flex-end" }}>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={onCancel}
-            startIcon={<X size={18} />}
-            size="medium"
+        <Box
+          sx={{
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
+          }}
+        >
+          {/* Left: Delete */}
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              pl: { sm: 4 },
+            }}
           >
-            Cancel
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Save size={18} />}
-            onClick={handleSaveStay}
-            disabled={!name.trim()}
-            size="medium"
+            {isEdit && onDelete && (
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setDeleteDialogOpen(true)}
+                startIcon={<Trash2 size={18} />}
+                size="medium"
+                disabled={deleting}
+              >
+                Delete
+              </Button>
+            )}
+          </Box>
+          {/* Right: Cancel + Save */}
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              pr: { sm: 4 },
+            }}
           >
-            {isEdit ? "Save" : "Save"}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Save size={18} />}
-            onClick={handleSaveAndClose}
-            disabled={!name.trim()}
-            size="medium"
-          >
-            {isEdit ? "Save and Close" : "Save and Close"}
-          </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={onCancel}
+              startIcon={<X size={18} />}
+              size="medium"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Save size={18} />}
+              onClick={handleSaveStay}
+              disabled={!name.trim()}
+              size="medium"
+            >
+              Save
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Save size={18} />}
+              onClick={handleSaveAndClose}
+              disabled={!name.trim()}
+              size="medium"
+            >
+              Save and Close
+            </Button>
+          </Box>
         </Box>
       }
     >
@@ -641,6 +697,27 @@ export const SegmentForm = ({
         selectedContactIds={staticContactIds.map(String)}
         onConfirm={handleContactsSelected}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Segment</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this segment? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ModuleWrapper>
   );
 };

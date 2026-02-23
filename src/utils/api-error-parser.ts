@@ -1,3 +1,5 @@
+import { NotificationsService } from "@hooks";
+
 /**
  * Structured API error information
  */
@@ -9,107 +11,208 @@ export interface ParsedApiError {
 }
 
 /**
- * API error structure from the backend
+ * Shape thrown by wrapApiClient (flat ApiError).
+ * Also covers legacy shapes where the error may be nested.
  */
-interface ApiErrorResponse {
+interface ApiErrorLike {
   status?: number;
+  title?: string;
   message?: string;
+  errors?: Record<string, string[]>;
+  // Legacy shapes
   data?: {
     errors?: Record<string, string[]>;
     title?: string;
-    type?: string;
+    message?: string;
+    error?: {
+      title?: string;
+      errors?: Record<string, string[]>;
+    };
   };
   error?: {
     status?: number;
     title?: string;
     message?: string;
     errors?: Record<string, string[]>;
-    data?: {
-      errors?: Record<string, string[]>;
-      title?: string;
-      type?: string;
-    };
   };
+  // fetch Response-like
+  body?: { detail?: string };
 }
 
 /**
- * Parse API errors into a structured format with message and details
- * Handles various error response structures from the backend
+ * Extract field-level validation errors into
+ * readable "Field: message" strings.
+ */
+export function formatValidationErrors(errors: Record<string, string[]>): string[] {
+  const formatted: string[] = [];
+  Object.entries(errors).forEach(([field, msgs]) => {
+    if (Array.isArray(msgs)) {
+      msgs.forEach((msg) => {
+        formatted.push(msg.startsWith(`${field}:`) ? msg : `${field}: ${msg}`);
+      });
+    }
+  });
+  return formatted;
+}
+
+/**
+ * Resolve the validation-errors record from whichever
+ * nesting level it lives in.
+ */
+function resolveErrors(err: ApiErrorLike): Record<string, string[]> | undefined {
+  return (
+    err.errors || err.error?.errors || err.data?.errors || err.data?.error?.errors || undefined
+  );
+}
+
+/**
+ * Resolve a human-readable title / message from whichever
+ * nesting level it lives in.
+ */
+function resolveMessage(err: ApiErrorLike, fallback: string): string {
+  return (
+    err.title ||
+    err.error?.title ||
+    err.data?.error?.title ||
+    err.data?.title ||
+    err.message ||
+    err.error?.message ||
+    err.data?.message ||
+    err.body?.detail ||
+    fallback
+  );
+}
+
+/**
+ * Parse any caught error into a structured object with
+ * a user-friendly `message` and optional `details` array.
  *
- * @param error - The error object from the API
- * @param defaultMessage - Default message if no error message is found
- * @returns Parsed error with message and details array
+ * Works with:
+ *  - `ApiError` thrown by `wrapApiClient`
+ *  - Legacy `{ data: { error: { … } } }` shapes
+ *  - Plain `Error` instances
+ *  - Strings
  */
 export function parseApiError(
   error: unknown,
   defaultMessage = "An error occurred. Please try again."
 ): ParsedApiError {
-  const apiError = error as ApiErrorResponse;
+  if (!error) {
+    return { message: defaultMessage, details: [] };
+  }
 
-  let errorMessage = defaultMessage;
-  const errorDetails: string[] = [];
+  if (typeof error === "string") {
+    return { message: error, details: [] };
+  }
 
-  // The API error structure can be: { error: { status, errors, title } } or flat
-  const actualError = (apiError.error || apiError) as typeof apiError.error;
-  const validationErrors = actualError?.errors || actualError?.data?.errors;
+  if (error instanceof Error && !("status" in error)) {
+    return { message: error.message, details: [] };
+  }
 
-  const status = apiError.status || actualError?.status;
-  const title = actualError?.title;
+  const err = error as ApiErrorLike;
+  const status = err.status || err.error?.status;
+  const validationErrors = resolveErrors(err);
+  const title = resolveMessage(err, defaultMessage);
+  const details: string[] = [];
 
-  // Handle network errors
   if (status === 0) {
-    errorMessage = "Network error: Please check your internet connection";
-  }
-  // Handle 422 validation errors
-  else if (status === 422 && validationErrors) {
-    const allErrors: string[] = [];
-
-    Object.entries(validationErrors).forEach(([field, fieldErrors]) => {
-      if (Array.isArray(fieldErrors)) {
-        fieldErrors.forEach((errorMsg) => {
-          allErrors.push(`${field}: ${errorMsg}`);
-        });
-      }
-    });
-
-    errorMessage = actualError?.title || "Validation failed";
-    errorDetails.push(...allErrors);
-  }
-  // Handle other API errors
-  else if (actualError?.title || actualError?.message || apiError.message) {
-    errorMessage = actualError?.title || actualError?.message || apiError.message || errorMessage;
-    if (actualError?.title && actualError.message) {
-      errorDetails.push(actualError.message);
-    }
+    return {
+      message: "Network error: Please check your internet connection",
+      details: [],
+      status: 0,
+      title: "Network Error",
+    };
   }
 
-  return {
-    message: errorMessage,
-    details: errorDetails,
-    status,
-    title,
-  };
+  if (validationErrors && Object.keys(validationErrors).length > 0) {
+    details.push(...formatValidationErrors(validationErrors));
+    // Use a clean title without the appended details that
+    // wrapApiClient adds to `message`.
+    const cleanTitle =
+      err.title ||
+      err.error?.title ||
+      err.data?.error?.title ||
+      err.data?.title ||
+      "Validation failed";
+    return { message: cleanTitle, details, status, title: cleanTitle };
+  }
+
+  return { message: title, details, status, title };
 }
 
 /**
- * Format validation errors for display
- * Converts field-level errors into readable messages
+ * One-liner error handler for catch blocks.
  *
- * @param errors - Record of field names to error arrays
- * @returns Array of formatted error messages
+ * Shows a toast with the error message. When field-level
+ * validation details are present the toast is clickable and
+ * opens the error-details modal.
+ *
+ * @example
+ * ```ts
+ * } catch (error) {
+ *   showApiError(
+ *     error,
+ *     notificationsService,
+ *     showErrorModal,
+ *     "Failed to save template",
+ *   );
+ * }
+ * ```
  */
-export function formatValidationErrors(errors: Record<string, string[]>): string[] {
-  const formatted: string[] = [];
+export function showApiError(
+  error: unknown,
+  notificationsService: NotificationsService,
+  showErrorModal?: (value: string[]) => void,
+  defaultMessage = "An error occurred. Please try again."
+): ParsedApiError {
+  const parsed = parseApiError(error, defaultMessage);
 
-  Object.entries(errors).forEach(([field, fieldErrors]) => {
-    if (Array.isArray(fieldErrors)) {
-      fieldErrors.forEach((errorMsg) => {
-        // Remove redundant field name from message if it starts with it
-        const cleanMsg = errorMsg.startsWith(`${field}:`) ? errorMsg : `${field}: ${errorMsg}`;
-        formatted.push(cleanMsg);
-      });
-    }
-  });
+  if (parsed.details.length > 0 && showErrorModal) {
+    const issueWord = parsed.details.length === 1 ? "issue" : "issues";
+    const detailsCopy = [parsed.message, ...parsed.details];
+    notificationsService.error(
+      `${parsed.message} (${parsed.details.length} ${issueWord} — click for details)`,
+      { onClick: () => showErrorModal(detailsCopy) }
+    );
+  } else {
+    notificationsService.error(parsed.message);
+  }
 
-  return formatted;
+  return parsed;
+}
+
+/**
+ * Error callback for `notificationsService.promise()`.
+ *
+ * Returns an `ErrorData`-compatible object with `title` and an
+ * optional `onClick` that opens the error-details modal.
+ *
+ * @example
+ * ```ts
+ * notificationsService.promise(apiCall(), {
+ *   pending: "Saving...",
+ *   success: "Saved",
+ *   error: (err) => toPromiseError(
+ *     err, showErrorModal, "Unable to save",
+ *   ),
+ * });
+ * ```
+ */
+export function toPromiseError(
+  error: unknown,
+  showErrorModal?: (value: string[]) => void,
+  defaultMessage = "An error occurred."
+): { title: string; onClick?: () => void } {
+  const parsed = parseApiError(error, defaultMessage);
+
+  const errDetails: string[] = [];
+  if (parsed.title && parsed.title !== parsed.message) {
+    errDetails.push(parsed.title);
+  }
+  errDetails.push(...parsed.details);
+
+  return {
+    title: parsed.message,
+    onClick: errDetails.length > 0 && showErrorModal ? () => showErrorModal(errDetails) : undefined,
+  };
 }

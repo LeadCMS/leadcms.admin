@@ -30,7 +30,7 @@ import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { SettingDetailsDto } from "@lib/network/swagger-client";
-import { networkErrorToStringArray } from "@utils/general-helper";
+import { toPromiseError } from "@utils/api-error-parser";
 import { settingsFormBreadcrumbLinks, settingsCurrentBreadcrumb } from "./constants";
 import { useLayout } from "@providers/layout-provider";
 import { useConfig } from "@providers/config-provider";
@@ -698,30 +698,7 @@ const Settings = () => {
       pending: "Saving settings...",
       success: "Settings saved successfully",
       error: (error: unknown) => {
-        const errMessage = "Unable to save settings. An error occurred.";
-        const errDetails: string[] = [];
-
-        if (error && typeof error === "object" && "data" in error) {
-          const errorData = error.data as unknown;
-          if (errorData && typeof errorData === "object") {
-            if ("error" in errorData && errorData.error && typeof errorData.error === "object") {
-              if ("title" in errorData.error && typeof errorData.error.title === "string") {
-                errDetails.push(errorData.error.title);
-              }
-              if ("errors" in errorData.error && errorData.error.errors) {
-                errDetails.push(...networkErrorToStringArray(errorData.error.errors));
-              }
-            }
-            if ("message" in errorData && typeof errorData.message === "string") {
-              errDetails.push(errorData.message);
-            }
-          }
-        }
-
-        return {
-          title: errMessage,
-          onClick: errDetails.length > 0 ? () => showErrorModal(errDetails) : undefined,
-        };
+        return toPromiseError(error, showErrorModal, "Unable to save settings. An error occurred.");
       },
     });
   };

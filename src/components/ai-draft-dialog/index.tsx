@@ -28,6 +28,7 @@ import { useDebounce } from "use-debounce";
 import { useConfig } from "@providers/config-provider";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { ContentDetailsDto, ContentTypeDetailsDto } from "@lib/network/swagger-client";
 import { idToDisplayName } from "@features/content/content-types";
@@ -146,7 +147,7 @@ export const AIDraftDialog = ({
         }
       } catch (err) {
         if (isActive) {
-          notificationsService.error("Failed to load reference content.");
+          showApiError(err, notificationsService, undefined, "Failed to load reference content.");
         }
       }
     };
@@ -199,7 +200,12 @@ export const AIDraftDialog = ({
         const items = data?.content || [];
         setReferenceContentOptions(items);
       } catch (err) {
-        notificationsService.error("Failed to load reference content list.");
+        showApiError(
+          err,
+          notificationsService,
+          undefined,
+          "Failed to load reference content list."
+        );
       } finally {
         setIsReferenceLoading(false);
       }

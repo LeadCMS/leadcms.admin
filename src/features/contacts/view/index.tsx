@@ -18,6 +18,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { CoreModule, getEditFormRoute } from "@lib/router";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { getMockConversationsForContact } from "./mock-data";
 import { ContactViewOutletContext } from "./types";
 
@@ -134,8 +135,7 @@ export const ContactBase = () => {
         contactDetailsCache.set(contactId, data);
         setContact(data);
       } catch (error) {
-        console.log(error);
-        notificationsService.error("Server error: could not retrieve contact details.");
+        showApiError(error, notificationsService, undefined, "Could not retrieve contact details.");
       } finally {
         setIsLoading(false);
       }

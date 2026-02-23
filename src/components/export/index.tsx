@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { downloadExportFile, downloadFile } from "components/download";
 import { useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { ExportParams } from "types";
 
 interface ExportPorps {
@@ -21,7 +22,7 @@ export const CsvExport = ({ exportAsync, closeExport, fileName }: ExportPorps) =
           downloadFile(response, "text/csv", `${fileName}.csv`);
           closeExport();
         } catch (error) {
-          notificationsService.error("Server error occurred.");
+          showApiError(error, notificationsService, undefined, "Server error occurred.");
         }
       };
       exportFile();

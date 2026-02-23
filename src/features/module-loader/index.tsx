@@ -24,6 +24,7 @@ import { MediaModule } from "@features/media/lazy";
 import { SettingsModule } from "@features/settings/lazy";
 import { TasksModule } from "@features/tasks";
 import { DeploymentsModule } from "@features/deployments";
+import { CampaignsModule } from "@features/campaigns/campaigns-module";
 
 export const ModuleLoader = () => {
   const { moduleName } = useRouteParams(coreModuleRoute);
@@ -50,6 +51,7 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.settings && <SettingsModule />}
           {moduleName === CoreModule.tasks && <TasksModule />}
           {moduleName === CoreModule.deployments && <DeploymentsModule />}
+          {moduleName === CoreModule.campaigns && <CampaignsModule />}
           {!moduleName && <Navigate to={defaultModuleRoute} replace />}
         </Suspense>
       </ErrorBoundary>

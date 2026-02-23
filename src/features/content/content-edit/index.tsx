@@ -2,11 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";
 import { useUserInfo } from "@providers/user-provider";
-import { useNavigationGuard, usePublicationDialogPreference, useSaveShortcut } from "@hooks";
+import {
+  useNavigationGuard,
+  usePublicationDialogPreference,
+  useSaveShortcut,
+  useNotificationsService,
+} from "@hooks";
 import { TranslationType } from "@components/translate-dialog";
 import { useRequestContext } from "@providers/request-provider";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { useLayout } from "@providers/layout-provider";
+import { showApiError } from "@utils/api-error-parser";
 import {
   getContentLengthSettings,
   validateTitleLength,
@@ -97,6 +103,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const { config } = useConfig();
   const userInfo = useUserInfo();
   const { client } = useRequestContext();
+  const { notificationsService } = useNotificationsService();
   const { selectedLanguage } = useGlobalLanguageFilter();
   const { setFullWidth } = useLayout();
 
@@ -372,6 +379,7 @@ export const ContentEdit = (props: ContentEditProps) => {
       });
       setAiEditPrompt("");
     } catch (error) {
+      showApiError(error, notificationsService, undefined, "AI edit failed");
       setAiEditDialogOpen(true);
     } finally {
       // Small delay to let completion animation play

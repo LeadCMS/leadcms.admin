@@ -4,6 +4,7 @@ import { ReactSpreadsheetImport } from "react-spreadsheet-import";
 import { Result } from "react-spreadsheet-import/types/types";
 import { StyledBackdrop } from "./index.styled";
 import { useCoreModuleNavigation, useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { getImportFields } from "utils/import-file-helper";
 
 interface csvImportPorps {
@@ -28,8 +29,7 @@ export const CsvImport = ({ isOpen, onClose, onUpload, object, endRoute }: csvIm
       await onUpload(data);
       handleSuccess();
     } catch (error) {
-      console.log(error);
-      notificationsService.error("Error when importing data.");
+      showApiError(error, notificationsService, undefined, "Error when importing data.");
     } finally {
       setIsUploading(false);
     }

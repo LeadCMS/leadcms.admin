@@ -5,6 +5,7 @@ import {
   DialogActions,
   Button,
   FormControl,
+  FormHelperText,
   FormControlLabel,
   FormLabel,
   InputLabel,
@@ -22,12 +23,18 @@ import {
   Autocomplete,
 } from "@mui/material";
 import { Plus, Sparkles, Trash2, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDebounce } from "use-debounce";
 import { useConfig } from "@providers/config-provider";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
+import { showApiError } from "@utils/api-error-parser";
 import { EmailGroupDetailsDto, EmailTemplateDetailsDto } from "@lib/network/swagger-client";
+import {
+  EMAIL_TEMPLATE_CATEGORY_OPTIONS,
+  EmailTemplateCategory,
+  getEmailTemplateCategoryNote,
+} from "@utils/email-template-category";
 import type { Theme } from "@mui/material/styles";
 import { Chip, Stack } from "@mui/material";
 
@@ -41,6 +48,7 @@ export interface AIEmailDraftDialogProps {
     emailGroupId: number,
     prompt: string,
     format: "Html" | "Mjml",
+    category: EmailTemplateCategory,
     referenceTemplateId?: number | null,
     templateVariables?: Record<string, string>,
     wordCount?: number | null,
@@ -54,6 +62,7 @@ export interface AIEmailDraftDialogProps {
     emailGroupId?: number;
     prompt?: string;
     format?: "Html" | "Mjml";
+    category?: EmailTemplateCategory;
     referenceTemplateId?: number | null;
   };
 }
@@ -74,6 +83,7 @@ export const AIEmailDraftDialog = ({
   const [emailGroupId, setEmailGroupId] = useState<number | "">("");
   const [prompt, setPrompt] = useState("");
   const [format, setFormat] = useState<"Html" | "Mjml">("Mjml");
+  const [category, setCategory] = useState<EmailTemplateCategory>("General");
   const [referenceTemplate, setReferenceTemplate] = useState<EmailTemplateDetailsDto | null>(null);
   const [referenceOptions, setReferenceOptions] = useState<EmailTemplateDetailsDto[]>([]);
   const [referenceInput, setReferenceInput] = useState("");
@@ -124,10 +134,22 @@ export const AIEmailDraftDialog = ({
   // Initialise form when dialog opens
   useEffect(() => {
     if (open) {
-      setLanguage(initialValues?.language || config?.defaultLanguage || "");
-      setEmailGroupId(initialValues?.emailGroupId || "");
+      const initGroupId = initialValues?.emailGroupId || "";
+      setEmailGroupId(initGroupId);
+
+      // Derive language: explicit > group's language > default
+      let initLang = initialValues?.language || "";
+      if (!initLang && initGroupId && allEmailGroups.length > 0) {
+        const group = allEmailGroups.find((g) => g.id === Number(initGroupId));
+        if (group?.language) {
+          initLang = group.language;
+        }
+      }
+      setLanguage(initLang || config?.defaultLanguage || "");
+
       setPrompt(initialValues?.prompt || "");
       setFormat(initialValues?.format || "Mjml");
+      setCategory(initialValues?.category || "General");
       setReferenceInput("");
       setReferenceTemplate(null);
       setTemplateVars([]);
@@ -136,6 +158,7 @@ export const AIEmailDraftDialog = ({
     }
   }, [
     open,
+    allEmailGroups,
     config?.defaultLanguage,
     initialValues?.language,
     initialValues?.emailGroupId,
@@ -152,8 +175,15 @@ export const AIEmailDraftDialog = ({
           initialValues.referenceTemplateId ?? 0
         );
         if (active) setReferenceTemplate(data);
-      } catch {
-        if (active) notificationsService.error("Failed to load reference template.");
+      } catch (error) {
+        if (active) {
+          showApiError(
+            error,
+            notificationsService,
+            undefined,
+            "Failed to load reference template."
+          );
+        }
       }
     };
     load();
@@ -177,11 +207,17 @@ export const AIEmailDraftDialog = ({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: Record<string, any> = {
           "filter[skip]": 0,
-          "filter[limit]": trimmed ? 20 : 10,
+          "filter[limit]": trimmed ? 30 : 20,
           "filter[order]": "updatedAt desc",
         };
         if (trimmed) {
           queryParams.query = trimmed;
+        }
+        if (language) {
+          queryParams["filter[where][language]"] = language;
+        }
+        if (emailGroupId !== "") {
+          queryParams["filter[where][emailGroupId]"] = Number(emailGroupId);
         }
         const { data } = await client.api.emailTemplatesList(queryParams as { query?: string });
         setReferenceOptions(
@@ -189,14 +225,26 @@ export const AIEmailDraftDialog = ({
             (data as EmailTemplateDetailsDto[]) ||
             []
         );
-      } catch {
-        notificationsService.error("Failed to load reference templates.");
+      } catch (error) {
+        showApiError(error, notificationsService, undefined, "Failed to load reference templates.");
       } finally {
         setIsRefLoading(false);
       }
     };
     load();
-  }, [client.api, debouncedRefInput, isRefOpen, notificationsService, open]);
+  }, [
+    client.api,
+    debouncedRefInput,
+    emailGroupId,
+    isRefOpen,
+    language,
+    notificationsService,
+    open,
+  ]);
+
+  const filteredReferenceOptions = useMemo(() => {
+    return [...referenceOptions].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [referenceOptions]);
 
   const handleCreate = () => {
     if (language && emailGroupId && prompt.trim()) {
@@ -212,6 +260,7 @@ export const AIEmailDraftDialog = ({
         Number(emailGroupId),
         prompt.trim(),
         format,
+        category,
         referenceTemplate?.id || null,
         Object.keys(vars).length > 0 ? vars : undefined,
         wordCount,
@@ -395,8 +444,28 @@ export const AIEmailDraftDialog = ({
             </Select>
           </FormControl>
 
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Category</InputLabel>
+            <Select
+              value={category}
+              label="Category"
+              onChange={(e) => {
+                setCategory(e.target.value as EmailTemplateCategory);
+                if (error && onErrorClear) onErrorClear();
+              }}
+              disabled={isLoading}
+            >
+              {EMAIL_TEMPLATE_CATEGORY_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+            <FormHelperText>{getEmailTemplateCategoryNote(category)}</FormHelperText>
+          </FormControl>
+
           <Autocomplete
-            options={referenceOptions}
+            options={filteredReferenceOptions}
             value={referenceTemplate}
             inputValue={referenceInput}
             open={isRefOpen}

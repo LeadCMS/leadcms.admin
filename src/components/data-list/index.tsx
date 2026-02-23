@@ -59,6 +59,8 @@ type dataListProps<TModel extends GridValidRowModel> = {
   refreshFlag?: number;
   onBulkDelete?: (ids: (string | number)[]) => Promise<void>;
   bulkDeleteEntityName?: string;
+  showActionsColumn?: boolean;
+  enableRowSelection?: boolean;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -84,6 +86,8 @@ export const DataList = <TModel extends GridValidRowModel>({
   refreshFlag = 0,
   onBulkDelete,
   bulkDeleteEntityName = "record",
+  showActionsColumn = true,
+  enableRowSelection = true,
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -497,7 +501,8 @@ export const DataList = <TModel extends GridValidRowModel>({
         initialState={gridInitialState}
         disableColumnFilter={true}
         disablePagination={false}
-        showActionsColumn={true}
+        showActionsColumn={showActionsColumn}
+        enableRowSelection={enableRowSelection}
         disableEditRoute={!showEditButton}
         disableViewRoute={!showViewButton}
         columnVisibilityModel={columnVisibilityModel}
