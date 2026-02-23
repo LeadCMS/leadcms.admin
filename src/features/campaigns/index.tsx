@@ -213,25 +213,20 @@ export const Campaigns = () => {
   }, [loadStats]);
 
   const getCampaignsList = async (mainQuery: string) => {
-    try {
-      let languageQuery = "";
-      if (isLanguageFilterActive && selectedLanguage !== "all") {
-        languageQuery = getWhereFilterQuery("language", selectedLanguage, "equals");
-      }
-      const fullQuery = [mainQuery, languageQuery].filter(Boolean).join("&");
-      const result = await client.api.campaignsList({
-        query: fullQuery,
-      });
-      return {
-        data: result.data || [],
-        headers: {
-          get: (key: string) => (key === "x-total-count" ? String(result.data?.length || 0) : null),
-        } as unknown as Headers,
-      };
-    } catch (error) {
-      console.log(error);
-      return null;
+    let languageQuery = "";
+    if (isLanguageFilterActive && selectedLanguage !== "all") {
+      languageQuery = getWhereFilterQuery("language", selectedLanguage, "equals");
     }
+    const fullQuery = [mainQuery, languageQuery].filter(Boolean).join("&");
+    const result = await client.api.campaignsList({
+      query: fullQuery,
+    });
+    return {
+      data: result.data || [],
+      headers: {
+        get: (key: string) => (key === "x-total-count" ? String(result.data?.length || 0) : null),
+      } as unknown as Headers,
+    };
   };
 
   const campaignsExportApi: (query: string, accept: string) => Promise<Response> = (

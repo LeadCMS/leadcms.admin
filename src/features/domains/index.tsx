@@ -43,16 +43,11 @@ export const Domains = () => {
   const dataExportQuery = useRef("");
 
   const getDomainList = async (mainQuery: string, exportQuery?: string) => {
-    try {
-      dataExportQuery.current = exportQuery || "";
-      const result = await client.api.domainsList({
-        query: mainQuery,
-      });
-      return result;
-    } catch (error) {
-      console.log(error);
-      return null;
-    }
+    dataExportQuery.current = exportQuery || "";
+    const result = await client.api.domainsList({
+      query: mainQuery,
+    });
+    return result;
   };
 
   const domainsExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>

@@ -85,27 +85,22 @@ export const EmailTemplatesList = () => {
   }, [selectedGroupId, selectedLanguage]);
 
   const getEmailTemplatesList = async (mainQuery: string, exportQuery?: string) => {
-    try {
-      dataExportQuery.current = exportQuery || "";
-      const includeFilter = "filter[include]=EmailGroup";
-      let groupFilter = "";
-      if (selectedGroupId !== "") {
-        groupFilter = `filter[where][emailGroupId]=${selectedGroupId}`;
-      }
-      let languageFilter = "";
-      if (isLanguageFilterActive && selectedLanguage !== "all") {
-        const langCode = selectedLanguage.split("-")[0];
-        languageFilter = getWhereFilterQuery("language", langCode, "contains").replace(/^&/, "");
-      }
-      const fullQuery = [mainQuery, includeFilter, groupFilter, languageFilter]
-        .filter(Boolean)
-        .join("&");
-      const result = await client.api.emailTemplatesList({ query: fullQuery });
-      return result;
-    } catch (error) {
-      console.log(error);
-      return null;
+    dataExportQuery.current = exportQuery || "";
+    const includeFilter = "filter[include]=EmailGroup";
+    let groupFilter = "";
+    if (selectedGroupId !== "") {
+      groupFilter = `filter[where][emailGroupId]=${selectedGroupId}`;
     }
+    let languageFilter = "";
+    if (isLanguageFilterActive && selectedLanguage !== "all") {
+      const langCode = selectedLanguage.split("-")[0];
+      languageFilter = getWhereFilterQuery("language", langCode, "contains").replace(/^&/, "");
+    }
+    const fullQuery = [mainQuery, includeFilter, groupFilter, languageFilter]
+      .filter(Boolean)
+      .join("&");
+    const result = await client.api.emailTemplatesList({ query: fullQuery });
+    return result;
   };
 
   const emailTemplatesExportApi: (query: string, accept: string) => Promise<Response> = (

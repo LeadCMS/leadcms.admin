@@ -30,19 +30,14 @@ export const Segments = () => {
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
 
   const getSegmentsList = async (mainQuery: string, exportQuery?: string) => {
-    try {
-      void exportQuery;
-      const result = await client.api.segmentsList({ query: mainQuery });
-      return {
-        data: result.data || [],
-        headers: {
-          get: (key: string) => (key === "x-total-count" ? String(result.data?.length || 0) : null),
-        } as unknown as Headers,
-      };
-    } catch (error) {
-      console.log(error);
-      return null;
-    }
+    void exportQuery;
+    const result = await client.api.segmentsList({ query: mainQuery });
+    return {
+      data: result.data || [],
+      headers: {
+        get: (key: string) => (key === "x-total-count" ? String(result.data?.length || 0) : null),
+      } as unknown as Headers,
+    };
   };
 
   const [columns, setColumns] = useState<GridColDef[]>([

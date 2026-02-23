@@ -55,6 +55,9 @@ import {
   PhotoLibrary,
 } from "@mui/icons-material";
 import { useRequestContext } from "@providers/request-provider";
+import { useNotificationsService } from "@hooks";
+import { parseApiError, showApiError } from "@utils/api-error-parser";
+import { AlertCircle } from "lucide-react";
 import type { TaskDetailsDto, TaskExecutionLogDetailsDto } from "lib/network/swagger-client";
 import { getTaskMetadata, getTaskCategory, describeCron, formatDuration } from "../utils";
 import { getCategoryColor } from "../utils";
@@ -76,8 +79,10 @@ const taskIcons: Record<string, React.ReactNode> = {
 
 export const TasksList = () => {
   const { client } = useRequestContext();
+  const { notificationsService } = useNotificationsService();
   const [loading, setLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<TaskDetailsDto[]>([]);
   const [executionLogs, setExecutionLogs] = useState<TaskExecutionLogDetailsDto[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,10 +108,12 @@ export const TasksList = () => {
   const loadTasks = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const response = await client.api.tasksList();
       setTasks(response.data || []);
     } catch (error) {
-      console.error("Failed to load tasks:", error);
+      const apiError = parseApiError(error, "Failed to load tasks");
+      setLoadError(apiError.message);
     } finally {
       setLoading(false);
     }
@@ -118,7 +125,8 @@ export const TasksList = () => {
       const response = await client.api.tasksLogsList();
       setExecutionLogs(response.data || []);
     } catch (error) {
-      console.error("Failed to load execution logs:", error);
+      const apiError = parseApiError(error, "Failed to load execution logs");
+      if (!loadError) setLoadError(apiError.message);
     } finally {
       setLogsLoading(false);
     }
@@ -130,7 +138,7 @@ export const TasksList = () => {
       await client.api.tasksStartDetail(taskName);
       await loadTasks();
     } catch (error) {
-      console.error("Failed to enable task:", error);
+      showApiError(error, notificationsService, undefined, "Failed to enable task");
     }
   };
 
@@ -140,7 +148,7 @@ export const TasksList = () => {
       await client.api.tasksStopDetail(taskName);
       await loadTasks();
     } catch (error) {
-      console.error("Failed to disable task:", error);
+      showApiError(error, notificationsService, undefined, "Failed to disable task");
     }
   };
 
@@ -153,7 +161,7 @@ export const TasksList = () => {
       // Refresh logs after execution
       await loadExecutionLogs();
     } catch (error) {
-      console.error("Failed to execute task:", error);
+      showApiError(error, notificationsService, undefined, "Failed to execute task");
       setExecutingTask(null);
     }
   };
@@ -232,6 +240,64 @@ export const TasksList = () => {
         </Grid>
         <Box sx={{ mt: 3 }}>
           <Skeleton variant="rectangular" height={400} />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (loadError && !loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 300,
+          py: 6,
+          px: 2,
+        }}
+      >
+        <Box
+          sx={{
+            p: 6,
+            textAlign: "center",
+            backgroundColor: "grey.50",
+            borderRadius: 3,
+            border: "2px dashed",
+            borderColor: "grey.300",
+            maxWidth: 500,
+            width: "100%",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 3,
+              color: "error.main",
+            }}
+          >
+            <AlertCircle size={48} />
+          </Box>
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              fontWeight: 600,
+              color: "grey.700",
+            }}
+          >
+            Error loading tasks
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "grey.600",
+              lineHeight: 1.6,
+            }}
+          >
+            {loadError}
+          </Typography>
         </Box>
       </Box>
     );

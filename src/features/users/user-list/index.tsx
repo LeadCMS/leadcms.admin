@@ -83,13 +83,8 @@ export const UserList = () => {
   );
 
   const getUserList = async (mainQuery: string, _exportQuery?: string) => {
-    try {
-      const result = await client.api.usersList({ query: mainQuery });
-      return result;
-    } catch (error) {
-      console.log(error);
-      return null;
-    }
+    const result = await client.api.usersList({ query: mainQuery });
+    return result;
   };
 
   const extraActions = [

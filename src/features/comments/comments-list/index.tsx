@@ -45,7 +45,7 @@ import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { useNotificationsService } from "@hooks";
-import { showApiError } from "@utils/api-error-parser";
+import { showApiError, parseApiError } from "@utils/api-error-parser";
 import { CommentDetailsDto } from "@lib/network/swagger-client";
 import { dataListBreadcrumbLinks } from "@utils/constants";
 import { Download, Filter, SortAsc, SortDesc } from "lucide-react";
@@ -98,6 +98,7 @@ export const CommentsList: React.FC = () => {
   // State
   const [comments, setComments] = useState<EnhancedCommentDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(storedSettings?.searchTerm ?? "");
   const [activeTab, setActiveTab] = useState<TabValue>(storedSettings?.activeTab ?? "All");
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -221,6 +222,7 @@ export const CommentsList: React.FC = () => {
   // Load comments with pagination - matching content list pattern
   const loadComments = async () => {
     setLoading(true);
+    setLoadError(null);
     const filter: Record<string, unknown> = {
       ["filter[order]"]: `${sortField} ${sortDirection === "asc" ? "" : "desc"}`.trim(),
       ["filter[skip]"]: !initialLoadRef.current ? 0 : comments.length,
@@ -294,7 +296,8 @@ export const CommentsList: React.FC = () => {
       }
       setTotalCount(newTotalCount);
     } catch (error) {
-      showApiError(error, notificationsService, undefined, "Failed to load comments");
+      const apiError = parseApiError(error, "Failed to load comments");
+      setLoadError(apiError.message);
     } finally {
       setLoading(false);
     }
@@ -1252,13 +1255,67 @@ export const CommentsList: React.FC = () => {
           )}
 
           {/* Comments list */}
-          {loading && comments.length === 0 ? (
+          {loadError && !loading ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: 300,
+                py: 6,
+                px: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  p: 6,
+                  textAlign: "center",
+                  backgroundColor: "grey.50",
+                  borderRadius: 3,
+                  border: "2px dashed",
+                  borderColor: "grey.300",
+                  maxWidth: 500,
+                  width: "100%",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    mb: 3,
+                    color: "error.main",
+                  }}
+                >
+                  <AlertCircle size={48} />
+                </Box>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    mb: 2,
+                    fontWeight: 600,
+                    color: "grey.700",
+                  }}
+                >
+                  Error loading comments
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: "grey.600",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {loadError}
+                </Typography>
+              </Box>
+            </Box>
+          ) : loading && comments.length === 0 ? (
             <Box display="flex" justifyContent="center" py={8}>
               <CircularProgress />
             </Box>
           ) : comments.length === 0 ? (
             <NoRecordsDisplay
-              visible={true}
+              visible={!loadError}
               message="No comments found"
               activeFilters={{
                 searchTerm: searchQuery.trim() || undefined,

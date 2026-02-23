@@ -493,24 +493,18 @@ export const CampaignView = () => {
 
   const getRecipientsList = async (mainQuery: string) => {
     if (!id) return null;
-    try {
-      const result = await client.api.campaignsRecipientsList(Number(id), {
-        query: mainQuery,
-      });
-      return {
-        data: result.data || [],
-        headers: {
-          get: (key: string) => {
-            if (key.toLowerCase() !== "x-total-count") return null;
-            const headerValue =
-              (result as unknown as { headers?: Headers }).headers?.get("x-total-count") || null;
-            return headerValue ?? String(result.data?.length || 0);
-          },
-        } as unknown as Headers,
-      };
-    } catch {
-      return null;
-    }
+    const result = await client.api.campaignsRecipientsList(Number(id), { query: mainQuery });
+    return {
+      data: result.data || [],
+      headers: {
+        get: (key: string) => {
+          if (key.toLowerCase() !== "x-total-count") return null;
+          const headerValue =
+            (result as unknown as { headers?: Headers }).headers?.get("x-total-count") || null;
+          return headerValue ?? String(result.data?.length || 0);
+        },
+      } as unknown as Headers,
+    };
   };
 
   const handleCancel = async () => {

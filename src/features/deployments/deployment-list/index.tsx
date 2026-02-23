@@ -51,6 +51,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
+import { parseApiError } from "@utils/api-error-parser";
+import { AlertCircle } from "lucide-react";
 import type { DeploymentRecordDto, DeploymentStatsDto, DeploymentTargetDto } from "../types";
 import {
   formatDuration,
@@ -73,6 +75,7 @@ export const DeploymentsList = () => {
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [targetsLoading, setTargetsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [deploying, setDeploying] = useState(false);
 
   const [deployments, setDeployments] = useState<DeploymentRecordDto[]>([]);
@@ -109,10 +112,12 @@ export const DeploymentsList = () => {
   const loadDeployments = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const response = await client.api.deploymentsList({ limit: DEPLOYMENT_HISTORY_LIMIT });
       setDeployments(response.data || []);
     } catch (error) {
-      console.error("Failed to load deployments:", error);
+      const apiError = parseApiError(error, "Failed to load deployments");
+      setLoadError(apiError.message);
     } finally {
       setLoading(false);
     }
@@ -124,7 +129,8 @@ export const DeploymentsList = () => {
       const response = await client.api.deploymentsStatsList();
       setStats(response.data || null);
     } catch (error) {
-      console.error("Failed to load deployment stats:", error);
+      const apiError = parseApiError(error, "Failed to load deployment stats");
+      if (!loadError) setLoadError(apiError.message);
     } finally {
       setStatsLoading(false);
     }
@@ -136,7 +142,8 @@ export const DeploymentsList = () => {
       const response = await client.api.deploymentsTargetsList();
       setTargets(response.data || []);
     } catch (error) {
-      console.error("Failed to load deployment targets:", error);
+      const apiError = parseApiError(error, "Failed to load deployment targets");
+      if (!loadError) setLoadError(apiError.message);
     } finally {
       setTargetsLoading(false);
     }
@@ -301,6 +308,64 @@ export const DeploymentsList = () => {
         </Grid>
         <Box sx={{ mt: 3 }}>
           <Skeleton variant="rectangular" height={400} />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (loadError && !loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 300,
+          py: 6,
+          px: 2,
+        }}
+      >
+        <Box
+          sx={{
+            p: 6,
+            textAlign: "center",
+            backgroundColor: "grey.50",
+            borderRadius: 3,
+            border: "2px dashed",
+            borderColor: "grey.300",
+            maxWidth: 500,
+            width: "100%",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 3,
+              color: "error.main",
+            }}
+          >
+            <AlertCircle size={48} />
+          </Box>
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              fontWeight: 600,
+              color: "grey.700",
+            }}
+          >
+            Error loading deployments
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "grey.600",
+              lineHeight: 1.6,
+            }}
+          >
+            {loadError}
+          </Typography>
         </Box>
       </Box>
     );

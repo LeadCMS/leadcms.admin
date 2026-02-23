@@ -58,7 +58,16 @@ import { MediaSortPopup } from "@components/media-sort-popup";
 import useLocalStorage from "use-local-storage";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { DataTableContainer } from "@components/data-table/index.styled";
-import { SortAsc, SortDesc, LayoutGrid, Table as TableIcon, File, X, Search } from "lucide-react";
+import {
+  SortAsc,
+  SortDesc,
+  LayoutGrid,
+  Table as TableIcon,
+  File,
+  X,
+  Search,
+  AlertCircle,
+} from "lucide-react";
 import { useConfig } from "@providers/config-provider";
 import { parseApiError } from "@utils/api-error-parser";
 
@@ -360,13 +369,9 @@ const MediaManagement = () => {
 
         setFetchError(null);
       } catch (error) {
-        const apiError = error as { status?: number; message?: string };
-        if (apiError.status === 0) {
-          setFetchError(apiError.message || "Network error");
-        } else {
-          setItems([]);
-          setFetchError(apiError.message || "Failed to load media");
-        }
+        const apiError = parseApiError(error, "Failed to load media");
+        setItems([]);
+        setFetchError(apiError.message);
       } finally {
         setLoading(false);
       }
@@ -409,13 +414,9 @@ const MediaManagement = () => {
 
         setFetchError(null);
       } catch (error) {
-        const apiError = error as { status?: number; message?: string };
-        if (apiError.status === 0) {
-          setFetchError(apiError.message || "Network error");
-        } else {
-          setItems([]);
-          setFetchError(apiError.message || "Failed to search media");
-        }
+        const apiError = parseApiError(error, "Failed to search media");
+        setItems([]);
+        setFetchError(apiError.message);
       } finally {
         setLoading(false);
         setIsSearching(false);
@@ -582,13 +583,9 @@ const MediaManagement = () => {
       setItems(validItems);
       setFetchError(null);
     } catch (error) {
-      const apiError = error as { status?: number; message?: string };
-      if (apiError.status === 0) {
-        setFetchError(apiError.message || "Network error");
-      } else {
-        setItems([]);
-        setFetchError(apiError.message || "Failed to refresh media");
-      }
+      const apiError = parseApiError(error, "Failed to refresh media");
+      setItems([]);
+      setFetchError(apiError.message);
     } finally {
       setLoading(false);
     }
@@ -946,13 +943,9 @@ const MediaManagement = () => {
         setItems(validItems);
         setFetchError(null);
       } catch (error) {
-        const apiError = error as { status?: number; message?: string };
-        if (apiError.status === 0) {
-          setFetchError(apiError.message || "Network error");
-        } else {
-          setItems([]);
-          setFetchError(apiError.message || "Failed to refresh media");
-        }
+        const apiError = parseApiError(error, "Failed to refresh media");
+        setItems([]);
+        setFetchError(apiError.message);
       } finally {
         setLoading(false);
       }
@@ -1372,8 +1365,58 @@ const MediaManagement = () => {
       )}
       {/* Content area with loading/error states */}
       {fetchError ? (
-        <Box textAlign="center" py={6}>
-          <Typography color="error">{fetchError}</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 300,
+            py: 6,
+            px: 2,
+          }}
+        >
+          <Box
+            sx={{
+              p: 6,
+              textAlign: "center",
+              backgroundColor: "grey.50",
+              borderRadius: 3,
+              border: "2px dashed",
+              borderColor: "grey.300",
+              maxWidth: 500,
+              width: "100%",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mb: 3,
+                color: "error.main",
+              }}
+            >
+              <AlertCircle size={48} />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 2,
+                fontWeight: 600,
+                color: "grey.700",
+              }}
+            >
+              Error loading media
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "grey.600",
+                lineHeight: 1.6,
+              }}
+            >
+              {fetchError}
+            </Typography>
+          </Box>
         </Box>
       ) : loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>

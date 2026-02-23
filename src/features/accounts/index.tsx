@@ -45,16 +45,11 @@ export const Accounts = () => {
   const dataExportQuery = useRef("");
 
   const getAccountList = async (mainQuery: string, exportQuery?: string) => {
-    try {
-      dataExportQuery.current = exportQuery || "";
-      const result = await client.api.accountsList({
-        query: mainQuery,
-      });
-      return result;
-    } catch (error) {
-      console.log(error);
-      return null;
-    }
+    dataExportQuery.current = exportQuery || "";
+    const result = await client.api.accountsList({
+      query: mainQuery,
+    });
+    return result;
   };
 
   const accountsExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>

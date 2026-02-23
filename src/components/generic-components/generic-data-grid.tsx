@@ -24,14 +24,15 @@ import {
   GenericDataGridSettings,
 } from "@components/generic-components/common";
 import { ActionButtonContainer, DataTableContainer } from "@components/data-table/index.styled";
-import { IconButton } from "@mui/material";
-import { Pencil, Eye } from "lucide-react";
+import { Box, IconButton, Typography } from "@mui/material";
+import { Pencil, Eye, AlertCircle } from "lucide-react";
 import dayjs from "dayjs";
 import useLocalStorage from "use-local-storage";
 import { GridDataFilterState } from "types";
 import React from "react";
 import { BulkDeleteToolbar } from "@components/bulk-delete-toolbar";
 import { useNotificationsService } from "@hooks";
+import { parseApiError } from "@utils/api-error-parser";
 
 export interface GenericDataGridProps<T extends BasicTypeForGeneric> {
   key: string;
@@ -173,6 +174,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
   );
 
   const [items, setItems] = useState<T[] | undefined>();
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [totalItemsCount, setTotalItemsCount] = useState<number>(0);
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
@@ -185,6 +187,7 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
 
   const selectedRows = Array.from(rowSelectionModel.ids);
   const [refreshInternalFlag, setRefreshInternalFlag] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     if (gridSettings) {
@@ -225,6 +228,9 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
     } else {
       setFilterState(defaultFilterState);
     }
+
+    // Mark initialization as complete
+    setIsInitialized(true);
   }, []);
 
   function getBasicFilterQueryString(filterState: GridDataFilterState): string {
@@ -338,27 +344,26 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
   }));
 
   useEffect(() => {
-    const abortController = new AbortController();
+    // Only fetch data after initialization is complete
+    if (!isInitialized) return;
+
     saveGridStateInLocalStorage();
 
     if (getItemsFn) {
       setBusy(async () => {
         try {
-          const { data, headers } = await getItemsFn(getFiltersQueryObject(), {
-            signal: abortController.signal,
-          });
+          setLoadError(null);
+          const { data, headers } = await getItemsFn(getFiltersQueryObject());
 
           setTotalItemsCount(() => parseInt(headers.get(totalCountHeaderName) || "0"));
           setItems(() => data);
         } catch (e) {
-          console.log(e);
+          const apiError = parseApiError(e, "Failed to load data");
+          setLoadError(apiError.message);
+          setItems([]);
         }
       });
     }
-
-    return () => {
-      abortController.abort("canceled");
-    };
   }, [getItemsFn, searchText, filterState, refreshFlag, refreshInternalFlag]);
 
   useEffect(() => {
@@ -502,34 +507,90 @@ export function GenericDataGrid<T extends BasicTypeForGeneric>(
           notificationsService={notificationsService}
         />
       )}
-      <DataGrid
-        columns={columns || []}
-        rows={items || []}
-        loading={false}
-        localeText={customLocaleText}
-        checkboxSelection={true}
-        disableRowSelectionOnClick
-        rowCount={totalItemsCount}
-        pageSizeOptions={[10, 25, 50, 100]}
-        pagination
-        paginationModel={{
-          page: filterState.pageNumber || 0,
-          pageSize: filterState.filterLimit || 25,
-        }}
-        paginationMode="server"
-        onPaginationModelChange={handlePaginationModelChange}
-        disableColumnFilter={true}
-        sortingMode="server"
-        onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}
-        filterMode="server"
-        onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
-        columnVisibilityModel={columnVisibilityModel}
-        onColumnWidthChange={handleColumnWidthChange}
-        onRowSelectionModelChange={(newRowSelectionModel) => {
-          setRowSelectionModel(newRowSelectionModel);
-        }}
-        rowSelectionModel={rowSelectionModel}
-      />
+      {loadError ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 300,
+            py: 6,
+            px: 2,
+          }}
+        >
+          <Box
+            sx={{
+              p: 6,
+              textAlign: "center",
+              backgroundColor: "grey.50",
+              borderRadius: 3,
+              border: "2px dashed",
+              borderColor: "grey.300",
+              maxWidth: 500,
+              width: "100%",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mb: 3,
+                color: "error.main",
+              }}
+            >
+              <AlertCircle size={48} />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 2,
+                fontWeight: 600,
+                color: "grey.700",
+              }}
+            >
+              Error loading data
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "grey.600",
+                lineHeight: 1.6,
+              }}
+            >
+              {loadError}
+            </Typography>
+          </Box>
+        </Box>
+      ) : (
+        <DataGrid
+          columns={columns || []}
+          rows={items || []}
+          loading={false}
+          localeText={customLocaleText}
+          checkboxSelection={true}
+          disableRowSelectionOnClick
+          rowCount={totalItemsCount}
+          pageSizeOptions={[10, 25, 50, 100]}
+          pagination
+          paginationModel={{
+            page: filterState.pageNumber || 0,
+            pageSize: filterState.filterLimit || 25,
+          }}
+          paginationMode="server"
+          onPaginationModelChange={handlePaginationModelChange}
+          disableColumnFilter={true}
+          sortingMode="server"
+          onSortModelChange={(newSortModel) => handleSortChange(newSortModel)}
+          filterMode="server"
+          onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
+          columnVisibilityModel={columnVisibilityModel}
+          onColumnWidthChange={handleColumnWidthChange}
+          onRowSelectionModelChange={(newRowSelectionModel) => {
+            setRowSelectionModel(newRowSelectionModel);
+          }}
+          rowSelectionModel={rowSelectionModel}
+        />
+      )}
     </DataTableContainer>
   );
 }

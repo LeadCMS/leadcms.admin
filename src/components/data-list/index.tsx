@@ -28,6 +28,9 @@ import { buildExportQueryString } from "@components/export";
 import { getModuleNameFromUrl } from "@utils/general-helper";
 import { downloadExportFile } from "@components/download";
 import { BulkDeleteToolbar } from "@components/bulk-delete-toolbar";
+import { parseApiError } from "@utils/api-error-parser";
+import { AlertCircle } from "lucide-react";
+import { Box, Typography } from "@mui/material";
 
 // Define response type for API model data
 interface ModelDataResponse<TModel> {
@@ -114,6 +117,7 @@ export const DataList = <TModel extends GridValidRowModel>({
 
   const selectedRows = Array.from(rowSelectionModel.ids);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -217,12 +221,6 @@ export const DataList = <TModel extends GridValidRowModel>({
       throw new Error("Server error: x-total-count header is not provided.");
     }
   }, [totalRowCount]);
-
-  useEffect(() => {
-    if (!modelData) {
-      notificationsService.error("Server error: Data cannot be retrieved from server.");
-    }
-  }, [modelData]);
 
   useEffect(() => {
     if (setColumns) {
@@ -332,16 +330,26 @@ export const DataList = <TModel extends GridValidRowModel>({
 
   const getDataListAsync = () => {
     setBusy(async () => {
-      const result = await getModelDataList(
-        `${searchTerm}&${basicFilterQuery || ""}${whereFilterQuery || ""}`,
-        `${searchTerm}&${basicExportFilterQuery || ""}${whereFilterQuery || ""}`
-      );
-      if (result) {
-        const { data, headers } = result;
-        setTotalResultsCount(headers.get(totalCountHeaderName));
-        setModelData(data);
-      } else {
-        setModelData(undefined);
+      try {
+        setLoadError(null);
+        const result = await getModelDataList(
+          `${searchTerm}&${basicFilterQuery || ""}${whereFilterQuery || ""}`,
+          `${searchTerm}&${basicExportFilterQuery || ""}${whereFilterQuery || ""}`
+        );
+        if (result) {
+          const { data, headers } = result;
+          setTotalResultsCount(headers.get(totalCountHeaderName));
+          setModelData(data);
+        } else {
+          setModelData([]);
+          setTotalRowCount(0);
+          setLoadError("Data cannot be retrieved from server.");
+        }
+      } catch (error) {
+        const apiError = parseApiError(error, "Failed to load data");
+        setLoadError(apiError.message);
+        setModelData([]);
+        setTotalRowCount(0);
       }
     });
   };
@@ -489,31 +497,87 @@ export const DataList = <TModel extends GridValidRowModel>({
           notificationsService={notificationsService}
         />
       )}
-      <DataTableGrid
-        columns={columns}
-        data={modelData || []}
-        pageSize={filterState.filterLimit}
-        totalRowCount={totalRowCount}
-        rowsPerPageOptions={[10, 30, 50, 100]}
-        pageNumber={filterState.pageNumber}
-        dataViewMode="server"
-        setFilterState={updateFilterState}
-        initialState={gridInitialState}
-        disableColumnFilter={true}
-        disablePagination={false}
-        showActionsColumn={showActionsColumn}
-        enableRowSelection={enableRowSelection}
-        disableEditRoute={!showEditButton}
-        disableViewRoute={!showViewButton}
-        columnVisibilityModel={columnVisibilityModel}
-        onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
-        onRowSelectionModelChange={(newRowSelectionModel) => {
-          setRowSelectionModel(newRowSelectionModel);
-        }}
-        rowSelectionModel={rowSelectionModel}
-        columnWidths={columnWidths}
-        saveColumnWidths={saveColumnWidths}
-      />
+      {loadError ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 300,
+            py: 6,
+            px: 2,
+          }}
+        >
+          <Box
+            sx={{
+              p: 6,
+              textAlign: "center",
+              backgroundColor: "grey.50",
+              borderRadius: 3,
+              border: "2px dashed",
+              borderColor: "grey.300",
+              maxWidth: 500,
+              width: "100%",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mb: 3,
+                color: "error.main",
+              }}
+            >
+              <AlertCircle size={48} />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 2,
+                fontWeight: 600,
+                color: "grey.700",
+              }}
+            >
+              Error loading data
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "grey.600",
+                lineHeight: 1.6,
+              }}
+            >
+              {loadError}
+            </Typography>
+          </Box>
+        </Box>
+      ) : (
+        <DataTableGrid
+          columns={columns}
+          data={modelData || []}
+          pageSize={filterState.filterLimit}
+          totalRowCount={totalRowCount}
+          rowsPerPageOptions={[10, 30, 50, 100]}
+          pageNumber={filterState.pageNumber}
+          dataViewMode="server"
+          setFilterState={updateFilterState}
+          initialState={gridInitialState}
+          disableColumnFilter={true}
+          disablePagination={false}
+          showActionsColumn={showActionsColumn}
+          enableRowSelection={enableRowSelection}
+          disableEditRoute={!showEditButton}
+          disableViewRoute={!showViewButton}
+          columnVisibilityModel={columnVisibilityModel}
+          onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
+          onRowSelectionModelChange={(newModel) => {
+            setRowSelectionModel(newModel);
+          }}
+          rowSelectionModel={rowSelectionModel}
+          columnWidths={columnWidths}
+          saveColumnWidths={saveColumnWidths}
+        />
+      )}
     </DataListContainer>
   ) : null;
 };

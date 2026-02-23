@@ -37,18 +37,13 @@ export const UnsubscribesList = () => {
   const dataExportQuery = useRef("");
 
   const getUnsubscribesList = async (mainQuery: string, exportQuery?: string) => {
-    try {
-      dataExportQuery.current = exportQuery || "";
-      const includeFilter = "filter[include]=Contact";
-      const fullQuery = [mainQuery, includeFilter].filter(Boolean).join("&");
-      const result = await client.api.unsubscribesList({
-        query: fullQuery,
-      });
-      return result;
-    } catch (error) {
-      console.log(error);
-      return null;
-    }
+    dataExportQuery.current = exportQuery || "";
+    const includeFilter = "filter[include]=Contact";
+    const fullQuery = [mainQuery, includeFilter].filter(Boolean).join("&");
+    const result = await client.api.unsubscribesList({
+      query: fullQuery,
+    });
+    return result;
   };
 
   const unsubscribesExportApi: (query: string, accept: string) => Promise<Response> = (

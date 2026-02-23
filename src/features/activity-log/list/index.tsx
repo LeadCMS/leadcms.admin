@@ -73,15 +73,10 @@ export const ActivityLogList = () => {
   );
 
   const getActivitiesList = async (mainQuery: string) => {
-    try {
-      const result = await client.api.activityLogsList({
-        query: mainQuery,
-      });
-      return result;
-    } catch (error) {
-      console.log(error);
-      return null;
-    }
+    const result = await client.api.activityLogsList({
+      query: mainQuery,
+    });
+    return result;
   };
 
   return (

@@ -52,30 +52,23 @@ export const Orders = () => {
   }, [selectedLanguage]);
 
   const getOrderList = async (mainQuery: string, exportQuery?: string) => {
-    try {
-      dataExportQuery.current = exportQuery || "";
-      const includeFilter = "filter[include]=Contact";
+    dataExportQuery.current = exportQuery || "";
+    const includeFilter = "filter[include]=Contact";
 
-      // Add global language filter if active (filter by contact language)
-      let globalLanguageQuery = "";
-      if (isLanguageFilterActive && selectedLanguage !== "all") {
-        // Extract language code prefix (e.g., "en" from "en-US")
-        const languageCode = selectedLanguage.split("-")[0];
-        globalLanguageQuery = getWhereFilterQuery("contact.language", languageCode, "contains");
-        // Remove leading & to avoid double ampersands
-        globalLanguageQuery = globalLanguageQuery.replace(/^&/, "");
-      }
-
-      const fullQuery = [mainQuery, includeFilter, globalLanguageQuery].filter(Boolean).join("&");
-
-      const result = await client.api.ordersList({
-        query: fullQuery,
-      });
-      return result;
-    } catch (error) {
-      console.log(error);
-      return null;
+    // Add global language filter if active (filter by contact language)
+    let globalLanguageQuery = "";
+    if (isLanguageFilterActive && selectedLanguage !== "all") {
+      const languageCode = selectedLanguage.split("-")[0];
+      globalLanguageQuery = getWhereFilterQuery("contact.language", languageCode, "contains");
+      globalLanguageQuery = globalLanguageQuery.replace(/^&/, "");
     }
+
+    const fullQuery = [mainQuery, includeFilter, globalLanguageQuery].filter(Boolean).join("&");
+
+    const result = await client.api.ordersList({
+      query: fullQuery,
+    });
+    return result;
   };
 
   const ordersExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>
