@@ -195,6 +195,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const [aiEditTemplateVars, setAiEditTemplateVars] = useState<
     Record<string, string> | undefined
   >();
+  const [aiEditError, setAiEditError] = useState<string | null>(null);
+  const [aiErrorDetails, setAiErrorDetails] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [aiProgressOpen, setAiProgressOpen] = useState(false);
   const [aiProgressType, setAiProgressType] = useState<"content" | "translation" | "edit">("edit");
@@ -525,6 +527,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   ) => {
     setAiEditPrompt(prompt);
     setAiEditTemplateVars(templateVariables);
+    setAiEditError(null);
+    setAiErrorDetails([]);
     setAiEditDialogOpen(false);
     setAiProgressType("edit");
     setAiOperationComplete(false);
@@ -554,13 +558,17 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       setWasModified(true);
       setAiEditPrompt("");
       setAiEditTemplateVars(undefined);
+      setAiEditError(null);
+      setAiErrorDetails([]);
       setTimeout(() => {
         setAiProgressOpen(false);
         setAiOperationComplete(false);
       }, 500);
     } catch (error) {
       setAiProgressOpen(false);
-      showApiError(error, notificationsService, showErrorModal, "AI edit failed");
+      const parsed = showApiError(error, notificationsService, showErrorModal, "AI edit failed");
+      setAiEditError(parsed.message);
+      setAiErrorDetails(parsed.details.length > 0 ? [parsed.message, ...parsed.details] : []);
       setAiEditDialogOpen(true);
     }
   };
@@ -686,6 +694,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         "AI draft generation failed. Please try again."
       );
       setAiDraftError(parsed.message);
+      setAiErrorDetails(parsed.details.length > 0 ? [parsed.message, ...parsed.details] : []);
       setAiDraftDialogOpen(true);
     } finally {
       setAiDraftLoading(false);
@@ -700,6 +709,16 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   }, [isAIDraftRoute]);
 
   const editorHeight = isCollapsed ? "calc(100vh - 302px)" : "calc(100vh - 317px)";
+
+  // Check for validation errors in each tab
+  const hasEditorErrors = Boolean(formik.errors.bodyTemplate);
+  const hasSettingsErrors = Boolean(
+    formik.errors.name ||
+      formik.errors.language ||
+      formik.errors.fromEmail ||
+      formik.errors.fromName ||
+      formik.errors.category
+  );
 
   return (
     <form onSubmit={formik.handleSubmit}>
@@ -1066,9 +1085,41 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                 }}
               >
                 <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ minHeight: 36 }}>
-                  <Tab label="Editor" value="editor" />
-                  <Tab label="Settings" value="settings" />
-                  {!isCreateMode && id && <Tab label="Change Log" value="changelog" />}
+                  <Tab
+                    label="Editor"
+                    value="editor"
+                    sx={{
+                      color: hasEditorErrors ? "error.main" : "inherit",
+                      fontWeight: hasEditorErrors ? 600 : 400,
+                      "&.Mui-selected": {
+                        color: hasEditorErrors ? "error.main" : "primary.main",
+                      },
+                    }}
+                  />
+                  <Tab
+                    label="Settings"
+                    value="settings"
+                    sx={{
+                      color: hasSettingsErrors ? "error.main" : "inherit",
+                      fontWeight: hasSettingsErrors ? 600 : 400,
+                      "&.Mui-selected": {
+                        color: hasSettingsErrors ? "error.main" : "primary.main",
+                      },
+                    }}
+                  />
+                  {!isCreateMode && id && (
+                    <Tab
+                      label="Change Log"
+                      value="changelog"
+                      sx={{
+                        color: "inherit",
+                        fontWeight: 400,
+                        "&.Mui-selected": {
+                          color: "primary.main",
+                        },
+                      }}
+                    />
+                  )}
                 </Tabs>
                 <Box sx={{ flex: 1 }} />
                 {activeTab === "editor" && (
@@ -1335,8 +1386,18 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
             setAiEditDialogOpen(false);
             setAiEditPrompt("");
             setAiEditTemplateVars(undefined);
+            setAiEditError(null);
+            setAiErrorDetails([]);
           }}
           onEdit={handleAIEdit}
+          error={aiEditError}
+          onErrorClear={() => {
+            setAiEditError(null);
+            setAiErrorDetails([]);
+          }}
+          onViewErrorDetails={
+            aiErrorDetails.length > 0 ? () => showErrorModal(aiErrorDetails) : undefined
+          }
           contentTitle={formik.values.name || "Untitled"}
           currentContent={formik.values}
           variant="email-template"
@@ -1486,7 +1547,13 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         onCreate={handleAIDraftCreate}
         isLoading={aiDraftLoading}
         error={aiDraftError}
-        onErrorClear={() => setAiDraftError(null)}
+        onErrorClear={() => {
+          setAiDraftError(null);
+          setAiErrorDetails([]);
+        }}
+        onViewErrorDetails={
+          aiErrorDetails.length > 0 ? () => showErrorModal(aiErrorDetails) : undefined
+        }
         initialValues={{
           language: formik.values.language || "",
           emailGroupId: formik.values.emailGroupId || undefined,

@@ -12,6 +12,7 @@ import { TranslationType } from "@components/translate-dialog";
 import { useRequestContext } from "@providers/request-provider";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { useLayout } from "@providers/layout-provider";
+import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { showApiError } from "@utils/api-error-parser";
 import {
   getContentLengthSettings,
@@ -104,6 +105,7 @@ export const ContentEdit = (props: ContentEditProps) => {
   const userInfo = useUserInfo();
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
+  const { Show: showErrorModal } = useErrorDetailsModal();
   const { selectedLanguage } = useGlobalLanguageFilter();
   const { setFullWidth } = useLayout();
 
@@ -185,6 +187,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     referenceContentId?: number | null;
   } | null>(null);
   const [aiEditPrompt, setAiEditPrompt] = useState<string>("");
+  const [aiErrorDetails, setAiErrorDetails] = useState<string[]>([]);
   const [aiCoverDialogOpen, setAiCoverDialogOpen] = useState(false);
   const [aiCoverDialogMode, setAiCoverDialogMode] = useState<"generate" | "edit">("generate");
   const [coverImageRefreshKey, setCoverImageRefreshKey] = useState<string | number | null>(null);
@@ -329,6 +332,13 @@ export const ContentEdit = (props: ContentEditProps) => {
         navigate("/content/new", { replace: true });
       }
     } catch (error) {
+      const parsed = showApiError(
+        error,
+        notificationsService,
+        showErrorModal,
+        "AI draft creation failed"
+      );
+      setAiErrorDetails(parsed.details.length > 0 ? [parsed.message, ...parsed.details] : []);
       setAiDraftDialogOpen(true);
     } finally {
       // Small delay to let completion animation play
@@ -348,6 +358,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     requiredMediaPaths?: string[]
   ) => {
     setAiEditPrompt(prompt);
+    setAiErrorDetails([]);
     setAiEditDialogOpen(false);
 
     setAiProgressType("edit");
@@ -379,7 +390,8 @@ export const ContentEdit = (props: ContentEditProps) => {
       });
       setAiEditPrompt("");
     } catch (error) {
-      showApiError(error, notificationsService, undefined, "AI edit failed");
+      const parsed = showApiError(error, notificationsService, showErrorModal, "AI edit failed");
+      setAiErrorDetails(parsed.details.length > 0 ? [parsed.message, ...parsed.details] : []);
       setAiEditDialogOpen(true);
     } finally {
       // Small delay to let completion animation play
@@ -421,6 +433,13 @@ export const ContentEdit = (props: ContentEditProps) => {
 
       setAiOperationComplete(true);
     } catch (error) {
+      const parsed = showApiError(
+        error,
+        notificationsService,
+        showErrorModal,
+        "AI cover generation failed"
+      );
+      setAiErrorDetails(parsed.details.length > 0 ? [parsed.message, ...parsed.details] : []);
       setAiCoverDialogOpen(true);
     } finally {
       setTimeout(() => {
@@ -485,6 +504,13 @@ export const ContentEdit = (props: ContentEditProps) => {
 
       setAiOperationComplete(true);
     } catch (error) {
+      const parsed = showApiError(
+        error,
+        notificationsService,
+        showErrorModal,
+        "AI cover edit failed"
+      );
+      setAiErrorDetails(parsed.details.length > 0 ? [parsed.message, ...parsed.details] : []);
       setAiCoverDialogOpen(true);
     } finally {
       setTimeout(() => {
@@ -1605,6 +1631,9 @@ export const ContentEdit = (props: ContentEditProps) => {
         isLoading={aiContentOps.isLoading}
         error={aiContentOps.error}
         onErrorClear={aiContentOps.clearError}
+        onViewErrorDetails={
+          aiErrorDetails.length > 0 ? () => showErrorModal(aiErrorDetails) : undefined
+        }
         initialValues={aiDraftFormValues || undefined}
       />
 
@@ -1619,6 +1648,9 @@ export const ContentEdit = (props: ContentEditProps) => {
         isLoading={aiContentOps.isLoading}
         error={aiContentOps.error}
         onErrorClear={aiContentOps.clearError}
+        onViewErrorDetails={
+          aiErrorDetails.length > 0 ? () => showErrorModal(aiErrorDetails) : undefined
+        }
         initialPrompt={aiEditPrompt}
         contentTitle={contentFormOps.formik.values.title || "Untitled"}
         currentContent={contentFormOps.formik.values}
@@ -1639,6 +1671,9 @@ export const ContentEdit = (props: ContentEditProps) => {
           isLoading={aiContentOps.isLoading}
           error={aiContentOps.error}
           onErrorClear={aiContentOps.clearError}
+          onViewErrorDetails={
+            aiErrorDetails.length > 0 ? () => showErrorModal(aiErrorDetails) : undefined
+          }
         />
       )}
 

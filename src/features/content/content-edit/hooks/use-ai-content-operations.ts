@@ -130,7 +130,7 @@ export const useAIContentOperations = (): AIContentOperations => {
       const errorMessage = extractErrorMessage(err);
       setError(errorMessage);
       console.error("Failed to create AI draft:", err);
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -182,7 +182,7 @@ export const useAIContentOperations = (): AIContentOperations => {
       const errorMessage = extractErrorMessage(err);
       setError(errorMessage);
       console.error("Failed to edit content with AI:", err);
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -202,7 +202,7 @@ export const useAIContentOperations = (): AIContentOperations => {
       const errorMessage = extractErrorMessage(err);
       setError(errorMessage);
       console.error("Failed to generate AI cover image:", err);
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -219,7 +219,7 @@ export const useAIContentOperations = (): AIContentOperations => {
       const errorMessage = extractErrorMessage(err);
       setError(errorMessage);
       console.error("Failed to edit AI cover image:", err);
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setIsLoading(false);
     }

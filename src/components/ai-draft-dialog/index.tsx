@@ -69,6 +69,7 @@ export interface AIDraftDialogProps {
   isLoading?: boolean;
   error?: string | null;
   onErrorClear?: () => void;
+  onViewErrorDetails?: () => void;
   initialValues?: {
     language?: string;
     contentType?: string;
@@ -88,6 +89,7 @@ export const AIDraftDialog = ({
   isLoading = false,
   error,
   onErrorClear,
+  onViewErrorDetails,
   initialValues,
 }: AIDraftDialogProps) => {
   const { config } = useConfig();
@@ -746,7 +748,17 @@ export const AIDraftDialog = ({
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ mt: 3 }}>
+            <Alert
+              severity="error"
+              sx={{ mt: 3 }}
+              action={
+                onViewErrorDetails ? (
+                  <Button color="error" size="small" onClick={onViewErrorDetails}>
+                    View Details
+                  </Button>
+                ) : undefined
+              }
+            >
               {error}
             </Alert>
           )}

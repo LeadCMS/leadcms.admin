@@ -57,6 +57,7 @@ export interface AIEmailDraftDialogProps {
   isLoading?: boolean;
   error?: string | null;
   onErrorClear?: () => void;
+  onViewErrorDetails?: () => void;
   initialValues?: {
     language?: string;
     emailGroupId?: number;
@@ -74,6 +75,7 @@ export const AIEmailDraftDialog = ({
   isLoading = false,
   error,
   onErrorClear,
+  onViewErrorDetails,
   initialValues,
 }: AIEmailDraftDialogProps) => {
   const { config } = useConfig();
@@ -736,7 +738,17 @@ export const AIEmailDraftDialog = ({
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ mt: 3 }}>
+            <Alert
+              severity="error"
+              sx={{ mt: 3 }}
+              action={
+                onViewErrorDetails ? (
+                  <Button color="error" size="small" onClick={onViewErrorDetails}>
+                    View Details
+                  </Button>
+                ) : undefined
+              }
+            >
               {error}
             </Alert>
           )}

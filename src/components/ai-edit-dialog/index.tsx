@@ -55,6 +55,7 @@ export interface AIEditDialogProps {
   isLoading?: boolean;
   error?: string | null;
   onErrorClear?: () => void;
+  onViewErrorDetails?: () => void;
   initialPrompt?: string;
   contentTitle?: string;
   currentContent?: unknown;
@@ -74,6 +75,7 @@ export const AIEditDialog = ({
   isLoading = false,
   error,
   onErrorClear,
+  onViewErrorDetails,
   initialPrompt = "",
   contentTitle,
   currentContent,
@@ -630,7 +632,17 @@ export const AIEditDialog = ({
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ mt: 3 }}>
+            <Alert
+              severity="error"
+              sx={{ mt: 3 }}
+              action={
+                onViewErrorDetails ? (
+                  <Button color="error" size="small" onClick={onViewErrorDetails}>
+                    View Details
+                  </Button>
+                ) : undefined
+              }
+            >
               {error}
             </Alert>
           )}

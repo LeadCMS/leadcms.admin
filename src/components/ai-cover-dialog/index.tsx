@@ -35,6 +35,7 @@ export interface AICoverDialogProps {
   isLoading?: boolean;
   error?: string | null;
   onErrorClear?: () => void;
+  onViewErrorDetails?: () => void;
 }
 
 const MAX_SAMPLE_IMAGES = 5;
@@ -53,6 +54,7 @@ export const AICoverDialog = ({
   isLoading = false,
   error,
   onErrorClear,
+  onViewErrorDetails,
 }: AICoverDialogProps) => {
   const [prompt, setPrompt] = useState("");
   const [sampleImagePaths, setSampleImagePaths] = useState<string[]>([]);
@@ -334,7 +336,17 @@ export const AICoverDialog = ({
           </Stack>
 
           {error && (
-            <Alert severity="error" sx={{ mt: 3 }}>
+            <Alert
+              severity="error"
+              sx={{ mt: 3 }}
+              action={
+                onViewErrorDetails ? (
+                  <Button color="error" size="small" onClick={onViewErrorDetails}>
+                    View Details
+                  </Button>
+                ) : undefined
+              }
+            >
               {error}
             </Alert>
           )}
