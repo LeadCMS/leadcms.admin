@@ -1736,6 +1736,13 @@ export interface CampaignPreviewRequestDto {
    * @example 1
    */
   contactId?: number | null;
+  /**
+   * Contact Type
+   * @example "Full"
+   */
+  contactType?: "Full" | "Standard" | "Basic" | "Minimal" | null;
+  /** Custom Template Parameters */
+  customTemplateParameters?: Record<string, any>;
 }
 
 export interface CampaignPreviewResultDto {
@@ -1763,42 +1770,7 @@ export interface CampaignPreviewResultDto {
    * @example 1
    */
   invalidEmailCount?: number;
-  /**
-   * Rendered Subject
-   * @example "string"
-   */
-  renderedSubject?: string;
-  /**
-   * Rendered Body
-   * @example "string"
-   */
-  renderedBody?: string;
-  /**
-   * From Email
-   * @example "string"
-   */
-  fromEmail?: string;
-  /**
-   * From Name
-   * @example "string"
-   */
-  fromName?: string;
-  /**
-   * Preview Contact Id
-   * @format int32
-   * @example 1
-   */
-  previewContactId?: number;
-  /**
-   * Preview Contact Name
-   * @example "string"
-   */
-  previewContactName?: string;
-  /**
-   * Preview Contact Email
-   * @example "string"
-   */
-  previewContactEmail?: string;
+  templatePreview?: EmailTemplatePreviewResultDto;
 }
 
 export interface CampaignRecipientDetailsDto {
@@ -1869,29 +1841,6 @@ export interface CampaignRecipientDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
-}
-
-export interface CampaignSendTestDto {
-  /**
-   * Email Template Id
-   * @format int32
-   * @example 1
-   */
-  emailTemplateId: number;
-  /**
-   * Contact Id
-   * @format int32
-   * @example 1
-   */
-  contactId: number;
-  /**
-   * Email
-   * @format email
-   * @minLength 1
-   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
-   * @example "example@example.com"
-   */
-  email: string;
 }
 
 export interface CampaignStatisticsDto {
@@ -6752,43 +6701,6 @@ export interface EmailGroupUpdateDto {
   translationKey?: string | null;
 }
 
-export interface EmailTemplateConvertFormatRequest {
-  /**
-   * Body Template
-   * @minLength 1
-   * @example "string"
-   */
-  bodyTemplate: string;
-  /**
-   * Current Format
-   * @example "Html"
-   */
-  currentFormat: "Html" | "Mjml";
-  /**
-   * Target Format
-   * @example "Html"
-   */
-  targetFormat: "Html" | "Mjml";
-}
-
-export interface EmailTemplateConvertFormatResponse {
-  /**
-   * Body Template
-   * @example "string"
-   */
-  bodyTemplate?: string;
-  /**
-   * Format
-   * @example "Html"
-   */
-  format?: "Html" | "Mjml";
-  /**
-   * Ai Powered
-   * @example true
-   */
-  aiPowered?: boolean;
-}
-
 export interface EmailTemplateCreateDto {
   /**
    * Name
@@ -6808,11 +6720,6 @@ export interface EmailTemplateCreateDto {
    * @example "string"
    */
   bodyTemplate: string;
-  /**
-   * Format
-   * @example "Html"
-   */
-  format?: "Html" | "Mjml";
   /**
    * Category
    * @example "General"
@@ -6880,11 +6787,6 @@ export interface EmailTemplateDetailsDto {
    * @example "string"
    */
   bodyTemplate: string;
-  /**
-   * Format
-   * @example "Html"
-   */
-  format?: "Html" | "Mjml";
   /**
    * Category
    * @example "General"
@@ -6983,11 +6885,6 @@ export interface EmailTemplateEditRequest {
    */
   bodyTemplate?: string | null;
   /**
-   * Format
-   * @example "Html"
-   */
-  format?: "Html" | "Mjml" | null;
-  /**
    * Category
    * @example "General"
    */
@@ -7061,7 +6958,8 @@ export interface EmailTemplateGenerationRequest {
   /**
    * Email Group Id
    * @format int32
-   * @minLength 1
+   * @min 1
+   * @max 2147483647
    * @example 1
    */
   emailGroupId: number;
@@ -7071,11 +6969,6 @@ export interface EmailTemplateGenerationRequest {
    * @example "string"
    */
   prompt: string;
-  /**
-   * Format
-   * @example "Html"
-   */
-  format?: "Html" | "Mjml" | null;
   /**
    * Category
    * @example "General"
@@ -7105,6 +6998,142 @@ export interface EmailTemplateGenerationRequest {
   templateVariables?: Record<string, string>;
 }
 
+export interface EmailTemplatePreviewRequestDto {
+  /**
+   * Subject
+   * @minLength 1
+   * @example "string"
+   */
+  subject: string;
+  /**
+   * Body Template
+   * @minLength 1
+   * @example "string"
+   */
+  bodyTemplate: string;
+  /**
+   * From Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  fromEmail: string;
+  /**
+   * From Name
+   * @minLength 1
+   * @example "string"
+   */
+  fromName: string;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number | null;
+  /**
+   * Contact Type
+   * @example "Full"
+   */
+  contactType?: "Full" | "Standard" | "Basic" | "Minimal" | null;
+  /** Custom Template Parameters */
+  customTemplateParameters?: Record<string, any>;
+}
+
+export interface EmailTemplatePreviewResultDto {
+  /**
+   * Rendered Subject
+   * @example "string"
+   */
+  renderedSubject?: string;
+  /**
+   * Rendered Body
+   * @example "string"
+   */
+  renderedBody?: string;
+  /**
+   * From Email
+   * @example "string"
+   */
+  fromEmail?: string;
+  /**
+   * From Name
+   * @example "string"
+   */
+  fromName?: string;
+  /**
+   * Preview Contact Id
+   * @format int32
+   * @example 1
+   */
+  previewContactId?: number;
+  /**
+   * Preview Contact Name
+   * @example "string"
+   */
+  previewContactName?: string;
+  /**
+   * Preview Contact Email
+   * @example "string"
+   */
+  previewContactEmail?: string;
+}
+
+export interface EmailTemplateSendTestDto {
+  /**
+   * Subject
+   * @minLength 1
+   * @example "string"
+   */
+  subject: string;
+  /**
+   * Body Template
+   * @minLength 1
+   * @example "string"
+   */
+  bodyTemplate: string;
+  /**
+   * From Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  fromEmail: string;
+  /**
+   * From Name
+   * @minLength 1
+   * @example "string"
+   */
+  fromName: string;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number | null;
+  /**
+   * Contact Type
+   * @example "Full"
+   */
+  contactType?: "Full" | "Standard" | "Basic" | "Minimal" | null;
+  /** Custom Template Parameters */
+  customTemplateParameters?: Record<string, any>;
+  /**
+   * Recipient Email
+   * @format email
+   * @minLength 1
+   * @pattern ^([\w\.\-]+)@([\w\-]+)((\.(\w){1,63})+)$
+   * @example "example@example.com"
+   */
+  recipientEmail: string;
+}
+
 export interface EmailTemplateUpdateDto {
   /**
    * Name
@@ -7124,11 +7153,6 @@ export interface EmailTemplateUpdateDto {
    * @example "string"
    */
   bodyTemplate?: string | null;
-  /**
-   * Format
-   * @example "Html"
-   */
-  format?: "Html" | "Mjml" | null;
   /**
    * Category
    * @example "General"
@@ -10457,27 +10481,6 @@ export class Api<
         method: "GET",
         secure: true,
         format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Campaigns
-     * @name CampaignsSendTestCreate
-     * @request POST:/api/campaigns/send-test
-     * @secure
-     */
-    campaignsSendTestCreate: (
-      data: CampaignSendTestDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, ProblemDetails>({
-        path: `/api/campaigns/send-test`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
         ...params,
       }),
 
@@ -15834,28 +15837,6 @@ export class Api<
      * No description
      *
      * @tags EmailTemplates
-     * @name EmailTemplatesConvertFormatCreate
-     * @request POST:/api/email-templates/convert-format
-     * @secure
-     */
-    emailTemplatesConvertFormatCreate: (
-      data: EmailTemplateConvertFormatRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<EmailTemplateConvertFormatResponse, ProblemDetails>({
-        path: `/api/email-templates/convert-format`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags EmailTemplates
      * @name EmailTemplatesCreate
      * @request POST:/api/email-templates
      * @secure
@@ -15950,6 +15931,49 @@ export class Api<
         path: `/api/email-templates/${id}`,
         method: "DELETE",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesPreviewCreate
+     * @request POST:/api/email-templates/preview
+     * @secure
+     */
+    emailTemplatesPreviewCreate: (
+      data: EmailTemplatePreviewRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<EmailTemplatePreviewResultDto, ProblemDetails>({
+        path: `/api/email-templates/preview`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesSendTestCreate
+     * @request POST:/api/email-templates/send-test
+     * @secure
+     */
+    emailTemplatesSendTestCreate: (
+      data: EmailTemplateSendTestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, ProblemDetails>({
+        path: `/api/email-templates/send-test`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         ...params,
       }),
 

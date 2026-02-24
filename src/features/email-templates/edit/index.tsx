@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";
 import { useLayout } from "@providers/layout-provider";
@@ -8,7 +8,6 @@ import { useRequestContext } from "@providers/request-provider";
 import {
   EmailTemplateDetailsDto,
   EmailTemplateEditRequest,
-  EmailTemplateConvertFormatRequest,
   EmailTemplateGenerationRequest,
   HttpResponse,
   ProblemDetails,
@@ -42,7 +41,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Backdrop,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import useLocalStorage from "use-local-storage";
@@ -61,15 +59,14 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  ArrowRightLeft,
 } from "lucide-react";
-import { GrapesEmailEditor } from "@components/grapes-email-editor";
 import { HtmlVisualEditor } from "@components/html-visual-editor";
-import { TemplatePreview, detectFormat, normalizePlaceholders } from "@components/mjml-preview";
-import MonacoEditor, { DiffEditor as MonacoDiffEditor } from "@monaco-editor/react";
+import { TemplatePreview, normalizePlaceholders } from "@components/template-preview";
+import MonacoEditor, { DiffEditor as MonacoDiffEditor, loader } from "@monaco-editor/react";
 import { TranslateDialog, TranslationType } from "@components/translate-dialog";
 import { AIEditDialog } from "@components/ai-edit-dialog";
 import { UnifiedAIProgress } from "@components/unified-ai-progress";
+import { getEmailOutputChars, charsToTokens } from "@utils/ai-token-estimation";
 import { AIEmailDraftDialog } from "@components/ai-email-draft-dialog";
 import ContentLanguageSwitcher, { LanguageHighlights } from "@components/content-language-switcher";
 import { EmailTemplateChangeLog } from "./email-template-change-log";
@@ -79,6 +76,16 @@ import {
   getEmailTemplateCategoryNote,
 } from "@utils/email-template-category";
 import { showApiError } from "@utils/api-error-parser";
+
+/**
+ * Pin Monaco to 0.52.0 to avoid the "InstantiationService has been
+ * disposed" regression shipped in 0.55.x.
+ */
+loader.config({
+  paths: {
+    vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs",
+  },
+});
 
 /**
  * Wrapper around MonacoDiffEditor that prevents the
@@ -243,10 +250,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const saveModeRef = useRef<"stay" | "close">("close");
 
-  // Template format: Html or Mjml
-  const [selectedFormat, setSelectedFormat] = useState<"Html" | "Mjml">("Mjml");
-  const [isConverting, setIsConverting] = useState(false);
-  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [aiDraftDialogOpen, setAiDraftDialogOpen] = useState(false);
   const [aiDraftError, setAiDraftError] = useState<string | null>(null);
   const [aiDraftLoading, setAiDraftLoading] = useState(false);
@@ -339,14 +342,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     }
   }, [formik.values.bodyTemplate]);
 
-  // Detect template format (Html vs Mjml) from content or API field
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const apiFormat = (formik.values as any).format as string | undefined;
-  const templateFormat = useMemo(
-    () => detectFormat(formik.values.bodyTemplate || "", apiFormat),
-    [formik.values.bodyTemplate, apiFormat]
-  );
-
   // Set defaults for new templates (create or AI draft)
   useEffect(() => {
     if (!isCreateMode && !isAIDraftRoute) return;
@@ -393,10 +388,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         }
         await formik.setValues(resp.data);
         originalBodyRef.current = rawBody;
-        const body = normalizedBody;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const apiFmt = (resp.data as any).format;
-        setSelectedFormat(detectFormat(body, apiFmt));
         if (resp.data.emailGroup?.name) {
           setEmailGroupDisplayName(resp.data.emailGroup.name);
         }
@@ -427,10 +418,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         data.translationKey = null;
         data.bodyTemplate = normalizePlaceholders(data.bodyTemplate || "");
         await formik.setValues(data);
-        const body = data.bodyTemplate;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const apiFmt = (resp.data as any).format;
-        setSelectedFormat(detectFormat(body, apiFmt));
         if (resp.data.emailGroup?.name) {
           setEmailGroupDisplayName(resp.data.emailGroup.name);
         }
@@ -460,7 +447,12 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       if (translationType === "AITranslation") {
         setAiProgressType("translation");
         setAiOperationComplete(false);
-        setAiProgressProps({ targetLanguage: routeTargetLanguage });
+        const cat = formik.values.category;
+        const translationChars = getEmailOutputChars("Html", cat);
+        setAiProgressProps({
+          targetLanguage: routeTargetLanguage,
+          estimatedOutputTokens: charsToTokens(translationChars),
+        });
         setAiProgressOpen(true);
         try {
           const resp = await client.api.emailTemplatesAiTranslationDraftDetail(
@@ -475,9 +467,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
           resp.data.bodyTemplate = body;
           delete (resp.data as unknown as Record<string, unknown>).id;
           await formik.setValues(resp.data);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const apiFmt = (resp.data as any).format;
-          setSelectedFormat(detectFormat(body, apiFmt));
           setWasModified(true);
           if (resp.data.emailGroup?.name) {
             setEmailGroupDisplayName(resp.data.emailGroup.name);
@@ -502,9 +491,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
           resp.data.bodyTemplate = body;
           delete (resp.data as unknown as Record<string, unknown>).id;
           await formik.setValues(resp.data);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const apiFmt = (resp.data as any).format;
-          setSelectedFormat(detectFormat(body, apiFmt));
           setWasModified(true);
           if (resp.data.emailGroup?.name) {
             setEmailGroupDisplayName(resp.data.emailGroup.name);
@@ -560,8 +546,11 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     setAiEditDialogOpen(false);
     setAiProgressType("edit");
     setAiOperationComplete(false);
+    const cat = formik.values.category;
+    const editChars = getEmailOutputChars("Html", cat);
     setAiProgressProps({
       contentTitle: formik.values.name || "Untitled",
+      estimatedOutputTokens: charsToTokens(editChars),
     });
     setAiProgressOpen(true);
 
@@ -570,7 +559,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         name: formik.values.name,
         subject: formik.values.subject,
         bodyTemplate: formik.values.bodyTemplate,
-        format: selectedFormat,
         category: formik.values.category || "General",
         fromEmail: formik.values.fromEmail,
         fromName: formik.values.fromName,
@@ -619,55 +607,11 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     navigate(`/email-templates/${id}/translate/${targetLanguage}`);
   };
 
-  const convertTargetFormat: "Html" | "Mjml" = selectedFormat === "Html" ? "Mjml" : "Html";
-
-  /** Convert format for saved records via API */
-  const handleConvertFormat = async () => {
-    setConvertDialogOpen(false);
-    const body = formik.values.bodyTemplate || "";
-    if (!body.trim()) {
-      notificationsService.error("No body content to convert");
-      return;
-    }
-    setIsConverting(true);
-    setAiProgressType("edit");
-    setAiOperationComplete(false);
-    setAiProgressProps({ contentTitle: "Format Conversion" });
-    setAiProgressOpen(true);
-    try {
-      const req: EmailTemplateConvertFormatRequest = {
-        bodyTemplate: body,
-        currentFormat: selectedFormat,
-        targetFormat: convertTargetFormat,
-      };
-      const resp = await client.api.emailTemplatesConvertFormatCreate(req);
-      setAiOperationComplete(true);
-      if (resp.data.bodyTemplate) {
-        formik.setFieldValue("bodyTemplate", resp.data.bodyTemplate);
-      }
-      const fmt = resp.data.format || convertTargetFormat;
-      setSelectedFormat(fmt);
-      formik.setFieldValue("format", fmt);
-      setWasModified(true);
-      setTimeout(() => {
-        setAiProgressOpen(false);
-        setAiOperationComplete(false);
-        notificationsService.success(`Converted to ${fmt} successfully`);
-      }, 500);
-    } catch (error) {
-      setAiProgressOpen(false);
-      showApiError(error, notificationsService, showErrorModal, "Format conversion failed");
-    } finally {
-      setIsConverting(false);
-    }
-  };
-
   /** Create with AI handler */
   const handleAIDraftCreate = async (
     language: string,
     emailGroupId: number,
     prompt: string,
-    format: "Html" | "Mjml",
     category: EmailTemplateCategory,
     referenceTemplateId?: number | null,
     templateVariables?: Record<string, string>,
@@ -680,7 +624,10 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     setAiDraftDialogOpen(false);
     setAiProgressType("content");
     setAiOperationComplete(false);
-    setAiProgressProps({});
+    const draftChars = getEmailOutputChars("Html", category);
+    setAiProgressProps({
+      estimatedOutputTokens: charsToTokens(draftChars),
+    });
     setAiProgressOpen(true);
     try {
       let enrichedPrompt = prompt;
@@ -693,7 +640,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         language,
         emailGroupId,
         prompt: enrichedPrompt,
-        format,
         category,
         referenceEmailTemplateId: referenceTemplateId ?? undefined,
         templateVariables: templateVariables ?? undefined,
@@ -703,9 +649,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       const body = normalizePlaceholders(resp.data.bodyTemplate || "");
       resp.data.bodyTemplate = body;
       await formik.setValues(resp.data);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const apiFmt = (resp.data as any).format as string | undefined;
-      setSelectedFormat(detectFormat(body, apiFmt));
       setWasModified(true);
       setAiDraftPrompt("");
       setTimeout(() => {
@@ -815,18 +758,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                   sx={{ mr: 2 }}
                 >
                   Edit with AI
-                </Button>
-              )}
-              {hasAIAssistance && !!id && !readonly && (
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<ArrowRightLeft size={16} />}
-                  onClick={() => setConvertDialogOpen(true)}
-                  disabled={isConverting || formik.isSubmitting}
-                  size="medium"
-                >
-                  Convert Format
                 </Button>
               )}
             </Box>
@@ -1072,27 +1003,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                         }}
                       />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 3 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>Format</InputLabel>
-                        <Select
-                          value={selectedFormat}
-                          label="Format"
-                          disabled={readonly || !!id}
-                          onChange={(e: SelectChangeEvent) => {
-                            type Fmt = "Html" | "Mjml";
-                            const fmt = e.target.value as Fmt;
-                            setSelectedFormat(fmt);
-                            formik.setFieldValue("format", fmt);
-                            formik.setFieldValue("bodyTemplate", "");
-                            setWasModified(true);
-                          }}
-                        >
-                          <MenuItem value="Html">HTML</MenuItem>
-                          <MenuItem value="Mjml">MJML</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
                   </Grid>
                 </Collapse>
               </Box>
@@ -1182,40 +1092,21 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                       minHeight: 0,
                     }}
                   >
-                    {selectedFormat === "Mjml" && (
-                      <Box
-                        sx={{
-                          display: editorMode === "visual" ? "block" : "none",
+                    <Box
+                      sx={{
+                        display: editorMode === "visual" ? "block" : "none",
+                      }}
+                    >
+                      <HtmlVisualEditor
+                        value={formik.values.bodyTemplate || ""}
+                        onChange={(html: string) => {
+                          setWasModified(true);
+                          formik.setFieldValue("bodyTemplate", html);
                         }}
-                      >
-                        <GrapesEmailEditor
-                          value={formik.values.bodyTemplate || ""}
-                          onChange={(mjml) => {
-                            setWasModified(true);
-                            formik.setFieldValue("bodyTemplate", mjml);
-                          }}
-                          disabled={readonly}
-                          height={editorHeight}
-                        />
-                      </Box>
-                    )}
-                    {selectedFormat !== "Mjml" && (
-                      <Box
-                        sx={{
-                          display: editorMode === "visual" ? "block" : "none",
-                        }}
-                      >
-                        <HtmlVisualEditor
-                          value={formik.values.bodyTemplate || ""}
-                          onChange={(html: string) => {
-                            setWasModified(true);
-                            formik.setFieldValue("bodyTemplate", html);
-                          }}
-                          disabled={readonly}
-                          height={editorHeight}
-                        />
-                      </Box>
-                    )}
+                        disabled={readonly}
+                        height={editorHeight}
+                      />
+                    </Box>
                     <Box
                       sx={{
                         display: editorMode === "source" ? "block" : "none",
@@ -1223,7 +1114,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     >
                       <MonacoEditor
                         height={editorHeight}
-                        defaultLanguage={templateFormat === "Mjml" ? "xml" : "html"}
+                        defaultLanguage="html"
                         defaultValue={formik.values.bodyTemplate || ""}
                         onMount={(editor) => {
                           monacoEditorRef.current = editor;
@@ -1248,7 +1139,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     {editorMode === "diff" && (
                       <SafeDiffEditor
                         height={editorHeight}
-                        language={templateFormat === "Mjml" ? "xml" : "html"}
+                        language="html"
                         original={originalBodyRef.current}
                         modified={formik.values.bodyTemplate || ""}
                         onModifiedChange={(val) => {
@@ -1267,7 +1158,10 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                     {editorMode === "preview" && (
                       <TemplatePreview
                         source={formik.values.bodyTemplate || ""}
-                        format={templateFormat}
+                        subject={formik.values.subject || ""}
+                        fromEmail={formik.values.fromEmail || ""}
+                        fromName={formik.values.fromName || ""}
+                        language={formik.values.language || ""}
                         height={editorHeight}
                       />
                     )}
@@ -1440,126 +1334,8 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         isComplete={aiOperationComplete}
         contentTitle={(aiProgressProps.contentTitle as string) || undefined}
         targetLanguage={(aiProgressProps.targetLanguage as string) || undefined}
+        estimatedOutputTokens={(aiProgressProps.estimatedOutputTokens as number) || undefined}
       />
-
-      {/* Convert Format Confirmation Dialog */}
-      <Dialog
-        open={convertDialogOpen}
-        onClose={() => setConvertDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        sx={{
-          "& .MuiDialog-paper": {
-            borderRadius: 3,
-            overflow: "visible",
-          },
-        }}
-      >
-        <Backdrop
-          open={convertDialogOpen}
-          sx={{
-            zIndex: -1,
-            backdropFilter: "blur(4px)",
-            backgroundColor: "rgba(0, 0, 0, 0.3)",
-          }}
-        />
-        <DialogTitle
-          sx={{
-            pb: 2,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                bgcolor: "rgba(255, 255, 255, 0.2)",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <ArrowRightLeft size={20} />
-            </Box>
-            <Box>
-              <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
-                Convert to {convertTargetFormat === "Mjml" ? "MJML" : "HTML"}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: "0.875rem" }}>
-                AI-powered format conversion
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton
-            aria-label="close"
-            onClick={() => setConvertDialogOpen(false)}
-            sx={{
-              position: "absolute",
-              right: 8,
-              top: 8,
-              color: "white",
-              bgcolor: "rgba(255, 255, 255, 0.1)",
-              "&:hover": { bgcolor: "rgba(255, 255, 255, 0.2)" },
-            }}
-          >
-            <X size={20} />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 4 }}>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 3, mb: 2, lineHeight: 1.6, mx: 2 }}
-          >
-            {selectedFormat === "Html" ? (
-              <>
-                Converting from <strong>HTML</strong> to <strong>MJML</strong> will use AI to
-                rebuild the layout using MJML components that best match your current design.
-                Complex CSS or custom HTML structures may be simplified to fit MJML&apos;s component
-                model.
-              </>
-            ) : (
-              <>
-                Converting from <strong>MJML</strong> to <strong>HTML</strong> will render the MJML
-                into its final HTML output. The result is static HTML that can no longer be edited
-                with the MJML visual editor.
-              </>
-            )}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6, mx: 2 }}>
-            All template tokens (e.g. {"{{ variable }}"}) will be preserved.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 4, pb: 4, pt: 2, gap: 2 }}>
-          <Button
-            onClick={() => setConvertDialogOpen(false)}
-            color="inherit"
-            sx={{ minWidth: 100 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConvertFormat}
-            variant="contained"
-            startIcon={<ArrowRightLeft size={16} />}
-            sx={{
-              minWidth: 160,
-              fontWeight: 600,
-              px: 3,
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              "&:hover": {
-                background: "linear-gradient(135deg, #5a6fd8 0%, #694d90 100%)",
-              },
-            }}
-          >
-            Convert
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* AI Draft Dialog */}
       <AIEmailDraftDialog
@@ -1584,7 +1360,6 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
         initialValues={{
           language: formik.values.language || "",
           emailGroupId: formik.values.emailGroupId || undefined,
-          format: selectedFormat,
           category: (formik.values.category || "General") as EmailTemplateCategory,
           prompt: aiDraftPrompt || undefined,
         }}

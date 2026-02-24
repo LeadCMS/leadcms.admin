@@ -20,6 +20,30 @@ export const SYSTEM_PROMPT_OVERHEAD = {
 // Default output estimation when no limit is set
 export const DEFAULT_OUTPUT_CHARS = 25000;
 
+// Email template output estimation by category.
+export const EMAIL_OUTPUT_CHARS: Record<string, number> = {
+  PlainText: 4000,
+  Alert: 5000,
+  Transactional: 7500,
+  SimpleProfessional: 8000,
+  General: 8500,
+  Lifecycle: 9500,
+  Event: 9500,
+  Promotional: 10500,
+  Newsletter: 13000,
+  Digest: 12500,
+};
+
+const DEFAULT_EMAIL_CHARS = 8500;
+
+/**
+ * Returns the estimated output chars for an email template
+ * based on its category.
+ */
+export function getEmailOutputChars(_format: string, category?: string): number {
+  return (category && EMAIL_OUTPUT_CHARS[category]) || DEFAULT_EMAIL_CHARS;
+}
+
 // Token generation speed range (tokens per second)
 export const TOKEN_GENERATION_SPEED = { min: 95, max: 100 };
 

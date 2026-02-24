@@ -47,7 +47,6 @@ export interface AIEmailDraftDialogProps {
     language: string,
     emailGroupId: number,
     prompt: string,
-    format: "Html" | "Mjml",
     category: EmailTemplateCategory,
     referenceTemplateId?: number | null,
     templateVariables?: Record<string, string>,
@@ -62,7 +61,6 @@ export interface AIEmailDraftDialogProps {
     language?: string;
     emailGroupId?: number;
     prompt?: string;
-    format?: "Html" | "Mjml";
     category?: EmailTemplateCategory;
     referenceTemplateId?: number | null;
   };
@@ -84,7 +82,6 @@ export const AIEmailDraftDialog = ({
   const [language, setLanguage] = useState("");
   const [emailGroupId, setEmailGroupId] = useState<number | "">("");
   const [prompt, setPrompt] = useState("");
-  const [format, setFormat] = useState<"Html" | "Mjml">("Mjml");
   const [category, setCategory] = useState<EmailTemplateCategory>("General");
   const [referenceTemplate, setReferenceTemplate] = useState<EmailTemplateDetailsDto | null>(null);
   const [referenceOptions, setReferenceOptions] = useState<EmailTemplateDetailsDto[]>([]);
@@ -150,7 +147,6 @@ export const AIEmailDraftDialog = ({
       setLanguage(initLang || config?.defaultLanguage || "");
 
       setPrompt(initialValues?.prompt || "");
-      setFormat(initialValues?.format || "Mjml");
       setCategory(initialValues?.category || "General");
       setReferenceInput("");
       setReferenceTemplate(null);
@@ -261,7 +257,6 @@ export const AIEmailDraftDialog = ({
         language,
         Number(emailGroupId),
         prompt.trim(),
-        format,
         category,
         referenceTemplate?.id || null,
         Object.keys(vars).length > 0 ? vars : undefined,
@@ -427,22 +422,6 @@ export const AIEmailDraftDialog = ({
                   </Box>
                 </MenuItem>
               ))}
-            </Select>
-          </FormControl>
-
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel>Format</InputLabel>
-            <Select
-              value={format}
-              label="Format"
-              onChange={(e) => {
-                setFormat(e.target.value as "Html" | "Mjml");
-                if (error && onErrorClear) onErrorClear();
-              }}
-              disabled={isLoading}
-            >
-              <MenuItem value="Mjml">MJML (Responsive email builder)</MenuItem>
-              <MenuItem value="Html">HTML (Raw HTML template)</MenuItem>
             </Select>
           </FormControl>
 

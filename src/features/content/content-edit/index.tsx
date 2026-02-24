@@ -77,10 +77,20 @@ import { RemoteValues } from "@components/remote-autocomplete/types";
 import { LanguageSelect } from "@components/language-select";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import MonacoEditor from "@monaco-editor/react";
+import MonacoEditor, { loader } from "@monaco-editor/react";
 import { openSitePreview } from "utils/preview-helper";
 
 import useLocalStorage from "use-local-storage";
+
+/**
+ * Pin Monaco to 0.52.0 to avoid the "InstantiationService has been
+ * disposed" regression shipped in 0.55.x.
+ */
+loader.config({
+  paths: {
+    vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs",
+  },
+});
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
