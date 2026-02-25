@@ -1,21 +1,88 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Autocomplete,
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
   FormControl,
+  IconButton,
   InputLabel,
+  ListSubheader,
   MenuItem,
   Select,
   TextField,
   Typography,
-  IconButton,
-  Chip,
 } from "@mui/material";
 import { Plus, Trash2 } from "lucide-react";
-import { contactFields, getFieldById, getOperatorDisplayName } from "../types";
+import {
+  type AutocompleteKey,
+  type FieldDefinition,
+  contactFields,
+  fieldCategories,
+  getFieldById,
+  getFieldsByCategory,
+  getOperatorDisplayName,
+  noValueOperators,
+} from "../types";
 import { RuleGroup, SegmentRule } from "lib/network/swagger-client";
+import { useRequestContext } from "providers/request-provider";
+import { useConfig } from "@providers/config-provider";
+import { getCountryList, getContinentList } from "utils/general-helper";
+
+type OptionItem = { value: string; label: string };
+
+/** Hook that lazy-loads countries, continents, languages. */
+const useAutocompleteOptions = () => {
+  const context = useRequestContext();
+  const { config } = useConfig();
+  const [options, setOptions] = useState<Record<AutocompleteKey, OptionItem[]>>({
+    countries: [],
+    continents: [],
+    languages: [],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      const [countries, continents] = await Promise.all([
+        getCountryList(context),
+        getContinentList(context),
+      ]);
+
+      if (cancelled) return;
+
+      const countryOpts: OptionItem[] = countries
+        ? Object.entries(countries).map(([code, name]) => ({ value: code, label: name }))
+        : [];
+
+      const continentOpts: OptionItem[] = continents
+        ? Object.entries(continents).map(([code, name]) => ({ value: code, label: name }))
+        : [];
+
+      const langs = config?.languages || [];
+      const languageOpts: OptionItem[] = langs.map((l) => ({
+        value: l.code || "",
+        label: l.name || l.code || "",
+      }));
+
+      setOptions({
+        countries: countryOpts,
+        continents: continentOpts,
+        languages: languageOpts,
+      });
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [context, config]);
+
+  return options;
+};
 
 interface RuleBuilderProps {
   ruleGroup: RuleGroup;
@@ -30,12 +97,160 @@ const formatRuleValue = (value: SegmentRule["value"]) => {
   if (value === null || value === undefined) return "";
   if (Array.isArray(value)) return value.map(String).join(", ");
   if (typeof value === "object") {
-    const recordValue = value as { value?: unknown; values?: unknown };
+    const recordValue = value as {
+      value?: unknown;
+      values?: unknown;
+    };
     if (recordValue.value !== undefined) return String(recordValue.value ?? "");
     if (Array.isArray(recordValue.values)) return recordValue.values.map(String).join(", ");
     return JSON.stringify(value);
   }
   return String(value);
+};
+
+/* ── Typed value editor ── */
+const RuleValueEditor: React.FC<{
+  field: FieldDefinition | undefined;
+  rule: SegmentRule;
+  onValueChange: (value: SegmentRule["value"]) => void;
+  autocompleteOptions: Record<AutocompleteKey, OptionItem[]>;
+}> = ({ field, rule, onValueChange, autocompleteOptions }) => {
+  if (noValueOperators.includes(rule.operator)) return null;
+
+  const fieldType = field?.type ?? "text";
+
+  switch (fieldType) {
+    case "autocomplete": {
+      const key = field?.autocompleteKey;
+      const opts = key ? autocompleteOptions[key] : [];
+      const currentValue = formatRuleValue(rule.value);
+      const selectedOption = opts.find((o) => o.value === currentValue) ?? null;
+
+      return (
+        <Autocomplete
+          size="small"
+          options={opts}
+          getOptionLabel={(o) => (typeof o === "string" ? o : o.label)}
+          isOptionEqualToValue={(option, val) => option.value === val.value}
+          value={selectedOption}
+          onChange={(_e, newVal) => {
+            onValueChange(newVal && typeof newVal !== "string" ? newVal.value : "");
+          }}
+          renderInput={(params) => <TextField {...params} label={field?.name ?? "Value"} />}
+          sx={{ minWidth: 220 }}
+        />
+      );
+    }
+    case "select":
+      return (
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel>Value</InputLabel>
+          <Select
+            value={formatRuleValue(rule.value)}
+            label="Value"
+            onChange={(e) => onValueChange(e.target.value)}
+          >
+            {(field?.options ?? []).map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      );
+
+    case "number":
+      return (
+        <TextField
+          size="small"
+          type="number"
+          label="Value"
+          value={formatRuleValue(rule.value)}
+          onChange={(e) => onValueChange(e.target.value)}
+          sx={{ minWidth: 140 }}
+        />
+      );
+
+    case "date":
+      return (
+        <TextField
+          size="small"
+          type="date"
+          label="Value"
+          value={formatRuleValue(rule.value)}
+          onChange={(e) => onValueChange(e.target.value)}
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ minWidth: 170 }}
+        />
+      );
+
+    case "boolean":
+      /* boolean operators (IsTrue/IsFalse) need no value */
+      return null;
+
+    case "tags":
+      return (
+        <Autocomplete
+          freeSolo
+          multiple
+          size="small"
+          options={[]}
+          value={
+            Array.isArray(rule.value)
+              ? (rule.value as string[])
+              : formatRuleValue(rule.value)
+              ? [formatRuleValue(rule.value)]
+              : []
+          }
+          onChange={(_e, newValue) => {
+            onValueChange(
+              newValue.length === 1 ? newValue[0] : newValue.length === 0 ? "" : newValue
+            );
+          }}
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => {
+              const { key, ...props } = getTagProps({
+                index,
+              });
+              return <Chip key={key} label={option} size="small" {...props} />;
+            })
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Tags" placeholder="Type and press Enter" />
+          )}
+          sx={{ minWidth: 220 }}
+        />
+      );
+
+    default:
+      return (
+        <TextField
+          size="small"
+          label="Value"
+          value={formatRuleValue(rule.value)}
+          onChange={(e) => onValueChange(e.target.value)}
+          sx={{ minWidth: 160 }}
+        />
+      );
+  }
+};
+
+/* ── Grouped field selector items ── */
+const buildFieldMenuItems = () => {
+  const items: React.ReactNode[] = [];
+  for (const category of fieldCategories) {
+    const fields = getFieldsByCategory(category);
+    if (fields.length === 0) continue;
+    items.push(<ListSubheader key={`header-${category}`}>{category}</ListSubheader>);
+    for (const f of fields) {
+      items.push(
+        <MenuItem key={f.id} value={f.id}>
+          {f.name}
+        </MenuItem>
+      );
+    }
+  }
+  return items;
 };
 
 export const RuleBuilder: React.FC<RuleBuilderProps> = ({
@@ -44,23 +259,25 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   title = "Rules",
   description,
 }) => {
+  const fieldMenuItems = React.useMemo(buildFieldMenuItems, []);
+  const autocompleteOptions = useAutocompleteOptions();
+
   const updateRule = (ruleId: string, updatedRule: Partial<SegmentRule>) => {
     const newGroup = { ...ruleGroup };
     const updateRuleInGroup = (group: RuleGroup): boolean => {
       const ruleIndex = group.rules?.findIndex((r) => r.id === ruleId) ?? -1;
       if (ruleIndex !== -1 && group.rules) {
-        group.rules[ruleIndex] = { ...group.rules[ruleIndex], ...updatedRule };
+        group.rules[ruleIndex] = {
+          ...group.rules[ruleIndex],
+          ...updatedRule,
+        };
         return true;
       }
-
       for (const subGroup of group.groups || []) {
-        if (updateRuleInGroup(subGroup)) {
-          return true;
-        }
+        if (updateRuleInGroup(subGroup)) return true;
       }
       return false;
     };
-
     updateRuleInGroup(newGroup);
     onChange(newGroup);
   };
@@ -73,15 +290,11 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         group.rules.splice(ruleIndex, 1);
         return true;
       }
-
       for (const subGroup of group.groups || []) {
-        if (removeRuleFromGroup(subGroup)) {
-          return true;
-        }
+        if (removeRuleFromGroup(subGroup)) return true;
       }
       return false;
     };
-
     removeRuleFromGroup(newGroup);
     onChange(newGroup);
   };
@@ -106,40 +319,43 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           group.rules.push(newRule);
           return true;
         }
-
         for (const subGroup of group.groups || []) {
-          if (findAndAddToGroup(subGroup)) {
-            return true;
-          }
+          if (findAndAddToGroup(subGroup)) return true;
         }
         return false;
       };
-
       findAndAddToGroup(newGroup);
     }
-
     onChange(newGroup);
   };
 
   const updateGroupConnector = (groupId: string, connector: "And" | "Or") => {
     const newGroup = { ...ruleGroup };
-
     const updateConnectorInGroup = (group: RuleGroup): boolean => {
       if (group.id === groupId) {
         group.connector = connector;
         return true;
       }
-
       for (const subGroup of group.groups || []) {
-        if (updateConnectorInGroup(subGroup)) {
-          return true;
-        }
+        if (updateConnectorInGroup(subGroup)) return true;
       }
       return false;
     };
-
     updateConnectorInGroup(newGroup);
     onChange(newGroup);
+  };
+
+  const handleFieldChange = (rule: SegmentRule, newFieldId: string) => {
+    const newField = getFieldById(newFieldId);
+    const ops = newField?.operators ?? [];
+    const currentOpValid = ops.includes(rule.operator);
+    const newOperator = currentOpValid ? rule.operator : ops[0] ?? "Contains";
+    const needsValueReset = !currentOpValid || newField?.type !== getFieldById(rule.fieldId)?.type;
+    updateRule(rule.id, {
+      fieldId: newFieldId,
+      operator: newOperator,
+      value: needsValueReset ? "" : rule.value,
+    });
   };
 
   const renderRule = (rule: SegmentRule) => {
@@ -147,29 +363,35 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     const availableOperators = field?.operators || [];
 
     return (
-      <Box key={rule.id} sx={{ display: "flex", gap: 2, alignItems: "flex-start", mb: 2 }}>
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+      <Box
+        key={rule.id}
+        sx={{
+          display: "flex",
+          gap: 2,
+          alignItems: "flex-start",
+          mb: 2,
+        }}
+      >
+        <FormControl size="small" sx={{ minWidth: 200 }}>
           <InputLabel>Field</InputLabel>
           <Select
             value={rule.fieldId}
             label="Field"
-            onChange={(e) => updateRule(rule.id, { fieldId: e.target.value })}
+            onChange={(e) => handleFieldChange(rule, e.target.value)}
           >
-            {contactFields.map((field) => (
-              <MenuItem key={field.id} value={field.id}>
-                {field.name}
-              </MenuItem>
-            ))}
+            {fieldMenuItems}
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl size="small" sx={{ minWidth: 160 }}>
           <InputLabel>Operator</InputLabel>
           <Select
             value={rule.operator}
             label="Operator"
             onChange={(e) =>
-              updateRule(rule.id, { operator: e.target.value as SegmentRule["operator"] })
+              updateRule(rule.id, {
+                operator: e.target.value as SegmentRule["operator"],
+              })
             }
           >
             {availableOperators.map((op) => (
@@ -180,15 +402,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           </Select>
         </FormControl>
 
-        {!["IsEmpty", "IsNotEmpty", "IsTrue", "IsFalse"].includes(rule.operator) && (
-          <TextField
-            size="small"
-            label="Value"
-            value={formatRuleValue(rule.value)}
-            onChange={(e) => updateRule(rule.id, { value: e.target.value })}
-            sx={{ minWidth: 150 }}
-          />
-        )}
+        <RuleValueEditor
+          field={field}
+          rule={rule}
+          onValueChange={(value) => updateRule(rule.id, { value })}
+          autocompleteOptions={autocompleteOptions}
+        />
 
         <IconButton size="small" onClick={() => removeRule(rule.id)} color="error">
           <Trash2 size={16} />
@@ -199,10 +418,23 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
   const renderRuleGroup = (group: RuleGroup, isRoot = false) => {
     return (
-      <Card key={group.id} sx={{ mb: 2, border: isRoot ? "none" : "1px solid #e0e0e0" }}>
+      <Card
+        key={group.id}
+        sx={{
+          mb: 2,
+          border: isRoot ? "none" : "1px solid #e0e0e0",
+        }}
+      >
         <CardContent>
           {!isRoot && (
-            <Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                mb: 2,
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
               <Typography variant="subtitle2">Group Connector:</Typography>
               <Chip
                 label="AND"

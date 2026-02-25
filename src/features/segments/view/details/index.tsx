@@ -23,7 +23,7 @@ import { Edit, Users } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SegmentsBreadcrumbLinks } from "../../constants";
-import { getFieldById, getOperatorDisplayName } from "../../types";
+import { getFieldDisplayName, getOperatorDisplayName } from "../../types";
 import { useRequestContext } from "providers/request-provider";
 import {
   ContactDetailsDto,
@@ -164,8 +164,7 @@ export const SegmentView = () => {
   }
 
   const formatRuleText = (rule: SegmentRule) => {
-    const field = getFieldById(rule.fieldId);
-    const fieldLabel = field?.name || rule.fieldId;
+    const fieldLabel = getFieldDisplayName(rule.fieldId);
     const operatorLabel = getOperatorDisplayName(rule.operator);
     const valueLabel =
       rule.value === null || rule.value === undefined || rule.value === ""

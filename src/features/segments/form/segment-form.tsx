@@ -34,6 +34,7 @@ import { useRequestContext } from "providers/request-provider";
 import { RuleBuilder } from "../components/rule-builder";
 import { ContactPickerModal } from "../components/contact-picker-modal";
 import { useSaveShortcut } from "@hooks";
+import { getFormattedDateOnly } from "utils/general-helper";
 
 const defaultRuleGroup: RuleGroup = {
   id: "default-group",
@@ -641,20 +642,62 @@ export const SegmentForm = ({
                           sx={{ width: 32, height: 32, borderRadius: "50%" }}
                         />
                       )}
-                      <Box sx={{ flexGrow: 1 }}>
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                         <Typography variant="body1" fontWeight="500">
                           {contact.firstName || contact.lastName
                             ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
                             : "Unnamed Contact"}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" noWrap>
                           {contact.email}
                         </Typography>
                       </Box>
-                      <Box sx={{ textAlign: "right" }}>
-                        {contact.source && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          flexShrink: 0,
+                          flexWrap: "wrap",
+                          justifyContent: "flex-end",
+                        }}
+                      >
+                        {contact.countryCode && (
                           <Chip
-                            label={contact.source}
+                            label={contact.countryCode}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontSize: "0.75rem" }}
+                          />
+                        )}
+                        {(contact.ordersCount ?? 0) > 0 && (
+                          <Chip
+                            label={`${contact.ordersCount} orders`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontSize: "0.75rem" }}
+                          />
+                        )}
+                        {(contact.dealsCount ?? 0) > 0 && (
+                          <Chip
+                            label={`${contact.dealsCount} deals`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontSize: "0.75rem" }}
+                          />
+                        )}
+                        {(contact.totalRevenue ?? 0) > 0 && (
+                          <Chip
+                            label={`$${contact.totalRevenue?.toLocaleString()}`}
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            sx={{ fontSize: "0.75rem" }}
+                          />
+                        )}
+                        {contact.lastOrderDate && (
+                          <Chip
+                            label={`Last order: ${getFormattedDateOnly(contact.lastOrderDate)}`}
                             size="small"
                             variant="outlined"
                             sx={{ fontSize: "0.75rem" }}
