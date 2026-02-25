@@ -293,7 +293,8 @@ export const SegmentForm = ({
         : {
             name,
             description: description || null,
-            type: segmentType,
+            type: (segmentType.charAt(0).toUpperCase() +
+              segmentType.slice(1)) as SegmentCreateDto["type"],
             definition:
               segmentType === "dynamic"
                 ? {

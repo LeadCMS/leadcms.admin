@@ -55,6 +55,7 @@ import {
   Eye,
   Save,
   ChevronDown,
+  Tag,
   Phone,
   Mail,
   Trash2,
@@ -957,6 +958,44 @@ export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: Conta
                     />
                   </Grid>
                 ))}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ py: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Box sx={{ mr: 1.5, display: "flex", color: "primary.main" }}>
+                  <Tag size={20} />
+                </Box>
+                <Typography variant="subtitle1" fontWeight="600">
+                  Tags
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Autocomplete
+                    multiple
+                    freeSolo
+                    size="small"
+                    disabled={isLoading || formik.isSubmitting}
+                    options={[]}
+                    value={formik.values.tags || []}
+                    onChange={(e, value) => {
+                      formik.setFieldValue("tags", value);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Tags"
+                        placeholder="Add tag"
+                        variant="outlined"
+                      />
+                    )}
+                  />
+                </Grid>
               </Grid>
             </AccordionDetails>
           </Accordion>

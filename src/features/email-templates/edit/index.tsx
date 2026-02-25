@@ -1132,7 +1132,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                           lineNumbers: "on",
                           scrollBeyondLastLine: false,
                           wordWrap: "on",
-                          formatOnPaste: true,
+                          formatOnPaste: false,
                         }}
                       />
                     </Box>

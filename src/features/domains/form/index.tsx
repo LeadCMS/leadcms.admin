@@ -28,7 +28,7 @@ const fieldSections = {
     {
       id: "metadata",
       title: "Source Metadata",
-      fields: ["source"],
+      fields: ["source", "tags"],
     },
     {
       id: "dnsRecords",
