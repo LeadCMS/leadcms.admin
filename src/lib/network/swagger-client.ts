@@ -8949,11 +8949,6 @@ export interface SegmentCreateDto {
   definition?: SegmentDefinition;
   /** Contact Ids */
   contactIds?: number[] | null;
-  /**
-   * Tags
-   * @example ["string1","string2"]
-   */
-  tags?: string[] | null;
 }
 
 export interface SegmentDefinition {
@@ -8993,11 +8988,6 @@ export interface SegmentDetailsDto {
   definition?: SegmentDefinition;
   /** Contact Ids */
   contactIds?: number[] | null;
-  /**
-   * Tags
-   * @example ["string1","string2"]
-   */
-  tags?: string[] | null;
   /**
    * Created At
    * @format date-time
@@ -9116,11 +9106,6 @@ export interface SegmentUpdateDto {
   definition?: SegmentDefinition;
   /** Contact Ids */
   contactIds?: number[] | null;
-  /**
-   * Tags
-   * @example ["string1","string2"]
-   */
-  tags?: string[] | null;
 }
 
 export interface SettingCreateDto {
@@ -9141,6 +9126,12 @@ export interface SettingCreateDto {
    * @example "string"
    */
   userId?: string | null;
+  /**
+   * Language
+   * @maxLength 10
+   * @example "string"
+   */
+  language?: string | null;
 }
 
 export interface SettingDetailsDto {
@@ -9166,6 +9157,26 @@ export interface SettingDetailsDto {
    */
   userId?: string | null;
   /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Required
+   * @example true
+   */
+  required?: boolean;
+  /**
+   * Type
+   * @example "string"
+   */
+  type?: string | null;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
    * Created At
    * @format date-time
    * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
@@ -9189,11 +9200,6 @@ export interface SettingDetailsDto {
    * @example "string"
    */
   updatedById?: string | null;
-  /**
-   * Is User Level
-   * @example true
-   */
-  isUserLevel?: boolean;
 }
 
 export interface SettingDetailsDtoInt32SyncResponseDto {
@@ -9278,6 +9284,12 @@ export interface SettingImportDto {
    * @example "string"
    */
   userId?: string | null;
+  /**
+   * Language
+   * @maxLength 10
+   * @example "string"
+   */
+  language?: string | null;
 }
 
 export interface SettingUpdateDto {
@@ -9300,10 +9312,30 @@ export interface SettingValueDto {
    */
   value?: string | null;
   /**
-   * Is User Level
+   * User Id
+   * @example "string"
+   */
+  userId?: string | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Required
    * @example true
    */
-  isUserLevel?: boolean;
+  required?: boolean;
+  /**
+   * Type
+   * @example "string"
+   */
+  type?: string | null;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
 }
 
 export interface StringStringValuesKeyValuePair {
@@ -10039,7 +10071,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.3.18.0
+ * @version 1.4.2.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -17879,14 +17911,62 @@ export class Api<
      * No description
      *
      * @tags Settings
+     * @name SettingsCreate
+     * @request POST:/api/settings
+     * @secure
+     */
+    settingsCreate: (data: SettingCreateDto, params: RequestParams = {}) =>
+      this.request<SettingDetailsDto, void | ProblemDetails>({
+        path: `/api/settings`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name SettingsList
+     * @request GET:/api/settings
+     * @secure
+     */
+    settingsList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SettingDetailsDto[], void | ProblemDetails>({
+        path: `/api/settings`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
      * @name SettingsSystemList
      * @request GET:/api/settings/system
      * @secure
      */
-    settingsSystemList: (params: RequestParams = {}) =>
+    settingsSystemList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<SettingDetailsDto[], void | ProblemDetails>({
         path: `/api/settings/system`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -17900,10 +17980,17 @@ export class Api<
      * @request GET:/api/settings/system/{key}
      * @secure
      */
-    settingsSystemDetail: (key: string, params: RequestParams = {}) =>
+    settingsSystemDetail: (
+      key: string,
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<SettingDetailsDto, void | ProblemDetails>({
         path: `/api/settings/system/${key}`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -17921,6 +18008,7 @@ export class Api<
       key: string,
       query?: {
         value?: string;
+        language?: string;
       },
       params: RequestParams = {},
     ) =>
@@ -17941,10 +18029,17 @@ export class Api<
      * @request DELETE:/api/settings/system/{key}
      * @secure
      */
-    settingsSystemDelete: (key: string, params: RequestParams = {}) =>
+    settingsSystemDelete: (
+      key: string,
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, void | ProblemDetails>({
         path: `/api/settings/system/${key}`,
         method: "DELETE",
+        query: query,
         secure: true,
         ...params,
       }),
@@ -17957,10 +18052,16 @@ export class Api<
      * @request GET:/api/settings/user
      * @secure
      */
-    settingsUserList: (params: RequestParams = {}) =>
+    settingsUserList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<Record<string, SettingValueDto>, void | ProblemDetails>({
         path: `/api/settings/user`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -17974,10 +18075,17 @@ export class Api<
      * @request GET:/api/settings/user/{key}
      * @secure
      */
-    settingsUserDetail: (key: string, params: RequestParams = {}) =>
+    settingsUserDetail: (
+      key: string,
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<SettingValueDto, void | ProblemDetails>({
         path: `/api/settings/user/${key}`,
         method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,
@@ -18142,48 +18250,6 @@ export class Api<
         path: `/api/settings/${id}`,
         method: "DELETE",
         secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Settings
-     * @name SettingsCreate
-     * @request POST:/api/settings
-     * @secure
-     */
-    settingsCreate: (data: SettingCreateDto, params: RequestParams = {}) =>
-      this.request<SettingDetailsDto, void | ProblemDetails>({
-        path: `/api/settings`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Settings
-     * @name SettingsList
-     * @request GET:/api/settings
-     * @secure
-     */
-    settingsList: (
-      query?: {
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<SettingDetailsDto[], void | ProblemDetails>({
-        path: `/api/settings`,
-        method: "GET",
-        query: query,
-        secure: true,
-        format: "json",
         ...params,
       }),
 

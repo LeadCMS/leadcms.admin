@@ -34,6 +34,14 @@ import { toPromiseError } from "@utils/api-error-parser";
 import { settingsFormBreadcrumbLinks, settingsCurrentBreadcrumb } from "./constants";
 import { useLayout } from "@providers/layout-provider";
 import { useConfig } from "@providers/config-provider";
+import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
+import { SiteProfileSettings } from "./components/site-profile-settings";
+import { LeadCaptureSettings } from "./components/lead-capture-settings";
+import {
+  parseEmailListInput,
+  formatEmailListValue,
+  validateEmailArray,
+} from "./components/dynamic-setting-field";
 
 interface SettingsFormData {
   LivePreviewUrlTemplate: string;
@@ -50,13 +58,6 @@ interface SettingsFormData {
   "Identity.RequireNonAlphanumeric": string;
   "Identity.RequiredLength": string;
   "Identity.RequiredUniqueChars": string;
-  "AI.SiteProfile.Topic": string;
-  "AI.SiteProfile.Audience": string;
-  "AI.SiteProfile.BrandVoice": string;
-  "AI.SiteProfile.PreferredTerms": string;
-  "AI.SiteProfile.AvoidTerms": string;
-  "AI.SiteProfile.BlogCover.Instructions": string;
-  "AI.SiteProfile.BlogCover.Size": string;
   "Media.Cover.Dimensions": string;
   "Media.EnableCoverResize": string;
   "Media.MaxDimensions": string;
@@ -64,13 +65,6 @@ interface SettingsFormData {
   "Media.PreferredFormat": string;
   "Media.Quality": string;
   "Media.EnableOptimisation": string;
-  "LeadCapture.Email.Enabled": string;
-  "LeadCapture.Email.To": string;
-  "LeadCapture.Telegram.Enabled": string;
-  "LeadCapture.Telegram.BotId": string;
-  "LeadCapture.Telegram.ChatId": string;
-  "LeadCapture.Slack.Enabled": string;
-  "LeadCapture.Slack.WebhookUrl": string;
 }
 
 const availableVariables = [
@@ -80,37 +74,6 @@ const availableVariables = [
   { name: "{lang+slug}", description: "Language code combined with slug" },
 ];
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const parseEmailListInput = (value: string): string[] => {
-  if (!value || !value.trim()) {
-    return [];
-  }
-
-  const trimmedValue = value.trim();
-
-  try {
-    const parsed = JSON.parse(trimmedValue) as unknown;
-    if (Array.isArray(parsed)) {
-      return parsed
-        .filter((item) => typeof item === "string")
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0);
-    }
-  } catch {
-    // Ignore JSON parsing errors and fall back to splitting
-  }
-
-  return trimmedValue
-    .split(/[,;\n]+/)
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-};
-
-const formatEmailListValue = (emails: string[]): string => {
-  return emails.join(", ");
-};
-
 const Settings = () => {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
@@ -119,6 +82,8 @@ const Settings = () => {
   const { config, reloadConfig } = useConfig();
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
   const hasSiteCapability = config?.capabilities?.includes("Site") || false;
+  const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
+  const languageParam = isLanguageFilterActive ? selectedLanguage : undefined;
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>(() => {
     // Initialize from URL or default
@@ -144,13 +109,6 @@ const Settings = () => {
     "Identity.RequireNonAlphanumeric": "true",
     "Identity.RequiredLength": "8",
     "Identity.RequiredUniqueChars": "1",
-    "AI.SiteProfile.Topic": "",
-    "AI.SiteProfile.Audience": "",
-    "AI.SiteProfile.BrandVoice": "",
-    "AI.SiteProfile.PreferredTerms": "",
-    "AI.SiteProfile.AvoidTerms": "",
-    "AI.SiteProfile.BlogCover.Instructions": "",
-    "AI.SiteProfile.BlogCover.Size": "",
     "Media.Cover.Dimensions": "",
     "Media.EnableCoverResize": "true",
     "Media.MaxDimensions": "",
@@ -158,14 +116,12 @@ const Settings = () => {
     "Media.PreferredFormat": "",
     "Media.Quality": "",
     "Media.EnableOptimisation": "true",
-    "LeadCapture.Email.Enabled": "true",
-    "LeadCapture.Email.To": "",
-    "LeadCapture.Telegram.Enabled": "false",
-    "LeadCapture.Telegram.BotId": "",
-    "LeadCapture.Telegram.ChatId": "",
-    "LeadCapture.Slack.Enabled": "false",
-    "LeadCapture.Slack.WebhookUrl": "",
   });
+  const [allSettings, setAllSettings] = useState<SettingDetailsDto[]>([]);
+  const [dynamicFormData, setDynamicFormData] = useState<Record<string, string>>({});
+  const [dynamicValidationErrors, setDynamicValidationErrors] = useState<
+    Record<string, string | undefined>
+  >({});
   const [coverWidth, setCoverWidth] = useState("");
   const [coverHeight, setCoverHeight] = useState("");
   const [maxWidth, setMaxWidth] = useState("");
@@ -187,7 +143,7 @@ const Settings = () => {
   useEffect(() => {
     loadSettings();
     loadAvailableFormats();
-  }, []);
+  }, [selectedLanguage]);
 
   // Handle tab changes based on capabilities and sync with URL
   useEffect(() => {
@@ -231,7 +187,9 @@ const Settings = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const response = await client.api.settingsSystemList();
+      const response = await client.api.settingsSystemList(
+        languageParam ? { language: languageParam } : undefined
+      );
       const settings = response.data;
 
       const newFormData: SettingsFormData = {
@@ -249,13 +207,6 @@ const Settings = () => {
         "Identity.RequireNonAlphanumeric": "true",
         "Identity.RequiredLength": "8",
         "Identity.RequiredUniqueChars": "1",
-        "AI.SiteProfile.Topic": "",
-        "AI.SiteProfile.Audience": "",
-        "AI.SiteProfile.BrandVoice": "",
-        "AI.SiteProfile.PreferredTerms": "",
-        "AI.SiteProfile.AvoidTerms": "",
-        "AI.SiteProfile.BlogCover.Instructions": "",
-        "AI.SiteProfile.BlogCover.Size": "",
         "Media.Cover.Dimensions": "",
         "Media.EnableCoverResize": "true",
         "Media.MaxDimensions": "",
@@ -263,102 +214,84 @@ const Settings = () => {
         "Media.PreferredFormat": "",
         "Media.Quality": "",
         "Media.EnableOptimisation": "true",
-        "LeadCapture.Email.Enabled": "true",
-        "LeadCapture.Email.To": "",
-        "LeadCapture.Telegram.Enabled": "false",
-        "LeadCapture.Telegram.BotId": "",
-        "LeadCapture.Telegram.ChatId": "",
-        "LeadCapture.Slack.Enabled": "false",
-        "LeadCapture.Slack.WebhookUrl": "",
       };
 
+      const newDynamicData: Record<string, string> = {};
+
       if (settings) {
+        setAllSettings(settings);
+
         settings.forEach((setting: SettingDetailsDto) => {
-          if (setting.key === "LivePreviewUrlTemplate") {
+          const key = setting.key || "";
+
+          // Dynamic settings: AI.SiteProfile.* and LeadCapture.*
+          if (key.startsWith("AI.SiteProfile.") || key.startsWith("LeadCapture.")) {
+            if (setting.type === "email[]") {
+              const emailList = parseEmailListInput(setting.value || "");
+              newDynamicData[key] = formatEmailListValue(emailList);
+            } else {
+              newDynamicData[key] = setting.value || "";
+            }
+            return;
+          }
+
+          // Static settings
+          if (key === "LivePreviewUrlTemplate") {
             newFormData.LivePreviewUrlTemplate = setting.value || "";
-          } else if (setting.key === "PreviewUrlTemplate") {
+          } else if (key === "PreviewUrlTemplate") {
             newFormData.PreviewUrlTemplate = setting.value || "";
-          } else if (setting.key === "Content.MinTitleLength") {
+          } else if (key === "Content.MinTitleLength") {
             newFormData["Content.MinTitleLength"] = setting.value || "";
-          } else if (setting.key === "Content.MaxTitleLength") {
+          } else if (key === "Content.MaxTitleLength") {
             newFormData["Content.MaxTitleLength"] = setting.value || "";
-          } else if (setting.key === "Content.MinDescriptionLength") {
+          } else if (key === "Content.MinDescriptionLength") {
             newFormData["Content.MinDescriptionLength"] = setting.value || "";
-          } else if (setting.key === "Content.MaxDescriptionLength") {
+          } else if (key === "Content.MaxDescriptionLength") {
             newFormData["Content.MaxDescriptionLength"] = setting.value || "";
-          } else if (setting.key === "Content.EnableRealtimeSyntaxValidation") {
+          } else if (key === "Content.EnableRealtimeSyntaxValidation") {
             newFormData["Content.EnableRealtimeSyntaxValidation"] = setting.value || "true";
-          } else if (setting.key === "Content.EnableCodeEditorLineNumbers") {
+          } else if (key === "Content.EnableCodeEditorLineNumbers") {
             newFormData["Content.EnableCodeEditorLineNumbers"] = setting.value || "true";
-          } else if (setting.key === "Identity.RequireDigit") {
+          } else if (key === "Identity.RequireDigit") {
             newFormData["Identity.RequireDigit"] = setting.value || "true";
-          } else if (setting.key === "Identity.RequireUppercase") {
+          } else if (key === "Identity.RequireUppercase") {
             newFormData["Identity.RequireUppercase"] = setting.value || "true";
-          } else if (setting.key === "Identity.RequireLowercase") {
+          } else if (key === "Identity.RequireLowercase") {
             newFormData["Identity.RequireLowercase"] = setting.value || "true";
-          } else if (setting.key === "Identity.RequireNonAlphanumeric") {
+          } else if (key === "Identity.RequireNonAlphanumeric") {
             newFormData["Identity.RequireNonAlphanumeric"] = setting.value || "true";
-          } else if (setting.key === "Identity.RequiredLength") {
+          } else if (key === "Identity.RequiredLength") {
             newFormData["Identity.RequiredLength"] = setting.value || "8";
-          } else if (setting.key === "Identity.RequiredUniqueChars") {
+          } else if (key === "Identity.RequiredUniqueChars") {
             newFormData["Identity.RequiredUniqueChars"] = setting.value || "1";
-          } else if (setting.key === "AI.SiteProfile.Topic") {
-            newFormData["AI.SiteProfile.Topic"] = setting.value || "";
-          } else if (setting.key === "AI.SiteProfile.Audience") {
-            newFormData["AI.SiteProfile.Audience"] = setting.value || "";
-          } else if (setting.key === "AI.SiteProfile.BrandVoice") {
-            newFormData["AI.SiteProfile.BrandVoice"] = setting.value || "";
-          } else if (setting.key === "AI.SiteProfile.PreferredTerms") {
-            newFormData["AI.SiteProfile.PreferredTerms"] = setting.value || "";
-          } else if (setting.key === "AI.SiteProfile.AvoidTerms") {
-            newFormData["AI.SiteProfile.AvoidTerms"] = setting.value || "";
-          } else if (setting.key === "AI.SiteProfile.BlogCover.Instructions") {
-            newFormData["AI.SiteProfile.BlogCover.Instructions"] = setting.value || "";
-          } else if (setting.key === "AI.SiteProfile.BlogCover.Size") {
-            newFormData["AI.SiteProfile.BlogCover.Size"] = setting.value || "";
-          } else if (setting.key === "Media.Cover.Dimensions") {
+          } else if (key === "Media.Cover.Dimensions") {
             newFormData["Media.Cover.Dimensions"] = setting.value || "";
             const rawSize = setting.value || "";
             const [widthValue, heightValue] = rawSize.split(/x/i);
             setCoverWidth(widthValue?.trim() || "");
             setCoverHeight(heightValue?.trim() || "");
-          } else if (setting.key === "Media.EnableCoverResize") {
+          } else if (key === "Media.EnableCoverResize") {
             newFormData["Media.EnableCoverResize"] = setting.value || "true";
-          } else if (setting.key === "Media.Max.Dimensions") {
+          } else if (key === "Media.Max.Dimensions") {
             newFormData["Media.MaxDimensions"] = setting.value || "";
             const rawSize = setting.value || "";
             const [widthValue, heightValue] = rawSize.split(/x/i);
             setMaxWidth(widthValue?.trim() || "");
             setMaxHeight(heightValue?.trim() || "");
-          } else if (setting.key === "Media.Max.FileSize") {
-            // Backend stores in KB, display as-is
+          } else if (key === "Media.Max.FileSize") {
             newFormData["Media.MaxFileSize"] = setting.value || "";
-          } else if (setting.key === "Media.PreferredFormat") {
+          } else if (key === "Media.PreferredFormat") {
             newFormData["Media.PreferredFormat"] = setting.value || "";
-          } else if (setting.key === "Media.Quality") {
+          } else if (key === "Media.Quality") {
             newFormData["Media.Quality"] = setting.value || "";
-          } else if (setting.key === "Media.EnableOptimisation") {
+          } else if (key === "Media.EnableOptimisation") {
             newFormData["Media.EnableOptimisation"] = setting.value || "true";
-          } else if (setting.key === "LeadCapture.Email.Enabled") {
-            newFormData["LeadCapture.Email.Enabled"] = setting.value || "true";
-          } else if (setting.key === "LeadCapture.Email.To") {
-            const emailList = parseEmailListInput(setting.value || "");
-            newFormData["LeadCapture.Email.To"] = formatEmailListValue(emailList);
-          } else if (setting.key === "LeadCapture.Telegram.Enabled") {
-            newFormData["LeadCapture.Telegram.Enabled"] = setting.value || "false";
-          } else if (setting.key === "LeadCapture.Telegram.BotId") {
-            newFormData["LeadCapture.Telegram.BotId"] = setting.value || "";
-          } else if (setting.key === "LeadCapture.Telegram.ChatId") {
-            newFormData["LeadCapture.Telegram.ChatId"] = setting.value || "";
-          } else if (setting.key === "LeadCapture.Slack.Enabled") {
-            newFormData["LeadCapture.Slack.Enabled"] = setting.value || "false";
-          } else if (setting.key === "LeadCapture.Slack.WebhookUrl") {
-            newFormData["LeadCapture.Slack.WebhookUrl"] = setting.value || "";
           }
         });
       }
 
       setFormData(newFormData);
+      setDynamicFormData(newDynamicData);
     } catch (err: unknown) {
       notificationsService.error("Failed to load settings");
     } finally {
@@ -430,40 +363,72 @@ const Settings = () => {
           }
         }
         break;
-      case "LeadCapture.Email.To": {
-        if (formData["LeadCapture.Email.Enabled"] !== "true") {
-          return null;
-        }
-
-        const emails = parseEmailListInput(value);
-        if (value.trim() !== "" && emails.length === 0) {
-          return "Enter at least one valid email";
-        }
-
-        const invalidEmails = emails.filter((email) => !emailRegex.test(email));
-        if (invalidEmails.length > 0) {
-          return "One or more emails are invalid";
-        }
-        break;
-      }
-      case "LeadCapture.Telegram.BotId":
-        if (formData["LeadCapture.Telegram.Enabled"] === "true" && !value.trim()) {
-          return "Bot ID is required when Telegram is enabled";
-        }
-        break;
-      case "LeadCapture.Telegram.ChatId":
-        if (formData["LeadCapture.Telegram.Enabled"] === "true" && !value.trim()) {
-          return "Chat ID is required when Telegram is enabled";
-        }
-        break;
-      case "LeadCapture.Slack.WebhookUrl":
-        if (formData["LeadCapture.Slack.Enabled"] === "true" && !value.trim()) {
-          return "Webhook URL is required when Slack is enabled";
-        }
-        break;
     }
     return null;
   };
+
+  const validateDynamicLeadCapture = (): {
+    errors: Record<string, string | undefined>;
+    globalError: string | undefined;
+    hasErrors: boolean;
+  } => {
+    const errors: Record<string, string | undefined> = {};
+    let hasErrors = false;
+    let globalError: string | undefined;
+
+    const leadSettings = allSettings.filter((s) => s.key?.startsWith("LeadCapture."));
+
+    // Group by strategy to find enabled toggles
+    const strategies = new Map<string, SettingDetailsDto[]>();
+    for (const s of leadSettings) {
+      const parts = (s.key || "").replace("LeadCapture.", "").split(".");
+      const strategy = parts[0];
+      if (!strategy) continue;
+      const existing = strategies.get(strategy);
+      if (existing) {
+        existing.push(s);
+      } else {
+        strategies.set(strategy, [s]);
+      }
+    }
+
+    let anyEnabled = false;
+    for (const [strategy, fields] of strategies) {
+      const enabledKey = `LeadCapture.${strategy}.Enabled`;
+      const isEnabled = dynamicFormData[enabledKey] === "true";
+      if (isEnabled) anyEnabled = true;
+
+      for (const field of fields) {
+        const key = field.key || "";
+        if (key.endsWith(".Enabled")) continue;
+
+        const value = dynamicFormData[key] || "";
+
+        if (isEnabled && field.required && !value.trim()) {
+          const fieldName = key.split(".").slice(-1)[0] || key;
+          errors[key] = `${fieldName} is required when ${strategy} is enabled`;
+          hasErrors = true;
+        }
+
+        if (field.type === "email[]" && value.trim()) {
+          const emailError = validateEmailArray(value);
+          if (emailError) {
+            errors[key] = emailError;
+            hasErrors = true;
+          }
+        }
+      }
+    }
+
+    if (strategies.size > 0 && !anyEnabled) {
+      globalError = "Enable at least one lead capture channel";
+      hasErrors = true;
+    }
+
+    return { errors, globalError, hasErrors };
+  };
+
+  const [leadCaptureGlobalError, setLeadCaptureGlobalError] = useState<string | undefined>();
 
   const validateAllFields = (): boolean => {
     const errors: Partial<SettingsFormData> = {};
@@ -478,12 +443,10 @@ const Settings = () => {
     });
 
     if (hasSiteCapability) {
-      const emailEnabled = formData["LeadCapture.Email.Enabled"] === "true";
-      const telegramEnabled = formData["LeadCapture.Telegram.Enabled"] === "true";
-      const slackEnabled = formData["LeadCapture.Slack.Enabled"] === "true";
-
-      if (!emailEnabled && !telegramEnabled && !slackEnabled) {
-        errors["LeadCapture.Email.To"] = "Enable at least one lead capture channel";
+      const lcResult = validateDynamicLeadCapture();
+      setDynamicValidationErrors(lcResult.errors);
+      setLeadCaptureGlobalError(lcResult.globalError);
+      if (lcResult.hasErrors) {
         hasErrors = true;
       }
     }
@@ -495,7 +458,6 @@ const Settings = () => {
   const getTabsWithErrors = (): string[] => {
     const tabsWithErrors: string[] = [];
 
-    // Content tab fields
     const contentFields: Array<keyof SettingsFormData> = [
       "Content.MinTitleLength",
       "Content.MaxTitleLength",
@@ -505,17 +467,9 @@ const Settings = () => {
       "Content.EnableCodeEditorLineNumbers",
     ];
 
-    // Password tab fields
     const passwordFields: Array<keyof SettingsFormData> = [
       "Identity.RequiredLength",
       "Identity.RequiredUniqueChars",
-    ];
-
-    const leadCaptureFields: Array<keyof SettingsFormData> = [
-      "LeadCapture.Email.To",
-      "LeadCapture.Telegram.BotId",
-      "LeadCapture.Telegram.ChatId",
-      "LeadCapture.Slack.WebhookUrl",
     ];
 
     if (contentFields.some((field) => validationErrors[field])) {
@@ -526,7 +480,9 @@ const Settings = () => {
       tabsWithErrors.push("password");
     }
 
-    if (leadCaptureFields.some((field) => validationErrors[field])) {
+    const hasLeadErrors =
+      leadCaptureGlobalError || Object.values(dynamicValidationErrors).some(Boolean);
+    if (hasLeadErrors) {
       tabsWithErrors.push("leadCapture");
     }
 
@@ -541,7 +497,6 @@ const Settings = () => {
         [field]: value,
       }));
 
-      // Clear previous error and validate new value
       const error = validateField(field, value);
       setValidationErrors((prev) => ({
         ...prev,
@@ -549,32 +504,31 @@ const Settings = () => {
       }));
     };
 
-  const handleToggleChange = (field: keyof SettingsFormData, enabled: boolean) => {
-    const value = enabled ? "true" : "false";
-    setFormData((prev) => ({
+  const handleDynamicChange = (key: string, value: string) => {
+    setDynamicFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [key]: value,
     }));
 
-    if (!enabled) {
-      setValidationErrors((prev) => {
-        const nextErrors = { ...prev };
+    // Clear validation error for this key
+    setDynamicValidationErrors((prev) => ({
+      ...prev,
+      [key]: undefined,
+    }));
 
-        if (field === "LeadCapture.Email.Enabled") {
-          nextErrors["LeadCapture.Email.To"] = undefined;
+    // If toggling off an Enabled switch, clear errors for that strategy
+    if (key.endsWith(".Enabled") && value !== "true") {
+      const prefix = key.replace(".Enabled", ".");
+      setDynamicValidationErrors((prev) => {
+        const next = { ...prev };
+        for (const k of Object.keys(next)) {
+          if (k.startsWith(prefix)) {
+            next[k] = undefined;
+          }
         }
-
-        if (field === "LeadCapture.Telegram.Enabled") {
-          nextErrors["LeadCapture.Telegram.BotId"] = undefined;
-          nextErrors["LeadCapture.Telegram.ChatId"] = undefined;
-        }
-
-        if (field === "LeadCapture.Slack.Enabled") {
-          nextErrors["LeadCapture.Slack.WebhookUrl"] = undefined;
-        }
-
-        return nextErrors;
+        return next;
       });
+      setLeadCaptureGlobalError(undefined);
     }
   };
 
@@ -591,12 +545,30 @@ const Settings = () => {
 
         // Save all settings using batch import
         const settingsToSave = [
-          { key: "LivePreviewUrlTemplate", value: formData.LivePreviewUrlTemplate },
-          { key: "PreviewUrlTemplate", value: formData.PreviewUrlTemplate },
-          { key: "Content.MinTitleLength", value: formData["Content.MinTitleLength"] },
-          { key: "Content.MaxTitleLength", value: formData["Content.MaxTitleLength"] },
-          { key: "Content.MinDescriptionLength", value: formData["Content.MinDescriptionLength"] },
-          { key: "Content.MaxDescriptionLength", value: formData["Content.MaxDescriptionLength"] },
+          {
+            key: "LivePreviewUrlTemplate",
+            value: formData.LivePreviewUrlTemplate,
+          },
+          {
+            key: "PreviewUrlTemplate",
+            value: formData.PreviewUrlTemplate,
+          },
+          {
+            key: "Content.MinTitleLength",
+            value: formData["Content.MinTitleLength"],
+          },
+          {
+            key: "Content.MaxTitleLength",
+            value: formData["Content.MaxTitleLength"],
+          },
+          {
+            key: "Content.MinDescriptionLength",
+            value: formData["Content.MinDescriptionLength"],
+          },
+          {
+            key: "Content.MaxDescriptionLength",
+            value: formData["Content.MaxDescriptionLength"],
+          },
           {
             key: "Content.EnableRealtimeSyntaxValidation",
             value: formData["Content.EnableRealtimeSyntaxValidation"],
@@ -605,15 +577,30 @@ const Settings = () => {
             key: "Content.EnableCodeEditorLineNumbers",
             value: formData["Content.EnableCodeEditorLineNumbers"],
           },
-          { key: "Identity.RequireDigit", value: formData["Identity.RequireDigit"] },
-          { key: "Identity.RequireUppercase", value: formData["Identity.RequireUppercase"] },
-          { key: "Identity.RequireLowercase", value: formData["Identity.RequireLowercase"] },
+          {
+            key: "Identity.RequireDigit",
+            value: formData["Identity.RequireDigit"],
+          },
+          {
+            key: "Identity.RequireUppercase",
+            value: formData["Identity.RequireUppercase"],
+          },
+          {
+            key: "Identity.RequireLowercase",
+            value: formData["Identity.RequireLowercase"],
+          },
           {
             key: "Identity.RequireNonAlphanumeric",
             value: formData["Identity.RequireNonAlphanumeric"],
           },
-          { key: "Identity.RequiredLength", value: formData["Identity.RequiredLength"] },
-          { key: "Identity.RequiredUniqueChars", value: formData["Identity.RequiredUniqueChars"] },
+          {
+            key: "Identity.RequiredLength",
+            value: formData["Identity.RequiredLength"],
+          },
+          {
+            key: "Identity.RequiredUniqueChars",
+            value: formData["Identity.RequiredUniqueChars"],
+          },
         ];
 
         // Add Media settings
@@ -625,59 +612,70 @@ const Settings = () => {
           maxWidth.trim() && maxHeight.trim() ? `${maxWidth.trim()}x${maxHeight.trim()}` : null;
 
         settingsToSave.push(
-          { key: "Media.Cover.Dimensions", value: coverDimensionsValue || "" },
-          { key: "Media.EnableCoverResize", value: formData["Media.EnableCoverResize"] },
-          { key: "Media.Max.Dimensions", value: maxDimensionsValue || "" },
-          { key: "Media.Max.FileSize", value: formData["Media.MaxFileSize"] },
-          { key: "Media.PreferredFormat", value: formData["Media.PreferredFormat"] },
-          { key: "Media.Quality", value: formData["Media.Quality"] },
-          { key: "Media.EnableOptimisation", value: formData["Media.EnableOptimisation"] }
+          {
+            key: "Media.Cover.Dimensions",
+            value: coverDimensionsValue || "",
+          },
+          {
+            key: "Media.EnableCoverResize",
+            value: formData["Media.EnableCoverResize"],
+          },
+          {
+            key: "Media.Max.Dimensions",
+            value: maxDimensionsValue || "",
+          },
+          {
+            key: "Media.Max.FileSize",
+            value: formData["Media.MaxFileSize"],
+          },
+          {
+            key: "Media.PreferredFormat",
+            value: formData["Media.PreferredFormat"],
+          },
+          {
+            key: "Media.Quality",
+            value: formData["Media.Quality"],
+          },
+          {
+            key: "Media.EnableOptimisation",
+            value: formData["Media.EnableOptimisation"],
+          }
         );
 
+        // Add dynamic AI.SiteProfile.* settings
         if (hasAIAssistance) {
-          settingsToSave.push(
-            { key: "AI.SiteProfile.Topic", value: formData["AI.SiteProfile.Topic"] },
-            { key: "AI.SiteProfile.Audience", value: formData["AI.SiteProfile.Audience"] },
-            { key: "AI.SiteProfile.BrandVoice", value: formData["AI.SiteProfile.BrandVoice"] },
-            {
-              key: "AI.SiteProfile.PreferredTerms",
-              value: formData["AI.SiteProfile.PreferredTerms"],
-            },
-            { key: "AI.SiteProfile.AvoidTerms", value: formData["AI.SiteProfile.AvoidTerms"] },
-            {
-              key: "AI.SiteProfile.BlogCover.Instructions",
-              value: formData["AI.SiteProfile.BlogCover.Instructions"],
-            }
-          );
+          for (const setting of allSettings) {
+            const key = setting.key || "";
+            if (!key.startsWith("AI.SiteProfile.")) continue;
+            settingsToSave.push({
+              key,
+              value: dynamicFormData[key] || "",
+            });
+          }
         }
 
+        // Add dynamic LeadCapture.* settings
         if (hasSiteCapability) {
-          const emailList = parseEmailListInput(formData["LeadCapture.Email.To"]);
-          settingsToSave.push(
-            { key: "LeadCapture.Email.Enabled", value: formData["LeadCapture.Email.Enabled"] },
-            { key: "LeadCapture.Email.To", value: JSON.stringify(emailList) },
-            {
-              key: "LeadCapture.Telegram.Enabled",
-              value: formData["LeadCapture.Telegram.Enabled"],
-            },
-            {
-              key: "LeadCapture.Telegram.BotId",
-              value: formData["LeadCapture.Telegram.BotId"],
-            },
-            {
-              key: "LeadCapture.Telegram.ChatId",
-              value: formData["LeadCapture.Telegram.ChatId"],
-            },
-            { key: "LeadCapture.Slack.Enabled", value: formData["LeadCapture.Slack.Enabled"] },
-            {
-              key: "LeadCapture.Slack.WebhookUrl",
-              value: formData["LeadCapture.Slack.WebhookUrl"],
+          for (const setting of allSettings) {
+            const key = setting.key || "";
+            if (!key.startsWith("LeadCapture.")) continue;
+            let value = dynamicFormData[key] || "";
+            if (setting.type === "email[]") {
+              const emailList = parseEmailListInput(value);
+              value = JSON.stringify(emailList);
             }
-          );
+            settingsToSave.push({ key, value });
+          }
         }
+
+        // Set language on each item when a specific language is selected
+        const settingsWithLanguage = settingsToSave.map((s) => ({
+          ...s,
+          language: languageParam || null,
+        }));
 
         // Use the batch import endpoint to save all settings at once
-        const importResult = await client.api.settingsImportCreate(settingsToSave);
+        const importResult = await client.api.settingsImportCreate(settingsWithLanguage);
 
         // Check if there were any failures
         if (importResult.data.failed && importResult.data.failed > 0) {
@@ -748,10 +746,30 @@ const Settings = () => {
       <form>
         <Card>
           <CardContent>
+            {/* Language context alert */}
+            {isLanguageFilterActive ? (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>Language override: {selectedLanguage}</strong> — You are editing
+                  language-specific settings. Only values that differ from the defaults will be
+                  saved. These overrides apply exclusively to <strong>{selectedLanguage}</strong>
+                  -specific operations.
+                </Typography>
+              </Alert>
+            ) : (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>All Languages (global defaults)</strong> — You are editing the default
+                  settings that apply across all languages. To create language-specific overrides,
+                  select a language from the global language filter.
+                </Typography>
+              </Alert>
+            )}
+
             {/* Settings Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 4 }}>
               <Tabs value={activeTab} onChange={handleTabChange}>
-                {hasAIAssistance && <Tab label="Site Profile" value="siteProfile" />}
+                {hasAIAssistance && <Tab label="AI Profile" value="siteProfile" />}
                 <Tab label="Preview" value="preview" />
                 <Tab label="Media" value="media" />
                 {hasSiteCapability && (
@@ -1202,197 +1220,13 @@ const Settings = () => {
 
             {/* Lead Capture Settings Tab */}
             {activeTab === "leadCapture" && hasSiteCapability && (
-              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
-                <Alert severity="info" sx={{ mb: 4 }}>
-                  <Typography variant="body2">
-                    Configure lead capture notifications for email, Telegram, and Slack.
-                  </Typography>
-                </Alert>
-
-                {validationErrors["LeadCapture.Email.To"] ===
-                  "Enable at least one lead capture channel" && (
-                  <Alert severity="error" sx={{ mb: 4 }}>
-                    <Typography variant="body2">
-                      Enable at least one lead capture channel to save settings.
-                    </Typography>
-                  </Alert>
-                )}
-
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                  Email
-                </Typography>
-                <Box
-                  sx={{
-                    mb: 4,
-                    p: 2.5,
-                    backgroundColor: "rgba(0, 0, 0, 0.02)",
-                    borderRadius: 1,
-                  }}
-                >
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData["LeadCapture.Email.Enabled"] === "true"}
-                        onChange={(e) =>
-                          handleToggleChange("LeadCapture.Email.Enabled", e.target.checked)
-                        }
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                          Enable Email Notifications
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Send lead capture notifications via email
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ width: "100%" }}
-                  />
-
-                  <Box sx={{ mt: 2 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={2}
-                      label="Recipient Emails"
-                      value={formData["LeadCapture.Email.To"]}
-                      onChange={handleInputChange("LeadCapture.Email.To")}
-                      placeholder="name@example.com, team@example.com"
-                      helperText={
-                        validationErrors["LeadCapture.Email.To"] ||
-                        "Comma-separated list. Leave empty to use Contact Us recipients."
-                      }
-                      variant="outlined"
-                      size="small"
-                      error={Boolean(validationErrors["LeadCapture.Email.To"])}
-                      disabled={formData["LeadCapture.Email.Enabled"] !== "true"}
-                    />
-                  </Box>
-                </Box>
-
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                  Telegram
-                </Typography>
-                <Box
-                  sx={{
-                    mb: 4,
-                    p: 2.5,
-                    backgroundColor: "rgba(0, 0, 0, 0.02)",
-                    borderRadius: 1,
-                  }}
-                >
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData["LeadCapture.Telegram.Enabled"] === "true"}
-                        onChange={(e) =>
-                          handleToggleChange("LeadCapture.Telegram.Enabled", e.target.checked)
-                        }
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                          Enable Telegram Notifications
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Send lead capture notifications to a Telegram chat
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ width: "100%" }}
-                  />
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="Bot ID"
-                        value={formData["LeadCapture.Telegram.BotId"]}
-                        onChange={handleInputChange("LeadCapture.Telegram.BotId")}
-                        placeholder="123456:ABC-DEF"
-                        helperText={
-                          validationErrors["LeadCapture.Telegram.BotId"] ||
-                          "Required when Telegram is enabled"
-                        }
-                        variant="outlined"
-                        size="small"
-                        error={Boolean(validationErrors["LeadCapture.Telegram.BotId"])}
-                        disabled={formData["LeadCapture.Telegram.Enabled"] !== "true"}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="Chat ID"
-                        value={formData["LeadCapture.Telegram.ChatId"]}
-                        onChange={handleInputChange("LeadCapture.Telegram.ChatId")}
-                        placeholder="-1001234567890"
-                        helperText={
-                          validationErrors["LeadCapture.Telegram.ChatId"] ||
-                          "Required when Telegram is enabled"
-                        }
-                        variant="outlined"
-                        size="small"
-                        error={Boolean(validationErrors["LeadCapture.Telegram.ChatId"])}
-                        disabled={formData["LeadCapture.Telegram.Enabled"] !== "true"}
-                      />
-                    </Grid>
-                  </Grid>
-                </Box>
-
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                  Slack
-                </Typography>
-                <Box
-                  sx={{
-                    mb: 2,
-                    p: 2.5,
-                    backgroundColor: "rgba(0, 0, 0, 0.02)",
-                    borderRadius: 1,
-                  }}
-                >
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData["LeadCapture.Slack.Enabled"] === "true"}
-                        onChange={(e) =>
-                          handleToggleChange("LeadCapture.Slack.Enabled", e.target.checked)
-                        }
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                          Enable Slack Notifications
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Send lead capture notifications via Slack webhook
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ width: "100%" }}
-                  />
-                  <Box sx={{ mt: 2 }}>
-                    <TextField
-                      fullWidth
-                      label="Webhook URL"
-                      value={formData["LeadCapture.Slack.WebhookUrl"]}
-                      onChange={handleInputChange("LeadCapture.Slack.WebhookUrl")}
-                      placeholder="https://hooks.slack.com/services/..."
-                      helperText={
-                        validationErrors["LeadCapture.Slack.WebhookUrl"] ||
-                        "Required when Slack is enabled"
-                      }
-                      variant="outlined"
-                      size="small"
-                      error={Boolean(validationErrors["LeadCapture.Slack.WebhookUrl"])}
-                      disabled={formData["LeadCapture.Slack.Enabled"] !== "true"}
-                    />
-                  </Box>
-                </Box>
-              </Box>
+              <LeadCaptureSettings
+                settings={allSettings}
+                formData={dynamicFormData}
+                onChange={handleDynamicChange}
+                validationErrors={dynamicValidationErrors}
+                globalError={leadCaptureGlobalError}
+              />
             )}
 
             {/* Content Settings Tab */}
@@ -1562,116 +1396,13 @@ const Settings = () => {
               </Box>
             )}
 
-            {/* Site Profile Settings Tab */}
+            {/* AI Profile Settings Tab */}
             {activeTab === "siteProfile" && hasAIAssistance && (
-              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
-                <Grid container spacing={3} marginBottom={4}>
-                  <Grid size={{ xs: 12 }}>
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      <Typography variant="body2">
-                        Define your site profile to help the AI assistant generate content that
-                        matches your brand and audience.
-                      </Typography>
-                    </Alert>
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={3}
-                      maxRows={8}
-                      label="Topic (Short Summary)"
-                      value={formData["AI.SiteProfile.Topic"]}
-                      onChange={handleInputChange("AI.SiteProfile.Topic")}
-                      placeholder={"Briefly describe the main topic of your site."}
-                      helperText="A concise summary of the site focus."
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={3}
-                      maxRows={8}
-                      label="Audience"
-                      value={formData["AI.SiteProfile.Audience"]}
-                      onChange={handleInputChange("AI.SiteProfile.Audience")}
-                      placeholder={"Describe the target audience and their needs."}
-                      helperText="Who the content is for and what they care about."
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={3}
-                      maxRows={8}
-                      label="Brand Voice"
-                      value={formData["AI.SiteProfile.BrandVoice"]}
-                      onChange={handleInputChange("AI.SiteProfile.BrandVoice")}
-                      placeholder={"Describe the tone and style for your content."}
-                      helperText="Tone, formality, and writing style guidance."
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={3}
-                      maxRows={8}
-                      label="Preferred Terms"
-                      value={formData["AI.SiteProfile.PreferredTerms"]}
-                      onChange={handleInputChange("AI.SiteProfile.PreferredTerms")}
-                      placeholder={"List words or phrases the AI should prefer."}
-                      helperText="Terminology to encourage in generated content."
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={3}
-                      maxRows={8}
-                      label="Avoid Terms"
-                      value={formData["AI.SiteProfile.AvoidTerms"]}
-                      onChange={handleInputChange("AI.SiteProfile.AvoidTerms")}
-                      placeholder={"List words or phrases the AI should avoid."}
-                      helperText="Terminology to avoid in generated content."
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={3}
-                      maxRows={8}
-                      label="Cover Image Instructions"
-                      value={formData["AI.SiteProfile.BlogCover.Instructions"]}
-                      onChange={handleInputChange("AI.SiteProfile.BlogCover.Instructions")}
-                      placeholder={"Provide guidance for AI-generated cover images."}
-                      helperText="Instructions and context for AI cover image generation."
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Grid>
-                </Grid>
-              </Box>
+              <SiteProfileSettings
+                settings={allSettings}
+                formData={dynamicFormData}
+                onChange={handleDynamicChange}
+              />
             )}
 
             {/* Password Policy Settings Tab */}
