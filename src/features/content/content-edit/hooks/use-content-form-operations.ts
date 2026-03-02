@@ -213,7 +213,7 @@ export const useContentFormOperations = (
     // Clear pending data before submit to avoid loops
     setPendingSubmitData(null);
 
-    await submitFunc(updatedValues, helpers);
+    await submit(updatedValues, helpers);
   };
 
   const submitFunc = async (values: ContentDetails, helpers: FormikHelpers<ContentDetails>) => {

@@ -649,7 +649,16 @@ export const ContentEdit = (props: ContentEditProps) => {
     }
 
     // Complete the pending submit with the new publishedAt value
-    await contentFormOps.completePendingSubmit(publishedAt);
+    try {
+      await contentFormOps.completePendingSubmit(publishedAt);
+    } catch (error) {
+      showApiError(
+        error,
+        notificationsService,
+        showErrorModal,
+        "Content validation failed. Please check title and description requirements."
+      );
+    }
   };
 
   const handlePublicationStatusClose = () => {

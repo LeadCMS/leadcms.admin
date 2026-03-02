@@ -258,6 +258,14 @@ export const Contacts = () => {
       valueFormatter: DateValueFormatter,
     },
     {
+      field: "updatedAt",
+      headerName: "Updated At",
+      width: 100,
+      type: "date",
+      valueGetter: DateValueGetter,
+      valueFormatter: DateValueFormatter,
+    },
+    {
       field: "id",
       headerName: "ID",
       width: 100,

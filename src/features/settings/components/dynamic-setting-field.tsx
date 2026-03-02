@@ -1,5 +1,13 @@
 import React from "react";
-import { TextField, FormControlLabel, Switch, Box, Typography } from "@mui/material";
+import {
+  TextField,
+  FormControlLabel,
+  Switch,
+  Box,
+  Typography,
+  Autocomplete,
+  Chip,
+} from "@mui/material";
 import { SettingDetailsDto } from "@lib/network/swagger-client";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -90,6 +98,19 @@ export const DynamicSettingField: React.FC<DynamicSettingFieldProps> = ({
     onChange(key, checked ? "true" : "false");
   };
 
+  const handleEmailTagsChange = (_: React.SyntheticEvent, newValue: string[]) => {
+    const normalized = Array.from(
+      new Set(
+        newValue
+          .flatMap((item) => parseEmailListInput(item))
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0)
+      )
+    );
+
+    onChange(key, formatEmailListValue(normalized));
+  };
+
   if (type === "bool") {
     return (
       <FormControlLabel
@@ -132,20 +153,34 @@ export const DynamicSettingField: React.FC<DynamicSettingFieldProps> = ({
   }
 
   if (type === "email[]") {
+    const emailTags = parseEmailListInput(value);
+
     return (
-      <TextField
-        fullWidth
-        multiline
-        minRows={2}
-        label={label}
-        value={value}
-        onChange={handleTextChange}
-        placeholder="name@example.com, team@example.com"
-        helperText={error || description}
-        variant="outlined"
-        size="small"
-        error={Boolean(error)}
+      <Autocomplete<string, true, false, true>
+        freeSolo
+        multiple
+        options={[]}
+        value={emailTags}
+        onChange={handleEmailTagsChange}
         disabled={disabled}
+        renderValue={(selectedValue, getItemProps) =>
+          selectedValue.map((option, index) => {
+            const { key, ...props } = getItemProps({ index });
+            return <Chip key={key} label={option} size="small" {...props} />;
+          })
+        }
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            fullWidth
+            label={label}
+            placeholder="Type email and press Enter"
+            helperText={error || description}
+            variant="outlined"
+            size="small"
+            error={Boolean(error)}
+          />
+        )}
       />
     );
   }
