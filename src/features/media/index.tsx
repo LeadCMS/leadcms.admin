@@ -910,11 +910,12 @@ const MediaManagement = () => {
           await api.mediaCreate({ File: file, ScopeUid: scopeUid });
           statuses[idx] = { file, status: "success" };
         } catch (err) {
-          const apiError = err as { message?: string };
+          const parsedError = parseApiError(err, "Upload failed");
+          const primaryDetail = parsedError.details[0] || parsedError.message;
           statuses[idx] = {
             file,
             status: "error",
-            error: apiError && apiError.message ? `Failed: ${apiError.message}` : "Unknown error",
+            error: `Failed: ${primaryDetail}`,
           };
         }
         setFileStatuses([...statuses]);
@@ -1942,7 +1943,7 @@ const MediaManagement = () => {
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              You are about to delete "{deleteTarget?.name}".
+              You are about to delete &quot;{deleteTarget?.name}&quot;.
             </Typography>
             {deleteTarget && (deleteTarget.usageCount ?? 0) > 0 ? (
               <Typography variant="body2" color="text.secondary">

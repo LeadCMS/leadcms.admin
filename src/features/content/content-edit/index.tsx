@@ -1058,6 +1058,7 @@ export const ContentEdit = (props: ContentEditProps) => {
             wasModified={contentFormOps.wasModified}
             coverWasModified={contentFormOps.coverWasModified}
             isSaving={contentFormOps.isSaving}
+            activeSaveMode={contentFormOps.activeSaveMode}
             id={id}
             isCreateMode={isCreateMode}
             isDuplicateMode={isDuplicateMode}

@@ -41,6 +41,7 @@ export interface ContentFormOperations {
   coverWasModified: boolean;
   setCoverWasModified: (modified: boolean) => void;
   isSaving: boolean;
+  activeSaveMode: "stay" | "close" | null;
   originalContent: string;
   setOriginalContent: (content: string) => void;
   refreshKey: number;
@@ -80,6 +81,7 @@ export const useContentFormOperations = (
   const [wasModified, setWasModified] = useState<boolean>(false);
   const [coverWasModified, setCoverWasModified] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [activeSaveMode, setActiveSaveMode] = useState<"stay" | "close" | null>(null);
   const [isDraftSaving, setIsDraftSaving] = useState<boolean>(false);
   const [originalContent, setOriginalContent] = useState<string>("");
   const [refreshKey, setRefreshKey] = useState<number>(0);
@@ -217,54 +219,59 @@ export const useContentFormOperations = (
   };
 
   const submitFunc = async (values: ContentDetails, helpers: FormikHelpers<ContentDetails>) => {
-    let response: HttpResponse<ContentDetailsDto, void | ProblemDetails>;
     setIsSaving(true);
+    setActiveSaveMode(saveModeRef.current);
 
-    if (frontmatterState !== null) {
-      helpers.setFieldError("body", "Frontmatter validation error. Check preview window.");
+    try {
+      let response: HttpResponse<ContentDetailsDto, void | ProblemDetails>;
+
+      if (frontmatterState !== null) {
+        helpers.setFieldError("body", "Frontmatter validation error. Check preview window.");
+        return;
+      }
+
+      const trimmedSlug = values.slug ? values.slug.replace(/^\/+|\/+$/g, "") : values.slug;
+
+      // Cover image is already uploaded via the CoverImageEditor component
+      // No need for additional processing here
+
+      if (values?.id) {
+        response = await client.api.contentUpdate(Number(values.id), {
+          ...values,
+          slug: trimmedSlug,
+        });
+      } else {
+        response = await client.api.contentCreate({
+          ...values,
+          slug: trimmedSlug,
+        });
+      }
+
+      const patched: ContentDetails = {
+        ...response.data,
+        id: response.data.id ? response.data.id.toString() : null,
+      } as ContentDetails;
+
+      helpers.setValues(patched);
+      setRefreshKey(Date.now());
+      setWasModified(false);
+      setCoverWasModified(false);
+      setHasContentChanged(false); // Reset content changed state after save
+      setOriginalContent(values.body || "");
+
+      const localStorageSnapshot = { ...editorLocalStorage };
+      localStorageSnapshot.data = localStorageSnapshot.data.filter((data) => data.id !== id);
+      setEditorLocalStorage(localStorageSnapshot);
+
+      if (saveModeRef.current === "close") {
+        handleNavigation(CoreModule.content);
+      }
+    } finally {
       setIsSaving(false);
+      setActiveSaveMode(null);
       helpers.setSubmitting(false);
-      return;
+      saveModeRef.current = "close";
     }
-
-    const trimmedSlug = values.slug ? values.slug.replace(/^\/+|\/+$/g, "") : values.slug;
-
-    // Cover image is already uploaded via the CoverImageEditor component
-    // No need for additional processing here
-
-    if (values?.id) {
-      response = await client.api.contentUpdate(Number(values.id), {
-        ...values,
-        slug: trimmedSlug,
-      });
-    } else {
-      response = await client.api.contentCreate({
-        ...values,
-        slug: trimmedSlug,
-      });
-    }
-
-    const patched: ContentDetails = {
-      ...response.data,
-      id: response.data.id ? response.data.id.toString() : null,
-    } as ContentDetails;
-
-    helpers.setValues(patched);
-    setRefreshKey(Date.now());
-    setWasModified(false);
-    setCoverWasModified(false);
-    setHasContentChanged(false); // Reset content changed state after save
-    setOriginalContent(values.body || "");
-
-    const localStorageSnapshot = { ...editorLocalStorage };
-    localStorageSnapshot.data = localStorageSnapshot.data.filter((data) => data.id !== id);
-    setEditorLocalStorage(localStorageSnapshot);
-    setIsSaving(false);
-    helpers.setSubmitting(false);
-    if (saveModeRef.current === "close") {
-      handleNavigation(CoreModule.content);
-    }
-    saveModeRef.current = "close";
   };
 
   const submit = async (values: ContentDetails, helpers: FormikHelpers<ContentDetails>) => {
@@ -371,6 +378,7 @@ export const useContentFormOperations = (
     coverWasModified,
     setCoverWasModified,
     isSaving,
+    activeSaveMode,
     originalContent,
     setOriginalContent,
     refreshKey,

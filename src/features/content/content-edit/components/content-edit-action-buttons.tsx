@@ -22,6 +22,7 @@ export interface ContentEditActionButtonsProps {
   wasModified: boolean;
   coverWasModified: boolean;
   isSaving: boolean;
+  activeSaveMode: "stay" | "close" | null;
   // Content information
   id?: string | null;
   // Mode flags
@@ -44,6 +45,7 @@ export const ContentEditActionButtons = ({
   wasModified,
   coverWasModified,
   isSaving,
+  activeSaveMode,
   id,
   isCreateMode,
   isDuplicateMode,
@@ -78,6 +80,9 @@ export const ContentEditActionButtons = ({
     if (!id) return;
     navigate(`/content/${id}/duplicate`);
   };
+
+  const isSaveLoading = isSaving && activeSaveMode === "stay";
+  const isSaveAndCloseLoading = isSaving && activeSaveMode === "close";
 
   return (
     <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 2 }}>
@@ -186,21 +191,21 @@ export const ContentEditActionButtons = ({
           variant="outlined"
           color="primary"
           disabled={!(wasModified || coverWasModified) || isSubmitting}
-          startIcon={isSaving ? <CircularProgress size={16} /> : <Save />}
+          startIcon={isSaveLoading ? <CircularProgress size={16} /> : <Save />}
           size="medium"
           onClick={onSave}
         >
-          {isSaving ? "Saving..." : "Save"}
+          {isSaveLoading ? "Saving..." : "Save"}
         </Button>
         <Button
           variant="contained"
           color="primary"
           disabled={!(wasModified || coverWasModified) || isSubmitting}
-          startIcon={isSaving ? <CircularProgress size={16} /> : <Save />}
+          startIcon={isSaveAndCloseLoading ? <CircularProgress size={16} /> : <Save />}
           size="medium"
           onClick={onSaveAndClose}
         >
-          {isSaving ? "Saving..." : "Save and Close"}
+          {isSaveAndCloseLoading ? "Saving..." : "Save and Close"}
         </Button>
       </Box>
     </Box>

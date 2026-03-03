@@ -8,6 +8,26 @@ export interface ApiError {
   raw?: unknown;
 }
 
+function isApiErrorLike(obj: unknown): obj is Partial<ApiError> {
+  return !!obj && typeof obj === "object" && "status" in obj && "message" in obj;
+}
+
+function appendValidationDetails(baseMessage: string, errors?: Record<string, string[]>): string {
+  if (!errors || typeof errors !== "object") {
+    return baseMessage;
+  }
+
+  const details = Object.entries(errors)
+    .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
+    .join("; ");
+
+  if (!details) {
+    return baseMessage;
+  }
+
+  return `${baseMessage}: ${details}`;
+}
+
 export function isFetchResponse(obj: any): obj is Response {
   return (
     obj &&
@@ -28,6 +48,15 @@ export function wrapApiClient<T extends object>(client: T): T {
         try {
           result = await origMethod.apply(target, args);
         } catch (networkError) {
+          if (isApiErrorLike(networkError)) {
+            const existing = networkError as ApiError;
+            throw {
+              ...existing,
+              message: appendValidationDetails(existing.message || "API Error", existing.errors),
+              raw: existing.raw ?? networkError,
+            } as ApiError;
+          }
+
           // If error is a fetch Response (non-2xx), parse and throw as API error
           if (isFetchResponse(networkError)) {
             let data: any = null;
@@ -51,12 +80,7 @@ export function wrapApiClient<T extends object>(client: T): T {
               traceId: data?.traceId,
               raw: data,
             };
-            if (data?.errors && typeof data.errors === "object") {
-              const details = Object.entries(data.errors)
-                .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
-                .join("; ");
-              apiError.message = `${apiError.message}: ${details}`;
-            }
+            apiError.message = appendValidationDetails(apiError.message, apiError.errors);
             console.error("[wrapApiClient] API error (from fetch Response):", apiError);
             throw apiError;
           }
@@ -97,13 +121,7 @@ export function wrapApiClient<T extends object>(client: T): T {
               traceId: result.data.traceId,
               raw: result.data,
             };
-            // If there are validation errors, append them to the message
-            if (result.data.errors && typeof result.data.errors === "object") {
-              const details = Object.entries(result.data.errors)
-                .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
-                .join("; ");
-              apiError.message = `${apiError.message}: ${details}`;
-            }
+            apiError.message = appendValidationDetails(apiError.message, apiError.errors);
           } else if (typeof result.data === "string") {
             apiError.message = result.data;
           } else if (result.statusText) {
