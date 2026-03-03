@@ -36,6 +36,7 @@ import ImageIcon from "@mui/icons-material/Image";
 import MovieIcon from "@mui/icons-material/Movie";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import DescriptionIcon from "@mui/icons-material/Description";
+import CoPresentIcon from "@mui/icons-material/CoPresent";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import { useRequestContext } from "@providers/request-provider";
@@ -134,6 +135,22 @@ const getFileType = (mimeType: string, extension: string) => {
   // Additional video format detection by extension
   if (cleanExt.match(/^(mp4|webm|ogg|avi|mov|wmv|flv|mkv)$/)) return "video";
   return "other";
+};
+
+const isPptxDocument = (mimeType: string, extension: string) => {
+  const cleanExt = extension.toLowerCase().replace(/^\./, "");
+  return (
+    mimeType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+    cleanExt === "pptx"
+  );
+};
+
+const getFileIcon = (mimeType: string, extension: string, type: string): JSX.Element => {
+  if (type === "document" && isPptxDocument(mimeType, extension)) {
+    return <CoPresentIcon color="warning" />;
+  }
+
+  return fileTypeIcons[type] || fileTypeIcons.other;
 };
 
 type MediaItem = {
@@ -255,10 +272,10 @@ const MediaManagement = () => {
   const [totalCount, setTotalCount] = useState(0);
   const paginationKey = viewMode === "files" ? `${pageNumber}:${pageSize}` : "client";
 
-  // For preview navigation - include both images and PDFs
+  // For preview navigation - include all files except folders
   const previewableItems = items.filter((item) => {
     const fileType = getFileType(item.mimeType, item.extension);
-    return fileType === "image" || item.mimeType === "application/pdf";
+    return fileType !== "folder";
   });
 
   const getCurrentPreviewIndex = useCallback(
@@ -1056,7 +1073,7 @@ const MediaManagement = () => {
                     flexShrink: 0,
                   }}
                 >
-                  {fileTypeIcons[type] || fileTypeIcons.other}
+                  {getFileIcon(row.mimeType, row.extension, type)}
                 </Box>
               )}
               <Typography
@@ -1440,6 +1457,13 @@ const MediaManagement = () => {
             const type = getFileType(item.mimeType, item.extension);
             const isFolder = type === "folder";
             const folderItemCount = isFolder ? item.id : undefined;
+            const maxMimeTypeLength = 15;
+            const mimeTypeDisplay =
+              item.mimeType.length > maxMimeTypeLength
+                ? `${item.mimeType.slice(0, maxMimeTypeLength)}...`
+                : item.mimeType;
+            const isMimeTypeTrimmed = mimeTypeDisplay !== item.mimeType;
+
             return (
               <Grid
                 key={`${item.scopeUid || "root"}:${item.name}:${item.location || item.id}`}
@@ -1538,7 +1562,7 @@ const MediaManagement = () => {
                           justifyContent: "center",
                         }}
                       >
-                        {fileTypeIcons[type] || fileTypeIcons.other}
+                        {getFileIcon(item.mimeType, item.extension, type)}
                       </Box>
                     )}
                   </Box>
@@ -1651,14 +1675,30 @@ const MediaManagement = () => {
                           {folderItemCount} items
                         </Typography>
                       ) : (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontSize: 12, ml: 2, flexShrink: 0 }}
+                        <Tooltip
                           title={item.mimeType}
+                          arrow
+                          disableHoverListener={!isMimeTypeTrimmed}
                         >
-                          {item.mimeType}
-                        </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: 12,
+                              ml: 2,
+                              flexShrink: 1,
+                              minWidth: 0,
+                              maxWidth: 110,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              display: "block",
+                              textAlign: "right",
+                            }}
+                          >
+                            {mimeTypeDisplay}
+                          </Typography>
+                        </Tooltip>
                       )}
                     </Box>
                   </Box>

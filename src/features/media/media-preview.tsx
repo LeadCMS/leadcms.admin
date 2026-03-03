@@ -27,6 +27,7 @@ import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import MovieIcon from "@mui/icons-material/Movie";
+import CoPresentIcon from "@mui/icons-material/CoPresent";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { buildAbsoluteUrl, buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { MediaDetailsDto, ProblemDetails } from "@lib/network/swagger-client";
@@ -94,6 +95,14 @@ const isVideoFile = (file: MediaDetailsDto) => {
   return (
     file?.mimeType?.startsWith("video/") ||
     /\.(mp4|webm|ogg|avi|mov|wmv|flv|mkv)$/i.test(file?.name || "")
+  );
+};
+
+const isPptxFile = (file: MediaDetailsDto) => {
+  return (
+    file?.mimeType ===
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+    file?.name?.toLowerCase().endsWith(".pptx")
   );
 };
 
@@ -167,6 +176,7 @@ export const MediaPreview = ({
 
   const isPdf = file ? isPdfFile(file) : false;
   const isVideo = file ? isVideoFile(file) : false;
+  const isPptx = file ? isPptxFile(file) : false;
   const fileUrl = file
     ? buildAbsoluteUrlWithCacheBust(file.location, file.size, file.updatedAt)
     : "";
@@ -817,6 +827,7 @@ export const MediaPreview = ({
             >
               {isPdf && <PictureAsPdfIcon color="error" />}
               {isVideo && <MovieIcon color="secondary" />}
+              {isPptx && <CoPresentIcon color="warning" />}
               {file.name}
               <Chip
                 label={usageCount > 0 ? `Used in ${usageCount} place(s)` : "Not used"}
@@ -1023,6 +1034,28 @@ export const MediaPreview = ({
                         Your browser does not support the video tag.
                       </Box>
                     )
+                  ) : isPptx ? (
+                    <Box sx={{ textAlign: "center", p: 4 }}>
+                      <Box
+                        component="img"
+                        src="/images/placeholder.svg"
+                        alt="PPTX preview not supported"
+                        sx={{ width: 96, height: 96, mb: 2, opacity: 0.85 }}
+                      />
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        PPTX Preview Not Supported
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        This file type cannot be previewed here. Download the file to view it.
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<DownloadIcon />}
+                        onClick={() => onDownload(file)}
+                      >
+                        Download PPTX
+                      </Button>
+                    </Box>
                   ) : (
                     <Box
                       sx={{
