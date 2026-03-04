@@ -15,19 +15,25 @@ import React from "react";
 import { toPromiseError } from "@utils/api-error-parser";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 import { EmailGroupEditValidationScheme } from "./validation";
-import { TextField } from "@mui/material";
+import { Box, TextField } from "@mui/material";
 import { CreateNewEmailGroupProps } from "./types";
+import { LanguageSelect } from "@components/language-select";
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
-    children: React.ReactElement<any, any>;
+    children: React.ReactElement;
   },
   ref: React.Ref<unknown>
 ) {
   return <Fade ref={ref} {...props} />;
 });
 
-export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmailGroupProps) => {
+export const CreateNewEmailGroup = ({
+  onChange,
+  isOpen,
+  onClose,
+  defaultLanguage,
+}: CreateNewEmailGroupProps) => {
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
   const { client } = useRequestContext();
@@ -62,9 +68,11 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
     validationSchema: toFormikValidationSchema(EmailGroupEditValidationScheme),
     initialValues: {
       name: "",
+      language: defaultLanguage || "",
     } as EmailGroupCreateDto,
     onSubmit: submit,
     validateOnChange: false,
+    enableReinitialize: true,
   });
 
   const valueUpdate = (event: React.SyntheticEvent<Element, Event>) => {
@@ -80,6 +88,15 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
         TransitionComponent={Transition}
         keepMounted={false}
         disablePortal={false}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: 520,
+            },
+          },
+        }}
         aria-labelledby="create-group-dialog-title"
       >
         <form onSubmit={formik.handleSubmit}>
@@ -100,6 +117,18 @@ export const CreateNewEmailGroup = ({ onChange, isOpen, onClose }: CreateNewEmai
               fullWidth
               sx={{ mt: 2 }}
             />
+            <Box sx={{ mt: 3 }}>
+              <LanguageSelect
+                value={formik.values.language || ""}
+                onChange={(value) => {
+                  formik.setFieldValue("language", value);
+                }}
+                error={formik.touched.language && Boolean(formik.errors.language)}
+                helperText={formik.touched.language && formik.errors.language}
+                disabled={formik.isSubmitting}
+                label="Language"
+              />
+            </Box>
           </DialogContent>
           <DialogActions>
             <Button

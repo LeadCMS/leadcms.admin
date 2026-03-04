@@ -3,6 +3,7 @@ export interface EmailGroupAutoCompleteProps {
   label: string;
   placeholder: string;
   value: number;
+  defaultLanguage?: string;
   error: boolean | undefined;
   helperText: string | string[] | false | undefined;
   onChange: (value: number) => void;
@@ -19,4 +20,5 @@ export interface CreateNewEmailGroupProps {
   onChange: (value: EmailGroupOption) => void;
   isOpen: boolean;
   onClose: () => void;
+  defaultLanguage?: string;
 }

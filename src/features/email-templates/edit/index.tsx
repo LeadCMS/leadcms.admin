@@ -375,6 +375,10 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     formik.setFieldValue(field, value);
   };
 
+  const defaultEmailGroupLanguage =
+    formik.values.language ||
+    (isLanguageFilterActive && globalLanguage !== "all" ? globalLanguage : "");
+
   // Load existing template
   useEffect(() => {
     if (!id || isDuplicateMode || isTranslationMode) return;
@@ -991,6 +995,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                         disabled={readonly}
                         label="Email Group"
                         value={formik.values.emailGroupId}
+                        defaultLanguage={defaultEmailGroupLanguage}
                         error={formik.touched.emailGroupId && Boolean(formik.errors.emailGroupId)}
                         helperText={formik.touched.emailGroupId && formik.errors.emailGroupId}
                         placeholder="Select group"

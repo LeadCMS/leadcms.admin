@@ -3,7 +3,6 @@ import { TextField, MenuItem, CircularProgress, Grid, Chip, Box } from "@mui/mat
 import { Plus } from "lucide-react";
 import { CreateNewEmailGroup } from "./create-new";
 import { useRequestContext } from "@providers/request-provider";
-import { ProblemDetails } from "@lib/network/swagger-client";
 import { useNotificationsService } from "@hooks";
 import { showApiError } from "@utils/api-error-parser";
 import { EmailGroupAutoCompleteProps, EmailGroupOption } from "./types";
@@ -12,6 +11,7 @@ export function EmailGroupAutocomplete({
   label,
   placeholder,
   value,
+  defaultLanguage,
   onChange,
   onChangeWithLabel,
   error,
@@ -116,6 +116,7 @@ export function EmailGroupAutocomplete({
         isOpen={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onChange={handleAddNewGroup}
+        defaultLanguage={defaultLanguage}
       />
     </>
   );
