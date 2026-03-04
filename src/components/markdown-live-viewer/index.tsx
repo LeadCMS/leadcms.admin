@@ -4,40 +4,7 @@ import { MarkdownLiveViewerProps } from "./types";
 import "./styles.css";
 import { useUserInfo } from "@providers/user-provider";
 import { useConfig } from "@providers/config-provider";
-
-const generatePreviewUrl = (
-  template: string,
-  params: Record<string, unknown>,
-  defaultLanguage?: string
-): string => {
-  let url = template;
-
-  // Create enhanced params with calculated fields
-  const enhancedParams = { ...params };
-
-  // Calculate lang+slug parameter
-  if (params.language && params.slug) {
-    const lang = calculateLangPrefix(String(params.language), defaultLanguage);
-    enhancedParams["lang+slug"] = `${lang}${params.slug}`;
-  }
-
-  Object.keys(enhancedParams).forEach((key) => {
-    // Escape special regex characters in the key
-    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    url = url.replace(
-      new RegExp(`\\{${escapedKey}\\}`, "g"),
-      enhancedParams[key] !== undefined ? String(enhancedParams[key]) : ""
-    );
-  });
-  return url;
-};
-
-const calculateLangPrefix = (contentLanguage: string, defaultLanguage?: string): string => {
-  if (!contentLanguage || !defaultLanguage || contentLanguage === defaultLanguage) {
-    return "";
-  }
-  return `${contentLanguage}/`;
-};
+import { generateSitePreviewUrl } from "@utils/preview-helper";
 
 const REQUIRED_KEYS = ["type", "slug", "body"];
 
@@ -65,7 +32,7 @@ const MarkdownLiveViewer = ({ params, template, viewerKey }: MarkdownLiveViewerP
     if (!mergedParams || !template) return null;
     if (missingRequired) return null;
 
-    const generatedUrl = generatePreviewUrl(template, mergedParams, defaultLanguage);
+    const generatedUrl = generateSitePreviewUrl(template, mergedParams, defaultLanguage);
 
     // Check if there are still unresolved placeholders after URL generation
     const unresolvedPlaceholders = generatedUrl.match(/{(.*?)}/g) || [];
