@@ -8,6 +8,7 @@ import {
   campaignListPageBreadcrumb,
 } from "./constants";
 import { dataListBreadcrumbLinks } from "utils/constants";
+import { formatTimezoneShort } from "utils/timezone-helpers";
 import { DataList, DateValueGetter } from "@components/data-list";
 import { GridColDef } from "@mui/x-data-grid";
 import {
@@ -131,19 +132,8 @@ const formatDateTime = (dateValue: string | null | undefined) => {
   });
 };
 
-const formatTimezoneOffset = (timezoneOffsetMinutes: number) => {
-  const utcMinutes = -timezoneOffsetMinutes;
-  const sign = utcMinutes >= 0 ? "+" : "-";
-  const absoluteMinutes = Math.abs(utcMinutes);
-  const hours = Math.floor(absoluteMinutes / 60)
-    .toString()
-    .padStart(2, "0");
-  const minutes = (absoluteMinutes % 60).toString().padStart(2, "0");
-  return `UTC${sign}${hours}:${minutes}`;
-};
-
 const getTimezoneDescription = (campaign: CampaignDetailsDto) =>
-  formatTimezoneOffset(campaign.timeZone ?? 0);
+  formatTimezoneShort(campaign.timeZone ?? 0);
 
 const formatScheduledWithTimezone = (campaign: CampaignDetailsDto) => {
   if (!campaign.scheduledAt) return "—";
@@ -559,7 +549,9 @@ export const Campaigns = () => {
       width: 180,
       valueGetter: DateValueGetter,
       renderCell: ({ row }) => (
-        <Typography variant="body2">{formatDateTime(row.createdAt)}</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
+          <Typography variant="body2">{formatDateTime(row.createdAt)}</Typography>
+        </Box>
       ),
     },
     {
@@ -568,7 +560,9 @@ export const Campaigns = () => {
       width: 180,
       valueGetter: DateValueGetter,
       renderCell: ({ row }) => (
-        <Typography variant="body2">{formatDateTime(row.updatedAt)}</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
+          <Typography variant="body2">{formatDateTime(row.updatedAt)}</Typography>
+        </Box>
       ),
     },
     {
@@ -585,6 +579,11 @@ export const Campaigns = () => {
         const isPausable = status === "Sending";
         const isResumable = status === "Paused";
         const isCancellable = status === "Scheduled";
+        const isEditable =
+          status === "Draft" ||
+          status === "Scheduled" ||
+          status === "Paused" ||
+          status === "Cancelled";
 
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, height: "100%" }}>
@@ -632,15 +631,17 @@ export const Campaigns = () => {
               <Eye size={16} />
             </IconButton>
 
-            <IconButton
-              size="small"
-              onClick={(event) => {
-                event.stopPropagation();
-                navigate(getCampaignEditRoute(row.id as number));
-              }}
-            >
-              <Edit size={16} />
-            </IconButton>
+            {isEditable && (
+              <IconButton
+                size="small"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  navigate(getCampaignEditRoute(row.id as number));
+                }}
+              >
+                <Edit size={16} />
+              </IconButton>
+            )}
 
             {isCancellable && (
               <IconButton

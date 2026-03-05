@@ -14,6 +14,7 @@ import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-
 import { GridColDef } from "@mui/x-data-grid";
 import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
+import { getTimezoneInfo } from "utils/timezone-helpers";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
 import { useRef, useState, useEffect } from "react";
@@ -328,6 +329,28 @@ export const Contacts = () => {
       field: "address2",
       headerName: "Address 2",
       width: 150,
+    },
+    {
+      field: "timezone",
+      headerName: "Timezone",
+      width: 120,
+      type: "number",
+      valueGetter: (value, row) => row.timezone ?? null,
+      renderCell: ({ value }) => {
+        if (value == null) return "";
+        const { short, long } = getTimezoneInfo(value);
+        return (
+          <Tooltip title={long} arrow>
+            <span>{short}</span>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      field: "countryCode",
+      headerName: "Country",
+      width: 100,
+      type: "string",
     },
     {
       field: "language",

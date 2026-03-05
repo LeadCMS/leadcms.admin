@@ -20,6 +20,7 @@ import { ContactEmailCommunicationListItemDto } from "lib/network/swagger-client
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { showApiError } from "@utils/api-error-parser";
+import { formatTimezoneShort } from "utils/timezone-helpers";
 import { ContactViewOutletContext } from "../types";
 
 type EmailStatus = "NotSent" | "Sent" | "Received";
@@ -117,18 +118,6 @@ export const ContactCommunications = () => {
     if (Number.isNaN(date.getTime())) return "";
     const adjusted = new Date(date.getTime() + contact.timezone * 60 * 1000);
     return utcDateFormatter.format(adjusted);
-  };
-
-  const formatTimezoneOffset = (offsetMinutes?: number | null) => {
-    if (offsetMinutes == null) return "";
-    const utcMinutes = -offsetMinutes;
-    const sign = utcMinutes >= 0 ? "+" : "-";
-    const absoluteMinutes = Math.abs(utcMinutes);
-    const hours = Math.floor(absoluteMinutes / 60)
-      .toString()
-      .padStart(2, "0");
-    const minutes = (absoluteMinutes % 60).toString().padStart(2, "0");
-    return `UTC${sign}${hours}:${minutes}`;
   };
 
   useEffect(() => {
@@ -382,7 +371,7 @@ export const ContactCommunications = () => {
                           {contact?.timezone != null && (
                             <>
                               <Typography variant="caption" fontWeight={600}>
-                                Contact time ({formatTimezoneOffset(contact.timezone)})
+                                Contact time ({formatTimezoneShort(contact.timezone)})
                               </Typography>
                               <Typography variant="caption">
                                 {formatContactTime(
@@ -502,7 +491,7 @@ export const ContactCommunications = () => {
             {contact?.timezone != null && (
               <>
                 <Typography variant="caption" color="text.secondary">
-                  Contact time ({formatTimezoneOffset(contact.timezone)})
+                  Contact time ({formatTimezoneShort(contact.timezone)})
                 </Typography>
                 <Typography variant="body2">
                   {formatContactTime(

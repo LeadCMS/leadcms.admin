@@ -17,6 +17,7 @@ import {
 import { LanguageSelect } from "@components/language-select";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { timezones } from "utils/constants";
+import { formatTimezoneLong } from "utils/timezone-helpers";
 import {
   Alert,
   Box,
@@ -64,13 +65,15 @@ import {
   X,
 } from "lucide-react";
 import { showApiError } from "@utils/api-error-parser";
+import { CampaignPreview } from "@components/campaign-preview";
 
-const steps = ["Details", "Segment", "Template", "Schedule", "Review"];
+const steps = ["Details", "Segment", "Template", "Preview & Test", "Schedule", "Review"];
 
 const stepDescriptions = [
   "Set the campaign name, description and language",
   "Choose which segments to include or exclude",
   "Choose an email template for this campaign",
+  "Preview your email and send a test",
   "Choose when to send this campaign",
   "Review your campaign settings before launching",
 ];
@@ -88,10 +91,15 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   const isEdit = mode === "edit";
 
   const [activeStep, setActiveStep] = useState(0);
-  const [saving, setSaving] = useState(false);
+  const [savingAction, setSavingAction] = useState<"draft" | "launch" | "save" | null>(null);
+  const saving = savingAction !== null;
   const [loading, setLoading] = useState(isEdit);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [launchConfirmOpen, setLaunchConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pendingLaunchAction, setPendingLaunchAction] = useState<(() => Promise<void>) | null>(
+    null
+  );
   const [campaign, setCampaign] = useState<CampaignDetailsDto | null>(null);
 
   // Form state
@@ -103,16 +111,20 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   const [sendOption, setSendOption] = useState<"now" | "scheduled">("now");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
-  const [timeZone, setTimeZone] = useState<number>(0);
+  const getBrowserTimezoneOffset = () => {
+    const browserOffset = -new Date().getTimezoneOffset();
+    const values = [...new Set(timezones.map((tz) => tz.value))];
+    return values.reduce((prev, curr) =>
+      Math.abs(curr - browserOffset) < Math.abs(prev - browserOffset) ? curr : prev
+    );
+  };
+
+  const [timeZone, setTimeZone] = useState<number>(getBrowserTimezoneOffset());
   const [useContactTimeZone, setUseContactTimeZone] = useState(false);
+  const [allowPastTimeZones, setAllowPastTimeZones] = useState(false);
   const [language, setLanguage] = useState(
     !isEdit && isLanguageFilterActive && selectedLanguage !== "all" ? selectedLanguage : ""
   );
-
-  // Test email state
-  const [testEmail, setTestEmail] = useState("");
-  const [sendingTest, setSendingTest] = useState(false);
-  const [testSent, setTestSent] = useState(false);
 
   // Data lists
   const [segments, setSegments] = useState<SegmentDetailsDto[]>([]);
@@ -124,7 +136,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   const [emailGroupFilter, setEmailGroupFilter] = useState<number | "">("");
 
   const campaignStatus = (campaign?.status || "Draft") as NonNullable<CampaignDetailsDto["status"]>;
-  const isDraftEdit = isEdit && campaignStatus === "Draft";
+  const isDraftEdit = isEdit && (campaignStatus === "Draft" || campaignStatus === "Cancelled");
   const isScheduleOnlyEdit =
     isEdit && (campaignStatus === "Scheduled" || campaignStatus === "Paused");
   const isControlOnlyEdit = isEdit && campaignStatus === "Sending";
@@ -164,7 +176,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
         if (data.scheduledAt) {
           const dt = new Date(data.scheduledAt);
           const datePart = dt.toISOString().split("T")[0];
-          const timePart = dt.toTimeString().slice(0, 5);
+          const timePart = dt.toISOString().split("T")[1].slice(0, 5);
           setScheduledDate(datePart);
           setScheduledTime(timePart);
           setSendOption("scheduled");
@@ -241,6 +253,8 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       case 2:
         return selectedTemplateId !== "";
       case 3:
+        return selectedTemplateId !== "";
+      case 4:
         return sendOption === "now" || (scheduledDate !== "" && scheduledTime !== "");
       default:
         return true;
@@ -255,10 +269,10 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
     scheduledTime,
   ]);
 
-  /** Save Draft available from step 4+ in create mode */
+  /** Save Draft available from step 5+ in create mode */
   const canSaveDraft =
     !isEdit &&
-    activeStep >= 3 &&
+    activeStep >= 4 &&
     name.trim() !== "" &&
     selectedSegmentIds.length > 0 &&
     selectedTemplateId !== "" &&
@@ -311,7 +325,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       language: language || undefined,
     };
     if (sendOption === "scheduled" && scheduledDate && scheduledTime) {
-      payload.scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+      payload.scheduledAt = `${scheduledDate}T${scheduledTime}:00.000Z`;
     }
     return payload;
   };
@@ -321,7 +335,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       notificationsService.error("Campaign name is required.");
       return;
     }
-    setSaving(true);
+    setSavingAction("draft");
     try {
       await client.api.campaignsCreate(buildCreatePayload());
       notificationsService.success("Campaign draft saved successfully.");
@@ -329,7 +343,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
     } catch (error) {
       showApiError(error, notificationsService, undefined, "Failed to save campaign draft.");
     } finally {
-      setSaving(false);
+      setSavingAction(null);
     }
   };
 
@@ -338,7 +352,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       notificationsService.error("Campaign name is required.");
       return;
     }
-    setSaving(true);
+    setSavingAction("launch");
     try {
       const createResult = await client.api.campaignsCreate(buildCreatePayload());
       const newId = createResult.data?.id;
@@ -347,9 +361,10 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
           sendNow: sendOption === "now",
           timeZone: timeZone || undefined,
           useContactTimeZone,
+          allowPastTimeZones: useContactTimeZone ? allowPastTimeZones : undefined,
         };
         if (sendOption === "scheduled" && scheduledDate && scheduledTime) {
-          launchPayload.scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+          launchPayload.scheduledAt = `${scheduledDate}T${scheduledTime}:00.000Z`;
         }
         await client.api.campaignsLaunchCreate(newId, launchPayload);
       }
@@ -362,7 +377,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
     } catch (error) {
       showApiError(error, notificationsService, undefined, "Failed to launch campaign.");
     } finally {
-      setSaving(false);
+      setSavingAction(null);
     }
   };
 
@@ -372,15 +387,16 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       notificationsService.error("Complete audience, template, and schedule before launching.");
       return;
     }
-    setSaving(true);
+    setSavingAction("launch");
     try {
       const launchPayload: CampaignLaunchDto = {
         sendNow: sendOption === "now",
         timeZone: timeZone || undefined,
         useContactTimeZone,
+        allowPastTimeZones: useContactTimeZone ? allowPastTimeZones : undefined,
       };
       if (sendOption === "scheduled" && scheduledDate && scheduledTime) {
-        launchPayload.scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+        launchPayload.scheduledAt = `${scheduledDate}T${scheduledTime}:00.000Z`;
       }
       await client.api.campaignsLaunchCreate(campaignId, launchPayload);
       notificationsService.success(
@@ -392,7 +408,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
     } catch (error) {
       showApiError(error, notificationsService, undefined, "Failed to launch campaign.");
     } finally {
-      setSaving(false);
+      setSavingAction(null);
     }
   };
 
@@ -403,9 +419,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
         useContactTimeZone,
       };
       if (sendOption === "scheduled" && scheduledDate && scheduledTime) {
-        scheduleOnlyPayload.scheduledAt = new Date(
-          `${scheduledDate}T${scheduledTime}`
-        ).toISOString();
+        scheduleOnlyPayload.scheduledAt = `${scheduledDate}T${scheduledTime}:00.000Z`;
       } else {
         scheduleOnlyPayload.scheduledAt = null;
       }
@@ -423,7 +437,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       language: language || undefined,
     };
     if (sendOption === "scheduled" && scheduledDate && scheduledTime) {
-      payload.scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+      payload.scheduledAt = `${scheduledDate}T${scheduledTime}:00.000Z`;
     } else {
       payload.scheduledAt = null;
     }
@@ -435,15 +449,14 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       notificationsService.error("Campaign name is required.");
       return;
     }
-    setSaving(true);
+    setSavingAction("draft");
     try {
       await client.api.campaignsPartialUpdate(campaignId, buildEditPayload());
       notificationsService.success("Campaign draft saved successfully.");
-      navigate(getCampaignViewRoute(campaignId));
     } catch (error) {
       showApiError(error, notificationsService, undefined, "Failed to save campaign draft.");
     } finally {
-      setSaving(false);
+      setSavingAction(null);
     }
   };
 
@@ -452,7 +465,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       notificationsService.error("Campaign name is required.");
       return;
     }
-    setSaving(true);
+    setSavingAction("save");
     try {
       await client.api.campaignsPartialUpdate(campaignId, buildEditPayload());
       notificationsService.success(
@@ -460,30 +473,10 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
           ? "Campaign schedule updated successfully."
           : "Campaign updated successfully."
       );
-      navigate(getCampaignViewRoute(campaignId));
     } catch (error) {
       showApiError(error, notificationsService, undefined, "Failed to update campaign.");
     } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSendTest = async () => {
-    if (!testEmail.trim() || !selectedTemplateId) return;
-    setSendingTest(true);
-    setTestSent(false);
-    try {
-      await client.api.campaignsSendTestCreate({
-        emailTemplateId: selectedTemplateId as number,
-        contactId: 0,
-        email: testEmail.trim(),
-      });
-      setTestSent(true);
-      setTimeout(() => setTestSent(false), 4000);
-    } catch (error) {
-      showApiError(error, notificationsService, undefined, "Failed to send test email.");
-    } finally {
-      setSendingTest(false);
+      setSavingAction(null);
     }
   };
 
@@ -496,10 +489,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   const excludedSegments = segments.filter((s) => excludeSegmentIds.includes(s.id ?? 0));
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
-  const getTimezoneLabel = (value: number) => {
-    const tz = timezones.find((t) => t.value === value);
-    return tz?.label || "UTC";
-  };
+  const getTimezoneLabel = (value: number) => formatTimezoneLong(value);
 
   const tzLabel = useContactTimeZone ? "Fallback Timezone" : "Timezone";
 
@@ -866,52 +856,6 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
               </RadioGroup>
             )}
 
-            {selectedTemplateId && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Send a test email
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Send a test version of this email for review.
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    alignItems: "center",
-                  }}
-                >
-                  <TextField
-                    size="small"
-                    type="email"
-                    placeholder="you@yourcompany.com"
-                    value={testEmail}
-                    onChange={(e) => setTestEmail(e.target.value)}
-                    sx={{ flex: 1 }}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={handleSendTest}
-                    disabled={!canEditTemplate || !testEmail.trim() || sendingTest}
-                    startIcon={
-                      sendingTest ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Send size={16} />
-                      )
-                    }
-                  >
-                    {sendingTest ? "Sending..." : "Send Test"}
-                  </Button>
-                </Box>
-                {testSent && (
-                  <Alert severity="success" sx={{ mt: 1 }} icon={<CheckCircle2 size={18} />}>
-                    Test email sent to <strong>{testEmail}</strong> successfully.
-                  </Alert>
-                )}
-              </Box>
-            )}
-
             {!canEditTemplate && (
               <Alert severity="info" icon={<Info size={18} />}>
                 Template and content are locked for this campaign status.
@@ -922,6 +866,22 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       }
 
       case 3:
+        return selectedTemplate ? (
+          <Box sx={{ mx: -2, mt: -1 }}>
+            <CampaignPreview
+              template={selectedTemplate}
+              segmentIds={selectedSegmentIds}
+              excludeSegmentIds={excludeSegmentIds}
+              language={language || undefined}
+            />
+          </Box>
+        ) : (
+          <Alert severity="info" icon={<Info size={18} />}>
+            Please select an email template in the previous step to preview it here.
+          </Alert>
+        );
+
+      case 4:
         return (
           <Box
             sx={{
@@ -1075,30 +1035,43 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
                     </Grid>
                   </Grid>
 
-                  <FormControlLabel
-                    control={
+                  <Box sx={{ display: "flex", alignItems: "flex-start", mt: 1 }}>
+                    <Checkbox
+                      checked={useContactTimeZone}
+                      onChange={(e) => setUseContactTimeZone(e.target.checked)}
+                      disabled={!canEditSchedule}
+                      sx={{ mt: -0.5 }}
+                    />
+                    <Box>
+                      <Typography variant="body2" fontWeight={500}>
+                        Use contact&apos;s timezone as priority
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Sends at the scheduled time in each contact&apos;s local timezone. Falls
+                        back to the timezone below when not set.
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {useContactTimeZone && sendOption === "scheduled" && (
+                    <Box sx={{ display: "flex", alignItems: "flex-start" }}>
                       <Checkbox
-                        checked={useContactTimeZone}
-                        onChange={(e) => setUseContactTimeZone(e.target.checked)}
+                        checked={allowPastTimeZones}
+                        onChange={(e) => setAllowPastTimeZones(e.target.checked)}
                         disabled={!canEditSchedule}
+                        sx={{ mt: -0.5 }}
                       />
-                    }
-                    label={
                       <Box>
                         <Typography variant="body2" fontWeight={500}>
-                          Use contact&apos;s timezone as priority
+                          Allow past timezones
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Sends at the scheduled time in each contact&apos;s local timezone. Falls
-                          back to the timezone below when not set.
+                          When the scheduled time has already passed in some contacts&apos;
+                          timezones, send to them shortly after the campaign is scheduled.
                         </Typography>
                       </Box>
-                    }
-                    sx={{
-                      alignItems: "flex-start",
-                      mt: 1,
-                    }}
-                  />
+                    </Box>
+                  )}
 
                   <FormControl fullWidth>
                     <InputLabel>{tzLabel}</InputLabel>
@@ -1124,6 +1097,9 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
                           <strong>{scheduledTime}</strong> in each contact&apos;s local timezone.
                           Contacts without a timezone will receive it at{" "}
                           {getTimezoneLabel(timeZone)}.
+                          {allowPastTimeZones &&
+                            " Contacts whose local time has already passed" +
+                              " will receive the campaign shortly after it is scheduled."}
                         </>
                       ) : (
                         <>
@@ -1158,7 +1134,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
           </Box>
         );
 
-      case 4:
+      case 5:
         return (
           <Box
             sx={{
@@ -1295,6 +1271,12 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
                       {getTimezoneLabel(timeZone)}
                     </Typography>
                   )}
+                  {useContactTimeZone && allowPastTimeZones && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                      Contacts whose local time has already passed will receive the campaign shortly
+                      after it is scheduled.
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -1413,18 +1395,33 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
             variant="outlined"
             onClick={handleSaveDraftEdit}
             disabled={saving || !name.trim()}
-            startIcon={saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={18} />}
+            startIcon={
+              savingAction === "draft" ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={18} />
+              )
+            }
             size="medium"
           >
-            {saving ? "Saving..." : "Save Draft"}
+            {savingAction === "draft" ? "Saving..." : "Save Draft"}
           </Button>
         )}
         {isEdit && isDraftEdit && (
           <Button
             variant="contained"
-            onClick={handleLaunchExisting}
+            onClick={() => {
+              setPendingLaunchAction(() => handleLaunchExisting);
+              setLaunchConfirmOpen(true);
+            }}
             disabled={saving || !canLaunch}
-            startIcon={saving ? <Loader2 size={16} className="animate-spin" /> : <Send size={18} />}
+            startIcon={
+              savingAction === "launch" ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Send size={18} />
+              )
+            }
             size="medium"
           >
             {sendOption === "now" ? "Launch Campaign" : "Schedule Campaign"}
@@ -1432,13 +1429,19 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
         )}
         {isEdit && !isDraftEdit && !isControlOnlyEdit && !isReadOnlyEdit && (
           <Button
-            variant="contained"
+            variant="outlined"
             onClick={handleSave}
             disabled={saving || !name.trim()}
-            startIcon={saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={18} />}
+            startIcon={
+              savingAction === "save" ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={18} />
+              )
+            }
             size="medium"
           >
-            {saving ? "Saving..." : isScheduleOnlyEdit ? "Save Schedule" : "Save Changes"}
+            {savingAction === "save" ? "Saving..." : isScheduleOnlyEdit ? "Save Schedule" : "Save"}
           </Button>
         )}
         {!isEdit && activeStep < steps.length - 1 && (
@@ -1455,9 +1458,18 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
         {!isEdit && activeStep === steps.length - 1 && (
           <Button
             variant="contained"
-            onClick={handleLaunch}
+            onClick={() => {
+              setPendingLaunchAction(() => handleLaunch);
+              setLaunchConfirmOpen(true);
+            }}
             disabled={saving || !canProceed()}
-            startIcon={saving ? <Loader2 size={16} className="animate-spin" /> : <Send size={18} />}
+            startIcon={
+              savingAction === "launch" ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Send size={18} />
+              )
+            }
             size="medium"
           >
             {sendOption === "now" ? "Send Campaign" : "Schedule Campaign"}
@@ -1528,17 +1540,26 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
         </Alert>
       )}
 
-      <Stepper activeStep={activeStep} nonLinear={isEdit} sx={{ mb: 3 }}>
-        {steps.map((label, index) => (
-          <Step key={label} completed={isEdit || undefined}>
-            {isEdit ? (
-              <StepButton onClick={() => setActiveStep(index)}>{label}</StepButton>
-            ) : (
-              <StepLabel>{label}</StepLabel>
-            )}
-          </Step>
-        ))}
-      </Stepper>
+      <Box
+        sx={{
+          mb: 3,
+          overflowX: "auto",
+          mx: { xs: -2, sm: 0 },
+          px: { xs: 2, sm: 0 },
+        }}
+      >
+        <Stepper activeStep={activeStep} nonLinear={isEdit} sx={{ minWidth: 500, pb: 2.5 }}>
+          {steps.map((label, index) => (
+            <Step key={label} completed={isEdit || undefined}>
+              {isEdit ? (
+                <StepButton onClick={() => setActiveStep(index)}>{label}</StepButton>
+              ) : (
+                <StepLabel>{label}</StepLabel>
+              )}
+            </Step>
+          ))}
+        </Stepper>
+      </Box>
 
       <Card>
         <CardHeader
@@ -1563,6 +1584,60 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
             {deleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Launch/Schedule Confirmation Dialog */}
+      <Dialog
+        open={launchConfirmOpen}
+        onClose={() => setLaunchConfirmOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{sendOption === "now" ? "Launch Campaign" : "Schedule Campaign"}</DialogTitle>
+        <DialogContent>
+          {sendOption === "now" ? (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              The campaign will begin sending immediately. This action cannot be undone.
+            </Alert>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+              <Typography variant="body2">
+                Campaign will be sent on <strong>{scheduledDate}</strong> at{" "}
+                <strong>{scheduledTime}</strong>
+                {useContactTimeZone ? (
+                  <>
+                    {" "}
+                    in each contact&apos;s local timezone. Contacts without a timezone will receive
+                    it at {getTimezoneLabel(timeZone)}.
+                  </>
+                ) : (
+                  <> {getTimezoneLabel(timeZone)}</>
+                )}
+              </Typography>
+              {useContactTimeZone && allowPastTimeZones && (
+                <Typography variant="body2" color="text.secondary">
+                  Contacts whose local time has already passed will receive the campaign shortly
+                  after it is scheduled.
+                </Typography>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLaunchConfirmOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              setLaunchConfirmOpen(false);
+              if (pendingLaunchAction) {
+                await pendingLaunchAction();
+                setPendingLaunchAction(null);
+              }
+            }}
+          >
+            {sendOption === "now" ? "Launch" : "Schedule"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -35,16 +35,18 @@ import {
   Search,
   Settings2,
   Mail,
+  Users,
 } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useUserInfo } from "@providers/user-provider";
 import {
+  CampaignPreviewRequestDto,
+  CampaignPreviewResultDto,
   ContactDetailsDto,
-  EmailTemplatePreviewRequestDto,
-  EmailTemplatePreviewResultDto,
   EmailTemplateSendTestDto,
+  EmailTemplateDetailsDto,
 } from "@lib/network/swagger-client";
 import { showApiError } from "@utils/api-error-parser";
 import {
@@ -60,40 +62,25 @@ import {
   getContactLabel,
 } from "@utils/template-preview-utils";
 
-export interface TemplatePreviewProps {
-  /** Raw template source (HTML) */
-  source: string;
-  /** Template subject line */
-  subject?: string;
-  /** From email */
-  fromEmail?: string;
-  /** From name */
-  fromName?: string;
-  /** Template language */
+export interface CampaignPreviewProps {
+  /** Selected email template */
+  template: EmailTemplateDetailsDto;
+  /** Included segment IDs */
+  segmentIds: number[];
+  /** Excluded segment IDs */
+  excludeSegmentIds?: number[];
+  /** Campaign language */
   language?: string;
   /** Height for the preview container */
   height?: string;
 }
 
-/**
- * Normalise legacy backend template tokens to Liquid syntax.
- */
-export function normalizePlaceholders(source: string): string {
-  let result = source;
-  result = result.replace(/<%\s*(\w+)\s*%>/g, (_, k) => `{{ ${k} }}`);
-  result = result.replace(/&lt;%\s*(\w+)\s*%&gt;/g, (_, k) => `{{ ${k} }}`);
-  result = result.replace(/\$\{\s*(\w+)\s*\}/g, (_, k) => `{{ ${k} }}`);
-  return result;
-}
+const STORAGE_PREFIX = "campaign-preview-";
+const CUSTOM_PARAMS_KEY = `${STORAGE_PREFIX}custom-params`;
+const DATA_MODE_KEY = `${STORAGE_PREFIX}data-mode`;
+const CONTACT_TYPE_KEY = `${STORAGE_PREFIX}contact-type`;
+const SELECTED_CONTACT_KEY = `${STORAGE_PREFIX}selected-contact`;
 
-const CUSTOM_PARAMS_STORAGE_KEY = "email-tpl-preview-custom-params";
-const DATA_MODE_STORAGE_KEY = "email-tpl-preview-data-mode";
-const CONTACT_TYPE_STORAGE_KEY = "email-tpl-preview-contact-type";
-const SELECTED_CONTACT_STORAGE_KEY = "email-tpl-preview-selected-contact";
-
-/* ------------------------------------------------------------------ */
-/*  Reusable "email header row" used in both preview & envelope       */
-/* ------------------------------------------------------------------ */
 const HeaderRow: React.FC<{
   label: string;
   children: React.ReactNode;
@@ -124,16 +111,18 @@ const HeaderRow: React.FC<{
   </Box>
 );
 
-/* ================================================================== */
-/*  Main component                                                    */
-/* ================================================================== */
-export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
-  source,
-  subject,
-  fromEmail,
-  fromName,
+/**
+ * Campaign preview component. Uses the campaigns/preview API
+ * to show a rendered template with audience statistics along
+ * with a "Send Test" dialog that uses the
+ * emailTemplatesSendTestCreate API.
+ */
+export const CampaignPreview: React.FC<CampaignPreviewProps> = ({
+  template,
+  segmentIds,
+  excludeSegmentIds,
   language,
-  height = "calc(100vh - 300px)",
+  height = "calc(100vh - 360px)",
 }) => {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
@@ -147,6 +136,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     name?: string;
     email?: string;
   } | null>(null);
+  const [audienceStats, setAudienceStats] = useState<CampaignPreviewResultDto | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
 
@@ -156,17 +146,17 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
 
   // Data mode
   const [dataMode, setDataMode] = useState<PreviewDataMode>(
-    () => loadStored<string>(DATA_MODE_STORAGE_KEY, "dummy") as PreviewDataMode
+    () => loadStored<string>(DATA_MODE_KEY, "dummy") as PreviewDataMode
   );
   const [contactType, setContactType] = useState<ContactType>(
-    () => loadStored<string>(CONTACT_TYPE_STORAGE_KEY, "Full") as ContactType
+    () => loadStored<string>(CONTACT_TYPE_KEY, "Full") as ContactType
   );
 
   // Contact search
   const [contactSearchQuery, setContactSearchQuery] = useState("");
   const [contactOptions, setContactOptions] = useState<ContactDetailsDto[]>([]);
   const [selectedContact, setSelectedContact] = useState<ContactDetailsDto | null>(() =>
-    loadStored<ContactDetailsDto | null>(SELECTED_CONTACT_STORAGE_KEY, null)
+    loadStored<ContactDetailsDto | null>(SELECTED_CONTACT_KEY, null)
   );
   const [contactLoading, setContactLoading] = useState(false);
   const contactSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -183,43 +173,42 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     return () => observer.disconnect();
   }, [settingsOpen]);
 
-  // Persist data mode, contact type, and selected contact
+  // Persist settings
   useEffect(() => {
-    saveStored(DATA_MODE_STORAGE_KEY, dataMode);
+    saveStored(DATA_MODE_KEY, dataMode);
   }, [dataMode]);
 
   useEffect(() => {
-    saveStored(CONTACT_TYPE_STORAGE_KEY, contactType);
+    saveStored(CONTACT_TYPE_KEY, contactType);
   }, [contactType]);
 
   useEffect(() => {
     if (selectedContact) {
-      saveStored(SELECTED_CONTACT_STORAGE_KEY, selectedContact);
+      saveStored(SELECTED_CONTACT_KEY, selectedContact);
     } else {
-      localStorage.removeItem(SELECTED_CONTACT_STORAGE_KEY);
+      localStorage.removeItem(SELECTED_CONTACT_KEY);
     }
   }, [selectedContact]);
 
   // Custom parameters
   const [customParams, setCustomParams] = useState<CustomParam[]>(() =>
-    loadStored<CustomParam[]>(CUSTOM_PARAMS_STORAGE_KEY, [])
+    loadStored<CustomParam[]>(CUSTOM_PARAMS_KEY, [])
   );
   const [paramsExpanded, setParamsExpanded] = useState(false);
 
-  /**
-   * Tokens detected in the current template that are NOT
-   * server-known (i.e. custom parameters the user must supply).
-   */
+  const source = template.bodyTemplate || "";
+  const subject = template.subject || "";
+  const fromEmail = template.fromEmail || "";
+  const fromName = template.fromName || "";
+
   const templateCustomTokens = useMemo(() => {
     if (!source.trim()) return [] as string[];
     const tokens = extractTemplateTokens(source);
     return tokens.filter((t) => !SERVER_KNOWN_LOWER.has(t.toLowerCase()));
   }, [source]);
 
-  /* ------ auto-detect custom template tokens ------ */
   useEffect(() => {
     if (templateCustomTokens.length === 0) return;
-
     setCustomParams((prev) => {
       const existingKeys = new Set(prev.map((p) => p.key.toLowerCase()));
       const newParams: CustomParam[] = [];
@@ -233,16 +222,11 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         }
       }
       if (newParams.length === 0) return prev;
-      const merged = [...prev, ...newParams];
       if (newParams.length > 0) setParamsExpanded(true);
-      return merged;
+      return [...prev, ...newParams];
     });
   }, [templateCustomTokens]);
 
-  /**
-   * Only show custom params whose keys match a token found in
-   * the current template source (case-insensitive).
-   */
   const visibleCustomParams = useMemo(() => {
     if (templateCustomTokens.length === 0) return [];
     const tokenSet = new Set(templateCustomTokens.map((t) => t.toLowerCase()));
@@ -254,21 +238,16 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
   const [recipientEmail, setRecipientEmail] = useState(() => userInfo?.details?.email || "");
   const [isSending, setIsSending] = useState(false);
 
-  /* ------ contact debounced search ------ */
-  useEffect(() => {
-    if (dataMode !== "contact") return;
-    if (contactSearchQuery.length < 2) {
-      setContactOptions([]);
-      return;
-    }
-    if (contactSearchTimerRef.current) {
-      clearTimeout(contactSearchTimerRef.current);
-    }
-    contactSearchTimerRef.current = setTimeout(async () => {
+  // Contact search — uses segment contacts API
+  const fetchSegmentContacts = useCallback(
+    async (query?: string) => {
+      if (segmentIds.length === 0) return;
       setContactLoading(true);
       try {
-        const resp = await client.api.contactsList({
-          query: contactSearchQuery,
+        const segId = segmentIds[0];
+        const resp = await client.api.segmentsContactsList(segId, {
+          query: query || undefined,
+          limit: 10,
         });
         setContactOptions(resp.data || []);
       } catch {
@@ -276,15 +255,38 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
       } finally {
         setContactLoading(false);
       }
-    }, 400);
+    },
+    [segmentIds, client]
+  );
+
+  // Load top 10 segment contacts when switching to contact mode
+  useEffect(() => {
+    if (dataMode === "contact") {
+      fetchSegmentContacts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataMode, segmentIds]);
+
+  // Debounced search within segment contacts
+  // When query is cleared (e.g. user clicks "x"), reload the top 10.
+  useEffect(() => {
+    if (dataMode !== "contact") return;
+    if (contactSearchTimerRef.current) {
+      clearTimeout(contactSearchTimerRef.current);
+    }
+    contactSearchTimerRef.current = setTimeout(
+      () => {
+        fetchSegmentContacts(contactSearchQuery || undefined);
+      },
+      contactSearchQuery ? 400 : 0
+    );
     return () => {
       if (contactSearchTimerRef.current) {
         clearTimeout(contactSearchTimerRef.current);
       }
     };
-  }, [contactSearchQuery, dataMode, client]);
+  }, [contactSearchQuery, dataMode, fetchSegmentContacts]);
 
-  /* ------ custom params map (only tokens present in template) ------ */
   const customTemplateParameters = useMemo(() => {
     const map: Record<string, string> = {};
     for (const p of visibleCustomParams) {
@@ -293,14 +295,14 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     return Object.keys(map).length > 0 ? map : undefined;
   }, [visibleCustomParams]);
 
-  /* ------ preview API ------ */
+  /* ------ campaign preview API ------ */
   const fetchPreview = useCallback(async () => {
-    if (!source.trim()) {
-      setPreviewError("Template body is empty.");
+    if (!template.id) {
+      setPreviewError("No email template selected.");
       return;
     }
-    if (!subject?.trim() || !fromEmail?.trim() || !fromName?.trim()) {
-      setPreviewError("Subject, sender email and sender name are required to preview.");
+    if (segmentIds.length === 0) {
+      setPreviewError("No segments selected.");
       return;
     }
 
@@ -308,11 +310,11 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     setPreviewError(null);
 
     try {
-      const request: EmailTemplatePreviewRequestDto = {
-        subject,
-        bodyTemplate: source,
-        fromEmail,
-        fromName,
+      const request: CampaignPreviewRequestDto = {
+        emailTemplateId: template.id,
+        segmentIds,
+        excludeSegmentIds:
+          excludeSegmentIds && excludeSegmentIds.length > 0 ? excludeSegmentIds : undefined,
         language: language || undefined,
         customTemplateParameters,
       };
@@ -329,29 +331,34 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         return;
       }
 
-      const resp = await client.api.emailTemplatesPreviewCreate(request);
-      const result: EmailTemplatePreviewResultDto = resp.data;
-      setPreviewHtml(result.renderedBody || "");
-      setPreviewSubject(result.renderedSubject || "");
-      if (result.previewContactName || result.previewContactEmail) {
-        setPreviewContact({
-          name: result.previewContactName,
-          email: result.previewContactEmail,
-        });
-      } else {
-        setPreviewContact(null);
+      const resp = await client.api.campaignsPreviewCreate(request);
+      const result: CampaignPreviewResultDto = resp.data;
+
+      setAudienceStats(result);
+
+      const tplPreview = result.templatePreview;
+      if (tplPreview) {
+        setPreviewHtml(tplPreview.renderedBody || "");
+        setPreviewSubject(tplPreview.renderedSubject || "");
+        if (tplPreview.previewContactName || tplPreview.previewContactEmail) {
+          setPreviewContact({
+            name: tplPreview.previewContactName,
+            email: tplPreview.previewContactEmail,
+          });
+        } else {
+          setPreviewContact(null);
+        }
       }
     } catch (error) {
-      showApiError(error, notificationsService, showErrorModal, "Preview failed");
+      showApiError(error, notificationsService, showErrorModal, "Campaign preview failed");
       setPreviewError("Failed to generate preview.");
     } finally {
       setIsLoading(false);
     }
   }, [
-    source,
-    subject,
-    fromEmail,
-    fromName,
+    template.id,
+    segmentIds,
+    excludeSegmentIds,
     language,
     dataMode,
     contactType,
@@ -362,14 +369,12 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     showErrorModal,
   ]);
 
-  /* auto-fetch on mount and whenever preview inputs change */
+  // Auto-fetch preview
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevParamsRef = useRef(customTemplateParameters);
 
   useEffect(() => {
-    if (!source.trim() || !subject?.trim() || !fromEmail?.trim() || !fromName?.trim()) {
-      return;
-    }
+    if (!template.id || segmentIds.length === 0) return;
 
     const paramsChanged = prevParamsRef.current !== customTemplateParameters;
     prevParamsRef.current = customTemplateParameters;
@@ -379,12 +384,10 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     }
 
     if (paramsChanged) {
-      // Debounce when the change came from typing parameter values
       refreshTimerRef.current = setTimeout(() => {
         fetchPreview();
       }, 600);
     } else {
-      // Immediate for discrete selections (dataMode, contactType, selectedContact)
       fetchPreview();
     }
 
@@ -396,7 +399,15 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataMode, contactType, selectedContact, customTemplateParameters]);
 
-  /* ------ send test ------ */
+  // Initial fetch
+  useEffect(() => {
+    if (template.id && segmentIds.length > 0) {
+      fetchPreview();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ------ send test email ------ */
   const handleSendTest = useCallback(async () => {
     if (!recipientEmail.trim()) {
       notificationsService.error("Please enter a recipient email.");
@@ -406,15 +417,15 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
       notificationsService.error("Template body is empty.");
       return;
     }
-    if (!subject?.trim()) {
+    if (!subject.trim()) {
       notificationsService.error("Template subject is required.");
       return;
     }
-    if (!fromEmail?.trim()) {
+    if (!fromEmail.trim()) {
       notificationsService.error("Sender email is required.");
       return;
     }
-    if (!fromName?.trim()) {
+    if (!fromName.trim()) {
       notificationsService.error("Sender name is required.");
       return;
     }
@@ -461,9 +472,13 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     showErrorModal,
   ]);
 
-  /* ------ custom params helpers ------ */
+  // Persist custom params
   useEffect(() => {
-    saveStored(CUSTOM_PARAMS_STORAGE_KEY, customParams);
+    try {
+      saveStored(CUSTOM_PARAMS_KEY, customParams);
+    } catch {
+      /* quota exceeded */
+    }
   }, [customParams]);
 
   const updateCustomParam = (idx: number, updates: Partial<CustomParam>) => {
@@ -474,15 +489,53 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
     });
   };
 
-  /* ================================================================ */
-  /*  RENDER                                                          */
-  /* ================================================================ */
-  const canPreview =
-    !!source.trim() && !!subject?.trim() && !!fromEmail?.trim() && !!fromName?.trim();
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height }}>
-      {/* ---- Top action bar ---- */}
+      {/* Audience stats bar */}
+      {audienceStats && (
+        <Box
+          sx={{
+            px: 2,
+            py: 1.5,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            bgcolor: "background.paper",
+          }}
+        >
+          <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Users size={16} />
+              <Typography variant="body2">
+                <strong>{audienceStats.totalAudienceCount ?? 0}</strong> total audience
+              </Typography>
+            </Box>
+            <Chip
+              size="small"
+              label={`${audienceStats.sendableCount ?? 0} sendable`}
+              color="success"
+              variant="outlined"
+            />
+            {(audienceStats.unsubscribedCount ?? 0) > 0 && (
+              <Chip
+                size="small"
+                label={`${audienceStats.unsubscribedCount} unsubscribed`}
+                color="warning"
+                variant="outlined"
+              />
+            )}
+            {(audienceStats.invalidEmailCount ?? 0) > 0 && (
+              <Chip
+                size="small"
+                label={`${audienceStats.invalidEmailCount} invalid`}
+                color="error"
+                variant="outlined"
+              />
+            )}
+          </Stack>
+        </Box>
+      )}
+
+      {/* Top action bar */}
       <Stack
         direction="row"
         alignItems="center"
@@ -551,7 +604,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         </Button>
       </Stack>
 
-      {/* ---- Settings drawer ---- */}
+      {/* Settings drawer */}
       <Collapse in={settingsOpen}>
         <Box
           sx={{
@@ -562,7 +615,6 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
             bgcolor: "grey.50",
           }}
         >
-          {/* Data Source row */}
           <Box
             sx={{
               display: "grid",
@@ -585,9 +637,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
               }}
               sx={{
                 height: 40,
-                "& .MuiToggleButton-root": {
-                  px: 1.5,
-                },
+                "& .MuiToggleButton-root": { px: 1.5 },
               }}
             >
               <ToggleButton value="dummy">
@@ -604,7 +654,6 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
               </ToggleButton>
             </ToggleButtonGroup>
 
-            {/* Inline contact type or search */}
             <Box>
               {dataMode === "dummy" && (
                 <FormControl size="small" sx={{ minWidth: 150 }}>
@@ -640,14 +689,15 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                   getOptionLabel={getContactLabel}
                   value={selectedContact}
                   loading={contactLoading}
-                  onInputChange={(_, v) => setContactSearchQuery(v)}
+                  onInputChange={(_, v, reason) => {
+                    if (reason === "input" || reason === "clear") {
+                      setContactSearchQuery(v);
+                    }
+                  }}
+                  onOpen={() => fetchSegmentContacts()}
                   onChange={(_, v) => setSelectedContact(v)}
                   isOptionEqualToValue={(a, b) => a.id === b.id}
-                  noOptionsText={
-                    contactSearchQuery.length < 2
-                      ? "Type at least 2 characters"
-                      : "No contacts found"
-                  }
+                  noOptionsText="No contacts found in segment"
                   renderOption={(props, option) => (
                     <li {...props} key={option.id}>
                       <Box>
@@ -663,7 +713,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Search contact"
+                      label="Search segment contact"
                       placeholder="Name or email"
                       slotProps={{
                         input: {
@@ -685,7 +735,6 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
               )}
             </Box>
 
-            {/* Custom parameters toggle */}
             <Box sx={{ justifySelf: "end" }}>
               {visibleCustomParams.length > 0 && (
                 <Button
@@ -742,14 +791,14 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         </Box>
       </Collapse>
 
-      {/* ---- Error ---- */}
+      {/* Error */}
       {previewError && (
         <Alert severity="warning" sx={{ borderRadius: 0 }}>
           {previewError}
         </Alert>
       )}
 
-      {/* ---- Loading ---- */}
+      {/* Loading */}
       {isLoading && (
         <Box
           sx={{
@@ -769,7 +818,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         </Box>
       )}
 
-      {/* ---- Preview area (envelope + iframe) ---- */}
+      {/* Preview area */}
       {!isLoading && (
         <Box
           sx={{
@@ -793,7 +842,6 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                 background: "white",
               }}
             >
-              {/* Envelope header */}
               {(previewSubject || previewContact || fromEmail) && (
                 <Box
                   sx={{
@@ -818,10 +866,9 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                   {previewSubject && <HeaderRow label="Subject:">{previewSubject}</HeaderRow>}
                 </Box>
               )}
-              {/* Email body */}
               <iframe
                 srcDoc={`<div style="padding:5px 5px">${previewHtml}</div>`}
-                title="Email Preview"
+                title="Campaign Email Preview"
                 sandbox="allow-same-origin allow-scripts"
                 style={{
                   border: "none",
@@ -841,9 +888,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
               >
                 <Mail size={32} color="#bbb" />
                 <Typography variant="body2" color="text.secondary">
-                  {canPreview
-                    ? "Click Preview to render the template"
-                    : "Fill in subject, sender email and name to enable preview"}
+                  Loading campaign preview...
                 </Typography>
               </Stack>
             )
@@ -851,7 +896,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         </Box>
       )}
 
-      {/* ---- Send Test Email Dialog ---- */}
+      {/* Send Test Email Dialog */}
       <Dialog open={sendTestOpen} onClose={() => setSendTestOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Send Test Email</DialogTitle>
         <DialogContent>

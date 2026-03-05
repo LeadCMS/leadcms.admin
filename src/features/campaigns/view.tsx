@@ -28,6 +28,7 @@ import {
   LinearProgress,
   Tab,
   Tabs,
+  Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -48,7 +49,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { timezones } from "utils/constants";
+import { formatTimezoneShort, formatTimezoneLong } from "utils/timezone-helpers";
 import { showApiError } from "@utils/api-error-parser";
 import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
 
@@ -109,22 +110,6 @@ const getCampaignStatusIcon = (status: CampaignStatus) => {
     default:
       return <Clock size={14} />;
   }
-};
-
-const formatUtcOffset = (timezoneValue: number | null | undefined) => {
-  const normalizedTimezoneValue = timezoneValue ?? 0;
-
-  const offsetMinutes = -normalizedTimezoneValue;
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const absMinutes = Math.abs(offsetMinutes);
-  const hours = Math.floor(absMinutes / 60);
-  const minutes = absMinutes % 60;
-
-  if (minutes === 0) {
-    return `UTC${sign}${hours}`;
-  }
-
-  return `UTC${sign}${hours}:${minutes.toString().padStart(2, "0")}`;
 };
 
 type DetailRow = {
@@ -309,11 +294,10 @@ export const CampaignView = () => {
       valueGetter: (_value, row) => row.contactId ?? "—",
     },
     {
-      field: "contact.Timezone",
+      field: "effectiveTimezone",
       headerName: "Timezone",
       minWidth: 120,
-      valueGetter: (_value, row) =>
-        formatUtcOffset(row.contact?.timezone ?? campaign?.timeZone ?? 0),
+      valueGetter: (_value, row) => formatTimezoneShort(row.effectiveTimezone ?? 0),
     },
     {
       field: "status",
@@ -343,7 +327,7 @@ export const CampaignView = () => {
     {
       field: "sentOrExpectedAt",
       headerName: "Sent / Expected At",
-      minWidth: 220,
+      minWidth: 240,
       align: "center",
       headerAlign: "center",
       sortable: false,
@@ -351,67 +335,95 @@ export const CampaignView = () => {
       renderCell: ({ row }) => {
         const sentValue = row.sentAt;
         const expectedValue = row.expectedSendAtUtc;
+        const offsetMin = row.effectiveTimezone ?? 0;
+
+        const formatUtc = (iso: string) => {
+          const d = new Date(iso);
+          if (Number.isNaN(d.getTime())) return null;
+          return d.toLocaleString(undefined, {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        };
+
+        const formatAtOffset = (iso: string) => {
+          const d = new Date(iso);
+          if (Number.isNaN(d.getTime())) return null;
+          const shifted = new Date(d.getTime() + offsetMin * 60_000);
+          return shifted.toLocaleString(undefined, {
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "UTC",
+          });
+        };
+
+        const tzLabel = formatTimezoneShort(offsetMin);
+
+        const renderTwoLines = (mainLabel: string, icon: React.ReactNode, iconColor: string) => {
+          const clientLabel = formatAtOffset(sentValue || expectedValue || "");
+          const tooltipTitle = clientLabel
+            ? "Top: shown in your local PC/browser time. " +
+              `Bottom: recipient local time (${tzLabel}), when email is expected for them.`
+            : "Top: shown in your local PC/browser time.";
+          return (
+            <Tooltip title={tooltipTitle} arrow placement="top">
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    color: iconColor,
+                    display: "flex",
+                    flexShrink: 0,
+                  }}
+                >
+                  {icon}
+                </Box>
+                <Box>
+                  <Typography variant="body2" sx={{ color: "text.primary", lineHeight: 1.6 }}>
+                    {mainLabel}
+                  </Typography>
+                  {clientLabel && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        mt: 1.25,
+                        color: "text.secondary",
+                        lineHeight: 1.2,
+                        display: "block",
+                      }}
+                    >
+                      {clientLabel} {tzLabel}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </Tooltip>
+          );
+        };
 
         if (sentValue) {
-          const sentDate = new Date(sentValue);
-          const sentLabel = Number.isNaN(sentDate.getTime())
-            ? "-"
-            : sentDate.toLocaleString(undefined, {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-          return (
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1,
-                color: "success.main",
-              }}
-            >
-              <Send size={14} />
-              <Typography variant="body2" sx={{ color: "text.primary" }}>
-                {sentLabel}
-              </Typography>
-            </Box>
-          );
+          const label = formatUtc(sentValue);
+          if (!label) return "-";
+          return renderTwoLines(label, <Send size={14} />, "success.main");
         }
 
         if (expectedValue) {
-          const expectedDate = new Date(expectedValue);
-          const expectedLabel = Number.isNaN(expectedDate.getTime())
-            ? "-"
-            : expectedDate.toLocaleString(undefined, {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-          return (
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1,
-                color: "info.main",
-              }}
-            >
-              <Calendar size={14} />
-              <Typography variant="body2" sx={{ color: "text.primary" }}>
-                {expectedLabel}
-              </Typography>
-            </Box>
-          );
+          const label = formatUtc(expectedValue);
+          if (!label) return "-";
+          return renderTwoLines(label, <Calendar size={14} />, "info.main");
         }
 
         return (
@@ -477,19 +489,6 @@ export const CampaignView = () => {
     loadCampaign();
     loadStatistics();
   }, [loadCampaign, loadStatistics]);
-
-  useEffect(() => {
-    setRecipientColumns((prev) =>
-      prev.map((column) => {
-        if (column.field !== "contact.Timezone") return column;
-        return {
-          ...column,
-          valueGetter: (_value: unknown, row: CampaignRecipientDetailsDto) =>
-            formatUtcOffset(row.contact?.timezone ?? campaign?.timeZone ?? 0),
-        };
-      })
-    );
-  }, [campaign?.timeZone]);
 
   const getRecipientsList = async (mainQuery: string) => {
     if (!id) return null;
@@ -713,8 +712,7 @@ export const CampaignView = () => {
 
   const getTimezoneLabel = (value: number | null | undefined) => {
     if (value === null || value === undefined) return "";
-    const tz = timezones.find((t) => t.value === value);
-    return tz?.label || "UTC";
+    return formatTimezoneLong(value);
   };
 
   const formatDateTime = (dateString?: string | null) => {
@@ -740,7 +738,7 @@ export const CampaignView = () => {
   const subtitleParts = [
     campaign.emailTemplate?.name && `Template: ${campaign.emailTemplate.name}`,
     campaign.scheduledAt && `Scheduled: ${formatDateTime(campaign.scheduledAt)}`,
-    campaign.scheduledAt && formatUtcOffset(campaign.timeZone ?? 0),
+    campaign.scheduledAt && formatTimezoneShort(campaign.timeZone ?? 0),
     campaign.createdAt && `Created: ${formatDateOnly(campaign.createdAt)}`,
   ]
     .filter(Boolean)
@@ -1192,7 +1190,6 @@ export const CampaignView = () => {
                   "contact.FirstName": false,
                   "contact.LastName": false,
                   contactId: false,
-                  "contact.Timezone": false,
                   createdAt: false,
                   updatedAt: false,
                 },

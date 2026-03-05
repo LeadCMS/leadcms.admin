@@ -38,6 +38,7 @@ import {
   getFormattedDateTime,
 } from "utils/general-helper";
 import { timezones } from "utils/constants";
+import { formatTimezoneShort } from "utils/timezone-helpers";
 import { getMockActivitiesForContact, getMockConversationsForContact } from "../mock-data";
 import { ContactViewOutletContext } from "../types";
 
@@ -68,17 +69,6 @@ const hasRenderableValue = (value: unknown) => {
 
 const compactRows = (rows: Array<DetailRow | null | undefined>) =>
   rows.filter((row): row is DetailRow => !!row && hasRenderableValue(row.value));
-
-const formatTimezoneOffset = (timezoneOffsetMinutes: number) => {
-  const utcMinutes = -timezoneOffsetMinutes;
-  const sign = utcMinutes >= 0 ? "+" : "-";
-  const absoluteMinutes = Math.abs(utcMinutes);
-  const hours = Math.floor(absoluteMinutes / 60)
-    .toString()
-    .padStart(2, "0");
-  const minutes = (absoluteMinutes % 60).toString().padStart(2, "0");
-  return `UTC${sign}${hours}:${minutes}`;
-};
 
 const toAbsoluteLink = (url: string | null | undefined) => {
   if (!url || !url.trim()) return "";
@@ -319,7 +309,7 @@ export const ContactView = () => {
   const timezoneLabel =
     timezones.find((timezone) => timezone.value === contact.timezone)?.label ||
     (contact.timezone !== null && contact.timezone !== undefined
-      ? formatTimezoneOffset(contact.timezone)
+      ? formatTimezoneShort(contact.timezone)
       : "");
 
   const emailHref = contact.email ? (
