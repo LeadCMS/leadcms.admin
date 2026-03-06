@@ -44,6 +44,9 @@ import {
 } from "./components/dynamic-setting-field";
 
 interface SettingsFormData {
+  "General.SiteUrl": string;
+  "General.UnsubscribeUrl": string;
+  "General.PrivacyUrl": string;
   LivePreviewUrlTemplate: string;
   PreviewUrlTemplate: string;
   "Content.MinTitleLength": string;
@@ -91,10 +94,13 @@ const Settings = () => {
     if (tabFromUrl) {
       return tabFromUrl;
     }
-    return hasAIAssistance ? "siteProfile" : "preview";
+    return "general";
   });
   const hasInitializedTab = useRef(false);
   const [formData, setFormData] = useState<SettingsFormData>({
+    "General.SiteUrl": "",
+    "General.UnsubscribeUrl": "",
+    "General.PrivacyUrl": "",
     LivePreviewUrlTemplate: "",
     PreviewUrlTemplate: "",
     "Content.MinTitleLength": "",
@@ -152,29 +158,29 @@ const Settings = () => {
       const tabFromUrl = searchParams.get("tab");
       if (!tabFromUrl) {
         // No tab in URL, set default
-        const defaultTab = hasAIAssistance ? "siteProfile" : "preview";
+        const defaultTab = "general";
         setActiveTab(defaultTab);
         setSearchParams({ tab: defaultTab }, { replace: true });
       } else if (!hasAIAssistance && tabFromUrl === "siteProfile") {
-        // AI not available but siteProfile tab requested, redirect to preview
-        setActiveTab("preview");
-        setSearchParams({ tab: "preview" }, { replace: true });
+        // AI not available but siteProfile tab requested, redirect to general
+        setActiveTab("general");
+        setSearchParams({ tab: "general" }, { replace: true });
       } else if (!hasSiteCapability && tabFromUrl === "leadCapture") {
-        setActiveTab("preview");
-        setSearchParams({ tab: "preview" }, { replace: true });
+        setActiveTab("general");
+        setSearchParams({ tab: "general" }, { replace: true });
       }
       hasInitializedTab.current = true;
       return;
     }
 
-    // If AI assistance is removed and user is on siteProfile tab, switch to preview
+    // If AI assistance is removed and user is on siteProfile tab, switch to general
     if (!hasAIAssistance && activeTab === "siteProfile") {
-      setActiveTab("preview");
-      setSearchParams({ tab: "preview" }, { replace: true });
+      setActiveTab("general");
+      setSearchParams({ tab: "general" }, { replace: true });
     }
     if (!hasSiteCapability && activeTab === "leadCapture") {
-      setActiveTab("preview");
-      setSearchParams({ tab: "preview" }, { replace: true });
+      setActiveTab("general");
+      setSearchParams({ tab: "general" }, { replace: true });
     }
   }, [activeTab, hasAIAssistance, hasSiteCapability, searchParams, setSearchParams]);
 
@@ -193,6 +199,9 @@ const Settings = () => {
       const settings = response.data;
 
       const newFormData: SettingsFormData = {
+        "General.SiteUrl": "",
+        "General.UnsubscribeUrl": "",
+        "General.PrivacyUrl": "",
         LivePreviewUrlTemplate: "",
         PreviewUrlTemplate: "",
         "Content.MinTitleLength": "",
@@ -236,7 +245,13 @@ const Settings = () => {
           }
 
           // Static settings
-          if (key === "LivePreviewUrlTemplate") {
+          if (key === "General.SiteUrl") {
+            newFormData["General.SiteUrl"] = setting.value || "";
+          } else if (key === "General.UnsubscribeUrl") {
+            newFormData["General.UnsubscribeUrl"] = setting.value || "";
+          } else if (key === "General.PrivacyUrl") {
+            newFormData["General.PrivacyUrl"] = setting.value || "";
+          } else if (key === "LivePreviewUrlTemplate") {
             newFormData.LivePreviewUrlTemplate = setting.value || "";
           } else if (key === "PreviewUrlTemplate") {
             newFormData.PreviewUrlTemplate = setting.value || "";
@@ -546,6 +561,18 @@ const Settings = () => {
         // Save all settings using batch import
         const settingsToSave = [
           {
+            key: "General.SiteUrl",
+            value: formData["General.SiteUrl"],
+          },
+          {
+            key: "General.UnsubscribeUrl",
+            value: formData["General.UnsubscribeUrl"],
+          },
+          {
+            key: "General.PrivacyUrl",
+            value: formData["General.PrivacyUrl"],
+          },
+          {
             key: "LivePreviewUrlTemplate",
             value: formData.LivePreviewUrlTemplate,
           },
@@ -769,6 +796,7 @@ const Settings = () => {
             {/* Settings Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 4 }}>
               <Tabs value={activeTab} onChange={handleTabChange}>
+                <Tab label="General" value="general" />
                 {hasAIAssistance && <Tab label="AI Profile" value="siteProfile" />}
                 <Tab label="Preview" value="preview" />
                 <Tab label="Media" value="media" />
@@ -836,6 +864,55 @@ const Settings = () => {
                 />
               </Tabs>
             </Box>
+
+            {/* General Settings Tab */}
+            {activeTab === "general" && (
+              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  General URLs
+                </Typography>
+                <Grid container spacing={3} marginBottom={4}>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      label="Site URL"
+                      value={formData["General.SiteUrl"]}
+                      onChange={handleInputChange("General.SiteUrl")}
+                      placeholder="https://example.com"
+                      helperText="Base public site URL used across the application."
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      label="Unsubscribe URL"
+                      value={formData["General.UnsubscribeUrl"]}
+                      onChange={handleInputChange("General.UnsubscribeUrl")}
+                      placeholder="https://example.com/unsubscribe"
+                      helperText="Public URL where recipients can manage unsubscribe actions."
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      label="Privacy URL"
+                      value={formData["General.PrivacyUrl"]}
+                      onChange={handleInputChange("General.PrivacyUrl")}
+                      placeholder="https://example.com/privacy"
+                      helperText="Public URL pointing to your privacy policy."
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
 
             {/* Preview Settings Tab */}
             {activeTab === "preview" && (

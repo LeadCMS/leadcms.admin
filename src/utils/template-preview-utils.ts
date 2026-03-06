@@ -33,6 +33,15 @@ export const CONTACT_TYPE_OPTIONS: {
  * Any template token NOT in this set is considered a custom parameter.
  */
 export const SERVER_KNOWN_PARAMS = new Set([
+  "Birthday",
+  "Timezone",
+  "TimezoneFormatted",
+  "LastOrderDate",
+  "DealsCount",
+  "OrdersCount",
+  "TotalRevenue",
+  "Tags",
+  "SocialMedia",
   "Email",
   "FirstName",
   "LastName",
@@ -54,6 +63,20 @@ export const SERVER_KNOWN_PARAMS = new Set([
   "AccountName",
   "AccountSiteUrl",
   "DomainName",
+  "Account",
+  "Domain",
+  "Orders",
+  "Deals",
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "utm_id",
+  "utm_query",
+  "site_url",
+  "unsubscribe_url",
+  "privacy_url",
 ]);
 
 /** Case-insensitive lookup for server-known params. */
