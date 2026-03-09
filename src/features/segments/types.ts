@@ -32,7 +32,14 @@ export type FieldValueType =
 
 export type AutocompleteKey = "countries" | "continents" | "languages";
 
-export type FieldCategory = "Contact" | "Account" | "Domain" | "Orders" | "Order Items" | "Deals";
+export type FieldCategory =
+  | "Contact"
+  | "Account"
+  | "Domain"
+  | "Orders"
+  | "Order Items"
+  | "Deals"
+  | "Email Logs";
 
 // Available field definitions
 export interface FieldDefinition {
@@ -99,6 +106,12 @@ const orderStatusOptions = [
   { value: "Cancelled", label: "Cancelled" },
   { value: "Refunded", label: "Refunded" },
   { value: "Failed", label: "Failed" },
+];
+
+const emailLogStatusOptions = [
+  { value: "NotSent", label: "Not Sent" },
+  { value: "Sent", label: "Sent" },
+  { value: "Received", label: "Received" },
 ];
 
 // Contact field definitions
@@ -630,6 +643,93 @@ export const contactFields: FieldDefinition[] = [
     category: "Deals",
     operators: dateOperators,
   },
+
+  // ── Email Logs collection attributes ──
+  {
+    id: "emailLogs.recipients",
+    name: "Recipients",
+    type: "text",
+    category: "Email Logs",
+    operators: textOperators,
+  },
+  {
+    id: "emailLogs.fromEmail",
+    name: "From Email",
+    type: "text",
+    category: "Email Logs",
+    operators: textOperators,
+  },
+  {
+    id: "emailLogs.subject",
+    name: "Subject",
+    type: "text",
+    category: "Email Logs",
+    operators: textOperators,
+  },
+  {
+    id: "emailLogs.htmlBody",
+    name: "HTML Body",
+    type: "text",
+    category: "Email Logs",
+    operators: textOperators,
+  },
+  {
+    id: "emailLogs.textBody",
+    name: "Text Body",
+    type: "text",
+    category: "Email Logs",
+    operators: textOperators,
+  },
+  {
+    id: "emailLogs.messageId",
+    name: "Message ID",
+    type: "text",
+    category: "Email Logs",
+    operators: textOperators,
+  },
+  {
+    id: "emailLogs.status",
+    name: "Status",
+    type: "select",
+    category: "Email Logs",
+    operators: selectOperators,
+    options: emailLogStatusOptions,
+  },
+  {
+    id: "emailLogs.createdAt",
+    name: "Created At",
+    type: "date",
+    category: "Email Logs",
+    operators: dateOperators,
+  },
+  {
+    id: "emailLogs.contactId",
+    name: "Contact ID",
+    type: "number",
+    category: "Email Logs",
+    operators: numericOperators,
+  },
+  {
+    id: "emailLogs.campaignId",
+    name: "Campaign ID",
+    type: "number",
+    category: "Email Logs",
+    operators: numericOperators,
+  },
+  {
+    id: "emailLogs.scheduleId",
+    name: "Schedule ID",
+    type: "number",
+    category: "Email Logs",
+    operators: numericOperators,
+  },
+  {
+    id: "emailLogs.templateId",
+    name: "Template ID",
+    type: "number",
+    category: "Email Logs",
+    operators: numericOperators,
+  },
 ];
 
 // Group fields by category for the field selector
@@ -640,6 +740,7 @@ export const fieldCategories: FieldCategory[] = [
   "Orders",
   "Order Items",
   "Deals",
+  "Email Logs",
 ];
 
 export const getFieldsByCategory = (category: FieldCategory): FieldDefinition[] => {
