@@ -1575,6 +1575,7 @@ export interface CampaignCreateDto {
    * @example "string"
    */
   language?: string | null;
+  utmParameters?: Utms;
 }
 
 export interface CampaignDetailsDto {
@@ -1622,6 +1623,7 @@ export interface CampaignDetailsDto {
    * @example "string"
    */
   language?: string | null;
+  utmParameters?: Utms;
   /**
    * Id
    * @format int32
@@ -1748,6 +1750,7 @@ export interface CampaignPreviewRequestDto {
   contactType?: "Full" | "Standard" | "Basic" | "Minimal" | null;
   /** Custom Template Parameters */
   customTemplateParameters?: Record<string, any>;
+  utmParameters?: Utms;
 }
 
 export interface CampaignPreviewResultDto {
@@ -1956,6 +1959,7 @@ export interface CampaignUpdateDto {
    * @example "string"
    */
   language?: string | null;
+  utmParameters?: Utms;
 }
 
 export interface ChangePasswordDto {
@@ -3279,6 +3283,7 @@ export interface ContactDetailsDto {
    * @example "string"
    */
   fullName?: string | null;
+  utms?: Utms;
   /**
    * Avatar Url
    * @example "string"
@@ -7074,6 +7079,7 @@ export interface EmailTemplatePreviewRequestDto {
   contactType?: "Full" | "Standard" | "Basic" | "Minimal" | null;
   /** Custom Template Parameters */
   customTemplateParameters?: Record<string, any>;
+  utmParameters?: Utms;
 }
 
 export interface EmailTemplatePreviewResultDto {
@@ -9860,6 +9866,39 @@ export interface UserUpdateDto {
   language?: string;
 }
 
+export interface Utms {
+  /**
+   * Source
+   * @example "string"
+   */
+  source?: string | null;
+  /**
+   * Medium
+   * @example "string"
+   */
+  medium?: string | null;
+  /**
+   * Campaign
+   * @example "string"
+   */
+  campaign?: string | null;
+  /**
+   * Content
+   * @example "string"
+   */
+  content?: string | null;
+  /**
+   * Term
+   * @example "string"
+   */
+  term?: string | null;
+  /**
+   * Id
+   * @example "string"
+   */
+  id?: string | null;
+}
+
 export interface VersionDto {
   /**
    * Version
@@ -10142,7 +10181,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.4.8.0
+ * @version 1.4.11.0
  */
 export class Api<
   SecurityDataType extends unknown,

@@ -83,6 +83,22 @@ const toAbsoluteLink = (url: string | null | undefined) => {
 
 const fieldLabel = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+const renderInlineChips = (values: string[], color: "default" | "primary" = "default") => (
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "flex-end",
+      flexWrap: "wrap",
+      gap: 1,
+      maxWidth: "100%",
+    }}
+  >
+    {values.map((value) => (
+      <Chip key={value} label={value} size="small" color={color} variant="outlined" />
+    ))}
+  </Box>
+);
+
 const StatCard = ({ label, value, icon }: StatItemProps) => {
   const theme = useTheme();
   return (
@@ -347,11 +363,6 @@ export const ContactView = () => {
         "",
     },
     { label: "Source", value: contact.source || "" },
-    {
-      label: "Tags",
-      value: contact.tags?.join(", ") || "",
-    },
-    { label: "Timezone", value: timezoneLabel },
   ]);
 
   const addressRows = compactRows([
@@ -458,6 +469,51 @@ export const ContactView = () => {
       value: toAbsoluteLink(value),
     }))
   );
+
+  const attributionRows = compactRows([
+    contact.tags?.length
+      ? {
+          label: "Tags",
+          value: renderInlineChips(contact.tags, "primary"),
+        }
+      : null,
+    contact.utms?.source
+      ? {
+          label: "UTM Source",
+          value: contact.utms.source,
+        }
+      : null,
+    contact.utms?.medium
+      ? {
+          label: "UTM Medium",
+          value: contact.utms.medium,
+        }
+      : null,
+    contact.utms?.campaign
+      ? {
+          label: "UTM Campaign",
+          value: contact.utms.campaign,
+        }
+      : null,
+    contact.utms?.content
+      ? {
+          label: "UTM Content",
+          value: contact.utms.content,
+        }
+      : null,
+    contact.utms?.term
+      ? {
+          label: "UTM Term",
+          value: contact.utms.term,
+        }
+      : null,
+    contact.utms?.id
+      ? {
+          label: "UTM ID",
+          value: contact.utms.id,
+        }
+      : null,
+  ]);
 
   const quickStatRows = compactRows([
     {
@@ -674,6 +730,16 @@ export const ContactView = () => {
             {socialRows.length > 0 && (
               <Grid size={{ xs: 12 }}>
                 <SectionCard title="Social Media" icon={<Share2 size={18} />} rows={socialRows} />
+              </Grid>
+            )}
+
+            {attributionRows.length > 0 && (
+              <Grid size={{ xs: 12 }}>
+                <SectionCard
+                  title="Tags & Attribution"
+                  icon={<Hash size={18} />}
+                  rows={attributionRows}
+                />
               </Grid>
             )}
           </Grid>
