@@ -34,6 +34,7 @@ export const CONTACT_TYPE_OPTIONS: {
  */
 export const SERVER_KNOWN_PARAMS = new Set([
   "Birthday",
+  "IpAddress",
   "Timezone",
   "TimezoneFormatted",
   "LastOrderDate",
@@ -148,7 +149,9 @@ export function extractTemplateTokens(template: string): string[] {
  */
 export function guessParamValue(name: string): string {
   const lower = name.toLowerCase();
+  const compact = lower.replace(/[^a-z0-9]/g, "");
 
+  if (compact === "ipaddress" || compact === "ip") return "203.0.113.42";
   if (lower.includes("email")) return "customer@example.com";
   if (lower.includes("name") && lower.includes("customer")) return "Alex Johnson";
   if (lower.includes("name")) return "Sample Name";

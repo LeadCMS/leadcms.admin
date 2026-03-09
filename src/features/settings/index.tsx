@@ -85,6 +85,8 @@ const Settings = () => {
   const { config, reloadConfig } = useConfig();
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
   const hasSiteCapability = config?.capabilities?.includes("Site") || false;
+  const supportedLanguages = config?.languages || [];
+  const shouldShowLanguageContextAlert = supportedLanguages.length > 1;
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const languageParam = isLanguageFilterActive ? selectedLanguage : undefined;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -774,24 +776,25 @@ const Settings = () => {
         <Card>
           <CardContent>
             {/* Language context alert */}
-            {isLanguageFilterActive ? (
-              <Alert severity="warning" sx={{ mb: 3 }}>
-                <Typography variant="body2">
-                  <strong>Language override: {selectedLanguage}</strong> — You are editing
-                  language-specific settings. Only values that differ from the defaults will be
-                  saved. These overrides apply exclusively to <strong>{selectedLanguage}</strong>
-                  -specific operations.
-                </Typography>
-              </Alert>
-            ) : (
-              <Alert severity="info" sx={{ mb: 3 }}>
-                <Typography variant="body2">
-                  <strong>All Languages (global defaults)</strong> — You are editing the default
-                  settings that apply across all languages. To create language-specific overrides,
-                  select a language from the global language filter.
-                </Typography>
-              </Alert>
-            )}
+            {shouldShowLanguageContextAlert &&
+              (isLanguageFilterActive ? (
+                <Alert severity="warning" sx={{ mb: 3 }}>
+                  <Typography variant="body2">
+                    <strong>Language override: {selectedLanguage}</strong> — You are editing
+                    language-specific settings. Only values that differ from the defaults will be
+                    saved. These overrides apply exclusively to <strong>{selectedLanguage}</strong>
+                    -specific operations.
+                  </Typography>
+                </Alert>
+              ) : (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  <Typography variant="body2">
+                    <strong>All Languages (global defaults)</strong> — You are editing the default
+                    settings that apply across all languages. To create language-specific overrides,
+                    select a language from the global language filter.
+                  </Typography>
+                </Alert>
+              ))}
 
             {/* Settings Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 4 }}>
