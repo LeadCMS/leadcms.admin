@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { ContactDetailsDto, ContactImportDto, SegmentDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
+import { contactFields } from "@features/segments/types";
 import { ContactHref, ContactNameListItem, ContactNameListItemText } from "./index.styled";
 import {
   contactGridSettingsStorageKey,
@@ -527,6 +528,7 @@ export const Contacts = () => {
       )}
       <DataList
         columns={columns}
+        filterFields={contactFields}
         setColumns={setColumns}
         gridSettingsStorageKey={contactGridSettingsStorageKey}
         defaultFilterOrderColumn={defaultFilterOrderColumn}

@@ -35,9 +35,10 @@ export const getWhereFilterQuery = (
   whereFieldValue: string,
   operatorValue: string
 ) => {
+  const noValueOperators = ["isEmpty", "isNotEmpty", "IsEmpty", "IsNotEmpty", "IsTrue", "IsFalse"];
   if (!whereField) return "";
   if (operatorValue === "isAnyOf" && (!whereFieldValue || whereFieldValue.length === 0)) return "";
-  if (operatorValue === "isEmpty" || operatorValue === "isNotEmpty" || whereFieldValue) {
+  if (noValueOperators.includes(operatorValue) || whereFieldValue) {
     return generateFilterQuery(whereField, operatorValue, whereFieldValue);
   }
   return "";
@@ -95,34 +96,53 @@ const getWhereOperatorAndValue = (
     case "equals":
     case "is":
     case "=":
+    case "Equals":
       return { operator: "eq", value: whereFieldValue };
     case "contains":
+    case "Contains":
       return { operator: "contains", value: `*${whereFieldValue}*` };
+    case "NotContains":
+      return { operator: "ncontains", value: `*${whereFieldValue}*` };
     case "startsWith":
+    case "StartsWith":
       return { operator: "contains", value: `${whereFieldValue}*` };
     case "endsWith":
+    case "EndsWith":
       return { operator: "contains", value: `*${whereFieldValue}` };
     case "isEmpty":
+    case "IsEmpty":
       return { operator: "eq", value: "" };
     case "isNotEmpty":
+    case "IsNotEmpty":
       return { operator: "neq", value: "" };
     case "isAnyOf":
+    case "In":
       return { operator: "eq", value: `${whereFieldValue.join("|")}` };
     case "not":
     case "!=":
+    case "NotEquals":
+    case "NotIn":
       return { operator: "neq", value: whereFieldValue };
     case "after":
     case ">":
+    case "GreaterThan":
       return { operator: "gt", value: whereFieldValue };
     case "onOrAfter":
     case ">=":
+    case "GreaterThanOrEqual":
       return { operator: "gte", value: whereFieldValue };
     case "before":
     case "<":
+    case "LessThan":
       return { operator: "lt", value: whereFieldValue };
     case "onOrBefore":
     case "<=":
+    case "LessThanOrEqual":
       return { operator: "lte", value: whereFieldValue };
+    case "IsTrue":
+      return { operator: "eq", value: "true" };
+    case "IsFalse":
+      return { operator: "eq", value: "false" };
     default:
       return { operator: "eq", value: whereFieldValue };
   }

@@ -24,6 +24,7 @@ import { ColumnsPanel } from "@components/custom-columns-panel";
 import { ExportPopup } from "@components/export-popup";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import React from "react";
+import type { FieldDefinition } from "@features/segments/types";
 import { buildExportQueryString } from "@components/export";
 import { getModuleNameFromUrl } from "@utils/general-helper";
 import { downloadExportFile } from "@components/download";
@@ -68,6 +69,7 @@ type dataListProps<TModel extends GridValidRowModel> = {
   enableRowSelection?: boolean;
   rowSelectionModel?: GridRowSelectionModel;
   onRowSelectionModelChange?: (rowSelectionModel: GridRowSelectionModel) => void;
+  filterFields?: FieldDefinition[];
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -99,6 +101,7 @@ export const DataList = <TModel extends GridValidRowModel>({
   enableRowSelection = true,
   rowSelectionModel: controlledRowSelectionModel,
   onRowSelectionModelChange,
+  filterFields,
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -449,6 +452,7 @@ export const DataList = <TModel extends GridValidRowModel>({
     <DataListContainer>
       <CustomFilterBar
         columns={columns}
+        filterFields={filterFields}
         whereFilters={filterState.whereFilters || []}
         addFilter={(f, _removeIdx, editIdx) => updateWhereFilters(f, _removeIdx, editIdx)}
         removeFilter={(idx) => updateWhereFilters(undefined, idx)}

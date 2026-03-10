@@ -1,4 +1,5 @@
 import {
+  Autocomplete,
   Box,
   TextField,
   MenuItem,
@@ -11,12 +12,50 @@ import {
   Stack,
   FormLabel,
   IconButton,
+  ListSubheader,
 } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
+import { useConfig } from "@providers/config-provider";
+import { useRequestContext } from "providers/request-provider";
+import {
+  type AutocompleteKey,
+  type FieldDefinition,
+  fieldCategories,
+  getOperatorDisplayName,
+  noValueOperators,
+} from "@features/segments/types";
+import { getContinentList, getCountryList } from "utils/general-helper";
 
 type OperatorOption = { value: string; label: string };
+type OptionItem = { value: string; label: string };
+type FilterRow = {
+  whereField: string;
+  whereOperator: string;
+  whereFieldValue: string;
+};
+
+const legacyOperatorToSegmentOperator: Record<string, string> = {
+  contains: "Contains",
+  equals: "Equals",
+  is: "Equals",
+  "=": "Equals",
+  not: "NotEquals",
+  "!=": "NotEquals",
+  startsWith: "StartsWith",
+  endsWith: "EndsWith",
+  isEmpty: "IsEmpty",
+  isNotEmpty: "IsNotEmpty",
+  after: "GreaterThan",
+  ">": "GreaterThan",
+  onOrAfter: "GreaterThanOrEqual",
+  ">=": "GreaterThanOrEqual",
+  before: "LessThan",
+  "<": "LessThan",
+  onOrBefore: "LessThanOrEqual",
+  "<=": "LessThanOrEqual",
+};
 
 const textOperators: OperatorOption[] = [
   { value: "contains", label: "Contains" },
@@ -58,6 +97,54 @@ const singleSelectOperators: OperatorOption[] = [
 ];
 
 const booleanOperators: OperatorOption[] = [{ value: "equals", label: "Is" }];
+
+const useAutocompleteOptions = () => {
+  const context = useRequestContext();
+  const { config } = useConfig();
+  const [options, setOptions] = useState<Record<AutocompleteKey, OptionItem[]>>({
+    countries: [],
+    continents: [],
+    languages: [],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      const [countries, continents] = await Promise.all([
+        getCountryList(context),
+        getContinentList(context),
+      ]);
+
+      if (cancelled) return;
+
+      const countryOptions = countries
+        ? Object.entries(countries).map(([code, name]) => ({ value: code, label: name }))
+        : [];
+      const continentOptions = continents
+        ? Object.entries(continents).map(([code, name]) => ({ value: code, label: name }))
+        : [];
+      const languageOptions = (config?.languages || []).map((language) => ({
+        value: language.code || "",
+        label: language.name || language.code || "",
+      }));
+
+      setOptions({
+        countries: countryOptions,
+        continents: continentOptions,
+        languages: languageOptions,
+      });
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.languages, context]);
+
+  return options;
+};
 
 function getColumnType(col: GridColDef | undefined): string {
   return col?.type || "string";
@@ -101,13 +188,56 @@ function getOperatorLabel(operatorValue: string, colType: string): string {
   return found?.label ?? operatorValue;
 }
 
+function normalizeFieldOperator(
+  field: FieldDefinition | undefined,
+  operator: string,
+  value: string
+) {
+  if (!field) return operator;
+  if (field.type === "boolean" && operator === "equals") {
+    return value === "false" ? "IsFalse" : "IsTrue";
+  }
+  return legacyOperatorToSegmentOperator[operator] || operator;
+}
+
+function getDefaultFieldOperator(field: FieldDefinition | undefined) {
+  return field?.operators?.[0] || "Contains";
+}
+
+function getFieldDisplayLabel(field: FieldDefinition | undefined, fieldId: string) {
+  if (!field) return fieldId;
+  return field.category !== "Contact" ? `${field.category}: ${field.name}` : field.name;
+}
+
+function formatStoredValueForInput(field: FieldDefinition | undefined, rawValue: string) {
+  if (field?.type === "tags") {
+    return rawValue
+      .split("|")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return rawValue;
+}
+
+function formatValueForStorage(field: FieldDefinition | undefined, nextValue: string | string[]) {
+  if (Array.isArray(nextValue)) {
+    return nextValue.filter(Boolean).join("|");
+  }
+
+  if (field?.type === "tags") {
+    return nextValue
+      .split("|")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join("|");
+  }
+
+  return nextValue;
+}
+
 type CustomFilterBarProps = {
   columns: GridColDef[];
-  whereFilters: Array<{
-    whereField: string;
-    whereOperator: string;
-    whereFieldValue: string;
-  }>;
+  whereFilters: FilterRow[];
   addFilter: (
     args: {
       whereField?: string;
@@ -121,6 +251,7 @@ type CustomFilterBarProps = {
   filterPanelOpen?: boolean;
   setFilterPanelOpen?: (open: boolean) => void;
   clearAllFilters: () => void;
+  filterFields?: FieldDefinition[];
 };
 
 export function CustomFilterBar({
@@ -131,17 +262,34 @@ export function CustomFilterBar({
   filterPanelOpen,
   setFilterPanelOpen,
   clearAllFilters,
+  filterFields,
 }: CustomFilterBarProps) {
-  const [field, setField] = useState(columns[0]?.field);
-  const [operator, setOperator] = useState(getDefaultOperator(getColumnType(columns[0])));
+  const autocompleteOptions = useAutocompleteOptions();
+  const [field, setField] = useState(filterFields?.[0]?.id || columns[0]?.field);
+  const [operator, setOperator] = useState(
+    filterFields?.[0]?.operators?.[0] || getDefaultOperator(getColumnType(columns[0]))
+  );
   const [value, setValue] = useState("");
   const [editIdx, setEditIdx] = useState<number | null>(null);
 
   const selectedColumn = useMemo(() => columns.find((c) => c.field === field), [columns, field]);
+  const selectedField = useMemo(
+    () => filterFields?.find((filterField) => filterField.id === field),
+    [field, filterFields]
+  );
   const colType = getColumnType(selectedColumn);
-  const operatorOptions = getOperatorsForType(colType);
+  const operatorOptions = selectedField
+    ? selectedField.operators.map((item) => ({
+        value: item,
+        label: getOperatorDisplayName(item),
+      }))
+    : getOperatorsForType(colType);
 
   const valueOptions: string[] = useMemo(() => {
+    if (selectedField?.options) {
+      return selectedField.options.map((option) => option.value);
+    }
+
     if (!selectedColumn) return [];
     const col = selectedColumn as unknown as Record<string, unknown>;
     const opts = col.valueOptions;
@@ -151,15 +299,21 @@ export function CustomFilterBar({
     return [];
   }, [selectedColumn]);
 
-  const noValueRequired = ["isEmpty", "isNotEmpty"].includes(operator);
+  const noValueRequired = selectedField
+    ? noValueOperators.includes(operator as never)
+    : ["isEmpty", "isNotEmpty"].includes(operator);
 
-  const canApply = field && (noValueRequired || (colType === "boolean" ? true : !!value));
+  const canApply = field && (noValueRequired || !!String(value).trim());
 
   const resetToDefaults = () => {
-    const defaultField = columns[0]?.field;
+    const defaultField = filterFields?.[0]?.id || columns[0]?.field;
     const defaultColType = getColumnType(columns[0]);
     setField(defaultField);
-    setOperator(getDefaultOperator(defaultColType));
+    setOperator(
+      filterFields?.[0]
+        ? getDefaultFieldOperator(filterFields[0])
+        : getDefaultOperator(defaultColType)
+    );
     setValue("");
     setEditIdx(null);
   };
@@ -171,6 +325,14 @@ export function CustomFilterBar({
 
   const handleFieldChange = (newField: string) => {
     setField(newField);
+    const nextField = filterFields?.find((filterField) => filterField.id === newField);
+    if (nextField) {
+      const nextOperator = getDefaultFieldOperator(nextField);
+      setOperator(nextOperator);
+      setValue("");
+      return;
+    }
+
     const newCol = columns.find((c) => c.field === newField);
     const newType = getColumnType(newCol);
     const newOps = getOperatorsForType(newType);
@@ -183,8 +345,15 @@ export function CustomFilterBar({
 
   const onChipClick = (idx: number) => {
     const f = whereFilters[idx];
+    const editField = filterFields?.find((filterField) => filterField.id === f.whereField);
+    const normalizedOperator = normalizeFieldOperator(
+      editField,
+      f.whereOperator,
+      f.whereFieldValue
+    );
+
     setField(f.whereField);
-    setOperator(f.whereOperator);
+    setOperator(normalizedOperator);
     setValue(f.whereFieldValue);
     setEditIdx(idx);
     setFilterPanelOpen?.(true);
@@ -194,8 +363,8 @@ export function CustomFilterBar({
     addFilter(
       {
         whereField: field,
-        whereOperator: operator,
-        whereFieldValue: value,
+        whereOperator: normalizeFieldOperator(selectedField, operator, value),
+        whereFieldValue: formatValueForStorage(selectedField, value),
       },
       undefined,
       editIdx !== null ? editIdx : undefined
@@ -204,7 +373,26 @@ export function CustomFilterBar({
     setFilterPanelOpen?.(false);
   };
 
-  const chipLabel = (f: { whereField: string; whereOperator: string; whereFieldValue: string }) => {
+  const chipLabel = (f: FilterRow) => {
+    const filterField = filterFields?.find((item) => item.id === f.whereField);
+    if (filterField) {
+      const operatorLabel = getOperatorDisplayName(
+        normalizeFieldOperator(filterField, f.whereOperator, f.whereFieldValue) as never
+      );
+      const fieldLabel = getFieldDisplayLabel(filterField, f.whereField);
+      const displayValue = f.whereFieldValue.split("|").filter(Boolean).join(", ");
+
+      if (
+        noValueOperators.includes(
+          normalizeFieldOperator(filterField, f.whereOperator, f.whereFieldValue) as never
+        )
+      ) {
+        return `${fieldLabel} ${operatorLabel}`;
+      }
+
+      return `${fieldLabel} ${operatorLabel} "${displayValue}"`;
+    }
+
     const col = columns.find((c) => c.field === f.whereField);
     const cType = getColumnType(col);
     const fieldLabel = col?.headerName ?? f.whereField;
@@ -216,6 +404,136 @@ export function CustomFilterBar({
   };
 
   const renderValueInput = () => {
+    if (selectedField) {
+      const isDisabled = noValueRequired;
+
+      if (selectedField.type === "autocomplete") {
+        const key = selectedField.autocompleteKey;
+        const options = key ? autocompleteOptions[key] : [];
+        const selectedOption = options.find((option) => option.value === value) ?? null;
+
+        return (
+          <Autocomplete
+            size="small"
+            options={options}
+            getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(option, optionValue) => option.value === optionValue.value}
+            value={selectedOption}
+            onChange={(_event, nextValue) => setValue(nextValue?.value || "")}
+            renderInput={(params) => <TextField {...params} label={selectedField.name} />}
+            sx={{ minWidth: 220 }}
+            disabled={isDisabled}
+          />
+        );
+      }
+
+      if (selectedField.type === "select") {
+        return (
+          <TextField
+            select
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            style={{ minWidth: 180 }}
+            disabled={isDisabled}
+            sx={{
+              "& .MuiSelect-select": {
+                padding: 2.5,
+                minHeight: "unset",
+                fontSize: "0.95rem",
+              },
+            }}
+          >
+            {(selectedField.options || []).map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        );
+      }
+
+      if (selectedField.type === "date") {
+        return (
+          <TextField
+            type="date"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            style={{ minWidth: 180 }}
+            disabled={isDisabled}
+            InputLabelProps={{ shrink: true }}
+            sx={{
+              "& .MuiInputBase-input": {
+                padding: 2.5,
+                minHeight: "unset",
+                fontSize: "0.95rem",
+              },
+            }}
+          />
+        );
+      }
+
+      if (selectedField.type === "number") {
+        return (
+          <TextField
+            type="number"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            style={{ minWidth: 180 }}
+            disabled={isDisabled}
+            sx={{
+              "& .MuiInputBase-input": {
+                padding: 2.5,
+                minHeight: "unset",
+                fontSize: "0.95rem",
+              },
+            }}
+          />
+        );
+      }
+
+      if (selectedField.type === "tags") {
+        return (
+          <Autocomplete
+            freeSolo
+            multiple
+            size="small"
+            options={[]}
+            value={formatStoredValueForInput(selectedField, value) as string[]}
+            onChange={(_event, nextValue) => {
+              setValue(formatValueForStorage(selectedField, nextValue));
+            }}
+            renderTags={(selectedValues, getTagProps) =>
+              selectedValues.map((selectedValue, index) => {
+                const { key, ...tagProps } = getTagProps({ index });
+                return <Chip key={key} label={selectedValue} size="small" {...tagProps} />;
+              })
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Tags" placeholder="Type and press Enter" />
+            )}
+            sx={{ minWidth: 220 }}
+            disabled={isDisabled}
+          />
+        );
+      }
+
+      return (
+        <TextField
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          style={{ minWidth: 180 }}
+          disabled={isDisabled}
+          sx={{
+            "& .MuiInputBase-input": {
+              padding: 2.5,
+              minHeight: "unset",
+              fontSize: "0.95rem",
+            },
+          }}
+        />
+      );
+    }
+
     const isDisabled = noValueRequired;
 
     if (colType === "singleSelect" && valueOptions.length > 0) {
@@ -400,7 +718,7 @@ export function CustomFilterBar({
                 </FormLabel>
                 <TextField
                   select
-                  value={field || columns[0]?.field || ""}
+                  value={field || filterFields?.[0]?.id || columns[0]?.field || ""}
                   onChange={(e) => handleFieldChange(e.target.value)}
                   style={{ minWidth: 120 }}
                   sx={{
@@ -411,11 +729,30 @@ export function CustomFilterBar({
                     },
                   }}
                 >
-                  {columns.map((col) => (
-                    <MenuItem key={col.field} value={col.field}>
-                      {col.headerName}
-                    </MenuItem>
-                  ))}
+                  {filterFields
+                    ? fieldCategories.flatMap((category) => {
+                        const groupedFields = filterFields.filter(
+                          (filterField) => filterField.category === category
+                        );
+
+                        if (groupedFields.length === 0) {
+                          return [];
+                        }
+
+                        return [
+                          <ListSubheader key={`header-${category}`}>{category}</ListSubheader>,
+                          ...groupedFields.map((filterField) => (
+                            <MenuItem key={filterField.id} value={filterField.id}>
+                              {filterField.name}
+                            </MenuItem>
+                          )),
+                        ];
+                      })
+                    : columns.map((col) => (
+                        <MenuItem key={col.field} value={col.field}>
+                          {col.headerName}
+                        </MenuItem>
+                      ))}
                 </TextField>
               </Box>
               <Box
