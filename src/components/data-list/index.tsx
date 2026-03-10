@@ -59,11 +59,15 @@ type dataListProps<TModel extends GridValidRowModel> = {
   onExportOpen?: boolean;
   onExportClose?: () => void;
   exportApiCall?: (finalQueryString: string, accept: string) => Promise<Response>;
+  hasAdditionalFilteredExportContext?: boolean;
+  additionalStorageState?: Record<string, unknown>;
   refreshFlag?: number;
   onBulkDelete?: (ids: (string | number)[]) => Promise<void>;
   bulkDeleteEntityName?: string;
   showActionsColumn?: boolean;
   enableRowSelection?: boolean;
+  rowSelectionModel?: GridRowSelectionModel;
+  onRowSelectionModelChange?: (rowSelectionModel: GridRowSelectionModel) => void;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -86,11 +90,15 @@ export const DataList = <TModel extends GridValidRowModel>({
     /* noop */
   },
   exportApiCall,
+  hasAdditionalFilteredExportContext = false,
+  additionalStorageState,
   refreshFlag = 0,
   onBulkDelete,
   bulkDeleteEntityName = "record",
   showActionsColumn = true,
   enableRowSelection = true,
+  rowSelectionModel: controlledRowSelectionModel,
+  onRowSelectionModelChange,
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -110,11 +118,13 @@ export const DataList = <TModel extends GridValidRowModel>({
     gridSettings?.columnWidths ?? {}
   );
 
-  const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
-    type: "include",
-    ids: new Set(),
-  });
+  const [internalRowSelectionModel, setInternalRowSelectionModel] =
+    React.useState<GridRowSelectionModel>({
+      type: "include",
+      ids: new Set(),
+    });
 
+  const rowSelectionModel = controlledRowSelectionModel ?? internalRowSelectionModel;
   const selectedRows = Array.from(rowSelectionModel.ids);
 
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -241,6 +251,7 @@ export const DataList = <TModel extends GridValidRowModel>({
   const saveGridStateInLocalStorage = () => {
     if (filterState) {
       setGridSettings({
+        ...gridSettings,
         searchTerm,
         filterLimit: filterState.filterLimit || defaultFilterLimit,
         skipLimit: filterState.skipLimit || 0,
@@ -251,6 +262,7 @@ export const DataList = <TModel extends GridValidRowModel>({
         columnVisibilityModel: filterState.columnVisibilityModel || {},
         columnOrder: filterState.columnOrder || [],
         columnWidths,
+        ...additionalStorageState,
       });
     }
   };
@@ -259,10 +271,14 @@ export const DataList = <TModel extends GridValidRowModel>({
     setColumnWidths(newWidths);
   };
 
-  function sortColumnsByOrder<T>(
-    columns: GridColDef<TModel>[],
-    columnOrder: string[]
-  ): GridColDef<TModel>[] {
+  const updateRowSelectionModel = (newModel: GridRowSelectionModel) => {
+    if (!controlledRowSelectionModel) {
+      setInternalRowSelectionModel(newModel);
+    }
+    onRowSelectionModelChange?.(newModel);
+  };
+
+  function sortColumnsByOrder(columns: GridColDef<TModel>[], columnOrder: string[]) {
     const ordered = columnOrder
       .map((field) => columns.find((col) => col.field === field))
       .filter(Boolean) as GridColDef<TModel>[];
@@ -276,7 +292,9 @@ export const DataList = <TModel extends GridValidRowModel>({
     removeIndex?: number,
     editIdx?: number
   ) => {
-    const updatedFilters = [...(filterState?.whereFilters || [])];
+    type WhereFilter = NonNullable<GridDataFilterState["whereFilters"]>[number];
+
+    const updatedFilters: WhereFilter[] = [...(filterState?.whereFilters || [])];
 
     if (typeof removeIndex === "number") {
       updatedFilters.splice(removeIndex, 1);
@@ -286,9 +304,9 @@ export const DataList = <TModel extends GridValidRowModel>({
       newFilter.whereField &&
       newFilter.whereOperator
     ) {
-      updatedFilters[editIdx] = newFilter as any;
+      updatedFilters[editIdx] = newFilter as WhereFilter;
     } else if (newFilter && newFilter.whereField && newFilter.whereOperator) {
-      updatedFilters.push(newFilter as any);
+      updatedFilters.push(newFilter as WhereFilter);
     }
 
     setFilterState({
@@ -394,10 +412,11 @@ export const DataList = <TModel extends GridValidRowModel>({
         err &&
         typeof err === "object" &&
         "statusText" in err &&
-        typeof (err as any).statusText === "string"
+        typeof (err as { statusText?: unknown }).statusText === "string"
       ) {
-        const statusText = (err as any).statusText;
-        const status = (err as any).status;
+        const responseError = err as { status?: unknown; statusText?: string };
+        const statusText = responseError.statusText;
+        const status = responseError.status;
         message = `Export failed (${status}): ${statusText}`;
       }
       setExportError(message);
@@ -455,11 +474,13 @@ export const DataList = <TModel extends GridValidRowModel>({
           onExport={handleExport}
           columns={columns}
           selectedCount={selectedRows.length}
+          filteredCount={totalRowCount}
           columnVisibilityModel={columnVisibilityModel}
           exporting={exporting}
           errorMessage={exportError}
           hasActiveFilters={!!filterState?.whereFilters?.length}
           hasSearchText={!!(searchTerm && searchTerm.trim() !== "")}
+          hasAdditionalFilteredContext={hasAdditionalFilteredExportContext}
         />
       )}
       {onBulkDelete && selectedRows.length > 0 && (
@@ -469,28 +490,28 @@ export const DataList = <TModel extends GridValidRowModel>({
           entityName={bulkDeleteEntityName}
           onDelete={() => onBulkDelete(selectedRows)}
           onDeleteSuccess={() => {
-            setRowSelectionModel({
+            updateRowSelectionModel({
               type: "include",
               ids: new Set(),
             });
             getDataListAsync();
           }}
           onClearSelection={() =>
-            setRowSelectionModel({
+            updateRowSelectionModel({
               type: "include",
               ids: new Set(),
             })
           }
           onToggleSelectAll={() => {
             if (selectedRows.length === (modelData || []).length) {
-              setRowSelectionModel({
+              updateRowSelectionModel({
                 type: "include",
                 ids: new Set(),
               });
             } else {
-              setRowSelectionModel({
+              updateRowSelectionModel({
                 type: "include",
-                ids: new Set((modelData || []).map((row) => (row as any).id)),
+                ids: new Set((modelData || []).map((row) => row.id)),
               });
             }
           }}
@@ -570,9 +591,7 @@ export const DataList = <TModel extends GridValidRowModel>({
           disableViewRoute={!showViewButton}
           columnVisibilityModel={columnVisibilityModel}
           onColumnVisibilityModelChange={handleColumnVisibilityModelChange}
-          onRowSelectionModelChange={(newModel) => {
-            setRowSelectionModel(newModel);
-          }}
+          onRowSelectionModelChange={updateRowSelectionModel}
           rowSelectionModel={rowSelectionModel}
           columnWidths={columnWidths}
           saveColumnWidths={saveColumnWidths}

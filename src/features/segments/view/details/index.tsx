@@ -10,26 +10,18 @@ import {
   CircularProgress,
   Divider,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Tabs,
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { Edit, Users } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ModuleWrapper } from "@components/module-wrapper";
+import { SegmentContactsTable } from "../../components/segment-contacts-table";
 import { SegmentsBreadcrumbLinks } from "../../constants";
 import { getFieldDisplayName, getOperatorDisplayName } from "../../types";
 import { useRequestContext } from "providers/request-provider";
-import {
-  ContactDetailsDto,
-  SegmentDetailsDto as ApiSegmentDetailsDto,
-  SegmentRule,
-} from "lib/network/swagger-client";
+import { SegmentDetailsDto as ApiSegmentDetailsDto, SegmentRule } from "lib/network/swagger-client";
 import { CoreModule, getEditFormRoute } from "@lib/router";
 import { getFormattedDateOnly } from "utils/general-helper";
 
@@ -99,16 +91,36 @@ const compactRows = (rows: DetailRow[]) =>
     return true;
   });
 
+const segmentViewTabs = ["overview", "contacts"] as const;
+
+const getSegmentViewTabValue = (tabParam: string | null) => {
+  const tabIndex = segmentViewTabs.indexOf(
+    (tabParam || "").toLowerCase() as (typeof segmentViewTabs)[number]
+  );
+  return tabIndex >= 0 ? tabIndex : 0;
+};
+
 export const SegmentView = () => {
   const { id } = useParams<{ id: string }>();
   const { client } = useRequestContext();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [segment, setSegment] = useState<ApiSegmentDetailsDto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [contacts, setContacts] = useState<ContactDetailsDto[]>([]);
-  const [loadingContacts, setLoadingContacts] = useState(false);
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(() => getSegmentViewTabValue(searchParams.get("tab")));
+
+  useEffect(() => {
+    setTabValue(getSegmentViewTabValue(searchParams.get("tab")));
+  }, [searchParams]);
+
+  const handleTabChange = (_event: React.SyntheticEvent, nextTab: number) => {
+    setTabValue(nextTab);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("tab", segmentViewTabs[nextTab] || segmentViewTabs[0]);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   useEffect(() => {
     const loadSegment = async () => {
@@ -124,26 +136,6 @@ export const SegmentView = () => {
     };
     loadSegment();
   }, [id, client]);
-
-  useEffect(() => {
-    if (tabValue !== 1 || !segment) return;
-    const loadContacts = async () => {
-      setLoadingContacts(true);
-      try {
-        const limit =
-          segment.contactCount && segment.contactCount > 0 ? segment.contactCount : undefined;
-        const listParams = limit ? { limit } : undefined;
-        const result = await client.api.segmentsContactsList(segment.id!, listParams);
-        setContacts(result.data || []);
-      } catch (error) {
-        console.error("Failed to load segment contacts:", error);
-        setContacts([]);
-      } finally {
-        setLoadingContacts(false);
-      }
-    };
-    loadContacts();
-  }, [tabValue, segment, client]);
 
   if (loading) {
     return (
@@ -254,16 +246,6 @@ export const SegmentView = () => {
           },
         ];
 
-  const hasContacts = contactCount > 0 || (segment.contactIds?.length ?? 0) > 0;
-  const emptyContactsMessage =
-    normalizedType === "dynamic"
-      ? hasContacts
-        ? "Contact preview is not available yet."
-        : "This segment has no contacts yet."
-      : hasContacts
-      ? "Contacts will appear here once loaded."
-      : "This segment has no contacts yet.";
-
   return (
     <ModuleWrapper breadcrumbs={SegmentsBreadcrumbLinks} currentBreadcrumb={segment.name}>
       {/* Header Card */}
@@ -324,7 +306,7 @@ export const SegmentView = () => {
       </Card>
 
       {/* Tabs */}
-      <Tabs value={tabValue} onChange={(_e, v) => setTabValue(v)}>
+      <Tabs value={tabValue} onChange={handleTabChange}>
         <Tab value={0} label="Overview" />
         <Tab
           value={1}
@@ -375,42 +357,10 @@ export const SegmentView = () => {
       {/* Contacts Tab */}
       {tabValue === 1 && (
         <Box sx={{ py: 3 }}>
-          {loadingContacts ? (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                py: 4,
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          ) : contacts.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
-              {emptyContactsMessage}
-            </Typography>
-          ) : (
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Contact</TableCell>
-                  <TableCell>Email</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {contacts.map((contact) => (
-                  <TableRow key={contact.id}>
-                    <TableCell>
-                      {contact.firstName || contact.lastName
-                        ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
-                        : "Unnamed Contact"}
-                    </TableCell>
-                    <TableCell>{contact.email}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <SegmentContactsTable
+            segmentId={segment.id!}
+            gridSettingsStorageKey={`segment-contacts-grid-settings-${segment.id || "0"}`}
+          />
         </Box>
       )}
     </ModuleWrapper>

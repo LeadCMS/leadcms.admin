@@ -1,5 +1,14 @@
-import { Avatar, Box, Button, Chip, ListItemAvatar, Tooltip } from "@mui/material";
-import { ContactDetailsDto, ContactImportDto } from "lib/network/swagger-client";
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  ListItemAvatar,
+  MenuItem,
+  TextField,
+  Tooltip,
+} from "@mui/material";
+import { ContactDetailsDto, ContactImportDto, SegmentDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { ContactHref, ContactNameListItem, ContactNameListItemText } from "./index.styled";
 import {
@@ -31,13 +40,20 @@ import { useGlobalLanguageFilter } from "@providers/global-language-filter-provi
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { useCurrencyFormatter } from "@hooks";
 
+type ContactGridSettings = DataListSettings & {
+  segmentId?: number | "";
+};
+
 export const Contacts = () => {
   const { client } = useRequestContext();
   const { primaryCurrency } = useCurrencyFormatter();
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
-  const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
+  const [gridSettings] = useLocalStorage<ContactGridSettings | undefined>(
     contactGridSettingsStorageKey,
     undefined
+  );
+  const [selectedSegmentId, setSelectedSegmentId] = useState<number | "">(
+    gridSettings?.segmentId ?? ""
   );
 
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");
@@ -47,13 +63,41 @@ export const Contacts = () => {
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [segments, setSegments] = useState<SegmentDetailsDto[]>([]);
+  const [segmentsLoaded, setSegmentsLoaded] = useState(false);
 
   const dataExportQuery = useRef("");
+
+  useEffect(() => {
+    const loadSegments = async () => {
+      try {
+        const result = await client.api.segmentsList();
+        setSegments((result.data || []).slice().sort((a, b) => a.name.localeCompare(b.name)));
+      } catch {
+        setSegments([]);
+      } finally {
+        setSegmentsLoaded(true);
+      }
+    };
+
+    void loadSegments();
+  }, [client]);
+
+  useEffect(() => {
+    if (selectedSegmentId === "" || !segmentsLoaded) {
+      return;
+    }
+
+    const hasSelectedSegment = segments.some((segment) => segment.id === selectedSegmentId);
+    if (!hasSelectedSegment) {
+      setSelectedSegmentId("");
+    }
+  }, [segments, selectedSegmentId, segmentsLoaded, setSelectedSegmentId]);
 
   // Trigger refresh when global language filter changes
   useEffect(() => {
     setRefreshTrigger((prev) => prev + 1);
-  }, [selectedLanguage]);
+  }, [selectedLanguage, selectedSegmentId]);
 
   const getContactList = async (mainQuery: string, exportQuery?: string) => {
     dataExportQuery.current = exportQuery || "";
@@ -71,12 +115,19 @@ export const Contacts = () => {
 
     const result = await client.api.contactsList({
       query: fullQuery,
+      segmentId: selectedSegmentId === "" ? undefined : selectedSegmentId,
     });
     return result;
   };
 
   const contactsExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>
-    client.api.contactsExportList({ query }, { headers: { Accept: accept } });
+    client.api.contactsExportList(
+      {
+        query,
+        segmentId: selectedSegmentId === "" ? undefined : selectedSegmentId,
+      },
+      { headers: { Accept: accept } }
+    );
 
   const handleImportOpen = () => {
     !importFieldsObject && setImportFieldsObject(getModelByName(modelName));
@@ -382,11 +433,40 @@ export const Contacts = () => {
   ]);
 
   const searchBar = (
-    <SearchBar
-      setSearchTermOnChange={setSearchTerm}
-      searchBoxLabel={searchLabel}
-      initialValue={gridSettings?.searchTerm ?? ""}
-    ></SearchBar>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 2,
+      }}
+    >
+      <SearchBar
+        setSearchTermOnChange={setSearchTerm}
+        searchBoxLabel={searchLabel}
+        initialValue={gridSettings?.searchTerm ?? ""}
+      ></SearchBar>
+      {segments.length > 0 && (
+        <TextField
+          select
+          size="small"
+          label="Segment"
+          value={selectedSegmentId}
+          onChange={(event) => {
+            const value = event.target.value;
+            setSelectedSegmentId(value === "" ? "" : Number(value));
+          }}
+          sx={{ minWidth: 220 }}
+        >
+          <MenuItem value="">All segments</MenuItem>
+          {segments.map((segment) => (
+            <MenuItem key={segment.id} value={segment.id}>
+              {segment.name}
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
+    </Box>
   );
 
   const extraActions = [
@@ -473,6 +553,8 @@ export const Contacts = () => {
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
         exportApiCall={contactsExportApi}
+        hasAdditionalFilteredExportContext={selectedSegmentId !== ""}
+        additionalStorageState={{ segmentId: selectedSegmentId }}
         refreshFlag={refreshTrigger}
         onBulkDelete={async (ids) => {
           await client.api.contactsBulkDelete(ids.map(Number));

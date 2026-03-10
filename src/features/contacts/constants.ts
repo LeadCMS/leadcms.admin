@@ -24,3 +24,5 @@ export const contactAddHeader = "Add Contact";
 export const contactViewHeader = "View Contact";
 
 export const contactGridSettingsStorageKey = "contactDataListSettings";
+
+export const contactSegmentFilterStorageKey = "contactSegmentFilter";

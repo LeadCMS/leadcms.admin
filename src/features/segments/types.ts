@@ -81,6 +81,12 @@ const numericOperators: SegmentRule["operator"][] = [
   "LessThanOrEqual",
 ];
 
+const nullableNumericOperators: SegmentRule["operator"][] = [
+  ...numericOperators,
+  "IsEmpty",
+  "IsNotEmpty",
+];
+
 const dateOperators: SegmentRule["operator"][] = [
   "Equals",
   "GreaterThan",
@@ -99,6 +105,12 @@ const tagsOperators: SegmentRule["operator"][] = [
 ];
 
 const selectOperators: SegmentRule["operator"][] = ["Equals", "NotEquals"];
+
+const nullableSelectOperators: SegmentRule["operator"][] = [
+  ...selectOperators,
+  "IsEmpty",
+  "IsNotEmpty",
+];
 
 const orderStatusOptions = [
   { value: "Pending", label: "Pending" },
@@ -250,8 +262,15 @@ export const contactFields: FieldDefinition[] = [
     name: "Language",
     type: "autocomplete",
     category: "Contact",
-    operators: selectOperators,
+    operators: nullableSelectOperators,
     autocompleteKey: "languages",
+  },
+  {
+    id: "timezone",
+    name: "Timezone",
+    type: "number",
+    category: "Contact",
+    operators: nullableNumericOperators,
   },
   {
     id: "source",
@@ -694,6 +713,13 @@ export const contactFields: FieldDefinition[] = [
     category: "Email Logs",
     operators: selectOperators,
     options: emailLogStatusOptions,
+  },
+  {
+    id: "emailLogs.source",
+    name: "Source",
+    type: "text",
+    category: "Email Logs",
+    operators: textOperators,
   },
   {
     id: "emailLogs.createdAt",

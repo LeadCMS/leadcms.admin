@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -26,11 +26,13 @@ interface ExportPopupProps<TModel extends GridValidRowModel> {
   onExport: (exportScope: string, fileFormat: string, selectedColumns: string[]) => void;
   columns: GridColDef<TModel>[];
   selectedCount: number;
+  filteredCount?: number;
   columnVisibilityModel?: GridColumnVisibilityModel;
   exporting?: boolean;
   errorMessage?: string | null;
   hasActiveFilters: boolean;
   hasSearchText: boolean;
+  hasAdditionalFilteredContext?: boolean;
 }
 
 export const ExportPopup = <TModel extends GridValidRowModel>({
@@ -39,11 +41,13 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
   onExport,
   columns,
   selectedCount,
+  filteredCount,
   columnVisibilityModel = {},
   exporting = false,
   errorMessage = null,
   hasActiveFilters,
   hasSearchText,
+  hasAdditionalFilteredContext = false,
 }: ExportPopupProps<TModel>) => {
   const [exportScope, setExportScope] = useState("all");
   const [fileFormat, setFileFormat] = useState("csv");
@@ -71,7 +75,9 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
 
   const handleExport = () => onExport(exportScope, fileFormat, selectedColumns);
 
-  const isFilteredExportValid = hasActiveFilters || hasSearchText;
+  const isFilteredExportValid = hasActiveFilters || hasSearchText || hasAdditionalFilteredContext;
+  const filteredLabel =
+    typeof filteredCount === "number" ? `Filtered Records (${filteredCount})` : "Filtered Records";
 
   const exportDisabled =
     exporting ||
@@ -136,7 +142,7 @@ export const ExportPopup = <TModel extends GridValidRowModel>({
                     }}
                   />
                 }
-                label={<Typography sx={{ fontSize: "0.9rem" }}>Filtered Records</Typography>}
+                label={<Typography sx={{ fontSize: "0.9rem" }}>{filteredLabel}</Typography>}
               />
               <FormControlLabel
                 value="selected"

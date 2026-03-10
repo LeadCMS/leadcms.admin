@@ -10181,7 +10181,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.4.11.0
+ * @version 1.4.13.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -11072,6 +11072,11 @@ export class Api<
     contactsList: (
       query?: {
         query?: string;
+        /**
+         * Filter contacts to the evaluated members of the specified segment before applying the remaining query filters
+         * @format int32
+         */
+        segmentId?: number;
       },
       params: RequestParams = {},
     ) =>
@@ -11100,6 +11105,33 @@ export class Api<
         secure: true,
         type: ContentType.Json,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
+     * @name ContactsExportList
+     * @request GET:/api/contacts/export
+     * @secure
+     */
+    contactsExportList: (
+      query?: {
+        query?: string;
+        /**
+         * Filter contacts to the evaluated members of the specified segment before applying the remaining query filters
+         * @format int32
+         */
+        segmentId?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, void | ProblemDetails>({
+        path: `/api/contacts/export`,
+        method: "GET",
+        query: query,
+        secure: true,
         ...params,
       }),
 
@@ -11225,6 +11257,11 @@ export class Api<
       query?: {
         syncToken?: string;
         query?: string;
+        /**
+         * Filter contacts to the evaluated members of the specified segment before applying the remaining query filters
+         * @format int32
+         */
+        segmentId?: number;
       },
       params: RequestParams = {},
     ) =>
@@ -11277,28 +11314,6 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Contacts
-     * @name ContactsExportList
-     * @request GET:/api/contacts/export
-     * @secure
-     */
-    contactsExportList: (
-      query?: {
-        query?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<any, void | ProblemDetails>({
-        path: `/api/contacts/export`,
-        method: "GET",
-        query: query,
-        secure: true,
         ...params,
       }),
 

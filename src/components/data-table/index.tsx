@@ -172,6 +172,7 @@ export const DataTableGrid = ({
         rows={data ?? empty}
         loading={!data}
         checkboxSelection={enableRowSelection}
+        disableRowSelectionExcludeModel
         disableRowSelectionOnClick
         rowHeight={72}
         rowCount={totalRowCount}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
@@ -7,18 +7,21 @@ import {
   CardContent,
   CardHeader,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
   MenuItem,
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { Save, Trash2, Users, Plus, X } from "lucide-react";
+import { Save, Settings2, Trash2, Users, Plus, X } from "lucide-react";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SegmentsBreadcrumbLinks } from "../constants";
 import { SegmentType, contactFields } from "../types";
@@ -30,11 +33,17 @@ import {
   SegmentRule,
   SegmentUpdateDto,
 } from "lib/network/swagger-client";
+import { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
+import { DataList } from "@components/data-list";
 import { useRequestContext } from "providers/request-provider";
 import { RuleBuilder } from "../components/rule-builder";
-import { ContactPickerModal } from "../components/contact-picker-modal";
-import { useSaveShortcut } from "@hooks";
+import { SegmentContactsTable } from "../components/segment-contacts-table";
+import { getSegmentContactColumns } from "../components/segment-contact-columns";
+import { useCurrencyFormatter, useNotificationsService, useSaveShortcut } from "@hooks";
+import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
+import { parseApiError, toPromiseError } from "@utils/api-error-parser";
 import { getFormattedDateOnly } from "utils/general-helper";
+import { useSearchParams } from "react-router-dom";
 
 const defaultRuleGroup: RuleGroup = {
   id: "default-group",
@@ -125,6 +134,15 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+const segmentFormTabs = ["definition", "contacts"] as const;
+
+const getSegmentFormTabValue = (tabParam: string | null) => {
+  const tabIndex = segmentFormTabs.indexOf(
+    (tabParam || "").toLowerCase() as (typeof segmentFormTabs)[number]
+  );
+  return tabIndex >= 0 ? tabIndex : 0;
+};
+
 interface SegmentFormProps {
   segment?: SegmentDetailsDto | null;
   isEdit: boolean;
@@ -143,11 +161,31 @@ export const SegmentForm = ({
   onDelete,
 }: SegmentFormProps) => {
   const { client } = useRequestContext();
+  const { primaryCurrency } = useCurrencyFormatter();
+  const { notificationsService } = useNotificationsService();
+  const { Show: showErrorModal } = useErrorDetailsModal();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [name, setName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
   const [description, setDescription] = useState("");
   const [segmentType, setSegmentType] = useState<SegmentType>("dynamic");
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => getSegmentFormTabValue(searchParams.get("tab")));
+
+  useEffect(() => {
+    setActiveTab(getSegmentFormTabValue(searchParams.get("tab")));
+  }, [searchParams]);
+
+  const updateTabInUrl = (nextTab: number) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("tab", segmentFormTabs[nextTab] || segmentFormTabs[0]);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
+
+  const handleTabChange = (_event: React.SyntheticEvent, nextTab: number) => {
+    setActiveTab(nextTab);
+    updateTabInUrl(nextTab);
+  };
 
   // Dynamic segment state
   const [includeRules, setIncludeRules] = useState<RuleGroup>(defaultRuleGroup);
@@ -158,9 +196,14 @@ export const SegmentForm = ({
 
   // Static segment state
   const [staticContactIds, setStaticContactIds] = useState<number[]>([]);
-  const [isContactPickerOpen, setIsContactPickerOpen] = useState(false);
+  const [staticContactSearchText, setStaticContactSearchText] = useState("");
+  const [staticContactsColumnsPanelOpen, setStaticContactsColumnsPanelOpen] = useState(false);
+  const [staticContactsColumns, setStaticContactsColumns] = useState<
+    GridColDef<ContactDetailsDto>[]
+  >(() => getSegmentContactColumns(primaryCurrency));
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [savingMode, setSavingMode] = useState<"stay" | "close" | null>(null);
 
   const clearPreviewResults = () => {
     setMatchingCount(null);
@@ -197,6 +240,7 @@ export const SegmentForm = ({
   const handleTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSegmentType(event.target.value as SegmentType);
     setActiveTab(0);
+    updateTabInUrl(0);
     clearPreviewResults();
   };
 
@@ -272,11 +316,29 @@ export const SegmentForm = ({
     return () => window.clearTimeout(timeoutId);
   }, [segmentType, includeRules, excludeRules, handlePreview, staticContactIds]);
 
-  const handleContactsSelected = (contactIds: string[]) => {
-    setStaticContactIds(contactIds.map(Number));
+  const handleStaticContactsSelectionChange = (rowSelectionModel: GridRowSelectionModel) => {
+    setStaticContactIds(Array.from(rowSelectionModel.ids).map(Number));
+  };
+
+  const staticContactsSelectionModel = useMemo<GridRowSelectionModel>(
+    () => ({
+      type: "include",
+      ids: new Set(staticContactIds),
+    }),
+    [staticContactIds]
+  );
+
+  const getSelectableContactsList = async (mainQuery: string) => {
+    const includeFilter = "filter[include]=Account&filter[include]=Domain";
+    const fullQuery = [mainQuery, includeFilter].filter(Boolean).join("&");
+    return client.api.contactsList({ query: fullQuery });
   };
 
   const handleSave = async (shouldClose: boolean) => {
+    const nextSavingMode = shouldClose ? "close" : "stay";
+    setSavingMode(nextSavingMode);
+    setNameError(null);
+
     try {
       const payload: SegmentCreateDto | SegmentUpdateDto = isEdit
         ? {
@@ -306,12 +368,25 @@ export const SegmentForm = ({
             contactIds: segmentType === "static" ? staticContactIds : null,
           };
 
-      await onSave(payload);
+      const savePromise = onSave(payload);
+      notificationsService.promise(savePromise, {
+        pending: "Saving segment...",
+        success: "Segment saved successfully",
+        error: (error) =>
+          toPromiseError(error, showErrorModal, "Unable to save segment. An error occurred."),
+      });
+
+      await savePromise;
       if (shouldClose) {
         onSaveSuccess?.();
       }
     } catch (error) {
-      console.error("Failed to save segment:", error);
+      const parsed = parseApiError(error, "Unable to save segment. An error occurred.");
+      if (parsed.status === 422) {
+        setNameError(parsed.message);
+      }
+    } finally {
+      setSavingMode(null);
     }
   };
 
@@ -323,7 +398,7 @@ export const SegmentForm = ({
     void handleSave(true);
   };
 
-  useSaveShortcut(handleSaveStay, true);
+  useSaveShortcut(handleSaveStay, !!name.trim() && savingMode === null);
 
   const handleDeleteConfirm = async () => {
     if (!onDelete) return;
@@ -337,6 +412,21 @@ export const SegmentForm = ({
   };
 
   const currentBreadcrumb = isEdit ? "Edit Segment" : "Create Segment";
+  const initialMembershipState = JSON.stringify({
+    type: (segment?.type || "dynamic").toLowerCase(),
+    includeRules: segment?.definition?.includeRules || null,
+    excludeRules: segment?.definition?.excludeRules || null,
+    contactIds: [...(segment?.contactIds || [])].sort((left, right) => left - right),
+  });
+  const currentMembershipState = JSON.stringify({
+    type: segmentType,
+    includeRules: segmentType === "dynamic" ? includeRules : null,
+    excludeRules: segmentType === "dynamic" ? excludeRules : null,
+    contactIds:
+      segmentType === "static" ? [...staticContactIds].sort((left, right) => left - right) : [],
+  });
+  const contactsTableNeedsSave =
+    isEdit && !!segment?.id && initialMembershipState !== currentMembershipState;
 
   return (
     <ModuleWrapper
@@ -366,7 +456,7 @@ export const SegmentForm = ({
                 onClick={() => setDeleteDialogOpen(true)}
                 startIcon={<Trash2 size={18} />}
                 size="medium"
-                disabled={deleting}
+                disabled={deleting || savingMode !== null}
               >
                 Delete
               </Button>
@@ -386,26 +476,31 @@ export const SegmentForm = ({
               onClick={onCancel}
               startIcon={<X size={18} />}
               size="medium"
+              disabled={savingMode !== null}
             >
               Cancel
             </Button>
             <Button
               variant="outlined"
-              startIcon={<Save size={18} />}
+              startIcon={
+                savingMode === "stay" ? <CircularProgress size={16} /> : <Save size={18} />
+              }
               onClick={handleSaveStay}
-              disabled={!name.trim()}
+              disabled={!name.trim() || savingMode !== null}
               size="medium"
             >
-              Save
+              {savingMode === "stay" ? "Saving..." : "Save"}
             </Button>
             <Button
               variant="contained"
-              startIcon={<Save size={18} />}
+              startIcon={
+                savingMode === "close" ? <CircularProgress size={16} /> : <Save size={18} />
+              }
               onClick={handleSaveAndClose}
-              disabled={!name.trim()}
+              disabled={!name.trim() || savingMode !== null}
               size="medium"
             >
-              Save and Close
+              {savingMode === "close" ? "Saving..." : "Save and Close"}
             </Button>
           </Box>
         </Box>
@@ -427,7 +522,14 @@ export const SegmentForm = ({
                 label="Segment Name"
                 placeholder="e.g., High-Value Customers"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) {
+                    setNameError(null);
+                  }
+                }}
+                error={!!nameError}
+                helperText={nameError}
                 required
                 fullWidth
               />
@@ -459,7 +561,7 @@ export const SegmentForm = ({
 
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
+        <Tabs value={activeTab} onChange={handleTabChange}>
           <Tab label="Definition" />
           <Tab
             label={
@@ -567,35 +669,96 @@ export const SegmentForm = ({
             <CardContent>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Box
-                  sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 2,
+                    flexWrap: "wrap",
+                  }}
                 >
                   <Typography variant="body2" color="text.secondary">
                     {staticContactIds.length}
                     contact{staticContactIds.length !== 1 ? "s" : ""} selected
                   </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Users size={16} />}
-                    onClick={() => setIsContactPickerOpen(true)}
-                    size="small"
-                  >
-                    Manage Contacts
-                  </Button>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <Tooltip title="Manage columns">
+                      <IconButton
+                        size="small"
+                        onClick={() => setStaticContactsColumnsPanelOpen(true)}
+                        sx={{ border: 1, borderColor: "divider" }}
+                      >
+                        <Settings2 size={16} />
+                      </IconButton>
+                    </Tooltip>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="inherit"
+                      sx={{ whiteSpace: "nowrap" }}
+                      onClick={() => setStaticContactIds([])}
+                      disabled={staticContactIds.length === 0}
+                    >
+                      Clear Selection
+                    </Button>
+                  </Box>
                 </Box>
 
-                {staticContactIds.length === 0 ? (
-                  <Alert severity="info">
-                    No contacts selected yet. Use the &quot;Manage Contacts&quot; button to add
-                    contacts to this segment.
-                  </Alert>
-                ) : (
-                  <Alert severity="success">
-                    <Typography variant="body2">
-                      {staticContactIds.length} contact
-                      {staticContactIds.length !== 1 ? "s" : ""} in this segment.
-                    </Typography>
-                  </Alert>
-                )}
+                <Alert severity={staticContactIds.length === 0 ? "info" : "success"}>
+                  <Typography variant="body2">
+                    {staticContactIds.length === 0
+                      ? "Select contacts directly in the table below."
+                      : `${staticContactIds.length} contact${
+                          staticContactIds.length !== 1 ? "s" : ""
+                        } currently selected.`}
+                  </Typography>
+                </Alert>
+
+                <TextField
+                  size="small"
+                  label="Search Contacts"
+                  value={staticContactSearchText}
+                  onChange={(event) => setStaticContactSearchText(event.target.value)}
+                  fullWidth
+                />
+
+                <DataList
+                  columns={staticContactsColumns}
+                  setColumns={setStaticContactsColumns}
+                  gridSettingsStorageKey={`segment-contact-selector-grid-settings-${
+                    segment?.id || "new"
+                  }`}
+                  defaultFilterOrderColumn="createdAt"
+                  defaultFilterOrderDirection="desc"
+                  searchText={staticContactSearchText}
+                  getModelDataList={getSelectableContactsList}
+                  initialGridState={{
+                    sorting: {
+                      sortModel: [
+                        {
+                          field: "createdAt",
+                          sort: "desc",
+                        },
+                      ],
+                    },
+                    columns: {
+                      columnVisibilityModel: {
+                        firstName: false,
+                        lastName: false,
+                        companyName: false,
+                        phone: false,
+                        createdAt: false,
+                        updatedAt: false,
+                      },
+                    },
+                  }}
+                  columnsPanelOpen={staticContactsColumnsPanelOpen}
+                  setColumnsPanelOpen={setStaticContactsColumnsPanelOpen}
+                  showActionsColumn={false}
+                  enableRowSelection={true}
+                  rowSelectionModel={staticContactsSelectionModel}
+                  onRowSelectionModelChange={handleStaticContactsSelectionChange}
+                />
               </Box>
             </CardContent>
           </Card>
@@ -604,143 +767,128 @@ export const SegmentForm = ({
 
       {/* Contacts Tab */}
       <TabPanel value={activeTab} index={1}>
-        <Card>
-          <CardHeader
-            title={`Contacts (${
-              segmentType === "dynamic" ? matchingCount : staticContactIds.length
-            })`}
-            subheader={
-              segmentType === "dynamic"
-                ? "Contacts matching the defined rules"
-                : "Manually selected contacts"
+        {isEdit && segment?.id ? (
+          <SegmentContactsTable
+            segmentId={segment.id}
+            gridSettingsStorageKey={`segment-edit-contacts-grid-settings-${segment.id}`}
+            infoMessage={
+              contactsTableNeedsSave
+                ? "This table reflects the saved segment membership. Save changes to refresh it."
+                : undefined
             }
-            titleTypographyProps={{ variant: "subtitle1" }}
           />
-          <CardContent>
-            {segmentType === "dynamic" ? (
-              previewContacts.length > 0 ? (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {previewContacts.map((contact) => (
+        ) : segmentType === "dynamic" ? (
+          previewContacts.length > 0 ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {previewContacts.map((contact) => (
+                <Box
+                  key={contact.id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    p: 2,
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    "&:hover": { backgroundColor: "grey.50" },
+                  }}
+                >
+                  {contact.avatarUrl && (
                     <Box
-                      key={contact.id}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        p: 2,
-                        border: 1,
-                        borderColor: "divider",
-                        borderRadius: 1,
-                        "&:hover": { backgroundColor: "grey.50" },
-                      }}
-                    >
-                      {contact.avatarUrl && (
-                        <Box
-                          component="img"
-                          src={contact.avatarUrl}
-                          alt="Avatar"
-                          sx={{ width: 32, height: 32, borderRadius: "50%" }}
-                        />
-                      )}
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Typography variant="body1" fontWeight="500">
-                          {contact.firstName || contact.lastName
-                            ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
-                            : "Unnamed Contact"}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" noWrap>
-                          {contact.email}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                          flexShrink: 0,
-                          flexWrap: "wrap",
-                          justifyContent: "flex-end",
-                        }}
-                      >
-                        {contact.countryCode && (
-                          <Chip
-                            label={contact.countryCode}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: "0.75rem" }}
-                          />
-                        )}
-                        {(contact.ordersCount ?? 0) > 0 && (
-                          <Chip
-                            label={`${contact.ordersCount} orders`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: "0.75rem" }}
-                          />
-                        )}
-                        {(contact.dealsCount ?? 0) > 0 && (
-                          <Chip
-                            label={`${contact.dealsCount} deals`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: "0.75rem" }}
-                          />
-                        )}
-                        {(contact.totalRevenue ?? 0) > 0 && (
-                          <Chip
-                            label={`$${contact.totalRevenue?.toLocaleString()}`}
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                            sx={{ fontSize: "0.75rem" }}
-                          />
-                        )}
-                        {contact.lastOrderDate && (
-                          <Chip
-                            label={`Last order: ${getFormattedDateOnly(contact.lastOrderDate)}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: "0.75rem" }}
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                  ))}
+                      component="img"
+                      src={contact.avatarUrl}
+                      alt="Avatar"
+                      sx={{ width: 32, height: 32, borderRadius: "50%" }}
+                    />
+                  )}
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography variant="body1" fontWeight="500">
+                      {contact.firstName || contact.lastName
+                        ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
+                        : "Unnamed Contact"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {contact.email}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      flexShrink: 0,
+                      flexWrap: "wrap",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {contact.countryCode && (
+                      <Chip
+                        label={contact.countryCode}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: "0.75rem" }}
+                      />
+                    )}
+                    {(contact.ordersCount ?? 0) > 0 && (
+                      <Chip
+                        label={`${contact.ordersCount} orders`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: "0.75rem" }}
+                      />
+                    )}
+                    {(contact.dealsCount ?? 0) > 0 && (
+                      <Chip
+                        label={`${contact.dealsCount} deals`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: "0.75rem" }}
+                      />
+                    )}
+                    {(contact.totalRevenue ?? 0) > 0 && (
+                      <Chip
+                        label={`$${contact.totalRevenue?.toLocaleString()}`}
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                        sx={{ fontSize: "0.75rem" }}
+                      />
+                    )}
+                    {contact.lastOrderDate && (
+                      <Chip
+                        label={`Last order: ${getFormattedDateOnly(contact.lastOrderDate)}`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: "0.75rem" }}
+                      />
+                    )}
+                  </Box>
                 </Box>
-              ) : (
-                <Box sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
-                  <Box component={Users} size={48} sx={{ opacity: 0.5 }} />
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    Matching contacts will appear here automatically
-                  </Typography>
-                  <Alert severity="info" sx={{ mt: 2, maxWidth: 400, mx: "auto" }}>
-                    Preview refreshes automatically as you update the rules.
-                  </Alert>
-                </Box>
-              )
-            ) : (
-              <Box sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
-                <Users size={48} style={{ opacity: 0.5 }} />
-                <Typography variant="h6" sx={{ mt: 2 }}>
-                  {staticContactIds.length === 0
-                    ? "No contacts selected yet"
-                    : isEdit
-                    ? "Contact list will be updated after saving"
-                    : "Contacts will be shown here after saving"}
-                </Typography>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
+              ))}
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+              <Box component={Users} size={48} sx={{ opacity: 0.5 }} />
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Matching contacts will appear here automatically
+              </Typography>
+              <Alert severity="info" sx={{ mt: 2, maxWidth: 400, mx: "auto" }}>
+                Preview refreshes automatically as you update the rules.
+              </Alert>
+            </Box>
+          )
+        ) : (
+          <Box sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+            <Users size={48} style={{ opacity: 0.5 }} />
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              {staticContactIds.length === 0
+                ? "No contacts selected yet"
+                : "Contacts will be shown here after saving"}
+            </Typography>
+          </Box>
+        )}
       </TabPanel>
-
-      {/* Contact Picker Modal */}
-      <ContactPickerModal
-        open={isContactPickerOpen}
-        onOpenChange={setIsContactPickerOpen}
-        selectedContactIds={staticContactIds.map(String)}
-        onConfirm={handleContactsSelected}
-      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
