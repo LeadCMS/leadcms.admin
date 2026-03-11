@@ -11,7 +11,11 @@ import { ContactDetailsDto } from "lib/network/swagger-client";
 import type { PrimaryCurrencyConfig } from "@utils/currency-formatter";
 
 export const getSegmentContactColumns = (
-  primaryCurrency: PrimaryCurrencyConfig | null | undefined
+  primaryCurrency: PrimaryCurrencyConfig | null | undefined,
+  options: {
+    hasDeals: boolean;
+    hasOrders: boolean;
+  }
 ): GridColDef<ContactDetailsDto>[] => [
   {
     field: "fullName",
@@ -143,37 +147,51 @@ export const getSegmentContactColumns = (
     minWidth: 120,
     valueGetter: (_value, row) => row.countryCode || "—",
   },
-  {
-    field: "ordersCount",
-    headerName: "Orders",
-    width: 110,
-    type: "number",
-    valueGetter: (_value, row) => row.ordersCount ?? 0,
-  },
-  {
-    field: "dealsCount",
-    headerName: "Deals",
-    width: 110,
-    type: "number",
-    valueGetter: (_value, row) => row.dealsCount ?? 0,
-  },
-  {
-    field: "totalRevenue",
-    headerName: "Revenue",
-    minWidth: 140,
-    type: "number",
-    align: "right",
-    headerAlign: "right",
-    valueGetter: (_value, row) => row.totalRevenue ?? null,
-    renderCell: ({ value }) => <RevenueCell value={value} primaryCurrency={primaryCurrency} />,
-  },
-  {
-    field: "lastOrderDate",
-    headerName: "Last Order",
-    minWidth: 180,
-    valueGetter: DateValueGetter,
-    valueFormatter: DateValueFormatter,
-  },
+  ...(options.hasOrders
+    ? [
+        {
+          field: "ordersCount",
+          headerName: "Orders",
+          width: 110,
+          type: "number",
+          valueGetter: (_value, row) => row.ordersCount ?? 0,
+        } as GridColDef<ContactDetailsDto>,
+      ]
+    : []),
+  ...(options.hasDeals
+    ? [
+        {
+          field: "dealsCount",
+          headerName: "Deals",
+          width: 110,
+          type: "number",
+          valueGetter: (_value, row) => row.dealsCount ?? 0,
+        } as GridColDef<ContactDetailsDto>,
+      ]
+    : []),
+  ...(options.hasOrders
+    ? [
+        {
+          field: "totalRevenue",
+          headerName: "Revenue",
+          minWidth: 140,
+          type: "number",
+          align: "right",
+          headerAlign: "right",
+          valueGetter: (_value, row) => row.totalRevenue ?? null,
+          renderCell: ({ value }) => (
+            <RevenueCell value={value} primaryCurrency={primaryCurrency} />
+          ),
+        } as GridColDef<ContactDetailsDto>,
+        {
+          field: "lastOrderDate",
+          headerName: "Last Order",
+          minWidth: 180,
+          valueGetter: DateValueGetter,
+          valueFormatter: DateValueFormatter,
+        } as GridColDef<ContactDetailsDto>,
+      ]
+    : []),
   {
     field: "createdAt",
     headerName: "Created",

@@ -3283,6 +3283,16 @@ export interface ContactDetailsDto {
    * @example "string"
    */
   fullName?: string | null;
+  /**
+   * Ip Address
+   * @example "string"
+   */
+  ipAddress?: string | null;
+  /**
+   * User Device Summary
+   * @example "string"
+   */
+  userDeviceSummary?: string | null;
   utms?: Utms;
   /**
    * Avatar Url
@@ -10181,7 +10191,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.4.13.0
+ * @version 1.4.14.0
  */
 export class Api<
   SecurityDataType extends unknown,

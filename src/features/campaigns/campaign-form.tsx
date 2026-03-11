@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRequestContext } from "providers/request-provider";
 import { useNotificationsService, useSaveShortcut } from "@hooks";
+import { useConfig } from "@providers/config-provider";
 import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "lib/router";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { campaignFormBreadcrumbLinks, campaignAddHeader, campaignEditHeader } from "./constants";
@@ -65,6 +66,7 @@ import {
   X,
 } from "lucide-react";
 import { showApiError } from "@utils/api-error-parser";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { CampaignPreview } from "@components/campaign-preview";
 
 const steps = ["Details", "Segment", "Template", "Preview & Test", "Schedule", "Review"];
@@ -85,10 +87,12 @@ interface CampaignFormProps {
 
 export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const navigate = useNavigate();
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const isEdit = mode === "edit";
+  const hasSegments = hasEntity(config?.entities, ENTITY_KEYS.segment);
 
   const [activeStep, setActiveStep] = useState(0);
   const [savingAction, setSavingAction] = useState<"draft" | "launch" | "save" | null>(null);
@@ -193,6 +197,12 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   // Load segments
   useEffect(() => {
     const load = async () => {
+      if (!hasSegments) {
+        setSegments([]);
+        setLoadingSegments(false);
+        return;
+      }
+
       setLoadingSegments(true);
       try {
         const result = await client.api.segmentsList();
@@ -204,7 +214,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
       }
     };
     load();
-  }, [client]);
+  }, [client, hasSegments]);
 
   useEffect(() => {
     if (isScheduleModeLocked) {
@@ -550,11 +560,16 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
               gap: 2,
             }}
           >
+            {!hasSegments && (
+              <Alert severity="info">
+                Segments are not available in this project configuration.
+              </Alert>
+            )}
             <Typography variant="body2" color="text.secondary">
               You can select multiple segments. Contacts in all selected segments will receive this
               campaign.
             </Typography>
-            {loadingSegments ? (
+            {hasSegments && loadingSegments ? (
               <Box
                 sx={{
                   display: "flex",
@@ -564,9 +579,9 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
               >
                 <Loader2 size={24} className="animate-spin" />
               </Box>
-            ) : segments.length === 0 ? (
+            ) : hasSegments && segments.length === 0 ? (
               <Alert severity="info">No segments available. Please create a segment first.</Alert>
-            ) : (
+            ) : hasSegments ? (
               segments.map((segment) => {
                 const isSelected = selectedSegmentIds.includes(segment.id ?? 0);
                 return (
@@ -637,7 +652,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
                   </Card>
                 );
               })
-            )}
+            ) : null}
             <Divider sx={{ my: 2 }} />
 
             <Typography variant="body2" color="text.secondary">
@@ -645,7 +660,8 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
               receive this campaign.
             </Typography>
 
-            {!loadingSegments &&
+            {hasSegments &&
+              !loadingSegments &&
               segments.length > 0 &&
               segments.map((segment) => {
                 const isIncluded = selectedSegmentIds.includes(segment.id ?? 0);

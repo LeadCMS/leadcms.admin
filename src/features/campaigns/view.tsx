@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRequestContext } from "providers/request-provider";
 import { useNotificationsService } from "@hooks";
+import { useConfig } from "@providers/config-provider";
 import { CoreModule, getCoreModuleRoute, getEditFormRoute } from "lib/router";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { campaignFormBreadcrumbLinks, campaignViewHeader } from "./constants";
@@ -51,6 +52,7 @@ import {
 
 import { formatTimezoneShort, formatTimezoneLong } from "utils/timezone-helpers";
 import { showApiError } from "@utils/api-error-parser";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
 
 type CampaignStatus = NonNullable<CampaignDetailsDto["status"]>;
@@ -249,8 +251,10 @@ const SectionCard = ({
 export const CampaignView = () => {
   const { id } = useParams<{ id: string }>();
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const navigate = useNavigate();
+  const hasSegments = hasEntity(config?.entities, ENTITY_KEYS.segment);
 
   const [campaign, setCampaign] = useState<CampaignDetailsDto | null>(null);
   const [statistics, setStatistics] = useState<CampaignStatisticsDto | null>(null);
@@ -1097,70 +1101,71 @@ export const CampaignView = () => {
             </Grid>
           </Grid>
 
-          {/* Segments */}
-          <Card variant="outlined" sx={{ mb: 3 }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  mb: 2.5,
-                }}
-              >
+          {hasSegments && (
+            <Card variant="outlined" sx={{ mb: 3 }}>
+              <CardContent sx={{ p: 3 }}>
                 <Box
                   sx={{
-                    color: "text.secondary",
                     display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 2.5,
                   }}
                 >
-                  <Users size={18} />
-                </Box>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Segments
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 1,
-                  flexWrap: "wrap",
-                }}
-              >
-                {campaign.segmentIds.map((segId) => (
-                  <Chip
-                    key={segId}
-                    label={`Segment #${segId}`}
-                    variant="outlined"
-                    icon={<Users size={14} />}
-                  />
-                ))}
-              </Box>
-              {campaign.excludeSegmentIds && campaign.excludeSegmentIds.length > 0 && (
-                <>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
-                    Excluded Segments
-                  </Typography>
                   <Box
                     sx={{
+                      color: "text.secondary",
                       display: "flex",
-                      gap: 1,
-                      flexWrap: "wrap",
                     }}
                   >
-                    {campaign.excludeSegmentIds.map((segId) => (
-                      <Chip
-                        key={segId}
-                        label={`Segment #${segId}`}
-                        variant="outlined"
-                        color="error"
-                      />
-                    ))}
+                    <Users size={18} />
                   </Box>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Segments
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {campaign.segmentIds.map((segId) => (
+                    <Chip
+                      key={segId}
+                      label={`Segment #${segId}`}
+                      variant="outlined"
+                      icon={<Users size={14} />}
+                    />
+                  ))}
+                </Box>
+                {campaign.excludeSegmentIds && campaign.excludeSegmentIds.length > 0 && (
+                  <>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
+                      Excluded Segments
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 1,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {campaign.excludeSegmentIds.map((segId) => (
+                        <Chip
+                          key={segId}
+                          label={`Segment #${segId}`}
+                          variant="outlined"
+                          color="error"
+                        />
+                      ))}
+                    </Box>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </Box>
       )}
 

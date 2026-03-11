@@ -20,7 +20,8 @@ import {
   type AutocompleteKey,
   type FieldDefinition,
   contactFields,
-  fieldCategories,
+  getAvailableContactFields,
+  getAvailableFieldCategories,
   getFieldById,
   getFieldsByCategory,
   getOperatorDisplayName,
@@ -236,10 +237,13 @@ const RuleValueEditor: React.FC<{
 };
 
 /* ── Grouped field selector items ── */
-const buildFieldMenuItems = () => {
+const buildFieldMenuItems = (availableEntities?: string[]) => {
+  const availableFieldIds = new Set(
+    getAvailableContactFields(availableEntities).map((field) => field.id)
+  );
   const items: React.ReactNode[] = [];
-  for (const category of fieldCategories) {
-    const fields = getFieldsByCategory(category);
+  for (const category of getAvailableFieldCategories(availableEntities)) {
+    const fields = getFieldsByCategory(category).filter((field) => availableFieldIds.has(field.id));
     if (fields.length === 0) continue;
     items.push(<ListSubheader key={`header-${category}`}>{category}</ListSubheader>);
     for (const f of fields) {
@@ -259,7 +263,15 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   title = "Rules",
   description,
 }) => {
-  const fieldMenuItems = React.useMemo(buildFieldMenuItems, []);
+  const { config } = useConfig();
+  const availableFields = React.useMemo(
+    () => getAvailableContactFields(config?.entities),
+    [config?.entities]
+  );
+  const fieldMenuItems = React.useMemo(
+    () => buildFieldMenuItems(config?.entities),
+    [config?.entities]
+  );
   const autocompleteOptions = useAutocompleteOptions();
 
   const updateRule = (ruleId: string, updatedRule: Partial<SegmentRule>) => {
@@ -300,9 +312,10 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   };
 
   const addRule = (groupId?: string) => {
+    const defaultField = availableFields[0] ?? contactFields[0];
     const newRule: SegmentRule = {
       id: generateId(),
-      fieldId: contactFields[0].id,
+      fieldId: defaultField.id,
       operator: "Contains",
       value: "",
     };

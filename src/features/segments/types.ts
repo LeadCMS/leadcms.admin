@@ -9,6 +9,7 @@ export type {
 } from "@lib/network/swagger-client";
 
 import type { SegmentRule } from "@lib/network/swagger-client";
+import { hasAllEntities } from "@utils/entity-availability";
 
 export type SegmentType = "dynamic" | "static";
 
@@ -51,6 +52,7 @@ export interface FieldDefinition {
   options?: { value: string; label: string }[];
   /** Key identifying which async option list to load */
   autocompleteKey?: AutocompleteKey;
+  requiredEntities?: string[];
 }
 
 // Operators that require no value input
@@ -299,6 +301,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Contact",
     operators: numericOperators,
+    requiredEntities: ["deal"],
   },
   {
     id: "ordersCount",
@@ -306,6 +309,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Contact",
     operators: numericOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "totalRevenue",
@@ -313,6 +317,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Contact",
     operators: numericOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "lastOrderDate",
@@ -320,6 +325,7 @@ export const contactFields: FieldDefinition[] = [
     type: "date",
     category: "Contact",
     operators: dateOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "createdAt",
@@ -400,6 +406,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
+    requiredEntities: ["deal"],
   },
   {
     id: "account.ordersCount",
@@ -407,6 +414,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "account.totalRevenue",
@@ -414,6 +422,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "account.contactCount",
@@ -503,6 +512,7 @@ export const contactFields: FieldDefinition[] = [
     category: "Orders",
     operators: selectOperators,
     options: orderStatusOptions,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.refNo",
@@ -510,6 +520,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Orders",
     operators: textOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.orderNumber",
@@ -517,6 +528,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Orders",
     operators: textOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.affiliateName",
@@ -524,6 +536,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Orders",
     operators: textOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.currency",
@@ -531,6 +544,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Orders",
     operators: textOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.source",
@@ -538,6 +552,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Orders",
     operators: textOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.testOrder",
@@ -545,6 +560,7 @@ export const contactFields: FieldDefinition[] = [
     type: "boolean",
     category: "Orders",
     operators: booleanOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.tags",
@@ -552,6 +568,7 @@ export const contactFields: FieldDefinition[] = [
     type: "tags",
     category: "Orders",
     operators: tagsOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.createdAt",
@@ -559,6 +576,7 @@ export const contactFields: FieldDefinition[] = [
     type: "date",
     category: "Orders",
     operators: dateOperators,
+    requiredEntities: ["order"],
   },
 
   // ── Order Items nested collection attributes ──
@@ -568,6 +586,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Order Items",
     operators: textOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.orderItems.unitPrice",
@@ -575,6 +594,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Order Items",
     operators: numericOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.orderItems.quantity",
@@ -582,6 +602,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Order Items",
     operators: numericOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.orderItems.currency",
@@ -589,6 +610,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Order Items",
     operators: textOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.orderItems.total",
@@ -596,6 +618,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Order Items",
     operators: numericOperators,
+    requiredEntities: ["order"],
   },
   {
     id: "orders.orderItems.source",
@@ -603,6 +626,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Order Items",
     operators: textOperators,
+    requiredEntities: ["order"],
   },
 
   // ── Deals collection attributes ──
@@ -612,6 +636,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Deals",
     operators: numericOperators,
+    requiredEntities: ["deal"],
   },
   {
     id: "deals.dealCurrency",
@@ -619,6 +644,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Deals",
     operators: textOperators,
+    requiredEntities: ["deal"],
   },
   {
     id: "deals.dealPipelineId",
@@ -626,6 +652,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Deals",
     operators: numericOperators,
+    requiredEntities: ["deal"],
   },
   {
     id: "deals.dealPipelineStageId",
@@ -633,6 +660,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Deals",
     operators: [...selectOperators, ...textOperators.filter((op) => !selectOperators.includes(op))],
+    requiredEntities: ["deal"],
   },
   {
     id: "deals.expectedCloseDate",
@@ -640,6 +668,7 @@ export const contactFields: FieldDefinition[] = [
     type: "date",
     category: "Deals",
     operators: dateOperators,
+    requiredEntities: ["deal"],
   },
   {
     id: "deals.actualCloseDate",
@@ -647,6 +676,7 @@ export const contactFields: FieldDefinition[] = [
     type: "date",
     category: "Deals",
     operators: dateOperators,
+    requiredEntities: ["deal"],
   },
   {
     id: "deals.tags",
@@ -654,6 +684,7 @@ export const contactFields: FieldDefinition[] = [
     type: "tags",
     category: "Deals",
     operators: tagsOperators,
+    requiredEntities: ["deal"],
   },
   {
     id: "deals.createdAt",
@@ -661,6 +692,7 @@ export const contactFields: FieldDefinition[] = [
     type: "date",
     category: "Deals",
     operators: dateOperators,
+    requiredEntities: ["deal"],
   },
 
   // ── Email Logs collection attributes ──
@@ -741,6 +773,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Email Logs",
     operators: numericOperators,
+    requiredEntities: ["campaign"],
   },
   {
     id: "emailLogs.scheduleId",
@@ -755,6 +788,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Email Logs",
     operators: numericOperators,
+    requiredEntities: ["emailtemplate"],
   },
 ];
 
@@ -768,6 +802,19 @@ export const fieldCategories: FieldCategory[] = [
   "Deals",
   "Email Logs",
 ];
+
+export const getAvailableContactFields = (availableEntities?: string[]): FieldDefinition[] => {
+  return contactFields.filter(
+    (field) => !field.requiredEntities || hasAllEntities(availableEntities, field.requiredEntities)
+  );
+};
+
+export const getAvailableFieldCategories = (availableEntities?: string[]): FieldCategory[] => {
+  const availableFields = getAvailableContactFields(availableEntities);
+  return fieldCategories.filter((category) => {
+    return availableFields.some((field) => field.category === category);
+  });
+};
 
 export const getFieldsByCategory = (category: FieldCategory): FieldDefinition[] => {
   return contactFields.filter((field) => field.category === category);

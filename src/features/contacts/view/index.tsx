@@ -16,20 +16,20 @@ import { ContactDetailsDto, RequestParams } from "lib/network/swagger-client";
 import { contactFormBreadcrumbLinks } from "../constants";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { CoreModule, getEditFormRoute } from "@lib/router";
+import { useConfig } from "@providers/config-provider";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { showApiError } from "@utils/api-error-parser";
-import { getMockConversationsForContact } from "./mock-data";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { ContactViewOutletContext } from "./types";
 
-type ContactTabValue = "overview" | "communications" | "activity" | "orders" | "deals";
+type ContactTabValue = "overview" | "communications" | "orders" | "deals";
 
 const contactDetailsCache = new Map<number, ContactDetailsDto>();
 
 const tabPathMap: Record<ContactTabValue, string> = {
   overview: "details",
   communications: "communications",
-  activity: "activity",
   orders: "orders",
   deals: "deals",
 };
@@ -37,9 +37,6 @@ const tabPathMap: Record<ContactTabValue, string> = {
 const getTabFromPathname = (pathname: string): ContactTabValue => {
   if (pathname.endsWith("/communications")) {
     return "communications";
-  }
-  if (pathname.endsWith("/activity") || pathname.endsWith("/logs")) {
-    return "activity";
   }
   if (pathname.endsWith("/orders") || pathname.endsWith("/invoices")) {
     return "orders";
@@ -77,6 +74,7 @@ export const ContactBase = () => {
   const navigate = useNavigate();
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
+  const { config } = useConfig();
 
   const initialContactState = isContactState(state) ? state : null;
   const [contact, setContact] = useState<ContactDetailsDto | null>(initialContactState);
@@ -96,11 +94,28 @@ export const ContactBase = () => {
   }, [contactIdFromPath, initialContactState?.id]);
 
   const contactName = getContactDisplayName(contact);
-  const conversationCount = getMockConversationsForContact(contactId).length;
+  const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
+  const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
 
   useEffect(() => {
-    setTabValue(getTabFromPathname(pathname));
-  }, [pathname]);
+    const nextTab = getTabFromPathname(pathname);
+    const isUnsupportedTab = pathname.endsWith("/activity") || pathname.endsWith("/logs");
+    const isUnavailableTab =
+      isUnsupportedTab ||
+      (nextTab === "orders" && !hasOrders) ||
+      (nextTab === "deals" && !hasDeals);
+
+    if (isUnavailableTab) {
+      setTabValue("overview");
+      navigate(tabPathMap.overview, {
+        replace: true,
+        state: contact ?? initialContactState ?? undefined,
+      });
+      return;
+    }
+
+    setTabValue(nextTab);
+  }, [contact, hasDeals, hasOrders, initialContactState, navigate, pathname]);
 
   useEffect(() => {
     if (initialContactState && !contact) {
@@ -217,44 +232,25 @@ export const ContactBase = () => {
             >
               Edit
             </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Briefcase size={16} />}
-              onClick={handleCreateDeal}
-            >
-              Create Deal
-            </Button>
+            {hasDeals && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Briefcase size={16} />}
+                onClick={handleCreateDeal}
+              >
+                Create Deal
+              </Button>
+            )}
           </Box>
         </CardContent>
       </Card>
 
       <Tabs value={tabValue} onChange={handleTabChange}>
         <Tab value="overview" label="Overview" />
-        <Tab
-          value="communications"
-          label={
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <span>Communications</span>
-              {conversationCount > 0 && (
-                <Box
-                  sx={{
-                    minWidth: 20,
-                    px: 0.75,
-                    borderRadius: 999,
-                    bgcolor: "action.selected",
-                    fontSize: "0.75rem",
-                    lineHeight: 1.4,
-                    fontWeight: 600,
-                  }}
-                >
-                  {conversationCount}
-                </Box>
-              )}
-            </Box>
-          }
-        />
-        <Tab value="orders" label="Orders" />
+        <Tab value="communications" label="Communications" />
+        {hasOrders && <Tab value="orders" label="Orders" />}
+        {hasDeals && <Tab value="deals" label="Deals" />}
       </Tabs>
       <Divider />
 

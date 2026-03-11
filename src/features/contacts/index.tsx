@@ -8,9 +8,10 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { ContactDetailsDto, ContactImportDto, SegmentDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
-import { contactFields } from "@features/segments/types";
+import { getAvailableContactFields } from "@features/segments/types";
 import { ContactHref, ContactNameListItem, ContactNameListItemText } from "./index.styled";
 import {
   contactGridSettingsStorageKey,
@@ -39,16 +40,69 @@ import { DataListSettings } from "types";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { getWhereFilterQuery } from "@providers/query-provider";
+import { useConfig } from "@providers/config-provider";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { useCurrencyFormatter } from "@hooks";
 
 type ContactGridSettings = DataListSettings & {
   segmentId?: number | "";
 };
 
+const tagColorPalette = [
+  "#2F6FED",
+  "#6B4FD3",
+  "#1D8F6A",
+  "#C26A1B",
+  "#C74E7B",
+  "#0F8A94",
+  "#7A57C8",
+  "#3E7F45",
+  "#A84E2E",
+  "#0E7490",
+  "#8F3D7A",
+  "#4F46B5",
+  "#2C7A7B",
+  "#B45309",
+  "#475569",
+  "#9F2C5F",
+] as const;
+
+const getTagColorIndex = (tag: string) => {
+  const hash = Array.from(tag).reduce(
+    (accumulator, character) => accumulator + character.charCodeAt(0),
+    0
+  );
+
+  return hash % tagColorPalette.length;
+};
+
+const getTagChipSx = (tag: string) => {
+  const accentColor = tagColorPalette[getTagColorIndex(tag)];
+
+  return (theme: { palette: { mode: "light" | "dark" } }) => {
+    const backgroundOpacity = theme.palette.mode === "dark" ? 0.24 : 0.14;
+    const borderOpacity = theme.palette.mode === "dark" ? 0.52 : 0.34;
+
+    return {
+      backgroundColor: alpha(accentColor, backgroundOpacity),
+      borderColor: alpha(accentColor, borderOpacity),
+      color: accentColor,
+      fontWeight: 500,
+      "& .MuiChip-label": {
+        px: 1,
+      },
+    };
+  };
+};
+
 export const Contacts = () => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { primaryCurrency } = useCurrencyFormatter();
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
+  const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
+  const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
+  const availableContactFields = getAvailableContactFields(config?.entities);
   const [gridSettings] = useLocalStorage<ContactGridSettings | undefined>(
     contactGridSettingsStorageKey,
     undefined
@@ -148,7 +202,7 @@ export const Contacts = () => {
     await client.api.contactsImportCreate(importDtoCollection);
   };
 
-  const [columns, setColumns] = useState<GridColDef<ContactDetailsDto>[]>([
+  const buildColumns = (): GridColDef<ContactDetailsDto>[] => [
     {
       field: "firstName",
       headerName: "Contact",
@@ -245,45 +299,55 @@ export const Contacts = () => {
       sortable: true,
       valueGetter: (value, row) => row.account?.name || "",
     },
-    {
-      field: "totalRevenue",
-      headerName: "Total Revenue",
-      width: 160,
-      type: "number",
-      sortable: true,
-      align: "right",
-      headerAlign: "right",
-      valueGetter: (value, row) => row.totalRevenue ?? null,
-      renderCell: ({ value }) => <RevenueCell value={value} primaryCurrency={primaryCurrency} />,
-    },
-    {
-      field: "dealsCount",
-      headerName: "Deals",
-      width: 120,
-      type: "number",
-      sortable: true,
-      valueGetter: (value, row) => row.dealsCount ?? 0,
-      renderCell: ({ value }) => <CountPill value={value} />,
-    },
-    {
-      field: "ordersCount",
-      headerName: "Orders",
-      width: 120,
-      type: "number",
-      sortable: true,
-      valueGetter: (value, row) => row.ordersCount ?? 0,
-      renderCell: ({ value }) => <CountPill value={value} />,
-    },
-    {
-      field: "lastOrderDate",
-      headerName: "Last Order",
-      width: 150,
-      type: "date",
-      align: "left",
-      headerAlign: "left",
-      valueGetter: (value, row) => DateValueGetter(row.lastOrderDate || null),
-      valueFormatter: DateValueFormatter,
-    },
+    ...(hasOrders
+      ? [
+          {
+            field: "totalRevenue",
+            headerName: "Total Revenue",
+            width: 160,
+            type: "number",
+            sortable: true,
+            align: "right",
+            headerAlign: "right",
+            valueGetter: (value, row) => row.totalRevenue ?? null,
+            renderCell: ({ value }) => (
+              <RevenueCell value={value} primaryCurrency={primaryCurrency} />
+            ),
+          } as GridColDef<ContactDetailsDto>,
+          {
+            field: "ordersCount",
+            headerName: "Orders",
+            width: 120,
+            type: "number",
+            sortable: true,
+            valueGetter: (value, row) => row.ordersCount ?? 0,
+            renderCell: ({ value }) => <CountPill value={value} />,
+          } as GridColDef<ContactDetailsDto>,
+          {
+            field: "lastOrderDate",
+            headerName: "Last Order",
+            width: 150,
+            type: "date",
+            align: "left",
+            headerAlign: "left",
+            valueGetter: (value, row) => DateValueGetter(row.lastOrderDate || null),
+            valueFormatter: DateValueFormatter,
+          } as GridColDef<ContactDetailsDto>,
+        ]
+      : []),
+    ...(hasDeals
+      ? [
+          {
+            field: "dealsCount",
+            headerName: "Deals",
+            width: 120,
+            type: "number",
+            sortable: true,
+            valueGetter: (value, row) => row.dealsCount ?? 0,
+            renderCell: ({ value }) => <CountPill value={value} />,
+          } as GridColDef<ContactDetailsDto>,
+        ]
+      : []),
     {
       field: "jobTitle",
       headerName: "Job Title",
@@ -301,6 +365,36 @@ export const Contacts = () => {
       headerName: "Email",
       width: 150,
       type: "string",
+    },
+    {
+      field: "tags",
+      headerName: "Tags",
+      width: 220,
+      type: "string",
+      valueGetter: (value, row) => row.tags?.join(", ") || "",
+      renderCell: ({ row }) => {
+        if (!row.tags?.length) {
+          return "";
+        }
+
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              height: "100%",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "3px",
+              maxWidth: "100%",
+              alignContent: "center",
+            }}
+          >
+            {row.tags.map((tag) => (
+              <Chip key={tag} label={tag} size="small" variant="outlined" sx={getTagChipSx(tag)} />
+            ))}
+          </Box>
+        );
+      },
     },
     {
       field: "createdAt",
@@ -431,7 +525,13 @@ export const Contacts = () => {
       valueGetter: (value, row) =>
         row.domain?.disposable == null ? "null" : String(row.domain.disposable),
     },
-  ]);
+  ];
+
+  const [columns, setColumns] = useState<GridColDef<ContactDetailsDto>[]>(buildColumns());
+
+  useEffect(() => {
+    setColumns(buildColumns());
+  }, [hasDeals, hasOrders, primaryCurrency]);
 
   const searchBar = (
     <Box
@@ -528,7 +628,7 @@ export const Contacts = () => {
       )}
       <DataList
         columns={columns}
-        filterFields={contactFields}
+        filterFields={availableContactFields}
         setColumns={setColumns}
         gridSettingsStorageKey={contactGridSettingsStorageKey}
         defaultFilterOrderColumn={defaultFilterOrderColumn}

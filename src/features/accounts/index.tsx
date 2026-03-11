@@ -16,7 +16,7 @@ import { CoreModule, getAddFormRoute } from "lib/router";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import { SearchBar } from "@components/search-bar";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import useLocalStorage from "use-local-storage";
@@ -26,11 +26,16 @@ import { Result } from "react-spreadsheet-import/types/types";
 import { GhostLink } from "@components/ghost-link";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { CountPill, RevenueCell } from "@components/metric-cells";
+import { useConfig } from "@providers/config-provider";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { useCurrencyFormatter } from "@hooks";
 
 export const Accounts = () => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { formatMoney, primaryCurrency } = useCurrencyFormatter();
+  const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
+  const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
   const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
     accountGridSettingsStorageKey,
     undefined
@@ -73,7 +78,7 @@ export const Accounts = () => {
     await client.api.accountsImportCreate(importDtoCollection);
   };
 
-  const [columns, setColumns] = useState<GridColDef<AccountDetailsDto>[]>([
+  const buildColumns = (): GridColDef<AccountDetailsDto>[] => [
     {
       field: "name",
       headerName: "Name",
@@ -94,45 +99,55 @@ export const Accounts = () => {
         </AccountListItem>
       ),
     },
-    {
-      field: "totalRevenue",
-      headerName: "Total Revenue",
-      width: 160,
-      type: "number",
-      sortable: true,
-      align: "right",
-      headerAlign: "right",
-      valueGetter: (value, row) => (row as any)?.totalRevenue ?? null,
-      renderCell: ({ value }) => <RevenueCell value={value} primaryCurrency={primaryCurrency} />,
-    },
-    {
-      field: "dealsCount",
-      headerName: "Deals",
-      width: 120,
-      type: "number",
-      sortable: true,
-      valueGetter: (value, row) => row.dealsCount ?? 0,
-      renderCell: ({ value }) => <CountPill value={value} />,
-    },
-    {
-      field: "ordersCount",
-      headerName: "Orders",
-      width: 120,
-      type: "number",
-      sortable: true,
-      valueGetter: (value, row) => (row as any)?.ordersCount ?? 0,
-      renderCell: ({ value }) => <CountPill value={value} />,
-    },
-    {
-      field: "lastOrderDate",
-      headerName: "Last Order",
-      width: 150,
-      type: "date",
-      align: "left",
-      headerAlign: "left",
-      valueGetter: (value, row) => DateValueGetter((row as any)?.lastOrderDate || null),
-      valueFormatter: DateValueFormatter,
-    },
+    ...(hasOrders
+      ? [
+          {
+            field: "totalRevenue",
+            headerName: "Total Revenue",
+            width: 160,
+            type: "number",
+            sortable: true,
+            align: "right",
+            headerAlign: "right",
+            valueGetter: (value, row) => row.totalRevenue ?? null,
+            renderCell: ({ value }) => (
+              <RevenueCell value={value} primaryCurrency={primaryCurrency} />
+            ),
+          } as GridColDef<AccountDetailsDto>,
+          {
+            field: "ordersCount",
+            headerName: "Orders",
+            width: 120,
+            type: "number",
+            sortable: true,
+            valueGetter: (value, row) => row.ordersCount ?? 0,
+            renderCell: ({ value }) => <CountPill value={value} />,
+          } as GridColDef<AccountDetailsDto>,
+          {
+            field: "lastOrderDate",
+            headerName: "Last Order",
+            width: 150,
+            type: "date",
+            align: "left",
+            headerAlign: "left",
+            valueGetter: (value, row) => DateValueGetter(row.lastOrderDate || null),
+            valueFormatter: DateValueFormatter,
+          } as GridColDef<AccountDetailsDto>,
+        ]
+      : []),
+    ...(hasDeals
+      ? [
+          {
+            field: "dealsCount",
+            headerName: "Deals",
+            width: 120,
+            type: "number",
+            sortable: true,
+            valueGetter: (value, row) => row.dealsCount ?? 0,
+            renderCell: ({ value }) => <CountPill value={value} />,
+          } as GridColDef<AccountDetailsDto>,
+        ]
+      : []),
     {
       field: "contactCount",
       headerName: "Contacts",
@@ -245,7 +260,13 @@ export const Accounts = () => {
         return Array.isArray(value) && value.length > 0 ? value.join(", ") : "";
       },
     },
-  ]);
+  ];
+
+  const [columns, setColumns] = useState<GridColDef<AccountDetailsDto>[]>(buildColumns());
+
+  useEffect(() => {
+    setColumns(buildColumns());
+  }, [hasDeals, hasOrders, primaryCurrency]);
 
   const searchBar = (
     <SearchBar

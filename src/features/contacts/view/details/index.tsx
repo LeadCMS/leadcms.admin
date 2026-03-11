@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -31,6 +31,7 @@ import { CoreModule, getViewFormRoute } from "@lib/router";
 import { useConfig } from "@providers/config-provider";
 import { useCurrencyFormatter } from "@hooks";
 import { useRequestContext } from "@providers/request-provider";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import {
   getContinentByCode,
   getCountryByCode,
@@ -39,7 +40,6 @@ import {
 } from "utils/general-helper";
 import { timezones } from "utils/constants";
 import { formatTimezoneShort } from "utils/timezone-helpers";
-import { getMockActivitiesForContact, getMockConversationsForContact } from "../mock-data";
 import { ContactViewOutletContext } from "../types";
 
 type DetailRow = {
@@ -69,6 +69,9 @@ const hasRenderableValue = (value: unknown) => {
 
 const compactRows = (rows: Array<DetailRow | null | undefined>) =>
   rows.filter((row): row is DetailRow => !!row && hasRenderableValue(row.value));
+
+const compactStatCards = (rows: Array<StatItemProps | null | undefined>) =>
+  rows.filter((row): row is StatItemProps => !!row && hasRenderableValue(row.value));
 
 const toAbsoluteLink = (url: string | null | undefined) => {
   if (!url || !url.trim()) return "";
@@ -257,18 +260,16 @@ const SectionCard = ({ title, icon, rows, linkTo }: SectionProps) => {
 };
 
 export const ContactView = () => {
-  const { contact, contactId, isLoading } = useOutletContext<ContactViewOutletContext>();
+  const { contact, isLoading } = useOutletContext<ContactViewOutletContext>();
   const context = useRequestContext();
   const { config } = useConfig();
   const languages = config?.languages || [];
+  const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
+  const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
   const [countryName, setCountryName] = useState<string>("");
   const [continentName, setContinentName] = useState<string>("");
 
   const { formatMoney } = useCurrencyFormatter();
-
-  const conversations = useMemo(() => getMockConversationsForContact(contactId), [contactId]);
-  const activities = useMemo(() => getMockActivitiesForContact(contactId), [contactId]);
-  const latestActivity = activities[0]?.timestamp;
 
   useEffect(() => {
     const loadLocationNames = async () => {
@@ -362,6 +363,7 @@ export const ContactView = () => {
         contact.language ||
         "",
     },
+    { label: "Timezone", value: timezoneLabel },
     { label: "Source", value: contact.source || "" },
   ]);
 
@@ -515,15 +517,28 @@ export const ContactView = () => {
       : null,
   ]);
 
+  const visitorDetailsRows = compactRows([
+    contact.ipAddress
+      ? {
+          label: "IP address",
+          value: contact.ipAddress,
+        }
+      : null,
+    contact.userDeviceSummary
+      ? {
+          label: "User device",
+          value: contact.userDeviceSummary,
+        }
+      : null,
+  ]);
+
   const quickStatRows = compactRows([
-    {
-      label: "Last order date",
-      value: contact.lastOrderDate ? getFormattedDateTime(contact.lastOrderDate) : "",
-    },
-    {
-      label: "Last activity",
-      value: latestActivity ? getFormattedDateTime(latestActivity) : "",
-    },
+    hasOrders
+      ? {
+          label: "Last order date",
+          value: contact.lastOrderDate ? getFormattedDateTime(contact.lastOrderDate) : "",
+        }
+      : null,
     {
       label: "Member since",
       value: contact.createdAt ? getFormattedDateTime(contact.createdAt) : "",
@@ -534,10 +549,32 @@ export const ContactView = () => {
     },
   ]);
 
-  const revenueDisplay =
-    contact.totalRevenue !== null && contact.totalRevenue !== undefined
-      ? formatMoney(contact.totalRevenue)
-      : formatMoney(0);
+  const statCards = compactStatCards([
+    hasOrders
+      ? {
+          label: "Revenue",
+          value:
+            contact.totalRevenue !== null && contact.totalRevenue !== undefined
+              ? formatMoney(contact.totalRevenue)
+              : formatMoney(0),
+          icon: <TrendingUp size={18} />,
+        }
+      : null,
+    hasOrders
+      ? {
+          label: "Orders",
+          value: contact.ordersCount ?? 0,
+          icon: <ShoppingCart size={18} />,
+        }
+      : null,
+    hasDeals
+      ? {
+          label: "Deals",
+          value: contact.dealsCount ?? 0,
+          icon: <Briefcase size={18} />,
+        }
+      : null,
+  ]);
 
   return (
     <Box sx={{ mt: 3 }}>
@@ -682,26 +719,14 @@ export const ContactView = () => {
                       mb: 2.5,
                     }}
                   >
-                    <StatCard
-                      label="Revenue"
-                      value={revenueDisplay}
-                      icon={<TrendingUp size={18} />}
-                    />
-                    <StatCard
-                      label="Orders"
-                      value={contact.ordersCount ?? 0}
-                      icon={<ShoppingCart size={18} />}
-                    />
-                    <StatCard
-                      label="Deals"
-                      value={contact.dealsCount ?? 0}
-                      icon={<Briefcase size={18} />}
-                    />
-                    <StatCard
-                      label="Conversations"
-                      value={conversations.length}
-                      icon={<Hash size={18} />}
-                    />
+                    {statCards.map((card) => (
+                      <StatCard
+                        key={card.label}
+                        label={card.label}
+                        value={card.value}
+                        icon={card.icon}
+                      />
+                    ))}
                   </Box>
                   <Divider sx={{ mb: 2 }} />
                   <Box sx={{ display: "grid", rowGap: 1.25 }}>
@@ -730,6 +755,16 @@ export const ContactView = () => {
             {socialRows.length > 0 && (
               <Grid size={{ xs: 12 }}>
                 <SectionCard title="Social Media" icon={<Share2 size={18} />} rows={socialRows} />
+              </Grid>
+            )}
+
+            {visitorDetailsRows.length > 0 && (
+              <Grid size={{ xs: 12 }}>
+                <SectionCard
+                  title="Visitor Details"
+                  icon={<Globe size={18} />}
+                  rows={visitorDetailsRows}
+                />
               </Grid>
             )}
 

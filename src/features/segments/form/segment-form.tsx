@@ -42,6 +42,8 @@ import { getSegmentContactColumns } from "../components/segment-contact-columns"
 import { useCurrencyFormatter, useNotificationsService, useSaveShortcut } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { parseApiError, toPromiseError } from "@utils/api-error-parser";
+import { useConfig } from "@providers/config-provider";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { getFormattedDateOnly } from "utils/general-helper";
 import { useSearchParams } from "react-router-dom";
 
@@ -161,9 +163,12 @@ export const SegmentForm = ({
   onDelete,
 }: SegmentFormProps) => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { primaryCurrency } = useCurrencyFormatter();
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
+  const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
+  const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [name, setName] = useState("");
@@ -200,7 +205,7 @@ export const SegmentForm = ({
   const [staticContactsColumnsPanelOpen, setStaticContactsColumnsPanelOpen] = useState(false);
   const [staticContactsColumns, setStaticContactsColumns] = useState<
     GridColDef<ContactDetailsDto>[]
-  >(() => getSegmentContactColumns(primaryCurrency));
+  >(() => getSegmentContactColumns(primaryCurrency, { hasDeals, hasOrders }));
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [savingMode, setSavingMode] = useState<"stay" | "close" | null>(null);
@@ -209,6 +214,10 @@ export const SegmentForm = ({
     setMatchingCount(null);
     setPreviewContacts([]);
   };
+
+  useEffect(() => {
+    setStaticContactsColumns(getSegmentContactColumns(primaryCurrency, { hasDeals, hasOrders }));
+  }, [hasDeals, hasOrders, primaryCurrency]);
 
   useEffect(() => {
     if (!segment) return;
@@ -830,7 +839,7 @@ export const SegmentForm = ({
                         sx={{ fontSize: "0.75rem" }}
                       />
                     )}
-                    {(contact.ordersCount ?? 0) > 0 && (
+                    {hasOrders && (contact.ordersCount ?? 0) > 0 && (
                       <Chip
                         label={`${contact.ordersCount} orders`}
                         size="small"
@@ -838,7 +847,7 @@ export const SegmentForm = ({
                         sx={{ fontSize: "0.75rem" }}
                       />
                     )}
-                    {(contact.dealsCount ?? 0) > 0 && (
+                    {hasDeals && (contact.dealsCount ?? 0) > 0 && (
                       <Chip
                         label={`${contact.dealsCount} deals`}
                         size="small"
@@ -846,7 +855,7 @@ export const SegmentForm = ({
                         sx={{ fontSize: "0.75rem" }}
                       />
                     )}
-                    {(contact.totalRevenue ?? 0) > 0 && (
+                    {hasOrders && (contact.totalRevenue ?? 0) > 0 && (
                       <Chip
                         label={`$${contact.totalRevenue?.toLocaleString()}`}
                         size="small"
@@ -855,7 +864,7 @@ export const SegmentForm = ({
                         sx={{ fontSize: "0.75rem" }}
                       />
                     )}
-                    {contact.lastOrderDate && (
+                    {hasOrders && contact.lastOrderDate && (
                       <Chip
                         label={`Last order: ${getFormattedDateOnly(contact.lastOrderDate)}`}
                         size="small"

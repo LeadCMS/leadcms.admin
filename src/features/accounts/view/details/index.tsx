@@ -1,10 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Box, Card, CardContent, Chip, Divider, Grid, Typography, useTheme } from "@mui/material";
 import {
-  Briefcase,
   Building,
-  DollarSign,
-  ExternalLink,
   Globe,
   Hash,
   MapPin,
@@ -15,11 +12,13 @@ import {
   Users,
 } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
-import { useRequestContext } from "@providers/request-provider";
-import { getContinentByCode, getCountryByCode, getFormattedDateTime } from "utils/general-helper";
-import { AccountViewOutletContext } from "../types";
+import { useConfig } from "@providers/config-provider";
 import { AccountUrlHref } from "@features/accounts/index.styled";
 import { useCurrencyFormatter } from "@hooks";
+import { useRequestContext } from "@providers/request-provider";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
+import { getContinentByCode, getCountryByCode, getFormattedDateTime } from "utils/general-helper";
+import { AccountViewOutletContext } from "../types";
 
 type DetailRow = {
   label: string;
@@ -48,10 +47,15 @@ const hasRenderableValue = (value: unknown) => {
 const compactRows = (rows: Array<DetailRow | null | undefined>) =>
   rows.filter((row): row is DetailRow => !!row && hasRenderableValue(row.value));
 
+const compactStatCards = (rows: Array<StatItemProps | null | undefined>) =>
+  rows.filter((row): row is StatItemProps => !!row && hasRenderableValue(row.value));
+
 const toAbsoluteLink = (url: string | null | undefined) => {
   if (!url || !url.trim()) return "";
+
   const absoluteUrl =
     url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+
   return (
     <AccountUrlHref href={absoluteUrl} target="_blank" rel="noopener noreferrer">
       {absoluteUrl}
@@ -63,6 +67,7 @@ const fieldLabel = (value: string) => value.charAt(0).toUpperCase() + value.slic
 
 const StatCard = ({ label, value, icon }: StatItemProps) => {
   const theme = useTheme();
+
   return (
     <Box
       sx={{
@@ -183,12 +188,13 @@ const SectionCard = ({ title, icon, rows }: SectionProps) => {
 };
 
 export const AccountView = () => {
-  const { account, accountId, isLoading } = useOutletContext<AccountViewOutletContext>();
+  const { account, isLoading } = useOutletContext<AccountViewOutletContext>();
+  const { config } = useConfig();
   const context = useRequestContext();
   const [countryName, setCountryName] = useState("");
   const [continentName, setContinentName] = useState("");
-
   const { formatMoney } = useCurrencyFormatter();
+  const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
 
   useEffect(() => {
     const loadLocationNames = async () => {
@@ -248,15 +254,9 @@ export const AccountView = () => {
 
   const aboutRows = compactRows([
     { label: "Name", value: account.name || "" },
-    {
-      label: "Site URL",
-      value: toAbsoluteLink(account.siteUrl),
-    },
+    { label: "Site URL", value: toAbsoluteLink(account.siteUrl) },
     { label: "TIN", value: account.tin || "" },
-    {
-      label: "Employees",
-      value: account.employeesRange || "",
-    },
+    { label: "Employees", value: account.employeesRange || "" },
     {
       label: "Revenue",
       value: account.revenue != null ? formatMoney(account.revenue) : "",
@@ -269,25 +269,13 @@ export const AccountView = () => {
   ]);
 
   const addressRows = compactRows([
-    {
-      label: "Address",
-      value: account.address || "",
-    },
+    { label: "Address", value: account.address || "" },
     { label: "City", value: account.cityName || "" },
-    {
-      label: "State / Province",
-      value: account.state || "",
-    },
+    { label: "State / Province", value: account.state || "" },
     { label: "Country", value: countryName },
-    {
-      label: "Country code",
-      value: account.countryCode || "",
-    },
+    { label: "Country code", value: account.countryCode || "" },
     { label: "Continent", value: continentName },
-    {
-      label: "Continent code",
-      value: account.continentCode || "",
-    },
+    { label: "Continent code", value: account.continentCode || "" },
   ]);
 
   const tagsRow = compactRows([
@@ -332,10 +320,12 @@ export const AccountView = () => {
   );
 
   const quickStatRows = compactRows([
-    {
-      label: "Last order date",
-      value: account.lastOrderDate ? getFormattedDateTime(account.lastOrderDate) : "",
-    },
+    hasOrders
+      ? {
+          label: "Last order date",
+          value: account.lastOrderDate ? getFormattedDateTime(account.lastOrderDate) : "",
+        }
+      : null,
     {
       label: "Member since",
       value: account.createdAt ? getFormattedDateTime(account.createdAt) : "",
@@ -346,8 +336,32 @@ export const AccountView = () => {
     },
   ]);
 
-  const revenueDisplay =
-    account.totalRevenue != null ? formatMoney(account.totalRevenue) : formatMoney(0);
+  const statCards = compactStatCards([
+    hasOrders
+      ? {
+          label: "Revenue",
+          value: account.totalRevenue != null ? formatMoney(account.totalRevenue) : formatMoney(0),
+          icon: <TrendingUp size={18} />,
+        }
+      : null,
+    hasOrders
+      ? {
+          label: "Orders",
+          value: account.ordersCount ?? 0,
+          icon: <ShoppingCart size={18} />,
+        }
+      : null,
+    {
+      label: "Contacts",
+      value: account.contactCount ?? 0,
+      icon: <Users size={18} />,
+    },
+    {
+      label: "Domains",
+      value: account.domainsCount ?? 0,
+      icon: <Globe size={18} />,
+    },
+  ]);
 
   return (
     <Box sx={{ mt: 3 }}>
@@ -362,30 +376,15 @@ export const AccountView = () => {
                   </Typography>
                   <Grid container spacing={3}>
                     {compactRows([
-                      {
-                        label: "Name",
-                        value: account.name || "",
-                      },
+                      { label: "Name", value: account.name || "" },
                       {
                         label: "Website",
                         value: account.siteUrl ? toAbsoluteLink(account.siteUrl) : "",
                       },
-                      {
-                        label: "Location",
-                        value: location,
-                      },
-                      {
-                        label: "Employees",
-                        value: account.employeesRange || "",
-                      },
-                      {
-                        label: "TIN",
-                        value: account.tin || "",
-                      },
-                      {
-                        label: "Source",
-                        value: account.source || "",
-                      },
+                      { label: "Location", value: location },
+                      { label: "Employees", value: account.employeesRange || "" },
+                      { label: "TIN", value: account.tin || "" },
+                      { label: "Source", value: account.source || "" },
                     ]).map((item) => (
                       <Grid key={item.label} size={{ xs: 12, sm: 6 }}>
                         <Box
@@ -480,26 +479,14 @@ export const AccountView = () => {
                       mb: 2.5,
                     }}
                   >
-                    <StatCard
-                      label="Revenue"
-                      value={revenueDisplay}
-                      icon={<TrendingUp size={18} />}
-                    />
-                    <StatCard
-                      label="Orders"
-                      value={account.ordersCount ?? 0}
-                      icon={<ShoppingCart size={18} />}
-                    />
-                    <StatCard
-                      label="Contacts"
-                      value={account.contactCount ?? 0}
-                      icon={<Users size={18} />}
-                    />
-                    <StatCard
-                      label="Domains"
-                      value={account.domainsCount ?? 0}
-                      icon={<Globe size={18} />}
-                    />
+                    {statCards.map((card) => (
+                      <StatCard
+                        key={card.label}
+                        label={card.label}
+                        value={card.value}
+                        icon={card.icon}
+                      />
+                    ))}
                   </Box>
                   <Divider sx={{ mb: 2 }} />
                   <Box

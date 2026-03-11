@@ -3,6 +3,7 @@ import { Box, Card, CardContent, CircularProgress, IconButton, Typography } from
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useConfig } from "@providers/config-provider";
 import { useNotificationsService, useCurrencyFormatter } from "@hooks";
 import { showApiError } from "@utils/api-error-parser";
 import { DateValueFormatter, DateValueGetter } from "@components/data-list";
@@ -10,20 +11,29 @@ import { ActionButtonContainer } from "@features/contacts/index.styled";
 import { OrderDetailsDto } from "@lib/network/swagger-client";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { useRequestContext } from "@providers/request-provider";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { getViewFormRoute } from "@lib/router";
 import { ContactViewOutletContext } from "../types";
 
 export const ContactOrders = () => {
   const { contactId } = useOutletContext<ContactViewOutletContext>();
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const { formatByCode, formatMoney } = useCurrencyFormatter();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderDetailsDto[]>();
   const [isLoading, setIsLoading] = useState(true);
+  const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
 
   useEffect(() => {
     const loadOrders = async () => {
+      if (!hasOrders) {
+        setOrders([]);
+        setIsLoading(false);
+        return;
+      }
+
       if (!contactId) {
         setOrders([]);
         setIsLoading(false);
@@ -46,7 +56,11 @@ export const ContactOrders = () => {
     };
 
     loadOrders();
-  }, [client, contactId, notificationsService]);
+  }, [client, contactId, hasOrders, notificationsService]);
+
+  if (!hasOrders) {
+    return null;
+  }
 
   const handleForwardClick = (row: OrderDetailsDto) => {
     if (!row.id) return;

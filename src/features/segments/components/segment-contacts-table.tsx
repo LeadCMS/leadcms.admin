@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Box, IconButton, Tooltip } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
 import { Settings2 } from "lucide-react";
 import { DataList } from "@components/data-list";
 import { useCurrencyFormatter } from "@hooks";
 import { ContactDetailsDto } from "lib/network/swagger-client";
+import { useConfig } from "@providers/config-provider";
 import { useRequestContext } from "providers/request-provider";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { getSegmentContactColumns } from "./segment-contact-columns";
 
 interface SegmentContactsTableProps {
@@ -22,12 +24,19 @@ export const SegmentContactsTable = ({
   infoMessage,
 }: SegmentContactsTableProps) => {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { primaryCurrency } = useCurrencyFormatter();
+  const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
+  const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
 
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [columns, setColumns] = useState<GridColDef<ContactDetailsDto>[]>(() =>
-    getSegmentContactColumns(primaryCurrency)
+    getSegmentContactColumns(primaryCurrency, { hasDeals, hasOrders })
   );
+
+  useEffect(() => {
+    setColumns(getSegmentContactColumns(primaryCurrency, { hasDeals, hasOrders }));
+  }, [hasDeals, hasOrders, primaryCurrency]);
 
   const getSegmentContactsList = async (mainQuery: string) => {
     const fullQuery = [mainQuery, includeFilter].filter(Boolean).join("&");
