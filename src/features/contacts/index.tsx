@@ -8,10 +8,10 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
 import { ContactDetailsDto, ContactImportDto, SegmentDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { getAvailableContactFields } from "@features/segments/types";
+import { TagChipList } from "@components/tag-chip-list";
 import { ContactHref, ContactNameListItem, ContactNameListItemText } from "./index.styled";
 import {
   contactGridSettingsStorageKey,
@@ -46,53 +46,6 @@ import { useCurrencyFormatter } from "@hooks";
 
 type ContactGridSettings = DataListSettings & {
   segmentId?: number | "";
-};
-
-const tagColorPalette = [
-  "#2F6FED",
-  "#6B4FD3",
-  "#1D8F6A",
-  "#C26A1B",
-  "#C74E7B",
-  "#0F8A94",
-  "#7A57C8",
-  "#3E7F45",
-  "#A84E2E",
-  "#0E7490",
-  "#8F3D7A",
-  "#4F46B5",
-  "#2C7A7B",
-  "#B45309",
-  "#475569",
-  "#9F2C5F",
-] as const;
-
-const getTagColorIndex = (tag: string) => {
-  const hash = Array.from(tag).reduce(
-    (accumulator, character) => accumulator + character.charCodeAt(0),
-    0
-  );
-
-  return hash % tagColorPalette.length;
-};
-
-const getTagChipSx = (tag: string) => {
-  const accentColor = tagColorPalette[getTagColorIndex(tag)];
-
-  return (theme: { palette: { mode: "light" | "dark" } }) => {
-    const backgroundOpacity = theme.palette.mode === "dark" ? 0.24 : 0.14;
-    const borderOpacity = theme.palette.mode === "dark" ? 0.52 : 0.34;
-
-    return {
-      backgroundColor: alpha(accentColor, backgroundOpacity),
-      borderColor: alpha(accentColor, borderOpacity),
-      color: accentColor,
-      fontWeight: 500,
-      "& .MuiChip-label": {
-        px: 1,
-      },
-    };
-  };
 };
 
 export const Contacts = () => {
@@ -378,21 +331,18 @@ export const Contacts = () => {
         }
 
         return (
-          <Box
-            sx={{
-              display: "flex",
+          <TagChipList
+            tags={row.tags}
+            truncateToFit
+            truncateMaxRows={2}
+            containerSx={{
               height: "100%",
+              width: "100%",
+              minWidth: 0,
               alignItems: "center",
-              flexWrap: "wrap",
-              gap: "3px",
-              maxWidth: "100%",
               alignContent: "center",
             }}
-          >
-            {row.tags.map((tag) => (
-              <Chip key={tag} label={tag} size="small" variant="outlined" sx={getTagChipSx(tag)} />
-            ))}
-          </Box>
+          />
         );
       },
     },

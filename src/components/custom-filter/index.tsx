@@ -23,6 +23,7 @@ import {
   type AutocompleteKey,
   type FieldDefinition,
   fieldCategories,
+  getPrefixedFieldName,
   getOperatorDisplayName,
   noValueOperators,
 } from "@features/segments/types";
@@ -34,6 +35,24 @@ type FilterRow = {
   whereField: string;
   whereOperator: string;
   whereFieldValue: string;
+};
+
+const fieldGroupHeaderSx = {
+  px: 2,
+  py: 1,
+  lineHeight: 1.6,
+  fontSize: "0.72rem",
+  fontWeight: 800,
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  color: "text.primary",
+  backgroundColor: "background.paper",
+  backgroundImage: "none",
+  borderTop: "1px solid",
+  borderBottom: "1px solid",
+  borderColor: "divider",
+  boxShadow: "inset 4px 0 0 var(--mui-palette-primary-main)",
+  zIndex: 2,
 };
 
 const legacyOperatorToSegmentOperator: Record<string, string> = {
@@ -205,8 +224,7 @@ function getDefaultFieldOperator(field: FieldDefinition | undefined) {
 }
 
 function getFieldDisplayLabel(field: FieldDefinition | undefined, fieldId: string) {
-  if (!field) return fieldId;
-  return field.category !== "Contact" ? `${field.category}: ${field.name}` : field.name;
+  return getPrefixedFieldName(field, fieldId);
 }
 
 function formatStoredValueForInput(field: FieldDefinition | undefined, rawValue: string) {
@@ -740,10 +758,16 @@ export function CustomFilterBar({
                         }
 
                         return [
-                          <ListSubheader key={`header-${category}`}>{category}</ListSubheader>,
+                          <ListSubheader key={`header-${category}`} sx={fieldGroupHeaderSx}>
+                            {category}
+                          </ListSubheader>,
                           ...groupedFields.map((filterField) => (
-                            <MenuItem key={filterField.id} value={filterField.id}>
-                              {filterField.name}
+                            <MenuItem
+                              key={filterField.id}
+                              value={filterField.id}
+                              sx={{ pl: 4, fontSize: "0.95rem" }}
+                            >
+                              {getPrefixedFieldName(filterField, filterField.id)}
                             </MenuItem>
                           )),
                         ];

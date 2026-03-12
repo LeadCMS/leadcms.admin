@@ -23,6 +23,7 @@ import {
   getAvailableContactFields,
   getAvailableFieldCategories,
   getFieldById,
+  getPrefixedFieldName,
   getFieldsByCategory,
   getOperatorDisplayName,
   noValueOperators,
@@ -237,6 +238,24 @@ const RuleValueEditor: React.FC<{
 };
 
 /* ── Grouped field selector items ── */
+const fieldGroupHeaderSx = {
+  px: 2,
+  py: 1,
+  lineHeight: 1.6,
+  fontSize: "0.72rem",
+  fontWeight: 800,
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  color: "text.primary",
+  backgroundColor: "background.paper",
+  backgroundImage: "none",
+  borderTop: "1px solid",
+  borderBottom: "1px solid",
+  borderColor: "divider",
+  boxShadow: "inset 4px 0 0 var(--mui-palette-primary-main)",
+  zIndex: 2,
+};
+
 const buildFieldMenuItems = (availableEntities?: string[]) => {
   const availableFieldIds = new Set(
     getAvailableContactFields(availableEntities).map((field) => field.id)
@@ -245,11 +264,15 @@ const buildFieldMenuItems = (availableEntities?: string[]) => {
   for (const category of getAvailableFieldCategories(availableEntities)) {
     const fields = getFieldsByCategory(category).filter((field) => availableFieldIds.has(field.id));
     if (fields.length === 0) continue;
-    items.push(<ListSubheader key={`header-${category}`}>{category}</ListSubheader>);
+    items.push(
+      <ListSubheader key={`header-${category}`} sx={fieldGroupHeaderSx}>
+        {category}
+      </ListSubheader>
+    );
     for (const f of fields) {
       items.push(
-        <MenuItem key={f.id} value={f.id}>
-          {f.name}
+        <MenuItem key={f.id} value={f.id} sx={{ pl: 4, fontSize: "0.95rem" }}>
+          {getPrefixedFieldName(f, f.id)}
         </MenuItem>
       );
     }

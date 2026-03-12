@@ -455,6 +455,13 @@ export const contactFields: FieldDefinition[] = [
     operators: textOperators,
   },
   {
+    id: "domain.contactCount",
+    name: "Contacts Count",
+    type: "number",
+    category: "Domain",
+    operators: numericOperators,
+  },
+  {
     id: "domain.free",
     name: "Free",
     type: "boolean",
@@ -824,6 +831,14 @@ export const getFieldById = (id: string): FieldDefinition | undefined => {
   return contactFields.find((field) => field.id === id);
 };
 
+export const getPrefixedFieldName = (field: FieldDefinition | undefined, fallback = ""): string => {
+  if (!field) {
+    return fallback;
+  }
+
+  return field.category !== "Contact" ? `${field.category}.${field.name}` : field.name;
+};
+
 export const getOperatorDisplayName = (operator: SegmentRule["operator"]): string => {
   const displayMap: Record<string, string> = {
     Equals: "equals",
@@ -848,8 +863,5 @@ export const getOperatorDisplayName = (operator: SegmentRule["operator"]): strin
 
 export const getFieldDisplayName = (fieldId: string): string => {
   const field = getFieldById(fieldId);
-  if (field) {
-    return field.category !== "Contact" ? `${field.category}: ${field.name}` : field.name;
-  }
-  return pascalCaseToDisplayText(fieldId);
+  return getPrefixedFieldName(field, pascalCaseToDisplayText(fieldId));
 };

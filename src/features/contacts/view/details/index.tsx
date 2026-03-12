@@ -25,6 +25,7 @@ import {
   TrendingUp,
   User,
 } from "lucide-react";
+import { TagChipList } from "@components/tag-chip-list";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { ContactHref } from "@features/contacts/index.styled";
 import { CoreModule, getViewFormRoute } from "@lib/router";
@@ -85,22 +86,6 @@ const toAbsoluteLink = (url: string | null | undefined) => {
 };
 
 const fieldLabel = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
-
-const renderInlineChips = (values: string[], color: "default" | "primary" = "default") => (
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "flex-end",
-      flexWrap: "wrap",
-      gap: 1,
-      maxWidth: "100%",
-    }}
-  >
-    {values.map((value) => (
-      <Chip key={value} label={value} size="small" color={color} variant="outlined" />
-    ))}
-  </Box>
-);
 
 const StatCard = ({ label, value, icon }: StatItemProps) => {
   const theme = useTheme();
@@ -399,10 +384,17 @@ export const ContactView = () => {
             value: contact.account.revenue != null ? formatMoney(contact.account.revenue, 0) : "",
           },
           { label: "TIN", value: contact.account.tin || "" },
-          {
-            label: "Tags",
-            value: contact.account.tags?.join(", ") || "",
-          },
+          contact.account.tags?.length
+            ? {
+                label: "Tags",
+                value: (
+                  <TagChipList
+                    tags={contact.account.tags}
+                    containerSx={{ justifyContent: "flex-end" }}
+                  />
+                ),
+              }
+            : null,
           { label: "Contacts", value: contact.account.contactCount ?? "" },
           { label: "Domains", value: contact.account.domainsCount ?? "" },
         ]
@@ -450,10 +442,17 @@ export const ContactView = () => {
             label: "Favicon URL",
             value: toAbsoluteLink(contact.domain.faviconUrl),
           },
-          {
-            label: "Tags",
-            value: contact.domain.tags?.join(", ") || "",
-          },
+          contact.domain.tags?.length
+            ? {
+                label: "Tags",
+                value: (
+                  <TagChipList
+                    tags={contact.domain.tags}
+                    containerSx={{ justifyContent: "flex-end" }}
+                  />
+                ),
+              }
+            : null,
         ]
       : []
   );
@@ -476,7 +475,7 @@ export const ContactView = () => {
     contact.tags?.length
       ? {
           label: "Tags",
-          value: renderInlineChips(contact.tags, "primary"),
+          value: <TagChipList tags={contact.tags} containerSx={{ justifyContent: "flex-end" }} />,
         }
       : null,
     contact.utms?.source
