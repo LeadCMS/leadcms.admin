@@ -47,6 +47,8 @@ import { ToolbarButton } from "@components/tool-bar-button";
 import { useNotificationsService } from "@hooks";
 import { showApiError, parseApiError } from "@utils/api-error-parser";
 import { CommentDetailsDto } from "@lib/network/swagger-client";
+import { DateTimePicker } from "@mui/x-date-pickers";
+import dayjs, { Dayjs } from "dayjs";
 import { dataListBreadcrumbLinks } from "@utils/constants";
 import { Download, Filter, SortAsc, SortDesc } from "lucide-react";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -127,6 +129,7 @@ export const CommentsList: React.FC = () => {
     "Unanswered" | "Answered" | "Closed" | null
   >(null);
   const [commentLanguage, setCommentLanguage] = useState("");
+  const [commentPublishedAt, setCommentPublishedAt] = useState<Dayjs | null>(null);
 
   // Filtering and pagination
   const [totalCount, setTotalCount] = useState(0);
@@ -429,6 +432,7 @@ export const CommentsList: React.FC = () => {
     setCommentStatus(comment.status || "NotApproved");
     setCommentAnswerStatus(comment.answerStatus || null);
     setCommentLanguage(comment.language || config?.defaultLanguage || "en-US");
+    setCommentPublishedAt(comment.publishedAt ? dayjs(comment.publishedAt) : null);
     setDialogMode("edit");
   };
 
@@ -446,6 +450,7 @@ export const CommentsList: React.FC = () => {
           authorEmail: commentAuthorEmail,
           status: commentStatus,
           language: commentLanguage,
+          publishedAt: commentPublishedAt ? commentPublishedAt.toISOString() : null,
         };
         if (commentAnswerStatus) {
           updateData.answerStatus = commentAnswerStatus;
@@ -472,6 +477,7 @@ export const CommentsList: React.FC = () => {
           status: commentStatus,
           parentId: selectedComment.id || undefined,
           language: commentLanguage,
+          publishedAt: commentPublishedAt ? commentPublishedAt.toISOString() : undefined,
         };
         if (selectedComment.commentableType) {
           createData.commentableType = selectedComment.commentableType;
@@ -498,6 +504,7 @@ export const CommentsList: React.FC = () => {
       setCommentStatus("Approved");
       setCommentAnswerStatus(null);
       setCommentLanguage("");
+      setCommentPublishedAt(null);
     } catch (error) {
       showApiError(
         error,
@@ -524,6 +531,7 @@ export const CommentsList: React.FC = () => {
     setCommentStatus("Approved");
     setCommentAnswerStatus(null);
     setCommentLanguage(comment.language || config?.defaultLanguage || "en-US");
+    setCommentPublishedAt(null);
     setDialogMode("reply");
   };
 
@@ -1428,6 +1436,16 @@ export const CommentsList: React.FC = () => {
                 onChange={(e) => setCommentAuthorEmail(e.target.value)}
                 placeholder="Enter author email"
                 required
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <DateTimePicker
+                label="Published At"
+                format="L HH:mm"
+                slotProps={{ textField: { fullWidth: true } }}
+                value={commentPublishedAt}
+                onChange={(val) => setCommentPublishedAt(val)}
               />
             </Grid>
 

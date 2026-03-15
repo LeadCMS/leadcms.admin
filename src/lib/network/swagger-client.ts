@@ -2067,6 +2067,13 @@ export interface CommentCreateBaseDto {
    */
   language?: string;
   /**
+   * Published At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  publishedAt?: string | null;
+  /**
    * Translation Key
    * @example "string"
    */
@@ -2120,6 +2127,13 @@ export interface CommentCreateDto {
    * @example "string"
    */
   language?: string;
+  /**
+   * Published At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  publishedAt?: string | null;
   /**
    * Translation Key
    * @example "string"
@@ -2186,6 +2200,13 @@ export interface CommentDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
+  /**
+   * Published At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  publishedAt?: string | null;
   /**
    * Commentable Id
    * @format int32
@@ -2347,6 +2368,13 @@ export interface CommentImportDto {
    */
   language?: string | null;
   /**
+   * Published At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  publishedAt?: string | null;
+  /**
    * Translation Key
    * @example "string"
    */
@@ -2451,6 +2479,13 @@ export interface CommentUpdateDto {
    */
   language?: string | null;
   /**
+   * Published At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  publishedAt?: string | null;
+  /**
    * Status
    * @example "NotApproved"
    */
@@ -2460,11 +2495,6 @@ export interface CommentUpdateDto {
    * @example "Unanswered"
    */
   answerStatus?: "Unanswered" | "Answered" | "Closed" | null;
-  /**
-   * Translation Key
-   * @example "string"
-   */
-  translationKey?: string | null;
   /**
    * Tags
    * @example ["string1","string2"]
@@ -10191,7 +10221,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.4.14.0
+ * @version 1.4.15.0
  */
 export class Api<
   SecurityDataType extends unknown,
