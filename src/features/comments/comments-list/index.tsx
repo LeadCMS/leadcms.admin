@@ -750,9 +750,28 @@ export const CommentsList: React.FC = () => {
               <Box mb={2}>
                 <Grid container spacing={1} alignItems="center" mb={1}>
                   <Grid size={{ xs: 12, md: "grow" }}>
-                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                      {comment.authorName}
-                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {comment.authorName}
+                      </Typography>
+                      <Chip
+                        label={`#${comment.id}`}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          fontSize: "0.7rem",
+                          height: 20,
+                          color: "text.secondary",
+                        }}
+                      />
+                    </Box>
                     <Typography variant="body2" color="text.secondary">
                       {comment.authorEmail}
                     </Typography>
