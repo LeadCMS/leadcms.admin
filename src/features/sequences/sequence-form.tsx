@@ -93,6 +93,7 @@ interface SequenceFormProps {
 }
 
 interface StepFormData {
+  id?: number | null;
   localId: string;
   emailTemplateId: number | "";
   name: string;
@@ -265,6 +266,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
             [...data.steps]
               .sort((left, right) => (left.position || 0) - (right.position || 0))
               .map((s: SequenceStepDetailsDto, idx: number) => ({
+                id: s.id ?? null,
                 localId: `step-${s.id || idx}`,
                 emailTemplateId: s.emailTemplateId || "",
                 name: s.name || "",
@@ -413,6 +415,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
 
   const buildSteps = (): SequenceStepCreateDto[] =>
     sequenceSteps.map((s, idx) => ({
+      id: s.id ?? undefined,
       emailTemplateId: s.emailTemplateId as number,
       name: s.name.trim() || `Step ${idx + 1}`,
       position: idx,

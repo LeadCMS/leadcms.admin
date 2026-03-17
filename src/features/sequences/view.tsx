@@ -10,9 +10,9 @@ import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-
 import { SearchBar } from "@components/search-bar";
 import { TagChipList } from "@components/tag-chip-list";
 import { CountPill, RevenueCell } from "@components/metric-cells";
-import { ContactHref } from "@features/contacts/index.styled";
 import { sequenceFormBreadcrumbLinks, sequenceViewHeader } from "./constants";
 import {
+  ContactEmailCommunicationDetailsDto,
   ContactDetailsDto,
   SequenceDetailsDto,
   SequenceDeliveryDetailsDto,
@@ -68,8 +68,8 @@ import {
 } from "lucide-react";
 import { showApiError } from "@utils/api-error-parser";
 
-const enrollmentGridSettingsStorageKey = "sequence-enrollments-grid-settings-v3";
-const deliveryGridSettingsStorageKey = "sequence-deliveries-grid-settings-v3";
+const enrollmentGridSettingsStorageKey = "sequence-enrollments-grid-settings-v4";
+const deliveryGridSettingsStorageKey = "sequence-deliveries-grid-settings-v4";
 
 type SequenceEnrollmentRow = SequenceEnrollmentDetailsDto & {
   contact?: ContactDetailsDto | null;
@@ -296,7 +296,108 @@ const formatStepTiming = (step: NonNullable<SequenceDetailsDto["steps"]>[number]
   return parts.join(" · ");
 };
 
-const contactIncludeQuery = "filter[include]=Contact";
+const enrollmentIncludeQuery = "filter[include]=Contact&filter[include]=LastCompletedStep";
+const deliveryIncludeQuery = "filter[include]=Contact&filter[include]=EmailLog";
+
+type EmailStatus = "NotSent" | "Sent" | "Received";
+
+type DeliveryEmailPreviewState = {
+  communication: ContactEmailCommunicationDetailsDto;
+  contact?: ContactDetailsDto | null;
+};
+
+const formatEmailStatusLabel = (value: string) => value.replace(/([a-z])([A-Z])/g, "$1 $2");
+
+const getEmailStatusColor = (status?: EmailStatus) => {
+  switch (status) {
+    case "Sent":
+      return "success" as const;
+    case "Received":
+      return "info" as const;
+    case "NotSent":
+      return "warning" as const;
+    default:
+      return "default" as const;
+  }
+};
+
+const isHtmlEmailBody = (body: string) => /<\/?[a-z][\s\S]*>/i.test(body);
+
+const htmlEmailToText = (html: string) => {
+  if (typeof window !== "undefined" && "DOMParser" in window) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent || "";
+  }
+
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<head[\s\S]*?<\/head>/gi, " ")
+    .replace(/<!--([\s\S]*?)-->/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, String.fromCharCode(34))
+    .replace(/&#39;/gi, "'");
+};
+
+const getEmailPreviewText = (body?: string | null) => {
+  const content = (body || "").trim();
+  if (!content) {
+    return "No content available.";
+  }
+
+  const text = isHtmlEmailBody(content) ? htmlEmailToText(content) : content;
+  return text.replace(/\s+/g, " ").trim();
+};
+
+const getEmailPreviewSnippet = (body?: string | null) => {
+  const previewText = getEmailPreviewText(body);
+  if (previewText.length <= 120) {
+    return previewText;
+  }
+
+  return `${previewText.slice(0, 117)}...`;
+};
+
+const renderEmailBody = (body?: string | null) => {
+  const content = (body || "").trim();
+  if (!content) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        No content available.
+      </Typography>
+    );
+  }
+
+  if (isHtmlEmailBody(content)) {
+    return (
+      <Box
+        component="div"
+        sx={{
+          color: "text.secondary",
+          typography: "body2",
+          "& p": { margin: 0 },
+          "& ul, & ol": { margin: 0, paddingLeft: 3 },
+        }}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+
+  return (
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      component="div"
+      sx={{ whiteSpace: "pre-wrap" }}
+    >
+      {content}
+    </Typography>
+  );
+};
 
 const formatUtcOffset = (offsetMinutes: number | null | undefined) => {
   if (offsetMinutes == null) {
@@ -447,9 +548,9 @@ const renderDualTimezoneDateCell = (
   const contactLabel = formatDateTimeAtOffset(sourceValue, offsetMinutes);
   const timezoneLabel = formatTimezoneShort(offsetMinutes);
   const tooltipTitle = contactLabel
-    ? "Top: shown in your local PC/browser time. " +
-      `Bottom: contact local time (${timezoneLabel}), ${tooltipContext}.`
-    : "Top: shown in your local PC/browser time.";
+    ? `Top: contact local time (${timezoneLabel}), ${tooltipContext}. ` +
+      "Bottom: shown in your local PC/browser time."
+    : "Shown in your local PC/browser time.";
 
   return (
     <Tooltip title={tooltipTitle} arrow placement="top">
@@ -473,22 +574,28 @@ const renderDualTimezoneDateCell = (
           {icon}
         </Box>
         <Box>
-          <Typography variant="body2" sx={{ color: "text.primary", lineHeight: 1.6 }}>
-            {browserLabel}
-          </Typography>
           {contactLabel && (
             <Typography
-              variant="caption"
+              variant="body2"
               sx={{
-                mt: 1.25,
-                color: "text.secondary",
-                lineHeight: 1.2,
-                display: "block",
+                color: "text.primary",
+                lineHeight: 1.6,
               }}
             >
               {contactLabel} {timezoneLabel}
             </Typography>
           )}
+          <Typography
+            variant={contactLabel ? "caption" : "body2"}
+            sx={{
+              mt: contactLabel ? 1.25 : 0,
+              color: contactLabel ? "text.secondary" : "text.primary",
+              lineHeight: contactLabel ? 1.2 : 1.6,
+              display: "block",
+            }}
+          >
+            {browserLabel}
+          </Typography>
         </Box>
       </Box>
     </Tooltip>
@@ -678,12 +785,9 @@ const getContactColumns = <TRow extends { contact?: ContactDetailsDto | null; co
           >
             {contactRoute ? (
               <Typography
-                component={GhostLink}
-                to={contactRoute}
+                component="div"
                 variant="body2"
                 sx={{
-                  color: "inherit",
-                  textDecoration: "none",
                   fontWeight: 500,
                   lineHeight: 1.25,
                   overflow: "hidden",
@@ -691,7 +795,21 @@ const getContactColumns = <TRow extends { contact?: ContactDetailsDto | null; co
                   whiteSpace: "nowrap",
                 }}
               >
-                {contactLabel}
+                <Box
+                  component={GhostLink}
+                  to={contactRoute}
+                  sx={{
+                    color: "inherit",
+                    textDecoration: "none",
+                    display: "inline-block",
+                    maxWidth: "100%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {contactLabel}
+                </Box>
               </Typography>
             ) : (
               <Typography
@@ -717,9 +835,9 @@ const getContactColumns = <TRow extends { contact?: ContactDetailsDto | null; co
                   overflow: "hidden",
                 }}
               >
-                <Box
-                  component={ContactHref}
-                  href={`mailto:${contact.email}`}
+                <Typography
+                  variant="body2"
+                  component="span"
                   sx={{
                     minWidth: 0,
                     flex: 1,
@@ -731,7 +849,7 @@ const getContactColumns = <TRow extends { contact?: ContactDetailsDto | null; co
                   }}
                 >
                   {contact.email}
-                </Box>
+                </Typography>
                 {emailTypeBadge && (
                   <Tooltip title={emailTypeBadge.tooltip} arrow>
                     <Box
@@ -752,6 +870,12 @@ const getContactColumns = <TRow extends { contact?: ContactDetailsDto | null; co
         </Box>
       );
     },
+  },
+  {
+    field: "contactId",
+    headerName: "Contact ID",
+    minWidth: 120,
+    valueGetter: (_value: unknown, row: TRow) => row.contactId ?? row.contact?.id ?? "—",
   },
   {
     field: "contact.email",
@@ -868,6 +992,7 @@ const buildEnrollmentColumns = (
 
   return [
     getColumn("contact.fullName"),
+    getColumn("contactId"),
     getColumn("contact.timezone"),
     {
       field: "enrollmentReason",
@@ -905,10 +1030,12 @@ const buildEnrollmentColumns = (
       ),
     },
     {
-      field: "lastCompletedStepName",
+      field: "lastCompletedStep.name",
       headerName: "Last Completed Step",
       minWidth: 180,
-      valueGetter: (_value, row) => row.lastCompletedStepName || "—",
+      valueGetter: (_value, row) =>
+        row.lastCompletedStep?.name?.trim() ||
+        (row.lastCompletedStepId ? `Step #${row.lastCompletedStepId}` : "—"),
     },
     {
       field: "completedAt",
@@ -956,7 +1083,8 @@ const buildEnrollmentColumns = (
 
 const buildDeliveryColumns = (
   primaryCurrency: PrimaryCurrencyConfig | null | undefined,
-  sequence: SequenceDetailsDto | null
+  sequence: SequenceDetailsDto | null,
+  onOpenEmailPreview: (row: SequenceDeliveryRow) => void
 ): GridColDef<SequenceDeliveryRow>[] => {
   const contactColumns = getContactColumns<SequenceDeliveryRow>(primaryCurrency);
   const contactColumnsByField = new Map(
@@ -972,6 +1100,7 @@ const buildDeliveryColumns = (
 
   return [
     getColumn("contact.fullName"),
+    getColumn("contactId"),
     getColumn("contact.timezone"),
     {
       field: "sequenceStepId",
@@ -1029,6 +1158,74 @@ const buildDeliveryColumns = (
           "success.main",
           "when this delivery was sent to the contact"
         ),
+    },
+    {
+      field: "emailPreview",
+      headerName: "Email Title",
+      minWidth: 260,
+      sortable: false,
+      filterable: false,
+      renderCell: ({ row }) => {
+        const previewLabel =
+          row.emailLog?.subject?.trim() || (row.emailLogId ? `Email #${row.emailLogId}` : "—");
+        const previewSnippet = getEmailPreviewSnippet(row.emailLog?.body);
+        const canPreview = Boolean(row.emailLog);
+
+        if (!row.emailLog && !row.emailLogId) {
+          return "—";
+        }
+
+        return (
+          <Box
+            sx={{
+              width: "100%",
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: 0.25,
+              py: 1,
+            }}
+          >
+            <Typography
+              component={canPreview ? "button" : "span"}
+              type={canPreview ? "button" : undefined}
+              variant="body2"
+              onClick={canPreview ? () => onOpenEmailPreview(row) : undefined}
+              sx={{
+                p: 0,
+                m: 0,
+                border: 0,
+                background: "transparent",
+                width: "100%",
+                textAlign: "left",
+                fontWeight: 500,
+                color: canPreview ? "primary.main" : "text.primary",
+                cursor: canPreview ? "pointer" : "default",
+                textDecoration: canPreview ? "underline" : "none",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {previewLabel}
+            </Typography>
+            {row.emailLog && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {previewSnippet}
+              </Typography>
+            )}
+          </Box>
+        );
+      },
     },
     {
       field: "skipReason",
@@ -1120,13 +1317,26 @@ export const SequenceView = () => {
   const [deliveryStatusFilter, setDeliveryStatusFilter] = useState<
     "" | "Scheduled" | "Sent" | "Failed" | "Skipped"
   >("");
+  const [selectedDeliveryEmailPreview, setSelectedDeliveryEmailPreview] =
+    useState<DeliveryEmailPreviewState | null>(null);
   const [deliveryRefreshFlag, setDeliveryRefreshFlag] = useState(0);
   const [deliveryTotalCount, setDeliveryTotalCount] = useState(0);
   const [enrollmentColumns, setEnrollmentColumns] = useState<GridColDef<SequenceEnrollmentRow>[]>(
     () => buildEnrollmentColumns(primaryCurrency)
   );
+  const handleOpenDeliveryEmailPreview = useCallback((row: SequenceDeliveryRow) => {
+    if (!row.emailLog) {
+      return;
+    }
+
+    setSelectedDeliveryEmailPreview({
+      communication: row.emailLog,
+      contact: row.contact,
+    });
+  }, []);
+
   const [deliveryColumns, setDeliveryColumns] = useState<GridColDef<SequenceDeliveryRow>[]>(() =>
-    buildDeliveryColumns(primaryCurrency, sequence)
+    buildDeliveryColumns(primaryCurrency, sequence, handleOpenDeliveryEmailPreview)
   );
 
   useEffect(() => {
@@ -1134,8 +1344,10 @@ export const SequenceView = () => {
   }, [primaryCurrency]);
 
   useEffect(() => {
-    setDeliveryColumns(buildDeliveryColumns(primaryCurrency, sequence));
-  }, [primaryCurrency, sequence]);
+    setDeliveryColumns(
+      buildDeliveryColumns(primaryCurrency, sequence, handleOpenDeliveryEmailPreview)
+    );
+  }, [handleOpenDeliveryEmailPreview, primaryCurrency, sequence]);
 
   const loadSequence = useCallback(async () => {
     if (!id) return;
@@ -1163,7 +1375,7 @@ export const SequenceView = () => {
     if (!id) return;
     try {
       const result = await client.api.sequencesDeliveriesList(Number(id), {
-        query: `${contactIncludeQuery}&filter[limit]=1`,
+        query: `${deliveryIncludeQuery}&filter[limit]=1`,
       });
       const headerValue =
         (result as unknown as { headers?: Headers }).headers?.get("x-total-count") || null;
@@ -1335,7 +1547,7 @@ export const SequenceView = () => {
     const statusQuery = enrollmentStatusFilter
       ? getWhereFilterQuery("status", enrollmentStatusFilter, "equals").replace(/^&/, "")
       : "";
-    const fullQuery = [mainQuery, contactIncludeQuery, contactQuery, statusQuery]
+    const fullQuery = [mainQuery, enrollmentIncludeQuery, contactQuery, statusQuery]
       .filter(Boolean)
       .join("&");
 
@@ -1376,7 +1588,7 @@ export const SequenceView = () => {
       ? getWhereFilterQuery("status", deliveryStatusFilter, "equals").replace(/^&/, "")
       : "";
 
-    const fullQuery = [mainQuery, contactIncludeQuery, contactFilter, stepFilter, statusFilter]
+    const fullQuery = [mainQuery, deliveryIncludeQuery, contactFilter, stepFilter, statusFilter]
       .filter(Boolean)
       .join("&");
     const result = await client.api.sequencesDeliveriesList(Number(id), {
@@ -1395,6 +1607,16 @@ export const SequenceView = () => {
       } as unknown as Headers,
     };
   };
+
+  const selectedDeliveryCommunication = selectedDeliveryEmailPreview?.communication || null;
+  const selectedDeliveryTimestamp =
+    selectedDeliveryCommunication?.updatedAt || selectedDeliveryCommunication?.createdAt || null;
+  const selectedDeliveryBrowserTime = formatBrowserDateTime(selectedDeliveryTimestamp);
+  const selectedDeliveryContactTimezone = selectedDeliveryEmailPreview?.contact?.timezone;
+  const selectedDeliveryContactTime =
+    selectedDeliveryTimestamp != null && selectedDeliveryContactTimezone != null
+      ? formatDateTimeAtOffset(selectedDeliveryTimestamp, selectedDeliveryContactTimezone)
+      : null;
 
   if (loading) {
     return (
@@ -1919,6 +2141,7 @@ export const SequenceView = () => {
               },
               columns: {
                 columnVisibilityModel: {
+                  contactId: false,
                   "contact.email": false,
                   "contact.companyName": false,
                   "contact.phone": false,
@@ -2015,6 +2238,7 @@ export const SequenceView = () => {
               },
               columns: {
                 columnVisibilityModel: {
+                  contactId: false,
                   "contact.email": false,
                   "contact.companyName": false,
                   "contact.phone": false,
@@ -2034,6 +2258,81 @@ export const SequenceView = () => {
           />
         </Box>
       )}
+
+      <Dialog
+        open={Boolean(selectedDeliveryCommunication)}
+        onClose={() => setSelectedDeliveryEmailPreview(null)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography variant="subtitle1" fontWeight={600} noWrap>
+              {selectedDeliveryCommunication?.subject || "(No subject)"}
+            </Typography>
+            {selectedDeliveryCommunication?.id != null && (
+              <Typography variant="caption" color="text.secondary">
+                Email log #{selectedDeliveryCommunication.id}
+              </Typography>
+            )}
+          </Box>
+          {selectedDeliveryCommunication?.status && (
+            <Chip
+              size="small"
+              color={getEmailStatusColor(selectedDeliveryCommunication.status)}
+              label={formatEmailStatusLabel(selectedDeliveryCommunication.status)}
+            />
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "auto 1fr" },
+              columnGap: 2,
+              rowGap: 1,
+              mb: 2,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              From
+            </Typography>
+            <Typography variant="body2">
+              {selectedDeliveryCommunication?.fromEmail || "-"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              To
+            </Typography>
+            <Typography variant="body2">
+              {selectedDeliveryCommunication?.recipients || "-"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Your time
+            </Typography>
+            <Typography variant="body2">{selectedDeliveryBrowserTime || "-"}</Typography>
+            {selectedDeliveryContactTime && selectedDeliveryContactTimezone != null && (
+              <>
+                <Typography variant="caption" color="text.secondary">
+                  Contact time ({formatTimezoneShort(selectedDeliveryContactTimezone)})
+                </Typography>
+                <Typography variant="body2">{selectedDeliveryContactTime}</Typography>
+              </>
+            )}
+            {selectedDeliveryCommunication?.source && (
+              <>
+                <Typography variant="caption" color="text.secondary">
+                  Source
+                </Typography>
+                <Typography variant="body2">{selectedDeliveryCommunication.source}</Typography>
+              </>
+            )}
+          </Box>
+          {renderEmailBody(selectedDeliveryCommunication?.body)}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedDeliveryEmailPreview(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Action confirmation dialog */}
       <Dialog open={Boolean(confirmAction)} onClose={closeActionConfirm}>

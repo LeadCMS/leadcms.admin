@@ -368,12 +368,12 @@ export const CampaignView = () => {
 
         const tzLabel = formatTimezoneShort(offsetMin);
 
-        const renderTwoLines = (mainLabel: string, icon: React.ReactNode, iconColor: string) => {
+        const renderTwoLines = (browserLabel: string, icon: React.ReactNode, iconColor: string) => {
           const clientLabel = formatAtOffset(sentValue || expectedValue || "");
           const tooltipTitle = clientLabel
-            ? "Top: shown in your local PC/browser time. " +
-              `Bottom: recipient local time (${tzLabel}), when email is expected for them.`
-            : "Top: shown in your local PC/browser time.";
+            ? `Top: recipient local time (${tzLabel}), when email is expected for them. ` +
+              "Bottom: shown in your local PC/browser time."
+            : "Shown in your local PC/browser time.";
           return (
             <Tooltip title={tooltipTitle} arrow placement="top">
               <Box
@@ -396,22 +396,22 @@ export const CampaignView = () => {
                   {icon}
                 </Box>
                 <Box>
-                  <Typography variant="body2" sx={{ color: "text.primary", lineHeight: 1.6 }}>
-                    {mainLabel}
-                  </Typography>
                   {clientLabel && (
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        mt: 1.25,
-                        color: "text.secondary",
-                        lineHeight: 1.2,
-                        display: "block",
-                      }}
-                    >
+                    <Typography variant="body2" sx={{ color: "text.primary", lineHeight: 1.6 }}>
                       {clientLabel} {tzLabel}
                     </Typography>
                   )}
+                  <Typography
+                    variant={clientLabel ? "caption" : "body2"}
+                    sx={{
+                      mt: clientLabel ? 1.25 : 0,
+                      color: clientLabel ? "text.secondary" : "text.primary",
+                      lineHeight: clientLabel ? 1.2 : 1.6,
+                      display: "block",
+                    }}
+                  >
+                    {browserLabel}
+                  </Typography>
                 </Box>
               </Box>
             </Tooltip>

@@ -9328,12 +9328,14 @@ export interface SequenceDeliveryDetailsDto {
    * @example 1
    */
   sequenceEnrollmentId?: number;
+  sequenceEnrollment?: SequenceEnrollmentDetailsDto;
   /**
    * Sequence Step Id
    * @format int32
    * @example 1
    */
   sequenceStepId?: number;
+  sequenceStep?: SequenceStepDetailsDto;
   /**
    * Contact Id
    * @format int32
@@ -9376,6 +9378,7 @@ export interface SequenceDeliveryDetailsDto {
    * @example 1
    */
   emailLogId?: number | null;
+  emailLog?: ContactEmailCommunicationDetailsDto;
   /**
    * Created At
    * @format date-time
@@ -9574,10 +9577,12 @@ export interface SequenceEnrollmentDetailsDto {
    */
   status?: "Active" | "Completed" | "Exited";
   /**
-   * Last Completed Step Name
-   * @example "string"
+   * Last Completed Step Id
+   * @format int32
+   * @example 1
    */
-  lastCompletedStepName?: string | null;
+  lastCompletedStepId?: number | null;
+  lastCompletedStep?: SequenceStepDetailsDto;
   /**
    * Entered At
    * @format date-time
@@ -9682,6 +9687,12 @@ export interface SequenceStatisticsDto {
 }
 
 export interface SequenceStepCreateDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number | null;
   /**
    * Email Template Id
    * @format int32
