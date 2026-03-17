@@ -21,6 +21,7 @@ export const enum CoreModule {
   tasks = "tasks",
   deployments = "deployments",
   campaigns = "campaigns",
+  sequences = "sequences",
 }
 
 const coreModuleParser: Parser<CoreModule> = {

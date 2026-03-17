@@ -3,12 +3,11 @@ import { useRequestContext } from "providers/request-provider";
 import {
   defaultFilterOrderColumn,
   defaultFilterOrderDirection,
-  campaignGridSettingsStorageKey,
+  sequenceGridSettingsStorageKey,
   searchLabel,
-  campaignListPageBreadcrumb,
+  sequenceListPageBreadcrumb,
 } from "./constants";
 import { dataListBreadcrumbLinks } from "utils/constants";
-import { formatTimezoneShort } from "utils/timezone-helpers";
 import { DataList, DateValueGetter } from "@components/data-list";
 import { GridColDef } from "@mui/x-data-grid";
 import {
@@ -22,6 +21,8 @@ import useLocalStorage from "use-local-storage";
 import { DataListSettings } from "types";
 import { SearchBar } from "@components/search-bar";
 import { useNotificationsService } from "@hooks";
+import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
+import { getWhereFilterQuery } from "@providers/query-provider";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -46,12 +47,9 @@ import {
   Plus,
   Settings2,
   Mail,
-  Calendar,
-  CheckCircle2,
   Clock,
-  Ban,
+  CheckCircle2,
   Loader2,
-  Download,
   Edit,
   MoreHorizontal,
   Trash2,
@@ -60,54 +58,46 @@ import {
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { ToolbarButton } from "@components/tool-bar-button";
-import { CampaignDetailsDto } from "lib/network/swagger-client";
-import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
-import { getWhereFilterQuery } from "@providers/query-provider";
+import { SequenceDetailsDto } from "lib/network/swagger-client";
 import { showApiError } from "@utils/api-error-parser";
 
-type CampaignStatus = NonNullable<CampaignDetailsDto["status"]>;
+type SequenceStatus = NonNullable<SequenceDetailsDto["status"]>;
 
 const statusConfig: Record<
-  CampaignStatus,
+  SequenceStatus,
   {
     label: string;
     color: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning";
   }
 > = {
   Draft: { label: "Draft", color: "default" },
-  Scheduled: { label: "Scheduled", color: "info" },
-  Sending: { label: "Sending", color: "info" },
-  Sent: { label: "Sent", color: "success" },
-  Cancelled: { label: "Cancelled", color: "default" },
+  Active: { label: "Active", color: "success" },
   Paused: { label: "Paused", color: "warning" },
+  Archived: { label: "Archived", color: "default" },
 };
 
-const getStatusIcon = (status: CampaignStatus) => {
+const getStatusIcon = (status: SequenceStatus) => {
   switch (status) {
     case "Draft":
       return <Clock size={14} />;
-    case "Scheduled":
-      return <Calendar size={14} />;
-    case "Sending":
+    case "Active":
       return (
         <Box
           component={Loader2}
           size={14}
           sx={{
-            animation: "campaign-index-status-spin 1s linear infinite",
-            "@keyframes campaign-index-status-spin": {
+            animation: "seq-status-spin 1s linear infinite",
+            "@keyframes seq-status-spin": {
               "0%": { transform: "rotate(0deg)" },
               "100%": { transform: "rotate(360deg)" },
             },
           }}
         />
       );
-    case "Sent":
-      return <CheckCircle2 size={14} />;
-    case "Cancelled":
-      return <Ban size={14} />;
     case "Paused":
-      return <Clock size={14} />;
+      return <Pause size={14} />;
+    case "Archived":
+      return <CheckCircle2 size={14} />;
     default:
       return <Mail size={14} />;
   }
@@ -115,10 +105,8 @@ const getStatusIcon = (status: CampaignStatus) => {
 
 const formatDateTime = (dateValue: string | null | undefined) => {
   if (!dateValue) return "—";
-
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return "—";
-
   return date.toLocaleString(undefined, {
     year: "numeric",
     month: "2-digit",
@@ -128,58 +116,42 @@ const formatDateTime = (dateValue: string | null | undefined) => {
   });
 };
 
-const getTimezoneDescription = (campaign: CampaignDetailsDto) =>
-  formatTimezoneShort(campaign.timeZone ?? 0);
-
-const formatScheduledWithTimezone = (campaign: CampaignDetailsDto) => {
-  if (!campaign.scheduledAt) return "—";
-
-  const date = new Date(campaign.scheduledAt);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-
-  return `${day}/${month}/${year}, ${hours}:${minutes}`;
-};
-
-export const Campaigns = () => {
+export const Sequences = () => {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
   const navigate = useNavigate();
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
-    campaignGridSettingsStorageKey,
+    sequenceGridSettingsStorageKey,
     undefined
   );
 
   const [searchTerm, setSearchTerm] = useState(gridSettings?.searchTerm ?? "");
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
-  const [openExport, setOpenExport] = useState(false);
   const [refreshFlag, setRefreshFlag] = useState(0);
-  const [confirmCampaignAction, setConfirmCampaignAction] = useState<
-    "launch" | "pause" | "resume" | "cancel" | "delete" | null
+  const [confirmAction, setConfirmAction] = useState<
+    "activate" | "pause" | "archive" | "delete" | null
   >(null);
-  const [confirmCampaign, setConfirmCampaign] = useState<CampaignDetailsDto | null>(null);
+  const [confirmSequence, setConfirmSequence] = useState<SequenceDetailsDto | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
-  const [menuCampaign, setMenuCampaign] = useState<CampaignDetailsDto | null>(null);
+  const [menuSequence, setMenuSequence] = useState<SequenceDetailsDto | null>(null);
 
-  // Trigger refresh when global language filter changes
+  const buildSequencesListQuery = (query?: string) => {
+    const includeFilter = "filter[include]=steps";
+    const languageFilter =
+      isLanguageFilterActive && selectedLanguage !== "all"
+        ? getWhereFilterQuery("language", selectedLanguage, "equals")
+        : "";
+    return [query, includeFilter, languageFilter].filter(Boolean).join("&");
+  };
+
   useEffect(() => {
     setRefreshFlag((prev) => prev + 1);
   }, [selectedLanguage]);
 
-  const getCampaignsList = async (mainQuery: string) => {
-    let languageQuery = "";
-    if (isLanguageFilterActive && selectedLanguage !== "all") {
-      languageQuery = getWhereFilterQuery("language", selectedLanguage, "equals");
-    }
-    const fullQuery = [mainQuery, languageQuery].filter(Boolean).join("&");
-    const result = await client.api.campaignsList({
-      query: fullQuery,
+  const getSequencesList = async (mainQuery: string) => {
+    const result = await client.api.sequencesList({
+      query: buildSequencesListQuery(mainQuery),
     });
     return {
       data: result.data || [],
@@ -189,12 +161,7 @@ export const Campaigns = () => {
     };
   };
 
-  const campaignsExportApi: (query: string, accept: string) => Promise<Response> = (
-    query,
-    accept
-  ) => client.api.campaignsExportList({ query }, { headers: { Accept: accept } });
-
-  const handleCampaignAction = async (
+  const handleSequenceAction = async (
     action: () => Promise<unknown>,
     successMessage: string,
     errorMessage: string
@@ -208,87 +175,89 @@ export const Campaigns = () => {
     }
   };
 
-  const handleExportOpen = () => {
-    setOpenExport((prev) => !prev);
-  };
-
-  const handleDuplicate = async (campaign: CampaignDetailsDto) => {
+  const handleDuplicate = async (sequence: SequenceDetailsDto) => {
     try {
-      const detail = await client.api.campaignsDetail(campaign.id as number);
+      const detail = await client.api.sequencesDetail(sequence.id as number);
       const src = detail.data;
-      await client.api.campaignsCreate({
+      await client.api.sequencesCreate({
         name: `Copy of ${src.name}`,
         description: src.description || undefined,
-        emailTemplateId: src.emailTemplateId,
-        segmentIds: src.segmentIds || [],
-        excludeSegmentIds: src.excludeSegmentIds || undefined,
-        timeZone: src.timeZone || undefined,
+        language: src.language,
+        stopOnReply: src.stopOnReply,
         useContactTimeZone: src.useContactTimeZone,
-        language: src.language || undefined,
+        timeZone: src.timeZone,
+        enrollment: src.enrollment || undefined,
+        steps: (src.steps || []).map((step) => ({
+          emailTemplateId: step.emailTemplateId as number,
+          name: step.name?.trim() || `Step ${((step.position ?? 0) as number) + 1}`,
+          position: step.position,
+          type: step.type,
+          timing: step.timing as {
+            delay?: {
+              value?: number;
+              unit?: string;
+            };
+            sendAt?: string | null;
+            allowedWeekDays?: string[] | null;
+          },
+        })),
       });
-      notificationsService.success("Campaign duplicated.");
+      notificationsService.success("Sequence duplicated.");
       setRefreshFlag((prev) => prev + 1);
     } catch {
-      notificationsService.error("Failed to duplicate campaign.");
+      notificationsService.error("Failed to duplicate sequence.");
     }
   };
 
-  const openCampaignActionConfirm = (
-    action: "launch" | "pause" | "resume" | "cancel" | "delete",
-    campaign: CampaignDetailsDto,
+  const openActionConfirm = (
+    action: "activate" | "pause" | "archive" | "delete",
+    sequence: SequenceDetailsDto,
     event?: React.MouseEvent<HTMLElement>
   ) => {
     event?.stopPropagation();
-    setConfirmCampaignAction(action);
-    setConfirmCampaign(campaign);
+    setConfirmAction(action);
+    setConfirmSequence(sequence);
   };
 
-  const closeCampaignActionConfirm = () => {
-    setConfirmCampaignAction(null);
-    setConfirmCampaign(null);
+  const closeActionConfirm = () => {
+    setConfirmAction(null);
+    setConfirmSequence(null);
   };
 
-  const getCampaignViewRoute = (id: number) =>
-    `${getCoreModuleRoute(CoreModule.campaigns)}/${getViewFormRoute(id)}`;
+  const getSequenceViewRoute = (id: number) =>
+    `${getCoreModuleRoute(CoreModule.sequences)}/${getViewFormRoute(id)}`;
 
-  const getCampaignEditRoute = (id: number) =>
-    `${getCoreModuleRoute(CoreModule.campaigns)}/${getEditFormRoute(id)}`;
+  const getSequenceEditRoute = (id: number) =>
+    `${getCoreModuleRoute(CoreModule.sequences)}/${getEditFormRoute(id)}`;
 
   const confirmDialogConfig = (() => {
-    switch (confirmCampaignAction) {
-      case "launch":
+    switch (confirmAction) {
+      case "activate":
         return {
-          title: "Launch Campaign",
-          message:
-            "Are you sure you want to launch this campaign? This will start campaign delivery.",
-          confirmLabel: "Launch",
+          title: "Activate Sequence",
+          message: "Are you sure you want to activate this sequence?",
+          confirmLabel: "Activate",
           confirmColor: "success" as const,
         };
       case "pause":
         return {
-          title: "Pause Campaign",
-          message: "Are you sure you want to pause this campaign?",
+          title: "Pause Sequence",
+          message: "Are you sure you want to pause this sequence?",
           confirmLabel: "Pause",
           confirmColor: "warning" as const,
         };
-      case "resume":
+      case "archive":
         return {
-          title: "Resume Campaign",
-          message: "Are you sure you want to resume this campaign?",
-          confirmLabel: "Resume",
-          confirmColor: "success" as const,
-        };
-      case "cancel":
-        return {
-          title: "Cancel Campaign",
-          message: "Are you sure you want to cancel this campaign? This action cannot be undone.",
-          confirmLabel: "Cancel Campaign",
+          title: "Archive Sequence",
+          message:
+            "Are you sure you want to archive this sequence? Active enrollments will be exited.",
+          confirmLabel: "Archive",
           confirmColor: "error" as const,
         };
       case "delete":
         return {
-          title: "Delete Campaign",
-          message: "Are you sure you want to delete this campaign? This action cannot be undone.",
+          title: "Delete Sequence",
+          message: "Are you sure you want to delete this sequence? This action cannot be undone.",
           confirmLabel: "Delete",
           confirmColor: "error" as const,
         };
@@ -297,71 +266,53 @@ export const Campaigns = () => {
     }
   })();
 
-  const handleConfirmedCampaignAction = async () => {
-    if (!confirmCampaign?.id || !confirmCampaignAction) return;
+  const handleConfirmedAction = async () => {
+    if (!confirmSequence?.id || !confirmAction) return;
+    const seq = confirmSequence;
+    const act = confirmAction;
+    closeActionConfirm();
 
-    const currentCampaign = confirmCampaign;
-    const currentAction = confirmCampaignAction;
-    closeCampaignActionConfirm();
-
-    if (currentAction === "launch") {
-      await handleCampaignAction(
-        () =>
-          client.api.campaignsLaunchCreate(currentCampaign.id as number, {
-            sendNow: !currentCampaign.scheduledAt,
-            scheduledAt: currentCampaign.scheduledAt || undefined,
-            timeZone: currentCampaign.timeZone || undefined,
-            useContactTimeZone: currentCampaign.useContactTimeZone,
-          }),
-        currentCampaign.scheduledAt
-          ? "Campaign scheduled successfully."
-          : "Campaign launched successfully.",
-        "Failed to launch campaign."
+    if (act === "activate") {
+      await handleSequenceAction(
+        () => client.api.sequencesActivateCreate(seq.id as number),
+        "Sequence activated.",
+        "Failed to activate sequence."
       );
       return;
     }
 
-    if (currentAction === "pause") {
-      await handleCampaignAction(
-        () => client.api.campaignsPauseCreate(currentCampaign.id as number),
-        "Campaign paused.",
-        "Failed to pause campaign."
+    if (act === "pause") {
+      await handleSequenceAction(
+        () => client.api.sequencesPauseCreate(seq.id as number),
+        "Sequence paused.",
+        "Failed to pause sequence."
       );
       return;
     }
 
-    if (currentAction === "resume") {
-      await handleCampaignAction(
-        () => client.api.campaignsResumeCreate(currentCampaign.id as number),
-        "Campaign resumed.",
-        "Failed to resume campaign."
+    if (act === "archive") {
+      await handleSequenceAction(
+        () => client.api.sequencesArchiveCreate(seq.id as number),
+        "Sequence archived.",
+        "Failed to archive sequence."
       );
       return;
     }
 
-    if (currentAction === "cancel") {
-      await handleCampaignAction(
-        () => client.api.campaignsCancelCreate(currentCampaign.id as number),
-        "Campaign cancelled.",
-        "Failed to cancel campaign."
-      );
-      return;
-    }
-
-    if (currentAction === "delete") {
-      await handleCampaignAction(
-        () => client.api.campaignsDelete(currentCampaign.id as number),
-        "Campaign deleted.",
-        "Failed to delete campaign."
+    if (act === "delete") {
+      await handleSequenceAction(
+        () => client.api.sequencesDelete(seq.id as number),
+        "Sequence deleted.",
+        "Failed to delete sequence."
       );
       return;
     }
   };
 
-  const [columns, setColumns] = useState<GridColDef<CampaignDetailsDto>[]>([
+  const [columns, setColumns] = useState<GridColDef<SequenceDetailsDto>[]>([
     {
       field: "name",
-      headerName: "Campaign",
+      headerName: "Sequence",
       width: 280,
       renderCell: ({ row }) => (
         <Box
@@ -400,7 +351,7 @@ export const Campaigns = () => {
       width: 140,
       renderCell: ({ row }) => {
         const status = row.status || "Draft";
-        const config = statusConfig[status];
+        const config = statusConfig[status as SequenceStatus];
         return (
           <Box
             sx={{
@@ -411,7 +362,7 @@ export const Campaigns = () => {
           >
             <Chip
               size="small"
-              icon={getStatusIcon(status)}
+              icon={getStatusIcon(status as SequenceStatus)}
               label={config?.label || status}
               color={config?.color || "default"}
               variant="outlined"
@@ -421,8 +372,36 @@ export const Campaigns = () => {
       },
     },
     {
-      field: "totalRecipients",
-      headerName: "Recipients",
+      field: "language",
+      headerName: "Language",
+      width: 130,
+      valueGetter: (_value, row) => row.language || "—",
+    },
+    {
+      field: "stepsCount",
+      headerName: "Steps",
+      width: 100,
+      renderCell: ({ row }) => (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
+            gap: 0.5,
+          }}
+        >
+          <Mail size={14} />
+          <Typography variant="body2">
+            {(row as SequenceDetailsDto & { stepsCount?: number }).stepsCount ??
+              row.steps?.length ??
+              0}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: "activeEnrollmentCount",
+      headerName: "Enrolled",
       width: 120,
       renderCell: ({ row }) => (
         <Box
@@ -432,7 +411,27 @@ export const Campaigns = () => {
             height: "100%",
           }}
         >
-          <Typography variant="body2">{row.totalRecipients?.toLocaleString() ?? "—"}</Typography>
+          <Typography variant="body2">
+            {(row.activeEnrollmentCount ?? 0).toLocaleString()}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: "completedEnrollmentCount",
+      headerName: "Completed",
+      width: 120,
+      renderCell: ({ row }) => (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
+          <Typography variant="body2">
+            {(row.completedEnrollmentCount ?? 0).toLocaleString()}
+          </Typography>
         </Box>
       ),
     },
@@ -448,66 +447,7 @@ export const Campaigns = () => {
             height: "100%",
           }}
         >
-          <Typography variant="body2">{row.sentCount?.toLocaleString() ?? "—"}</Typography>
-        </Box>
-      ),
-    },
-    {
-      field: "failedCount",
-      headerName: "Failed",
-      width: 100,
-      renderCell: ({ row }) => (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            height: "100%",
-          }}
-        >
-          <Typography variant="body2">{row.failedCount?.toLocaleString() ?? "—"}</Typography>
-        </Box>
-      ),
-    },
-    {
-      field: "scheduledAt",
-      headerName: "Scheduled",
-      width: 280,
-      align: "center",
-      headerAlign: "center",
-      valueGetter: DateValueGetter,
-      renderCell: ({ row }) => (
-        <Box
-          sx={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography variant="body2">{formatScheduledWithTimezone(row)}</Typography>
-          {row.scheduledAt && (
-            <Typography variant="caption" color="text.secondary">
-              {getTimezoneDescription(row)}
-            </Typography>
-          )}
-        </Box>
-      ),
-    },
-    {
-      field: "language",
-      headerName: "Language",
-      width: 120,
-      renderCell: ({ row }) => (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            height: "100%",
-          }}
-        >
-          <Typography variant="body2">{row.language || "—"}</Typography>
+          <Typography variant="body2">{(row.sentCount ?? 0).toLocaleString()}</Typography>
         </Box>
       ),
     },
@@ -517,7 +457,13 @@ export const Campaigns = () => {
       width: 180,
       valueGetter: DateValueGetter,
       renderCell: ({ row }) => (
-        <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
           <Typography variant="body2">{formatDateTime(row.createdAt)}</Typography>
         </Box>
       ),
@@ -528,13 +474,19 @@ export const Campaigns = () => {
       width: 180,
       valueGetter: DateValueGetter,
       renderCell: ({ row }) => (
-        <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
           <Typography variant="body2">{formatDateTime(row.updatedAt)}</Typography>
         </Box>
       ),
     },
     {
-      field: "campaignControls",
+      field: "sequenceControls",
       headerName: "Actions",
       width: 210,
       sortable: false,
@@ -543,24 +495,25 @@ export const Campaigns = () => {
         const status = row.status || "Draft";
         if (!row.id) return null;
 
-        const isLaunchable = status === "Draft";
-        const isPausable = status === "Sending";
-        const isResumable = status === "Paused";
-        const isCancellable = status === "Scheduled";
-        const isEditable =
-          status === "Draft" ||
-          status === "Scheduled" ||
-          status === "Paused" ||
-          status === "Cancelled";
+        const isActivatable = status === "Draft" || status === "Paused";
+        const isPausable = status === "Active";
+        const isEditable = status === "Draft" || status === "Paused";
 
         return (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, height: "100%" }}>
-            {isLaunchable && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              height: "100%",
+            }}
+          >
+            {isActivatable && (
               <IconButton
                 size="small"
                 color="success"
                 onClick={(event) => {
-                  openCampaignActionConfirm("launch", row, event);
+                  openActionConfirm("activate", row, event);
                 }}
               >
                 <Play size={16} />
@@ -571,21 +524,10 @@ export const Campaigns = () => {
                 size="small"
                 color="warning"
                 onClick={(event) => {
-                  openCampaignActionConfirm("pause", row, event);
+                  openActionConfirm("pause", row, event);
                 }}
               >
                 <Pause size={16} />
-              </IconButton>
-            )}
-            {isResumable && (
-              <IconButton
-                size="small"
-                color="success"
-                onClick={(event) => {
-                  openCampaignActionConfirm("resume", row, event);
-                }}
-              >
-                <Play size={16} />
               </IconButton>
             )}
 
@@ -593,7 +535,7 @@ export const Campaigns = () => {
               size="small"
               onClick={(event) => {
                 event.stopPropagation();
-                navigate(getCampaignViewRoute(row.id as number));
+                navigate(getSequenceViewRoute(row.id as number));
               }}
             >
               <Eye size={16} />
@@ -604,22 +546,10 @@ export const Campaigns = () => {
                 size="small"
                 onClick={(event) => {
                   event.stopPropagation();
-                  navigate(getCampaignEditRoute(row.id as number));
+                  navigate(getSequenceEditRoute(row.id as number));
                 }}
               >
                 <Edit size={16} />
-              </IconButton>
-            )}
-
-            {isCancellable && (
-              <IconButton
-                size="small"
-                color="error"
-                onClick={(event) => {
-                  openCampaignActionConfirm("cancel", row, event);
-                }}
-              >
-                <Ban size={16} />
               </IconButton>
             )}
 
@@ -628,7 +558,7 @@ export const Campaigns = () => {
               onClick={(event) => {
                 event.stopPropagation();
                 setMenuAnchorEl(event.currentTarget);
-                setMenuCampaign(row);
+                setMenuSequence(row);
               }}
             >
               <MoreHorizontal size={16} />
@@ -655,9 +585,6 @@ export const Campaigns = () => {
     >
       Columns
     </ToolbarButton>,
-    <ToolbarButton key="export-btn" startIcon={<Download size={18} />} onClick={handleExportOpen}>
-      Export
-    </ToolbarButton>,
   ];
 
   const addButton = (
@@ -667,14 +594,14 @@ export const Campaigns = () => {
       component={GhostLink}
       startIcon={<Plus size={18} />}
     >
-      Create Campaign
+      Create Sequence
     </Button>
   );
 
   return (
     <ModuleWrapper
       breadcrumbs={dataListBreadcrumbLinks}
-      currentBreadcrumb={campaignListPageBreadcrumb}
+      currentBreadcrumb={sequenceListPageBreadcrumb}
       leftContainerChildren={searchBar}
       extraActionsContainerChildren={extraActions}
       addButtonContainerChildren={addButton}
@@ -682,11 +609,11 @@ export const Campaigns = () => {
       <DataList
         columns={columns}
         setColumns={setColumns}
-        gridSettingsStorageKey={campaignGridSettingsStorageKey}
+        gridSettingsStorageKey={sequenceGridSettingsStorageKey}
         defaultFilterOrderColumn={defaultFilterOrderColumn}
         defaultFilterOrderDirection={defaultFilterOrderDirection}
         searchText={searchTerm}
-        getModelDataList={getCampaignsList}
+        getModelDataList={getSequencesList}
         initialGridState={{
           sorting: {
             sortModel: [
@@ -699,9 +626,6 @@ export const Campaigns = () => {
         }}
         columnsPanelOpen={columnsPanelOpen}
         setColumnsPanelOpen={setColumnsPanelOpen}
-        onExportOpen={openExport}
-        onExportClose={handleExportOpen}
-        exportApiCall={campaignsExportApi}
         refreshFlag={refreshFlag}
         showActionsColumn={false}
       />
@@ -711,16 +635,16 @@ export const Campaigns = () => {
         open={Boolean(menuAnchorEl)}
         onClose={() => {
           setMenuAnchorEl(null);
-          setMenuCampaign(null);
+          setMenuSequence(null);
         }}
       >
         <MenuItem
           onClick={() => {
-            if (menuCampaign) {
-              const campaign = menuCampaign;
+            if (menuSequence) {
+              const seq = menuSequence;
               setMenuAnchorEl(null);
-              setMenuCampaign(null);
-              void handleDuplicate(campaign);
+              setMenuSequence(null);
+              void handleDuplicate(seq);
             }
           }}
         >
@@ -729,12 +653,28 @@ export const Campaigns = () => {
           </ListItemIcon>
           <ListItemText>Duplicate</ListItemText>
         </MenuItem>
+        {menuSequence?.status !== "Archived" && (
+          <MenuItem
+            onClick={() => {
+              if (menuSequence) {
+                setMenuAnchorEl(null);
+                openActionConfirm("archive", menuSequence);
+                setMenuSequence(null);
+              }
+            }}
+          >
+            <ListItemIcon>
+              <CheckCircle2 size={16} />
+            </ListItemIcon>
+            <ListItemText>Archive</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
-            if (menuCampaign) {
+            if (menuSequence) {
               setMenuAnchorEl(null);
-              openCampaignActionConfirm("delete", menuCampaign);
-              setMenuCampaign(null);
+              openActionConfirm("delete", menuSequence);
+              setMenuSequence(null);
             }
           }}
         >
@@ -745,15 +685,15 @@ export const Campaigns = () => {
         </MenuItem>
       </Menu>
 
-      <Dialog open={Boolean(confirmCampaignAction)} onClose={closeCampaignActionConfirm}>
+      <Dialog open={Boolean(confirmAction)} onClose={closeActionConfirm}>
         <DialogTitle>{confirmDialogConfig?.title || "Confirm Action"}</DialogTitle>
         <DialogContent>
           <DialogContentText>{confirmDialogConfig?.message || ""}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeCampaignActionConfirm}>No</Button>
+          <Button onClick={closeActionConfirm}>No</Button>
           <Button
-            onClick={() => void handleConfirmedCampaignAction()}
+            onClick={() => void handleConfirmedAction()}
             color={confirmDialogConfig?.confirmColor || "primary"}
             variant="contained"
           >

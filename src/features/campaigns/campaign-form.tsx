@@ -257,7 +257,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   const canProceed = useCallback(() => {
     switch (activeStep) {
       case 0:
-        return name.trim() !== "";
+        return name.trim() !== "" && language !== "";
       case 1:
         return selectedSegmentIds.length > 0;
       case 2:
@@ -272,6 +272,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   }, [
     activeStep,
     name,
+    language,
     selectedSegmentIds,
     selectedTemplateId,
     sendOption,
@@ -284,6 +285,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
     !isEdit &&
     activeStep >= 4 &&
     name.trim() !== "" &&
+    language !== "" &&
     selectedSegmentIds.length > 0 &&
     selectedTemplateId !== "" &&
     (sendOption === "now" || (scheduledDate !== "" && scheduledTime !== ""));
@@ -509,46 +511,50 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
     switch (activeStep) {
       case 0:
         return (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 3,
-            }}
-          >
-            <TextField
-              label="Campaign Name *"
-              placeholder="e.g., Black Friday Sale 2024"
-              fullWidth
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={!canEditDetails}
-            />
-            <TextField
-              label="Description"
-              placeholder="What is this campaign about?"
-              fullWidth
-              multiline
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={!canEditDetails}
-            />
-            <LanguageSelect
-              value={language}
-              onChange={(val) => {
-                setLanguage(val);
-                setSelectedTemplateId("");
-              }}
-              label="Language"
-              disabled={!canEditDetails}
-            />
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Campaign Name"
+                placeholder="e.g., Black Friday Sale 2024"
+                fullWidth
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={!canEditDetails}
+                required
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <LanguageSelect
+                value={language}
+                onChange={(val) => {
+                  setLanguage(val);
+                  setSelectedTemplateId("");
+                }}
+                label="Language"
+                disabled={!canEditDetails}
+                required
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Description"
+                placeholder="What is this campaign about?"
+                fullWidth
+                multiline
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={!canEditDetails}
+              />
+            </Grid>
             {!canEditDetails && (
-              <Alert severity="info" icon={<Info size={18} />}>
-                Campaign details are locked in this status to prevent content drift.
-              </Alert>
+              <Grid size={{ xs: 12 }}>
+                <Alert severity="info" icon={<Info size={18} />}>
+                  Campaign details are locked in this status to prevent content drift.
+                </Alert>
+              </Grid>
             )}
-          </Box>
+          </Grid>
         );
 
       case 1:

@@ -9,6 +9,7 @@ interface LanguageSelectProps {
   helperText?: string | false | undefined;
   name?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
 export const LanguageSelect = ({
@@ -19,6 +20,7 @@ export const LanguageSelect = ({
   helperText,
   name = "language",
   disabled = false,
+  required = false,
 }: LanguageSelectProps) => {
   const { config } = useConfig();
   const languages = config?.languages || [];
@@ -34,6 +36,7 @@ export const LanguageSelect = ({
       error={error}
       helperText={helperText}
       disabled={disabled}
+      required={required}
     >
       {languages.map((lang) => (
         <MenuItem key={lang.code} value={lang.code}>

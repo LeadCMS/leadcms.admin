@@ -4522,6 +4522,11 @@ export interface ContentCreateDto {
    */
   slug: string;
   /**
+   * Preview Slug
+   * @example "string"
+   */
+  previewSlug?: string | null;
+  /**
    * Type
    * @minLength 1
    * @example "string"
@@ -4608,6 +4613,11 @@ export interface ContentDetailsDto {
    * @example "string"
    */
   slug: string;
+  /**
+   * Preview Slug
+   * @example "string"
+   */
+  previewSlug?: string | null;
   /**
    * Type
    * @minLength 1
@@ -4742,6 +4752,11 @@ export interface ContentEditRequest {
    * @example "string"
    */
   slug?: string | null;
+  /**
+   * Preview Slug
+   * @example "string"
+   */
+  previewSlug?: string | null;
   /**
    * Type
    * @minLength 1
@@ -4961,6 +4976,11 @@ export interface ContentImportDto {
    */
   slug?: string | null;
   /**
+   * Preview Slug
+   * @example "string"
+   */
+  previewSlug?: string | null;
+  /**
    * Type
    * @example "string"
    */
@@ -5064,6 +5084,11 @@ export interface ContentTypeCreateDto {
    * @example true
    */
   supportsCoverImage?: boolean;
+  /**
+   * Supports Preview Slug
+   * @example true
+   */
+  supportsPreviewSlug?: boolean;
 }
 
 export interface ContentTypeDetailsDto {
@@ -5088,6 +5113,11 @@ export interface ContentTypeDetailsDto {
    * @example true
    */
   supportsCoverImage?: boolean;
+  /**
+   * Supports Preview Slug
+   * @example true
+   */
+  supportsPreviewSlug?: boolean;
   /**
    * Id
    * @format int32
@@ -5201,6 +5231,11 @@ export interface ContentTypeImportDto {
    * @example true
    */
   supportsCoverImage?: boolean | null;
+  /**
+   * Supports Preview Slug
+   * @example true
+   */
+  supportsPreviewSlug?: boolean | null;
 }
 
 export interface ContentTypeUpdateDto {
@@ -5224,6 +5259,11 @@ export interface ContentTypeUpdateDto {
    * @example true
    */
   supportsCoverImage?: boolean | null;
+  /**
+   * Supports Preview Slug
+   * @example true
+   */
+  supportsPreviewSlug?: boolean | null;
 }
 
 export interface ContentUpdateDto {
@@ -5261,6 +5301,11 @@ export interface ContentUpdateDto {
    * @example "string"
    */
   slug?: string | null;
+  /**
+   * Preview Slug
+   * @example "string"
+   */
+  previewSlug?: string | null;
   /**
    * Type
    * @minLength 1
@@ -9225,6 +9270,607 @@ export interface SegmentUpdateDto {
   contactIds?: number[] | null;
 }
 
+export interface SequenceCreateDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string;
+  /**
+   * Stop On Reply
+   * @example true
+   */
+  stopOnReply?: boolean;
+  /**
+   * Use Contact Time Zone
+   * @example true
+   */
+  useContactTimeZone?: boolean;
+  /**
+   * Time Zone
+   * @format int32
+   * @example 1
+   */
+  timeZone?: number;
+  enrollment?: SequenceEnrollmentConfig;
+  utmParameters?: Utms;
+  /** Steps */
+  steps?: SequenceStepCreateDto[];
+}
+
+export interface SequenceDeliveryDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Sequence Id
+   * @format int32
+   * @example 1
+   */
+  sequenceId?: number;
+  /**
+   * Sequence Enrollment Id
+   * @format int32
+   * @example 1
+   */
+  sequenceEnrollmentId?: number;
+  /**
+   * Sequence Step Id
+   * @format int32
+   * @example 1
+   */
+  sequenceStepId?: number;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number;
+  contact?: ContactDetailsDto;
+  /**
+   * Status
+   * @example "Scheduled"
+   */
+  status?: "Scheduled" | "Sent" | "Failed" | "Skipped";
+  /**
+   * Scheduled At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  scheduledAt?: string | null;
+  /**
+   * Sent At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  sentAt?: string | null;
+  /**
+   * Skip Reason
+   * @example "string"
+   */
+  skipReason?: string | null;
+  /**
+   * Error Message
+   * @example "string"
+   */
+  errorMessage?: string | null;
+  /**
+   * Email Log Id
+   * @format int32
+   * @example 1
+   */
+  emailLogId?: number | null;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface SequenceDetailsDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string;
+  /**
+   * Stop On Reply
+   * @example true
+   */
+  stopOnReply?: boolean;
+  /**
+   * Use Contact Time Zone
+   * @example true
+   */
+  useContactTimeZone?: boolean;
+  /**
+   * Time Zone
+   * @format int32
+   * @example 1
+   */
+  timeZone?: number;
+  enrollment?: SequenceEnrollmentConfig;
+  utmParameters?: Utms;
+  /** Steps */
+  steps?: SequenceStepDetailsDto[];
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Status
+   * @example "Draft"
+   */
+  status?: "Draft" | "Active" | "Paused" | "Archived";
+  /**
+   * Last Activated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  lastActivatedAt?: string | null;
+  /**
+   * Last Paused At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  lastPausedAt?: string | null;
+  /**
+   * Archived At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  archivedAt?: string | null;
+  /**
+   * Active Enrollment Count
+   * @format int32
+   * @example 1
+   */
+  activeEnrollmentCount?: number;
+  /**
+   * Completed Enrollment Count
+   * @format int32
+   * @example 1
+   */
+  completedEnrollmentCount?: number;
+  /**
+   * Exited Enrollment Count
+   * @format int32
+   * @example 1
+   */
+  exitedEnrollmentCount?: number;
+  /**
+   * Sent Count
+   * @format int32
+   * @example 1
+   */
+  sentCount?: number;
+  /**
+   * Failed Count
+   * @format int32
+   * @example 1
+   */
+  failedCount?: number;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface SequenceDetailsDtoInt32SyncResponseDto {
+  /** Items */
+  items?: SequenceDetailsDto[];
+  /** Deleted */
+  deleted?: number[];
+  /** Base Items */
+  baseItems?: Record<string, SequenceDetailsDto>;
+}
+
+export interface SequenceEnrollmentConfig {
+  /**
+   * Modes
+   * @example ["string1","string2"]
+   */
+  modes?: string[];
+  /** Include Segment Ids */
+  includeSegmentIds?: number[] | null;
+  /** Exclude Segment Ids */
+  excludeSegmentIds?: number[] | null;
+  /**
+   * Reentry Policy
+   * @example "OnceEver"
+   */
+  reentryPolicy?: "OnceEver" | "AllowAfterCompletion" | "Always";
+}
+
+export interface SequenceEnrollmentCreateDto {
+  /** Contact Ids */
+  contactIds: number[];
+  /**
+   * Enrollment Reason
+   * @example "string"
+   */
+  enrollmentReason?: string | null;
+  /**
+   * Template Arguments
+   * @example {"key1":"value1","key2":"value2"}
+   */
+  templateArguments?: Record<string, string>;
+}
+
+export interface SequenceEnrollmentDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Sequence Id
+   * @format int32
+   * @example 1
+   */
+  sequenceId?: number;
+  /**
+   * Contact Id
+   * @format int32
+   * @example 1
+   */
+  contactId?: number;
+  contact?: ContactDetailsDto;
+  /**
+   * Status
+   * @example "Active"
+   */
+  status?: "Active" | "Completed" | "Exited";
+  /**
+   * Last Completed Step Name
+   * @example "string"
+   */
+  lastCompletedStepName?: string | null;
+  /**
+   * Entered At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  enteredAt?: string;
+  /**
+   * Completed At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  completedAt?: string | null;
+  /**
+   * Exited At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  exitedAt?: string | null;
+  /**
+   * Exit Reason
+   * @example "None"
+   */
+  exitReason?:
+    | "None"
+    | "Completed"
+    | "Failed"
+    | "Unsubscribed"
+    | "ReplyStopped"
+    | "ManuallyRemoved"
+    | "Archived";
+  /**
+   * Enrollment Source
+   * @example "Manual"
+   */
+  enrollmentSource?: "Manual" | "Api" | "Segment" | "Migration";
+  /**
+   * Enrollment Reason
+   * @example "string"
+   */
+  enrollmentReason?: string | null;
+  /**
+   * Template Arguments
+   * @example {"key1":"value1","key2":"value2"}
+   */
+  templateArguments?: Record<string, string>;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface SequenceStatisticsDto {
+  /**
+   * Active Enrollment Count
+   * @format int32
+   * @example 1
+   */
+  activeEnrollmentCount?: number;
+  /**
+   * Completed Enrollment Count
+   * @format int32
+   * @example 1
+   */
+  completedEnrollmentCount?: number;
+  /**
+   * Exited Enrollment Count
+   * @format int32
+   * @example 1
+   */
+  exitedEnrollmentCount?: number;
+  /**
+   * Sent Count
+   * @format int32
+   * @example 1
+   */
+  sentCount?: number;
+  /**
+   * Failed Count
+   * @format int32
+   * @example 1
+   */
+  failedCount?: number;
+  /**
+   * Steps Count
+   * @format int32
+   * @example 1
+   */
+  stepsCount?: number;
+}
+
+export interface SequenceStepCreateDto {
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId: number;
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name: string;
+  /**
+   * Position
+   * @format int32
+   * @example 1
+   */
+  position?: number | null;
+  /**
+   * Type
+   * @example "Email"
+   */
+  type?: "Email";
+  timing: SequenceStepTiming;
+}
+
+export interface SequenceStepDelay {
+  /**
+   * Value
+   * @format int32
+   * @example 1
+   */
+  value?: number;
+  /**
+   * Unit
+   * @example "string"
+   */
+  unit?: string;
+}
+
+export interface SequenceStepDetailsDto {
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Sequence Id
+   * @format int32
+   * @example 1
+   */
+  sequenceId?: number;
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId?: number;
+  /**
+   * Position
+   * @format int32
+   * @example 1
+   */
+  position?: number;
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+  /**
+   * Type
+   * @example "Email"
+   */
+  type?: "Email";
+  timing?: SequenceStepTiming;
+  /**
+   * Scheduled Count
+   * @format int32
+   * @example 1
+   */
+  scheduledCount?: number;
+  /**
+   * Sent Count
+   * @format int32
+   * @example 1
+   */
+  sentCount?: number;
+  /**
+   * Failed Count
+   * @format int32
+   * @example 1
+   */
+  failedCount?: number;
+  /**
+   * Skipped Count
+   * @format int32
+   * @example 1
+   */
+  skippedCount?: number;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface SequenceStepReorderDto {
+  /** Step Ids */
+  stepIds: number[];
+}
+
+export interface SequenceStepTiming {
+  delay?: SequenceStepDelay;
+  /**
+   * Send At
+   * @example "string"
+   */
+  sendAt?: string | null;
+  /**
+   * Allowed Week Days
+   * @example ["string1","string2"]
+   */
+  allowedWeekDays?: string[] | null;
+}
+
+export interface SequenceStepUpdateDto {
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId?: number | null;
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string | null;
+  timing?: SequenceStepTiming;
+}
+
+export interface SequenceUpdateDto {
+  /**
+   * Name
+   * @minLength 1
+   * @example "string"
+   */
+  name?: string | null;
+  /**
+   * Description
+   * @example "string"
+   */
+  description?: string | null;
+  /**
+   * Language
+   * @example "string"
+   */
+  language?: string | null;
+  /**
+   * Stop On Reply
+   * @example true
+   */
+  stopOnReply?: boolean | null;
+  /**
+   * Use Contact Time Zone
+   * @example true
+   */
+  useContactTimeZone?: boolean | null;
+  /**
+   * Time Zone
+   * @format int32
+   * @example 1
+   */
+  timeZone?: number | null;
+  enrollment?: SequenceEnrollmentConfig;
+  utmParameters?: Utms;
+  /** Steps */
+  steps?: SequenceStepCreateDto[] | null;
+}
+
 export interface SettingCreateDto {
   /**
    * Key
@@ -10221,7 +10867,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.4.15.0
+ * @version 1.4.16.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -18085,6 +18731,548 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceContacts
+     * @name SequencesContactsList
+     * @request GET:/api/sequences/{sequenceId}/contacts
+     * @secure
+     */
+    sequencesContactsList: (
+      sequenceId: number,
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ContactDetailsDto[], void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/contacts`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceDeliveries
+     * @name SequencesDeliveriesList
+     * @request GET:/api/sequences/{sequenceId}/deliveries
+     * @secure
+     */
+    sequencesDeliveriesList: (
+      sequenceId: number,
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceDeliveryDetailsDto[], void>({
+        path: `/api/sequences/${sequenceId}/deliveries`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceDeliveries
+     * @name SequencesDeliveriesDetail
+     * @request GET:/api/sequences/{sequenceId}/deliveries/{deliveryId}
+     * @secure
+     */
+    sequencesDeliveriesDetail: (
+      sequenceId: number,
+      deliveryId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceDeliveryDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/deliveries/${deliveryId}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceEnrollments
+     * @name SequencesEnrollmentsList
+     * @request GET:/api/sequences/{sequenceId}/enrollments
+     * @secure
+     */
+    sequencesEnrollmentsList: (
+      sequenceId: number,
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceEnrollmentDetailsDto[], void>({
+        path: `/api/sequences/${sequenceId}/enrollments`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceEnrollments
+     * @name SequencesEnrollmentsCreate
+     * @request POST:/api/sequences/{sequenceId}/enrollments
+     * @secure
+     */
+    sequencesEnrollmentsCreate: (
+      sequenceId: number,
+      data: SequenceEnrollmentCreateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceEnrollmentDetailsDto[], void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/enrollments`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceEnrollments
+     * @name SequencesEnrollmentsDetail
+     * @request GET:/api/sequences/{sequenceId}/enrollments/{enrollmentId}
+     * @secure
+     */
+    sequencesEnrollmentsDetail: (
+      sequenceId: number,
+      enrollmentId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceEnrollmentDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/enrollments/${enrollmentId}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceEnrollments
+     * @name SequencesEnrollmentsDelete
+     * @request DELETE:/api/sequences/{sequenceId}/enrollments/{enrollmentId}
+     * @secure
+     */
+    sequencesEnrollmentsDelete: (
+      sequenceId: number,
+      enrollmentId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceEnrollmentDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/enrollments/${enrollmentId}`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesDetail
+     * @request GET:/api/sequences/{id}
+     * @secure
+     */
+    sequencesDetail: (id: number, params: RequestParams = {}) =>
+      this.request<SequenceDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesUpdate
+     * @request PUT:/api/sequences/{id}
+     * @secure
+     */
+    sequencesUpdate: (
+      id: number,
+      data: SequenceCreateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${id}`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesPartialUpdate
+     * @request PATCH:/api/sequences/{id}
+     * @secure
+     */
+    sequencesPartialUpdate: (
+      id: number,
+      data: SequenceUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesDelete
+     * @request DELETE:/api/sequences/{id}
+     * @secure
+     */
+    sequencesDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/sequences/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesCreate
+     * @request POST:/api/sequences
+     * @secure
+     */
+    sequencesCreate: (data: SequenceCreateDto, params: RequestParams = {}) =>
+      this.request<SequenceDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesList
+     * @request GET:/api/sequences
+     * @secure
+     */
+    sequencesList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceDetailsDto[], void | ProblemDetails>({
+        path: `/api/sequences`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesActivateCreate
+     * @request POST:/api/sequences/{id}/activate
+     * @secure
+     */
+    sequencesActivateCreate: (id: number, params: RequestParams = {}) =>
+      this.request<SequenceDetailsDto, ProblemDetails>({
+        path: `/api/sequences/${id}/activate`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesPauseCreate
+     * @request POST:/api/sequences/{id}/pause
+     * @secure
+     */
+    sequencesPauseCreate: (id: number, params: RequestParams = {}) =>
+      this.request<SequenceDetailsDto, ProblemDetails>({
+        path: `/api/sequences/${id}/pause`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesArchiveCreate
+     * @request POST:/api/sequences/{id}/archive
+     * @secure
+     */
+    sequencesArchiveCreate: (id: number, params: RequestParams = {}) =>
+      this.request<SequenceDetailsDto, ProblemDetails>({
+        path: `/api/sequences/${id}/archive`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesStatisticsList
+     * @request GET:/api/sequences/{id}/statistics
+     * @secure
+     */
+    sequencesStatisticsList: (id: number, params: RequestParams = {}) =>
+      this.request<SequenceStatisticsDto, ProblemDetails>({
+        path: `/api/sequences/${id}/statistics`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesSyncList
+     * @request GET:/api/sequences/sync
+     * @secure
+     */
+    sequencesSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        SequenceDetailsDtoInt32SyncResponseDto,
+        void | ProblemDetails
+      >({
+        path: `/api/sequences/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesBulkDelete
+     * @request DELETE:/api/sequences/bulk
+     * @secure
+     */
+    sequencesBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/sequences/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Sequences
+     * @name SequencesExportList
+     * @request GET:/api/sequences/export
+     * @secure
+     */
+    sequencesExportList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, void | ProblemDetails>({
+        path: `/api/sequences/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceSteps
+     * @name SequencesStepsList
+     * @request GET:/api/sequences/{sequenceId}/steps
+     * @secure
+     */
+    sequencesStepsList: (sequenceId: number, params: RequestParams = {}) =>
+      this.request<SequenceStepDetailsDto[], void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/steps`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceSteps
+     * @name SequencesStepsCreate
+     * @request POST:/api/sequences/{sequenceId}/steps
+     * @secure
+     */
+    sequencesStepsCreate: (
+      sequenceId: number,
+      data: SequenceStepCreateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceStepDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/steps`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceSteps
+     * @name SequencesStepsDetail
+     * @request GET:/api/sequences/{sequenceId}/steps/{stepId}
+     * @secure
+     */
+    sequencesStepsDetail: (
+      sequenceId: number,
+      stepId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceStepDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/steps/${stepId}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceSteps
+     * @name SequencesStepsPartialUpdate
+     * @request PATCH:/api/sequences/{sequenceId}/steps/{stepId}
+     * @secure
+     */
+    sequencesStepsPartialUpdate: (
+      sequenceId: number,
+      stepId: number,
+      data: SequenceStepUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceStepDetailsDto, void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/steps/${stepId}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceSteps
+     * @name SequencesStepsDelete
+     * @request DELETE:/api/sequences/{sequenceId}/steps/{stepId}
+     * @secure
+     */
+    sequencesStepsDelete: (
+      sequenceId: number,
+      stepId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/steps/${stepId}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceSteps
+     * @name SequencesStepsReorderCreate
+     * @request POST:/api/sequences/{sequenceId}/steps/reorder
+     * @secure
+     */
+    sequencesStepsReorderCreate: (
+      sequenceId: number,
+      data: SequenceStepReorderDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceStepDetailsDto[], void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/steps/reorder`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 

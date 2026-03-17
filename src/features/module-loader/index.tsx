@@ -25,6 +25,7 @@ import { SettingsModule } from "@features/settings/lazy";
 import { TasksModule } from "@features/tasks";
 import { DeploymentsModule } from "@features/deployments";
 import { CampaignsModule } from "@features/campaigns/campaigns-module";
+import { SequencesModule } from "@features/sequences/sequences-module";
 
 export const ModuleLoader = () => {
   const { moduleName } = useRouteParams(coreModuleRoute);
@@ -52,6 +53,7 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.tasks && <TasksModule />}
           {moduleName === CoreModule.deployments && <DeploymentsModule />}
           {moduleName === CoreModule.campaigns && <CampaignsModule />}
+          {moduleName === CoreModule.sequences && <SequencesModule />}
           {!moduleName && <Navigate to={defaultModuleRoute} replace />}
         </Suspense>
       </ErrorBoundary>
