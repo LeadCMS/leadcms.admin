@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, ReactNode } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useRequestContext } from "providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { useCurrencyFormatter } from "@hooks";
@@ -1081,7 +1081,27 @@ export const SequenceView = () => {
   const [sequence, setSequence] = useState<SequenceDetailsDto | null>(null);
   const [statistics, setStatistics] = useState<SequenceStatisticsDto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tabValue, setTabValue] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tabValue, setTabValue] = useState(() => {
+    const tab = (searchParams.get("tab") || "").toLowerCase();
+    if (tab === "enrollments") return 1;
+    if (tab === "deliveries") return 2;
+    return 0;
+  });
+
+  useEffect(() => {
+    const tab = (searchParams.get("tab") || "").toLowerCase();
+    const nextTab = tab === "enrollments" ? 1 : tab === "deliveries" ? 2 : 0;
+    setTabValue(nextTab);
+  }, [searchParams]);
+
+  const handleTabChange = (_event: React.SyntheticEvent, nextTab: number) => {
+    setTabValue(nextTab);
+    const tabNames = ["overview", "enrollments", "deliveries"];
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tabNames[nextTab]);
+    setSearchParams(next, { replace: true });
+  };
   const [confirmAction, setConfirmAction] = useState<"activate" | "pause" | "archive" | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [enrollmentSearchTerm, setEnrollmentSearchTerm] = useState("");
@@ -1625,7 +1645,7 @@ export const SequenceView = () => {
         </CardContent>
       </Card>
 
-      <Tabs value={tabValue} onChange={(_event, value) => setTabValue(value)}>
+      <Tabs value={tabValue} onChange={handleTabChange}>
         <Tab value={0} label="Overview" />
         <Tab
           value={1}

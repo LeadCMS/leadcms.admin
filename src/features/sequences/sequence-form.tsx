@@ -54,6 +54,8 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  Calendar,
+  Clock,
   Info,
   Mail,
   Plus,
@@ -64,6 +66,8 @@ import {
 } from "lucide-react";
 import { showApiError } from "@utils/api-error-parser";
 import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
+import { timezones } from "utils/constants";
+import { formatTimezoneLong } from "utils/timezone-helpers";
 
 const steps = ["Details", "Enrollment", "Steps", "Settings", "Review"];
 
@@ -79,7 +83,6 @@ const delayUnits = [
   { value: "minutes", label: "Minutes" },
   { value: "hours", label: "Hours" },
   { value: "days", label: "Days" },
-  { value: "weeks", label: "Weeks" },
 ];
 
 const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -98,6 +101,82 @@ interface StepFormData {
   sendAt: string;
   allowedWeekDays: string[];
 }
+
+const getTimingMode = (step: StepFormData): "immediate" | "delay" => {
+  if (step.delayValue === 0 && !step.sendAt && step.allowedWeekDays.length === 0) {
+    return "immediate";
+  }
+  return "delay";
+};
+
+const getTimingSummary = (step: StepFormData): string => {
+  if (getTimingMode(step) === "immediate") return "Immediately";
+  const parts: string[] = [];
+  if (step.delayValue > 0) {
+    const unit = step.delayValue === 1 ? step.delayUnit.replace(/s$/, "") : step.delayUnit;
+    parts.push(`Wait ${step.delayValue} ${unit}`);
+  }
+  if (step.sendAt) parts.push(`at ${step.sendAt}`);
+  if (step.allowedWeekDays.length > 0) {
+    const isWeekdays =
+      step.allowedWeekDays.length === 5 &&
+      !step.allowedWeekDays.includes("Saturday") &&
+      !step.allowedWeekDays.includes("Sunday");
+    parts.push(
+      isWeekdays ? "weekdays only" : step.allowedWeekDays.map((d) => d.slice(0, 3)).join(", ")
+    );
+  }
+  return parts.join(" \u00B7 ") || "No delay";
+};
+
+const getBrowserTimezoneOffset = () => {
+  const browserOffset = -new Date().getTimezoneOffset();
+  const values = [...new Set(timezones.map((tz) => tz.value))];
+  return values.reduce((prev, curr) =>
+    Math.abs(curr - browserOffset) < Math.abs(prev - browserOffset) ? curr : prev
+  );
+};
+
+const calculateProjectedDates = (steps: StepFormData[], enrollmentDate: Date): Date[] => {
+  const dates: Date[] = [];
+  let current = new Date(enrollmentDate);
+  for (const step of steps) {
+    current = new Date(current);
+    const delayMs =
+      step.delayUnit === "minutes"
+        ? step.delayValue * 60 * 1000
+        : step.delayUnit === "hours"
+        ? step.delayValue * 3600 * 1000
+        : step.delayValue * 86400 * 1000;
+    current = new Date(current.getTime() + delayMs);
+    if (step.sendAt) {
+      const [h, m] = step.sendAt.split(":").map(Number);
+      const target = new Date(current);
+      target.setHours(h, m, 0, 0);
+      if (target <= current) target.setDate(target.getDate() + 1);
+      current = target;
+    }
+    if (step.allowedWeekDays.length > 0) {
+      const dayMap: Record<string, number> = {
+        Sunday: 0,
+        Monday: 1,
+        Tuesday: 2,
+        Wednesday: 3,
+        Thursday: 4,
+        Friday: 5,
+        Saturday: 6,
+      };
+      const allowed = step.allowedWeekDays.map((d) => dayMap[d]);
+      let guard = 0;
+      while (!allowed.includes(current.getDay()) && guard < 7) {
+        current.setDate(current.getDate() + 1);
+        guard++;
+      }
+    }
+    dates.push(new Date(current));
+  }
+  return dates;
+};
 
 export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
   const { client } = useRequestContext();
@@ -128,6 +207,8 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
   );
   const [stopOnReply, setStopOnReply] = useState(true);
   const [useContactTimeZone, setUseContactTimeZone] = useState(false);
+  const [timeZone, setTimeZone] = useState<number>(getBrowserTimezoneOffset());
+  const [previewDate, setPreviewDate] = useState<Date>(new Date());
 
   // Enrollment
   const [enrollmentModes, setEnrollmentModes] = useState<string[]>(["manual"]);
@@ -172,6 +253,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
         setLanguage(data.language || "");
         setStopOnReply(data.stopOnReply ?? true);
         setUseContactTimeZone(data.useContactTimeZone ?? false);
+        if (data.timeZone != null) setTimeZone(data.timeZone);
         if (data.enrollment) {
           setEnrollmentModes(data.enrollment.modes || ["manual"]);
           setIncludeSegmentIds(data.enrollment.includeSegmentIds || []);
@@ -351,6 +433,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
     language: effectiveSequenceLanguage || undefined,
     stopOnReply,
     useContactTimeZone,
+    timeZone: timeZone || undefined,
     enrollment: {
       modes: enrollmentModes,
       includeSegmentIds: includeSegmentIds.length > 0 ? includeSegmentIds : undefined,
@@ -408,6 +491,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
     language: effectiveSequenceLanguage || undefined,
     stopOnReply,
     useContactTimeZone,
+    timeZone: timeZone || undefined,
     enrollment: {
       modes: enrollmentModes,
       includeSegmentIds: includeSegmentIds.length > 0 ? includeSegmentIds : undefined,
@@ -1000,284 +1084,569 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
 
       {/* Step 3: Steps */}
       {activeStep === 2 && (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
-          <Card variant="outlined">
-            <CardHeader
-              title="Template Filters"
-              subheader="Templates are automatically filtered by sequence language"
-            />
-            <CardContent sx={{ pt: 0 }}>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Filter by Email Group</InputLabel>
-                    <Select
-                      value={emailGroupFilter}
-                      label="Filter by Email Group"
-                      onChange={(e) => setEmailGroupFilter(e.target.value as number | "")}
-                    >
-                      <MenuItem value="">All Groups</MenuItem>
-                      {availableTemplateGroups.map((group) => (
-                        <MenuItem key={group.id} value={group.id}>
-                          {group.name}
-                          {group.language ? ` (${group.language})` : ""}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-
-              {effectiveSequenceLanguage && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Showing templates for <strong>{effectiveSequenceLanguage}</strong>.
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Template filter bar */}
           {!loadingTemplates && !loadingEmailGroups && filteredTemplates.length === 0 && (
             <Alert severity="info">
               {templates.length === 0
-                ? "No email templates available. Please create a template first."
-                : "No templates match the current language and group filters."}
+                ? "No email templates available. Create one first."
+                : "No templates match the current filters."}
             </Alert>
           )}
 
-          {sequenceSteps.map((step, idx) => {
-            const selectedTemplate = templates.find(
-              (template) => template.id === step.emailTemplateId
-            );
-            const stepTemplateOptions =
-              selectedTemplate &&
-              !filteredTemplates.some((template) => template.id === selectedTemplate.id)
-                ? [selectedTemplate, ...filteredTemplates]
-                : filteredTemplates;
+          {/* Timeline — single continuous borderLeft */}
+          <Box
+            sx={{
+              ml: "17px",
+              borderLeft: "2px solid",
+              borderColor: "divider",
+            }}
+          >
+            {/* Enrollment node */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flexWrap: "wrap",
+                ml: "-19px",
+                py: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  bgcolor: "success.main",
+                  color: "success.contrastText",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Zap size={18} />
+              </Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ flexShrink: 0 }}>
+                Contact enrolls in sequence
+              </Typography>
+              <TextField
+                type="datetime-local"
+                value={
+                  previewDate.getFullYear() +
+                  "-" +
+                  String(previewDate.getMonth() + 1).padStart(2, "0") +
+                  "-" +
+                  String(previewDate.getDate()).padStart(2, "0") +
+                  "T" +
+                  String(previewDate.getHours()).padStart(2, "0") +
+                  ":" +
+                  String(previewDate.getMinutes()).padStart(2, "0")
+                }
+                onChange={(e) => {
+                  const d = new Date(e.target.value);
+                  if (!isNaN(d.getTime())) setPreviewDate(d);
+                }}
+                size="small"
+                slotProps={{
+                  inputLabel: { shrink: true },
+                }}
+                sx={{ width: 220 }}
+              />
+              <Box sx={{ flex: 1 }} />
+              <FormControl size="small" sx={{ minWidth: 300 }}>
+                <InputLabel>Filter Templates by Email Group</InputLabel>
+                <Select
+                  value={emailGroupFilter}
+                  label="Filter Templates by Email Group"
+                  onChange={(e) => setEmailGroupFilter(e.target.value as number | "")}
+                >
+                  <MenuItem value="">All Groups</MenuItem>
+                  {availableTemplateGroups.map((group) => (
+                    <MenuItem key={group.id} value={group.id}>
+                      {group.name}
+                      {group.language ? ` (${group.language})` : ""}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
 
-            return (
-              <Card key={step.localId} variant="outlined">
-                <CardContent sx={{ p: 3 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 2,
-                    }}
-                  >
+            {(() => {
+              const projectedDates = calculateProjectedDates(sequenceSteps, previewDate);
+              return sequenceSteps.map((step, idx) => {
+                const timingMode = getTimingMode(step);
+                const selectedTemplate = templates.find((t) => t.id === step.emailTemplateId);
+                const stepTemplateOptions =
+                  selectedTemplate && !filteredTemplates.some((t) => t.id === selectedTemplate.id)
+                    ? [selectedTemplate, ...filteredTemplates]
+                    : filteredTemplates;
+                const projected = projectedDates[idx];
+
+                return (
+                  <Box key={step.localId}>
+                    {/* Step number on the line + timing summary beside it */}
                     <Box
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 1,
+                        gap: 2,
+                        ml: "-19px",
+                        py: 1,
                       }}
                     >
-                      <Mail size={16} />
-                      <Typography variant="subtitle2" fontWeight={600}>
-                        Step {idx + 1}
-                      </Typography>
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: "50%",
+                          bgcolor: "primary.main",
+                          color: "primary.contrastText",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {idx + 1}
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          {getTimingSummary(step)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {projected.toLocaleDateString(undefined, {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                          })}{" "}
+                          {projected.toLocaleTimeString(undefined, {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Typography>
+                      </Box>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 0.5 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => moveStep(step.localId, "up")}
-                        disabled={isReadOnly || idx === 0}
-                      >
-                        <ArrowUp size={16} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => moveStep(step.localId, "down")}
-                        disabled={isReadOnly || idx === sequenceSteps.length - 1}
-                      >
-                        <ArrowDown size={16} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => removeStep(step.localId)}
-                        disabled={isReadOnly}
-                      >
-                        <X size={16} />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="Step Name"
-                        value={step.name}
-                        onChange={(e) =>
-                          updateStep(step.localId, {
-                            name: e.target.value,
-                          })
-                        }
-                        size="small"
-                        disabled={isReadOnly}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Email Template</InputLabel>
-                        <Select
-                          value={step.emailTemplateId}
-                          onChange={(e) =>
-                            updateStep(step.localId, {
-                              emailTemplateId: e.target.value as number,
-                            })
-                          }
-                          label="Email Template"
-                          disabled={isReadOnly}
-                          renderValue={(value) => {
-                            const template = templates.find((item) => item.id === value);
-                            return getTemplateDisplayLabel(template);
+
+                    {/* Step configuration card — indented inside the line */}
+                    <Box sx={{ pl: 3, pb: 1 }}>
+                      <Card variant="outlined">
+                        <CardContent
+                          sx={{
+                            p: 2,
+                            "&:last-child": { pb: 2 },
                           }}
                         >
-                          {loadingTemplates || loadingEmailGroups ? (
-                            <MenuItem disabled>Loading...</MenuItem>
-                          ) : (
-                            stepTemplateOptions.map((template) => (
-                              <MenuItem key={template.id} value={template.id}>
-                                <Box>
-                                  <Typography variant="body2">{template.name}</Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {getTemplateMeta(template)}
-                                  </Typography>
-                                </Box>
-                              </MenuItem>
-                            ))
-                          )}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <TextField
-                        fullWidth
-                        label="Delay"
-                        type="number"
-                        value={step.delayValue}
-                        onChange={(e) =>
-                          updateStep(step.localId, {
-                            delayValue: Math.max(0, Number(e.target.value)),
-                          })
-                        }
-                        size="small"
-                        disabled={isReadOnly}
-                        slotProps={{
-                          input: {
-                            inputProps: {
-                              min: 0,
-                            },
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Delay Unit</InputLabel>
-                        <Select
-                          value={step.delayUnit}
-                          onChange={(e) =>
-                            updateStep(step.localId, {
-                              delayUnit: e.target.value as string,
-                            })
-                          }
-                          label="Delay Unit"
-                          disabled={isReadOnly}
-                        >
-                          {delayUnits.map((u) => (
-                            <MenuItem key={u.value} value={u.value}>
-                              {u.label}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <TextField
-                        fullWidth
-                        label="Send At"
-                        type="time"
-                        value={step.sendAt}
-                        onChange={(e) =>
-                          updateStep(step.localId, {
-                            sendAt: e.target.value,
-                          })
-                        }
-                        size="small"
-                        disabled={isReadOnly}
-                        slotProps={{
-                          inputLabel: {
-                            shrink: true,
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Allowed Week Days</InputLabel>
-                        <Select
-                          multiple
-                          value={step.allowedWeekDays}
-                          onChange={(e) =>
-                            updateStep(step.localId, {
-                              allowedWeekDays: e.target.value as string[],
-                            })
-                          }
-                          label="Allowed Week Days"
-                          disabled={isReadOnly}
-                          renderValue={(selected) => {
-                            const values = selected as string[];
-                            if (values.length === 0) {
-                              return "Any day";
-                            }
-                            return (
+                          {/* Header */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              mb: 2,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <Mail size={16} />
+                              <Typography variant="subtitle2" fontWeight={600}>
+                                Email Step
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 0.5,
+                              }}
+                            >
+                              <IconButton
+                                size="small"
+                                onClick={() => moveStep(step.localId, "up")}
+                                disabled={isReadOnly || idx === 0}
+                              >
+                                <ArrowUp size={14} />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => moveStep(step.localId, "down")}
+                                disabled={isReadOnly || idx === sequenceSteps.length - 1}
+                              >
+                                <ArrowDown size={14} />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => removeStep(step.localId)}
+                                disabled={isReadOnly}
+                              >
+                                <X size={14} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+
+                          {/* Name + Template */}
+                          <Grid container spacing={2} sx={{ mb: 2 }}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <TextField
+                                fullWidth
+                                label="Step Name"
+                                value={step.name}
+                                onChange={(e) =>
+                                  updateStep(step.localId, {
+                                    name: e.target.value,
+                                  })
+                                }
+                                size="small"
+                                disabled={isReadOnly}
+                              />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel>Email Template</InputLabel>
+                                <Select
+                                  value={step.emailTemplateId}
+                                  onChange={(e) =>
+                                    updateStep(step.localId, {
+                                      emailTemplateId: e.target.value as number,
+                                    })
+                                  }
+                                  label="Email Template"
+                                  disabled={isReadOnly}
+                                  renderValue={(value) => {
+                                    const tmpl = templates.find((item) => item.id === value);
+                                    return getTemplateDisplayLabel(tmpl);
+                                  }}
+                                >
+                                  {loadingTemplates || loadingEmailGroups ? (
+                                    <MenuItem disabled>Loading...</MenuItem>
+                                  ) : (
+                                    stepTemplateOptions.map((template) => (
+                                      <MenuItem key={template.id} value={template.id}>
+                                        <Box>
+                                          <Typography variant="body2">{template.name}</Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                            {getTemplateMeta(template)}
+                                          </Typography>
+                                        </Box>
+                                      </MenuItem>
+                                    ))
+                                  )}
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                          </Grid>
+
+                          {/* Timing section */}
+                          <Box
+                            sx={{
+                              bgcolor: "action.hover",
+                              borderRadius: 1,
+                              p: 2,
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              fontWeight={600}
+                              color="text.secondary"
+                              sx={{
+                                mb: 1.5,
+                                display: "block",
+                              }}
+                            >
+                              TIMING
+                            </Typography>
+                            <RadioGroup
+                              row
+                              value={timingMode}
+                              onChange={(e) => {
+                                if (e.target.value === "immediate") {
+                                  updateStep(step.localId, {
+                                    delayValue: 0,
+                                    delayUnit: "minutes",
+                                    sendAt: "",
+                                    allowedWeekDays: [],
+                                  });
+                                } else {
+                                  updateStep(step.localId, {
+                                    delayValue: step.delayValue || 1,
+                                    delayUnit:
+                                      step.delayUnit === "minutes" && step.delayValue === 0
+                                        ? "days"
+                                        : step.delayUnit,
+                                  });
+                                }
+                              }}
+                              sx={{
+                                mb: timingMode === "delay" ? 2 : 0,
+                              }}
+                            >
+                              <FormControlLabel
+                                value="immediate"
+                                control={<Radio size="small" />}
+                                label={<Typography variant="body2">Send immediately</Typography>}
+                                disabled={isReadOnly}
+                              />
+                              <FormControlLabel
+                                value="delay"
+                                control={<Radio size="small" />}
+                                label={<Typography variant="body2">Wait before sending</Typography>}
+                                disabled={isReadOnly}
+                              />
+                            </RadioGroup>
+
+                            {timingMode === "delay" && (
                               <Box
                                 sx={{
                                   display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 0.5,
+                                  flexDirection: "column",
+                                  gap: 2,
                                 }}
                               >
-                                {values.map((day) => (
-                                  <Chip key={day} label={day} size="small" />
-                                ))}
-                              </Box>
-                            );
-                          }}
-                        >
-                          {weekDays.map((day) => (
-                            <MenuItem key={day} value={day}>
-                              <Checkbox checked={step.allowedWeekDays.includes(day)} size="small" />
-                              {day}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            );
-          })}
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    gap: 2,
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Typography variant="body2" sx={{ flexShrink: 0 }}>
+                                    Wait
+                                  </Typography>
+                                  <TextField
+                                    type="number"
+                                    value={step.delayValue}
+                                    onChange={(e) =>
+                                      updateStep(step.localId, {
+                                        delayValue: Math.max(0, Number(e.target.value)),
+                                      })
+                                    }
+                                    size="small"
+                                    disabled={isReadOnly}
+                                    sx={{ width: 80 }}
+                                    slotProps={{
+                                      input: {
+                                        inputProps: {
+                                          min: 0,
+                                        },
+                                      },
+                                    }}
+                                  />
+                                  <FormControl size="small" sx={{ minWidth: 100 }}>
+                                    <Select
+                                      value={step.delayUnit}
+                                      onChange={(e) =>
+                                        updateStep(step.localId, {
+                                          delayUnit: e.target.value,
+                                        })
+                                      }
+                                      disabled={isReadOnly}
+                                    >
+                                      {delayUnits.map((u) => (
+                                        <MenuItem key={u.value} value={u.value}>
+                                          {u.label}
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  </FormControl>
+                                </Box>
 
-          <Button
-            variant="outlined"
-            onClick={addStep}
-            startIcon={<Plus size={16} />}
-            disabled={isReadOnly}
-          >
-            Add Step
-          </Button>
+                                <Box>
+                                  <FormControlLabel
+                                    control={
+                                      <Switch
+                                        size="small"
+                                        checked={!!step.sendAt}
+                                        onChange={(e) =>
+                                          updateStep(step.localId, {
+                                            sendAt: e.target.checked ? "09:00" : "",
+                                          })
+                                        }
+                                        disabled={isReadOnly}
+                                      />
+                                    }
+                                    label={
+                                      <Box
+                                        sx={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 0.5,
+                                        }}
+                                      >
+                                        <Clock size={14} />
+                                        <Typography variant="body2">At a specific time</Typography>
+                                      </Box>
+                                    }
+                                  />
+                                  {!!step.sendAt && (
+                                    <Box
+                                      sx={{
+                                        mt: 1,
+                                        ml: 5,
+                                      }}
+                                    >
+                                      <TextField
+                                        type="time"
+                                        value={step.sendAt}
+                                        onChange={(e) =>
+                                          updateStep(step.localId, {
+                                            sendAt: e.target.value,
+                                          })
+                                        }
+                                        size="small"
+                                        disabled={isReadOnly}
+                                        slotProps={{
+                                          inputLabel: {
+                                            shrink: true,
+                                          },
+                                        }}
+                                        sx={{ width: 140 }}
+                                      />
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{
+                                          display: "block",
+                                          mt: 0.5,
+                                        }}
+                                      >
+                                        Sends at the next occurrence of this time after the delay
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                </Box>
+
+                                <Box>
+                                  <FormControlLabel
+                                    control={
+                                      <Switch
+                                        size="small"
+                                        checked={step.allowedWeekDays.length > 0}
+                                        onChange={(e) =>
+                                          updateStep(step.localId, {
+                                            allowedWeekDays: e.target.checked
+                                              ? [
+                                                  "Monday",
+                                                  "Tuesday",
+                                                  "Wednesday",
+                                                  "Thursday",
+                                                  "Friday",
+                                                ]
+                                              : [],
+                                          })
+                                        }
+                                        disabled={isReadOnly}
+                                      />
+                                    }
+                                    label={
+                                      <Box
+                                        sx={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 0.5,
+                                        }}
+                                      >
+                                        <Calendar size={14} />
+                                        <Typography variant="body2">
+                                          Only on certain days
+                                        </Typography>
+                                      </Box>
+                                    }
+                                  />
+                                  {step.allowedWeekDays.length > 0 && (
+                                    <Box
+                                      sx={{
+                                        mt: 1,
+                                        ml: 5,
+                                        display: "flex",
+                                        gap: 0.5,
+                                        flexWrap: "wrap",
+                                      }}
+                                    >
+                                      {weekDays.map((day) => (
+                                        <Chip
+                                          key={day}
+                                          label={day.slice(0, 3)}
+                                          size="small"
+                                          variant={
+                                            step.allowedWeekDays.includes(day)
+                                              ? "filled"
+                                              : "outlined"
+                                          }
+                                          color={
+                                            step.allowedWeekDays.includes(day)
+                                              ? "primary"
+                                              : "default"
+                                          }
+                                          onClick={() => {
+                                            if (isReadOnly) return;
+                                            const newDays = step.allowedWeekDays.includes(day)
+                                              ? step.allowedWeekDays.filter((d) => d !== day)
+                                              : [...step.allowedWeekDays, day];
+                                            updateStep(step.localId, {
+                                              allowedWeekDays: newDays.length > 0 ? newDays : [],
+                                            });
+                                          }}
+                                          sx={{
+                                            cursor: isReadOnly ? "default" : "pointer",
+                                          }}
+                                        />
+                                      ))}
+                                    </Box>
+                                  )}
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Box>
+                  </Box>
+                );
+              });
+            })()}
+
+            {/* Add step node */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                ml: "-19px",
+                py: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  border: "2px dashed",
+                  borderColor: "divider",
+                  bgcolor: "background.paper",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  cursor: isReadOnly ? "default" : "pointer",
+                  "&:hover": isReadOnly ? {} : { borderColor: "primary.main" },
+                }}
+                onClick={isReadOnly ? undefined : addStep}
+              >
+                <Plus size={16} />
+              </Box>
+              <Button size="small" onClick={addStep} disabled={isReadOnly}>
+                Add Step
+              </Button>
+            </Box>
+          </Box>
 
           {sequenceSteps.length === 0 && (
             <Alert severity="info" icon={<Info size={16} />}>
@@ -1328,23 +1697,49 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
               subheader="Configure timezone handling for email delivery"
             />
             <CardContent sx={{ pt: 0 }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={useContactTimeZone}
-                    onChange={(e) => setUseContactTimeZone(e.target.checked)}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={useContactTimeZone}
+                      onChange={(e) => setUseContactTimeZone(e.target.checked)}
+                      disabled={isReadOnly}
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography variant="body2">Use contact timezone</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Send emails based on each contact&apos;s local timezone. Falls back to the
+                        timezone below when not set.
+                      </Typography>
+                    </Box>
+                  }
+                />
+                <FormControl fullWidth>
+                  <InputLabel>
+                    {useContactTimeZone ? "Fallback Timezone" : "Default Timezone"}
+                  </InputLabel>
+                  <Select
+                    value={timeZone}
+                    label={useContactTimeZone ? "Fallback Timezone" : "Default Timezone"}
+                    onChange={(e) => setTimeZone(e.target.value as number)}
                     disabled={isReadOnly}
-                  />
-                }
-                label={
-                  <Box>
-                    <Typography variant="body2">Use contact timezone</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Send emails based on each contact&apos;s local timezone
-                    </Typography>
-                  </Box>
-                }
-              />
+                  >
+                    {timezones.map((tz, index) => (
+                      <MenuItem key={`${tz.value}-${index}`} value={tz.value}>
+                        {tz.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
             </CardContent>
           </Card>
         </Box>
@@ -1435,6 +1830,12 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
                   </Typography>
                   <Typography variant="body2">{useContactTimeZone ? "Yes" : "No"}</Typography>
                 </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {useContactTimeZone ? "Fallback Timezone" : "Default Timezone"}
+                  </Typography>
+                  <Typography variant="body2">{formatTimezoneLong(timeZone)}</Typography>
+                </Grid>
               </Grid>
             </CardContent>
           </Card>
@@ -1443,61 +1844,91 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
             <Card variant="outlined">
               <CardHeader title="Steps Overview" />
               <CardContent sx={{ pt: 0 }}>
-                {sequenceSteps.map((step, idx) => {
-                  const template = templates.find((t) => t.id === step.emailTemplateId);
-                  const timingBits = [
-                    `Delay: ${step.delayValue} ${step.delayUnit}`,
-                    step.sendAt ? `Send at ${step.sendAt}` : "",
-                    step.allowedWeekDays.length > 0
-                      ? `Days: ${step.allowedWeekDays.join(", ")}`
-                      : "Days: Any",
-                  ].filter(Boolean);
-                  return (
+                <Box
+                  sx={{
+                    ml: "11px",
+                    borderLeft: "2px solid",
+                    borderColor: "divider",
+                  }}
+                >
+                  {/* Start node */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      ml: "-13px",
+                      py: 0.5,
+                    }}
+                  >
                     <Box
-                      key={step.localId}
                       sx={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        bgcolor: "success.main",
+                        color: "success.contrastText",
                         display: "flex",
                         alignItems: "center",
-                        gap: 2,
-                        py: 1,
-                        borderBottom: idx < sequenceSteps.length - 1 ? "1px solid" : "none",
-                        borderColor: "divider",
+                        justifyContent: "center",
+                        flexShrink: 0,
                       }}
                     >
+                      <Zap size={12} />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Enrollment
+                    </Typography>
+                  </Box>
+
+                  {sequenceSteps.map((step, idx) => {
+                    const template = templates.find((t) => t.id === step.emailTemplateId);
+                    return (
                       <Box
+                        key={step.localId}
                         sx={{
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "center",
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          bgcolor: "primary.main",
-                          color: "primary.contrastText",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          flexShrink: 0,
+                          gap: 1.5,
+                          ml: "-13px",
+                          py: 0.5,
                         }}
                       >
-                        {idx + 1}
+                        <Box
+                          sx={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: "50%",
+                            bgcolor: "primary.main",
+                            color: "primary.contrastText",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {idx + 1}
+                        </Box>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body2">
+                            {step.name || template?.name || `Step ${idx + 1}`}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {getTimingSummary(step)} · {template?.name || "No template"}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label="Email"
+                          size="small"
+                          variant="outlined"
+                          icon={<Mail size={12} />}
+                        />
                       </Box>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body2">
-                          {step.name || template?.name || `Step ${idx + 1}`}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {timingBits.join(" · ")}
-                        </Typography>
-                      </Box>
-                      <Chip
-                        label="Email"
-                        size="small"
-                        variant="outlined"
-                        icon={<Mail size={12} />}
-                      />
-                    </Box>
-                  );
-                })}
+                    );
+                  })}
+                </Box>
               </CardContent>
             </Card>
           )}

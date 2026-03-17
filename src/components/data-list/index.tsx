@@ -223,7 +223,7 @@ export const DataList = <TModel extends GridValidRowModel>({
       saveGridStateInLocalStorage();
       getDataListAsync();
     }
-  }, [searchTerm, filterState, refreshFlag]);
+  }, [searchTerm, filterState, refreshFlag, isInitialized]);
 
   useEffect(() => {
     saveGridStateInLocalStorage();
