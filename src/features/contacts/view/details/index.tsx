@@ -18,6 +18,7 @@ import {
   Hash,
   Landmark,
   Mail,
+  MailX,
   MapPin,
   Phone,
   Share2,
@@ -531,6 +532,27 @@ export const ContactView = () => {
       : null,
   ]);
 
+  const unsubscribeRows = compactRows(
+    contact.unsubscribe
+      ? [
+          {
+            label: "Date",
+            value: contact.unsubscribe.createdAt
+              ? getFormattedDateTime(contact.unsubscribe.createdAt)
+              : "",
+          },
+          {
+            label: "Reason",
+            value: contact.unsubscribe.reason || "",
+          },
+          {
+            label: "Source",
+            value: contact.unsubscribe.source || "",
+          },
+        ]
+      : []
+  );
+
   const quickStatRows = compactRows([
     hasOrders
       ? {
@@ -754,6 +776,16 @@ export const ContactView = () => {
             {socialRows.length > 0 && (
               <Grid size={{ xs: 12 }}>
                 <SectionCard title="Social Media" icon={<Share2 size={18} />} rows={socialRows} />
+              </Grid>
+            )}
+
+            {unsubscribeRows.length > 0 && (
+              <Grid size={{ xs: 12 }}>
+                <SectionCard
+                  title="Unsubscribe Details"
+                  icon={<MailX size={18} />}
+                  rows={unsubscribeRows}
+                />
               </Grid>
             )}
 

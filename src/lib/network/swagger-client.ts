@@ -3378,6 +3378,7 @@ export interface ContactDetailsDto {
   pendingUpdates?: PendingContactUpdate[] | null;
   domain?: DomainDetailsDto;
   account?: AccountDetailsDto;
+  unsubscribe?: UnsubscribeDetailsDto;
   /** Orders */
   orders?: OrderDetailsDto[] | null;
 }
@@ -9353,9 +9354,10 @@ export interface SequenceCreateDto {
   description?: string | null;
   /**
    * Language
+   * @minLength 1
    * @example "string"
    */
-  language?: string;
+  language: string;
   /**
    * Stop On Reply
    * @example true
@@ -9478,9 +9480,10 @@ export interface SequenceDetailsDto {
   description?: string | null;
   /**
    * Language
+   * @minLength 1
    * @example "string"
    */
-  language?: string;
+  language: string;
   /**
    * Stop On Reply
    * @example true
@@ -9684,7 +9687,8 @@ export interface SequenceEnrollmentDetailsDto {
     | "Unsubscribed"
     | "ReplyStopped"
     | "ManuallyRemoved"
-    | "Archived";
+    | "Archived"
+    | "ExcludedBySegment";
   /**
    * Enrollment Source
    * @example "Manual"
@@ -9933,6 +9937,7 @@ export interface SequenceUpdateDto {
   description?: string | null;
   /**
    * Language
+   * @minLength 1
    * @example "string"
    */
   language?: string | null;

@@ -5,12 +5,13 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Divider,
   Tab,
   Tabs,
   Typography,
 } from "@mui/material";
-import { Briefcase, Edit, Mail } from "lucide-react";
+import { Briefcase, Edit, Mail, MailX } from "lucide-react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ContactDetailsDto, RequestParams } from "lib/network/swagger-client";
 import { contactFormBreadcrumbLinks } from "../constants";
@@ -140,7 +141,11 @@ export const ContactBase = () => {
     (async () => {
       try {
         const includeRelationsPath =
-          "/api/contacts/" + contactId + "?filter%5Binclude%5D=Account&filter%5Binclude%5D=Domain";
+          "/api/contacts/" +
+          contactId +
+          "?filter%5Binclude%5D=Account" +
+          "&filter%5Binclude%5D=Domain" +
+          "&filter%5Binclude%5D=Unsubscribe";
 
         const paramsWithIncludes = {
           path: includeRelationsPath,
@@ -199,9 +204,21 @@ export const ContactBase = () => {
             {getContactInitials(contact)}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h5" fontWeight={700}>
-              {contactName}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Typography variant="h5" fontWeight={700}>
+                {contactName}
+              </Typography>
+              {contact?.unsubscribeId && (
+                <Chip
+                  icon={<MailX size={14} />}
+                  label="Unsubscribed"
+                  color="error"
+                  size="small"
+                  variant="outlined"
+                  sx={{ mx: 1, gap: 0.5, pl: 1 }}
+                />
+              )}
+            </Box>
             {subtitleParts.length > 0 ? (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 {subtitleParts.join(" at ")}
