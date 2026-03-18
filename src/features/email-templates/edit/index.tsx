@@ -52,7 +52,6 @@ import { CoreModule } from "@lib/router";
 import {
   Save,
   XCircle,
-  X,
   Trash2,
   Copy,
   Languages,
@@ -712,6 +711,18 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
           >
             {/* Left: Delete, Duplicate, Translate, AI */}
             <Box sx={{ pl: { sm: 4 } }}>
+              {readonly && !!id && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => navigate(`/email-templates/${id}/edit`)}
+                  disabled={formik.isSubmitting}
+                  size="medium"
+                  sx={{ mr: 2 }}
+                >
+                  Edit
+                </Button>
+              )}
               {!isCreateMode && !isDuplicateMode && !readonly && (
                 <Button
                   variant="outlined"

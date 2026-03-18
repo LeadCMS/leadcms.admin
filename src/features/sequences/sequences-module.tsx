@@ -4,6 +4,7 @@ import { Sequences } from "./index";
 import { SequenceAdd } from "./add";
 import { SequenceEdit } from "./edit";
 import { SequenceView } from "./view";
+import { SequenceEnrollmentView } from "./enrollment-view";
 
 export const SequencesModule = () => {
   return (
@@ -13,6 +14,7 @@ export const SequencesModule = () => {
         <Route path={addFormRoute.template} element={<SequenceAdd />} />
         <Route path={editFormRoute.template} element={<SequenceEdit />} />
         <Route path={viewFormRoute.template} element={<SequenceView />} />
+        <Route path=":id/view/enrollments/:enrollmentId" element={<SequenceEnrollmentView />} />
       </Routes>
       <Outlet />
     </>

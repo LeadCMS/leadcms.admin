@@ -7380,6 +7380,75 @@ export interface EmailTemplateUpdateDtoChangeLogDetailsDto {
   updatedBy?: string | null;
 }
 
+export interface EnrollmentStepTimelineEntryDto {
+  /**
+   * Step Id
+   * @format int32
+   * @example 1
+   */
+  stepId?: number;
+  /**
+   * Name
+   * @example "string"
+   */
+  name?: string;
+  /**
+   * Position
+   * @format int32
+   * @example 1
+   */
+  position?: number;
+  /**
+   * Email Template Id
+   * @format int32
+   * @example 1
+   */
+  emailTemplateId?: number;
+  timing?: SequenceStepTiming;
+  /**
+   * Status
+   * @example "Sent"
+   */
+  status?: "Sent" | "Scheduled" | "Planned" | "Failed" | "Skipped";
+  /**
+   * Sent At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  sentAt?: string | null;
+  /**
+   * Scheduled At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  scheduledAt?: string | null;
+  /**
+   * Delivery Id
+   * @format int32
+   * @example 1
+   */
+  deliveryId?: number | null;
+  /**
+   * Email Log Id
+   * @format int32
+   * @example 1
+   */
+  emailLogId?: number | null;
+  /**
+   * Skip Reason
+   * @example "string"
+   */
+  skipReason?: string | null;
+  /**
+   * Error Message
+   * @example "string"
+   */
+  errorMessage?: string | null;
+  emailPreview?: StepEmailPreviewDto;
+}
+
 export interface ExportActionDto {
   /**
    * Show Button
@@ -9645,6 +9714,8 @@ export interface SequenceEnrollmentDetailsDto {
    * @example "2023-04-18T12:00:00.0000000Z"
    */
   updatedAt?: string | null;
+  /** Steps */
+  steps?: EnrollmentStepTimelineEntryDto[] | null;
 }
 
 export interface SequenceStatisticsDto {
@@ -10110,6 +10181,29 @@ export interface SettingValueDto {
    * @example "string"
    */
   description?: string | null;
+}
+
+export interface StepEmailPreviewDto {
+  /**
+   * Subject
+   * @example "string"
+   */
+  subject?: string;
+  /**
+   * Body
+   * @example "string"
+   */
+  body?: string | null;
+  /**
+   * From Email
+   * @example "string"
+   */
+  fromEmail?: string;
+  /**
+   * From Name
+   * @example "string"
+   */
+  fromName?: string;
 }
 
 export interface StringStringValuesKeyValuePair {

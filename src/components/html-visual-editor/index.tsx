@@ -148,6 +148,13 @@ export const HtmlVisualEditor: React.FC<HtmlVisualEditorProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    const doc = getDoc();
+    if (!doc) return;
+    doc.designMode = disabled ? "off" : "on";
+  }, [disabled, getDoc]);
+
   // Sync external value changes (e.g. AI edit)
   useEffect(() => {
     if (!initializedRef.current) return;
@@ -174,114 +181,99 @@ export const HtmlVisualEditor: React.FC<HtmlVisualEditorProps> = ({
     if (url) exec("createLink", url);
   }, [exec]);
 
-  if (disabled) {
-    return (
-      <Box sx={{ height }}>
-        <iframe
-          ref={iframeRef}
-          title="HTML Visual Editor"
-          style={{
-            border: "none",
-            width: "100%",
-            height: "100%",
-            background: "white",
-          }}
-        />
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ height, display: "flex", flexDirection: "column" }}>
       {/* Toolbar */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          px: 1,
-          height: TOOLBAR_H,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          bgcolor: "grey.50",
-          flexShrink: 0,
-        }}
-      >
-        <Tooltip title="Bold">
-          <IconButton size="small" onClick={() => exec("bold")}>
-            <Bold size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Italic">
-          <IconButton size="small" onClick={() => exec("italic")}>
-            <Italic size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Underline">
-          <IconButton size="small" onClick={() => exec("underline")}>
-            <Underline size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Strikethrough">
-          <IconButton size="small" onClick={() => exec("strikeThrough")}>
-            <Strikethrough size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-        <Tooltip title="Heading 1">
-          <IconButton size="small" onClick={() => exec("formatBlock", "h1")}>
-            <Heading1 size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Heading 2">
-          <IconButton size="small" onClick={() => exec("formatBlock", "h2")}>
-            <Heading2 size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Heading 3">
-          <IconButton size="small" onClick={() => exec("formatBlock", "h3")}>
-            <Heading3 size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-        <Tooltip title="Bulleted List">
-          <IconButton size="small" onClick={() => exec("insertUnorderedList")}>
-            <List size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Numbered List">
-          <IconButton size="small" onClick={() => exec("insertOrderedList")}>
-            <ListOrdered size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-        <Tooltip title="Insert Link">
-          <IconButton size="small" onClick={handleLink}>
-            <Link2 size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Remove Link">
-          <IconButton size="small" onClick={() => exec("unlink")}>
-            <Unlink size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-        <Tooltip title="Undo">
-          <IconButton size="small" onClick={() => exec("undo")}>
-            <Undo2 size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Redo">
-          <IconButton size="small" onClick={() => exec("redo")}>
-            <Redo2 size={ICO} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Clear Formatting">
-          <IconButton size="small" onClick={() => exec("removeFormat")}>
-            <RemoveFormatting size={ICO} />
-          </IconButton>
-        </Tooltip>
-      </Box>
+      {!disabled && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5,
+            px: 1,
+            height: TOOLBAR_H,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            bgcolor: "grey.50",
+            flexShrink: 0,
+          }}
+        >
+          <Tooltip title="Bold">
+            <IconButton size="small" onClick={() => exec("bold")}>
+              <Bold size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Italic">
+            <IconButton size="small" onClick={() => exec("italic")}>
+              <Italic size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Underline">
+            <IconButton size="small" onClick={() => exec("underline")}>
+              <Underline size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Strikethrough">
+            <IconButton size="small" onClick={() => exec("strikeThrough")}>
+              <Strikethrough size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+          <Tooltip title="Heading 1">
+            <IconButton size="small" onClick={() => exec("formatBlock", "h1")}>
+              <Heading1 size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Heading 2">
+            <IconButton size="small" onClick={() => exec("formatBlock", "h2")}>
+              <Heading2 size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Heading 3">
+            <IconButton size="small" onClick={() => exec("formatBlock", "h3")}>
+              <Heading3 size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+          <Tooltip title="Bulleted List">
+            <IconButton size="small" onClick={() => exec("insertUnorderedList")}>
+              <List size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Numbered List">
+            <IconButton size="small" onClick={() => exec("insertOrderedList")}>
+              <ListOrdered size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+          <Tooltip title="Insert Link">
+            <IconButton size="small" onClick={handleLink}>
+              <Link2 size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Remove Link">
+            <IconButton size="small" onClick={() => exec("unlink")}>
+              <Unlink size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+          <Tooltip title="Undo">
+            <IconButton size="small" onClick={() => exec("undo")}>
+              <Undo2 size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Redo">
+            <IconButton size="small" onClick={() => exec("redo")}>
+              <Redo2 size={ICO} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Clear Formatting">
+            <IconButton size="small" onClick={() => exec("removeFormat")}>
+              <RemoveFormatting size={ICO} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
 
       {/* Editor iframe */}
       <iframe

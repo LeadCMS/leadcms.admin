@@ -51,6 +51,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { GridColDef } from "@mui/x-data-grid";
+import useLocalStorage from "use-local-storage";
 import {
   Users,
   Send,
@@ -65,11 +66,14 @@ import {
   Mail,
   CheckCircle2,
   Archive,
+  Eye,
 } from "lucide-react";
 import { showApiError } from "@utils/api-error-parser";
 
 const enrollmentGridSettingsStorageKey = "sequence-enrollments-grid-settings-v4";
 const deliveryGridSettingsStorageKey = "sequence-deliveries-grid-settings-v4";
+const enrollmentToolbarStateStorageKey = "sequence-enrollments-toolbar-state-v1";
+const deliveryToolbarStateStorageKey = "sequence-deliveries-toolbar-state-v1";
 
 type SequenceEnrollmentRow = SequenceEnrollmentDetailsDto & {
   contact?: ContactDetailsDto | null;
@@ -78,6 +82,34 @@ type SequenceEnrollmentRow = SequenceEnrollmentDetailsDto & {
 type SequenceDeliveryRow = SequenceDeliveryDetailsDto & {
   contact?: ContactDetailsDto | null;
 };
+
+type SequenceEnrollmentToolbarState = {
+  searchTerm: string;
+  contactFilter: ContactDetailsDto | null;
+  statusFilter: "" | "Active" | "Completed" | "Exited";
+  lastCompletedStepFilter: number | "";
+};
+
+type SequenceDeliveryToolbarState = {
+  searchTerm: string;
+  contactFilter: ContactDetailsDto | null;
+  stepFilter: number | "";
+  statusFilter: "" | "Scheduled" | "Sent" | "Failed" | "Skipped";
+};
+
+const getDefaultEnrollmentToolbarState = (): SequenceEnrollmentToolbarState => ({
+  searchTerm: "",
+  contactFilter: null,
+  statusFilter: "",
+  lastCompletedStepFilter: "",
+});
+
+const getDefaultDeliveryToolbarState = (): SequenceDeliveryToolbarState => ({
+  searchTerm: "",
+  contactFilter: null,
+  stepFilter: "",
+  statusFilter: "",
+});
 
 type SequenceStatus = NonNullable<SequenceDetailsDto["status"]>;
 
@@ -976,7 +1008,8 @@ const getSequenceStepDisplayName = (
 };
 
 const buildEnrollmentColumns = (
-  primaryCurrency: PrimaryCurrencyConfig | null | undefined
+  primaryCurrency: PrimaryCurrencyConfig | null | undefined,
+  sequenceId?: number
 ): GridColDef<SequenceEnrollmentRow>[] => {
   const contactColumns = getContactColumns<SequenceEnrollmentRow>(primaryCurrency);
   const contactColumnsByField = new Map(
@@ -990,7 +1023,44 @@ const buildEnrollmentColumns = (
     return column;
   };
 
+  const enrollmentRoute = (enrollId?: number) => {
+    if (!sequenceId || !enrollId) return "";
+    return (
+      `${getCoreModuleRoute(CoreModule.sequences)}` + `/${sequenceId}/view/enrollments/${enrollId}`
+    );
+  };
+
   return [
+    {
+      field: "viewEnrollment",
+      headerName: "",
+      width: 50,
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      renderCell: ({ row }) => {
+        const route = enrollmentRoute(row.id);
+        if (!route) return null;
+        return (
+          <Tooltip title="View enrollment" arrow>
+            <Box
+              component={GhostLink}
+              to={route}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "100%",
+                height: "100%",
+                color: "primary.main",
+              }}
+            >
+              <Eye size={16} />
+            </Box>
+          </Tooltip>
+        );
+      },
+    },
     getColumn("contact.fullName"),
     getColumn("contactId"),
     getColumn("contact.timezone"),
@@ -1179,12 +1249,13 @@ const buildDeliveryColumns = (
           <Box
             sx={{
               width: "100%",
+              height: "100%",
               minWidth: 0,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
+              alignItems: "stretch",
               gap: 0.25,
-              py: 1,
             }}
           >
             <Typography
@@ -1279,6 +1350,13 @@ export const SequenceView = () => {
   const [statistics, setStatistics] = useState<SequenceStatisticsDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const sequenceStorageSlot = String(id || "0");
+  const [storedEnrollmentToolbarState, setStoredEnrollmentToolbarState] = useLocalStorage<
+    Record<string, SequenceEnrollmentToolbarState>
+  >(enrollmentToolbarStateStorageKey, {});
+  const [storedDeliveryToolbarState, setStoredDeliveryToolbarState] = useLocalStorage<
+    Record<string, SequenceDeliveryToolbarState>
+  >(deliveryToolbarStateStorageKey, {});
   const [tabValue, setTabValue] = useState(() => {
     const tab = (searchParams.get("tab") || "").toLowerCase();
     if (tab === "enrollments") return 1;
@@ -1301,28 +1379,63 @@ export const SequenceView = () => {
   };
   const [confirmAction, setConfirmAction] = useState<"activate" | "pause" | "archive" | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [enrollmentSearchTerm, setEnrollmentSearchTerm] = useState("");
+  const [enrollmentSearchTerm, setEnrollmentSearchTerm] = useState(
+    () =>
+      storedEnrollmentToolbarState[sequenceStorageSlot]?.searchTerm ||
+      getDefaultEnrollmentToolbarState().searchTerm
+  );
   const [enrollmentContactFilter, setEnrollmentContactFilter] = useState<ContactDetailsDto | null>(
-    null
+    () =>
+      storedEnrollmentToolbarState[sequenceStorageSlot]?.contactFilter ||
+      getDefaultEnrollmentToolbarState().contactFilter
   );
   const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<
     "" | "Active" | "Completed" | "Exited"
-  >("");
-  const [enrollmentRefreshFlag, setEnrollmentRefreshFlag] = useState(0);
-  const [deliverySearchTerm, setDeliverySearchTerm] = useState("");
-  const [deliveryContactFilter, setDeliveryContactFilter] = useState<ContactDetailsDto | null>(
-    null
+  >(
+    () =>
+      storedEnrollmentToolbarState[sequenceStorageSlot]?.statusFilter ||
+      getDefaultEnrollmentToolbarState().statusFilter
   );
-  const [deliveryStepFilter, setDeliveryStepFilter] = useState<number | "">("");
+  const [enrollmentLastCompletedStepFilter, setEnrollmentLastCompletedStepFilter] = useState<
+    number | ""
+  >(
+    () =>
+      storedEnrollmentToolbarState[sequenceStorageSlot]?.lastCompletedStepFilter ||
+      getDefaultEnrollmentToolbarState().lastCompletedStepFilter
+  );
+  const [hydratedEnrollmentToolbarSlot, setHydratedEnrollmentToolbarSlot] =
+    useState(sequenceStorageSlot);
+  const [enrollmentRefreshFlag, setEnrollmentRefreshFlag] = useState(0);
+  const [deliverySearchTerm, setDeliverySearchTerm] = useState(
+    () =>
+      storedDeliveryToolbarState[sequenceStorageSlot]?.searchTerm ||
+      getDefaultDeliveryToolbarState().searchTerm
+  );
+  const [deliveryContactFilter, setDeliveryContactFilter] = useState<ContactDetailsDto | null>(
+    () =>
+      storedDeliveryToolbarState[sequenceStorageSlot]?.contactFilter ||
+      getDefaultDeliveryToolbarState().contactFilter
+  );
+  const [deliveryStepFilter, setDeliveryStepFilter] = useState<number | "">(
+    () =>
+      storedDeliveryToolbarState[sequenceStorageSlot]?.stepFilter ||
+      getDefaultDeliveryToolbarState().stepFilter
+  );
   const [deliveryStatusFilter, setDeliveryStatusFilter] = useState<
     "" | "Scheduled" | "Sent" | "Failed" | "Skipped"
-  >("");
+  >(
+    () =>
+      storedDeliveryToolbarState[sequenceStorageSlot]?.statusFilter ||
+      getDefaultDeliveryToolbarState().statusFilter
+  );
+  const [hydratedDeliveryToolbarSlot, setHydratedDeliveryToolbarSlot] =
+    useState(sequenceStorageSlot);
   const [selectedDeliveryEmailPreview, setSelectedDeliveryEmailPreview] =
     useState<DeliveryEmailPreviewState | null>(null);
   const [deliveryRefreshFlag, setDeliveryRefreshFlag] = useState(0);
   const [deliveryTotalCount, setDeliveryTotalCount] = useState(0);
   const [enrollmentColumns, setEnrollmentColumns] = useState<GridColDef<SequenceEnrollmentRow>[]>(
-    () => buildEnrollmentColumns(primaryCurrency)
+    () => buildEnrollmentColumns(primaryCurrency, Number(id))
   );
   const handleOpenDeliveryEmailPreview = useCallback((row: SequenceDeliveryRow) => {
     if (!row.emailLog) {
@@ -1340,8 +1453,96 @@ export const SequenceView = () => {
   );
 
   useEffect(() => {
-    setEnrollmentColumns(buildEnrollmentColumns(primaryCurrency));
-  }, [primaryCurrency]);
+    setEnrollmentColumns(buildEnrollmentColumns(primaryCurrency, Number(id)));
+  }, [primaryCurrency, id]);
+
+  useEffect(() => {
+    const nextState =
+      storedEnrollmentToolbarState[sequenceStorageSlot] || getDefaultEnrollmentToolbarState();
+
+    setEnrollmentSearchTerm(nextState.searchTerm);
+    setEnrollmentContactFilter(nextState.contactFilter);
+    setEnrollmentStatusFilter(nextState.statusFilter);
+    setEnrollmentLastCompletedStepFilter(nextState.lastCompletedStepFilter);
+    setHydratedEnrollmentToolbarSlot(sequenceStorageSlot);
+  }, [sequenceStorageSlot, storedEnrollmentToolbarState]);
+
+  useEffect(() => {
+    const nextState =
+      storedDeliveryToolbarState[sequenceStorageSlot] || getDefaultDeliveryToolbarState();
+
+    setDeliverySearchTerm(nextState.searchTerm);
+    setDeliveryContactFilter(nextState.contactFilter);
+    setDeliveryStepFilter(nextState.stepFilter);
+    setDeliveryStatusFilter(nextState.statusFilter);
+    setHydratedDeliveryToolbarSlot(sequenceStorageSlot);
+  }, [sequenceStorageSlot, storedDeliveryToolbarState]);
+
+  useEffect(() => {
+    if (hydratedEnrollmentToolbarSlot !== sequenceStorageSlot) return;
+
+    const nextState: SequenceEnrollmentToolbarState = {
+      searchTerm: enrollmentSearchTerm,
+      contactFilter: enrollmentContactFilter,
+      statusFilter: enrollmentStatusFilter,
+      lastCompletedStepFilter: enrollmentLastCompletedStepFilter,
+    };
+    const currentState = storedEnrollmentToolbarState[sequenceStorageSlot];
+    const isUnchanged =
+      currentState?.searchTerm === nextState.searchTerm &&
+      (currentState?.contactFilter?.id || null) === (nextState.contactFilter?.id || null) &&
+      currentState?.statusFilter === nextState.statusFilter &&
+      currentState?.lastCompletedStepFilter === nextState.lastCompletedStepFilter;
+
+    if (isUnchanged) return;
+
+    setStoredEnrollmentToolbarState({
+      ...storedEnrollmentToolbarState,
+      [sequenceStorageSlot]: nextState,
+    });
+  }, [
+    enrollmentContactFilter,
+    enrollmentLastCompletedStepFilter,
+    enrollmentSearchTerm,
+    enrollmentStatusFilter,
+    hydratedEnrollmentToolbarSlot,
+    sequenceStorageSlot,
+    setStoredEnrollmentToolbarState,
+    storedEnrollmentToolbarState,
+  ]);
+
+  useEffect(() => {
+    if (hydratedDeliveryToolbarSlot !== sequenceStorageSlot) return;
+
+    const nextState: SequenceDeliveryToolbarState = {
+      searchTerm: deliverySearchTerm,
+      contactFilter: deliveryContactFilter,
+      stepFilter: deliveryStepFilter,
+      statusFilter: deliveryStatusFilter,
+    };
+    const currentState = storedDeliveryToolbarState[sequenceStorageSlot];
+    const isUnchanged =
+      currentState?.searchTerm === nextState.searchTerm &&
+      (currentState?.contactFilter?.id || null) === (nextState.contactFilter?.id || null) &&
+      currentState?.stepFilter === nextState.stepFilter &&
+      currentState?.statusFilter === nextState.statusFilter;
+
+    if (isUnchanged) return;
+
+    setStoredDeliveryToolbarState({
+      ...storedDeliveryToolbarState,
+      [sequenceStorageSlot]: nextState,
+    });
+  }, [
+    deliveryContactFilter,
+    deliverySearchTerm,
+    deliveryStatusFilter,
+    deliveryStepFilter,
+    hydratedDeliveryToolbarSlot,
+    sequenceStorageSlot,
+    setStoredDeliveryToolbarState,
+    storedDeliveryToolbarState,
+  ]);
 
   useEffect(() => {
     setDeliveryColumns(
@@ -1393,7 +1594,7 @@ export const SequenceView = () => {
 
   useEffect(() => {
     setEnrollmentRefreshFlag((prev) => prev + 1);
-  }, [enrollmentContactFilter?.id, enrollmentStatusFilter]);
+  }, [enrollmentContactFilter?.id, enrollmentStatusFilter, enrollmentLastCompletedStepFilter]);
 
   useEffect(() => {
     setDeliveryRefreshFlag((prev) => prev + 1);
@@ -1547,7 +1748,21 @@ export const SequenceView = () => {
     const statusQuery = enrollmentStatusFilter
       ? getWhereFilterQuery("status", enrollmentStatusFilter, "equals").replace(/^&/, "")
       : "";
-    const fullQuery = [mainQuery, enrollmentIncludeQuery, contactQuery, statusQuery]
+    const lastCompletedStepQuery =
+      enrollmentLastCompletedStepFilter !== ""
+        ? getWhereFilterQuery(
+            "lastCompletedStepId",
+            String(enrollmentLastCompletedStepFilter),
+            "equals"
+          ).replace(/^&/, "")
+        : "";
+    const fullQuery = [
+      mainQuery,
+      enrollmentIncludeQuery,
+      contactQuery,
+      statusQuery,
+      lastCompletedStepQuery,
+    ]
       .filter(Boolean)
       .join("&");
 
@@ -2118,6 +2333,27 @@ export const SequenceView = () => {
                 <MenuItem value="Active">Active</MenuItem>
                 <MenuItem value="Completed">Completed</MenuItem>
                 <MenuItem value="Exited">Exited</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 240 }}>
+              <InputLabel>Last Completed Step</InputLabel>
+              <Select
+                value={enrollmentLastCompletedStepFilter}
+                label="Last Completed Step"
+                onChange={(event) => {
+                  const nextValue = event.target.value as number | "";
+                  setEnrollmentLastCompletedStepFilter(nextValue === "" ? "" : Number(nextValue));
+                }}
+              >
+                <MenuItem value="">All steps</MenuItem>
+                {(sequence.steps || [])
+                  .slice()
+                  .sort((left, right) => (left.position || 0) - (right.position || 0))
+                  .map((step, index) => (
+                    <MenuItem key={step.id || index} value={step.id || ""}>
+                      {getSequenceStepDisplayName(step, step.position ?? index)}
+                    </MenuItem>
+                  ))}
               </Select>
             </FormControl>
           </Box>
