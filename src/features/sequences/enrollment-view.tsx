@@ -371,15 +371,88 @@ export const SequenceEnrollmentView = () => {
   );
 
   const contactTimezone = contact?.timezone;
+  const browserTimezoneOffset = -new Date().getTimezoneOffset();
+  const browserTimezoneLabel = formatTimezoneShort(browserTimezoneOffset);
+  const browserTimezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  const formatDualTime = (iso?: string | null) => {
+  const renderDualTime = (iso?: string | null, textColor?: string) => {
     const browserTime = formatBrowserDateTime(iso);
-    if (!browserTime || !iso) return browserTime;
-    if (contactTimezone == null) return browserTime;
-    const contactTime = formatDateTimeAtOffset(iso, contactTimezone);
-    const tzLabel = formatTimezoneShort(contactTimezone);
-    if (!contactTime) return browserTime;
-    return `${contactTime} ${tzLabel}`;
+    if (!browserTime || !iso) return "—";
+
+    const sendingTimezoneLabel =
+      contactTimezone == null ? browserTimezoneLabel : formatTimezoneShort(contactTimezone);
+
+    const sendingTime =
+      contactTimezone == null
+        ? browserTime
+        : formatDateTimeAtOffset(iso, contactTimezone) || browserTime;
+
+    const sendingTooltip =
+      contactTimezone == null
+        ? "Shown in browser timezone because contact timezone is not set."
+        : "Shown in contact/sending timezone.";
+
+    const browserTooltip = browserTimezoneName
+      ? `Shown in your browser timezone (${browserTimezoneName}).`
+      : "Shown in your browser timezone.";
+
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+        <Tooltip title={sendingTooltip} arrow>
+          <Typography variant="body2" fontWeight={500} color={textColor}>
+            {sendingTime} ({sendingTimezoneLabel})
+          </Typography>
+        </Tooltip>
+        <Tooltip title={browserTooltip} arrow>
+          <Typography variant="caption" color={textColor || "text.secondary"}>
+            {browserTime} ({browserTimezoneLabel})
+          </Typography>
+        </Tooltip>
+      </Box>
+    );
+  };
+
+  const renderDualTimeInline = (label: string, iso?: string | null, textColor?: string) => {
+    const browserTime = formatBrowserDateTime(iso);
+    if (!browserTime || !iso) return "—";
+
+    const sendingTimezoneLabel =
+      contactTimezone == null ? browserTimezoneLabel : formatTimezoneShort(contactTimezone);
+
+    const sendingTime =
+      contactTimezone == null
+        ? browserTime
+        : formatDateTimeAtOffset(iso, contactTimezone) || browserTime;
+
+    const sendingTooltip =
+      contactTimezone == null
+        ? "Shown in browser timezone because contact timezone is not set."
+        : "Shown in contact/sending timezone.";
+
+    const browserTooltip = browserTimezoneName
+      ? `Shown in your browser timezone (${browserTimezoneName}).`
+      : "Shown in your browser timezone.";
+
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+        <Typography variant="body2" fontWeight={500} color={textColor}>
+          {label}:
+        </Typography>
+        <Tooltip title={sendingTooltip} arrow>
+          <Typography variant="body2" color={textColor}>
+            {sendingTime} [{sendingTimezoneLabel}]
+          </Typography>
+        </Tooltip>
+        <Typography variant="body2" color={textColor}>
+          •
+        </Typography>
+        <Tooltip title={browserTooltip} arrow>
+          <Typography variant="body2" color={textColor}>
+            {browserTime} [{browserTimezoneLabel}]
+          </Typography>
+        </Tooltip>
+      </Box>
+    );
   };
 
   const exitReason =
@@ -436,9 +509,7 @@ export const SequenceEnrollmentView = () => {
         <Typography variant="subtitle2" fontWeight={600}>
           {exitConfig?.label || "Exited"}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {formatDualTime(enrollment.exitedAt) || "—"}
-        </Typography>
+        {renderDualTime(enrollment.exitedAt, "text.secondary")}
       </Box>
     </Box>
   );
@@ -518,18 +589,14 @@ export const SequenceEnrollmentView = () => {
               <Typography variant="caption" color="text.secondary">
                 Entered At
               </Typography>
-              <Typography variant="body2" fontWeight={500}>
-                {formatDualTime(enrollment.enteredAt) || "—"}
-              </Typography>
+              {renderDualTime(enrollment.enteredAt)}
             </Grid>
             {enrollment.completedAt && (
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Typography variant="caption" color="text.secondary">
                   Completed At
                 </Typography>
-                <Typography variant="body2" fontWeight={500}>
-                  {formatDualTime(enrollment.completedAt) || "—"}
-                </Typography>
+                {renderDualTime(enrollment.completedAt)}
               </Grid>
             )}
             {enrollment.exitedAt && (
@@ -537,9 +604,7 @@ export const SequenceEnrollmentView = () => {
                 <Typography variant="caption" color="text.secondary">
                   Exited At
                 </Typography>
-                <Typography variant="body2" fontWeight={500}>
-                  {formatDualTime(enrollment.exitedAt) || "—"}
-                </Typography>
+                {renderDualTime(enrollment.exitedAt)}
               </Grid>
             )}
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -645,9 +710,7 @@ export const SequenceEnrollmentView = () => {
                 <Typography variant="subtitle2" fontWeight={600}>
                   Enrolled
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formatDualTime(enrollment.enteredAt) || "—"}
-                </Typography>
+                {renderDualTime(enrollment.enteredAt, "text.secondary")}
               </Box>
             </Box>
 
@@ -821,9 +884,11 @@ export const SequenceEnrollmentView = () => {
                                 }}
                               >
                                 <Calendar size={14} color={theme.palette.info.main} />
-                                <Typography variant="body2" fontWeight={500}>
-                                  Scheduled: {formatDualTime(step.scheduledAt)}
-                                </Typography>
+                                {renderDualTimeInline(
+                                  "Scheduled",
+                                  step.scheduledAt,
+                                  "text.secondary"
+                                )}
                               </Box>
                             )}
                             {step.sentAt && (
@@ -836,9 +901,7 @@ export const SequenceEnrollmentView = () => {
                                 }}
                               >
                                 <Send size={14} color={theme.palette.success.main} />
-                                <Typography variant="body2" fontWeight={500}>
-                                  Sent: {formatDualTime(step.sentAt)}
-                                </Typography>
+                                {renderDualTimeInline("Sent", step.sentAt, "text.secondary")}
                               </Box>
                             )}
                             {step.emailPreview && (
@@ -976,9 +1039,7 @@ export const SequenceEnrollmentView = () => {
                   <Typography variant="subtitle2" fontWeight={600}>
                     Completed
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {formatDualTime(enrollment.completedAt) || "—"}
-                  </Typography>
+                  {renderDualTime(enrollment.completedAt, "text.secondary")}
                 </Box>
               </Box>
             )}
