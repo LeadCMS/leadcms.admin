@@ -114,10 +114,10 @@ const getStatusIcon = (status: CampaignStatus) => {
 };
 
 const formatDateTime = (dateValue: string | null | undefined) => {
-  if (!dateValue) return "—";
+  if (!dateValue) return "-";
 
   const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
 
   return date.toLocaleString(undefined, {
     year: "numeric",
@@ -132,10 +132,10 @@ const getTimezoneDescription = (campaign: CampaignDetailsDto) =>
   formatTimezoneShort(campaign.timeZone ?? 0);
 
 const formatScheduledWithTimezone = (campaign: CampaignDetailsDto) => {
-  if (!campaign.scheduledAt) return "—";
+  if (!campaign.scheduledAt) return "-";
 
   const date = new Date(campaign.scheduledAt);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
 
   const day = date.getDate().toString().padStart(2, "0");
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -432,7 +432,7 @@ export const Campaigns = () => {
             height: "100%",
           }}
         >
-          <Typography variant="body2">{row.totalRecipients?.toLocaleString() ?? "—"}</Typography>
+          <Typography variant="body2">{row.totalRecipients?.toLocaleString() ?? "-"}</Typography>
         </Box>
       ),
     },
@@ -448,7 +448,7 @@ export const Campaigns = () => {
             height: "100%",
           }}
         >
-          <Typography variant="body2">{row.sentCount?.toLocaleString() ?? "—"}</Typography>
+          <Typography variant="body2">{row.sentCount?.toLocaleString() ?? "-"}</Typography>
         </Box>
       ),
     },
@@ -464,7 +464,7 @@ export const Campaigns = () => {
             height: "100%",
           }}
         >
-          <Typography variant="body2">{row.failedCount?.toLocaleString() ?? "—"}</Typography>
+          <Typography variant="body2">{row.failedCount?.toLocaleString() ?? "-"}</Typography>
         </Box>
       ),
     },
@@ -507,7 +507,7 @@ export const Campaigns = () => {
             height: "100%",
           }}
         >
-          <Typography variant="body2">{row.language || "—"}</Typography>
+          <Typography variant="body2">{row.language || "-"}</Typography>
         </Box>
       ),
     },

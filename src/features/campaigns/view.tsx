@@ -271,31 +271,31 @@ export const CampaignView = () => {
       field: "contact.FullName",
       headerName: "Contact Name",
       width: 240,
-      valueGetter: (_value, row) => row.contact?.fullName || "—",
+      valueGetter: (_value, row) => row.contact?.fullName || "-",
     },
     {
       field: "contact.Email",
       headerName: "Email",
       width: 280,
-      valueGetter: (_value, row) => row.contact?.email || "—",
+      valueGetter: (_value, row) => row.contact?.email || "-",
     },
     {
       field: "contact.FirstName",
       headerName: "First Name",
       minWidth: 140,
-      valueGetter: (_value, row) => row.contact?.firstName || "—",
+      valueGetter: (_value, row) => row.contact?.firstName || "-",
     },
     {
       field: "contact.LastName",
       headerName: "Last Name",
       minWidth: 140,
-      valueGetter: (_value, row) => row.contact?.lastName || "—",
+      valueGetter: (_value, row) => row.contact?.lastName || "-",
     },
     {
       field: "contactId",
       headerName: "Contact ID",
       minWidth: 120,
-      valueGetter: (_value, row) => row.contactId ?? "—",
+      valueGetter: (_value, row) => row.contactId ?? "-",
     },
     {
       field: "effectiveTimezone",
@@ -326,7 +326,7 @@ export const CampaignView = () => {
       headerName: "Skip Reason",
       minWidth: 160,
       valueGetter: (_value, row) =>
-        row.skipReason && row.skipReason !== "None" ? row.skipReason : "—",
+        row.skipReason && row.skipReason !== "None" ? row.skipReason : "-",
     },
     {
       field: "sentOrExpectedAt",
@@ -449,7 +449,7 @@ export const CampaignView = () => {
       field: "errorMessage",
       headerName: "Error",
       minWidth: 240,
-      valueGetter: (_value, row) => row.errorMessage || "—",
+      valueGetter: (_value, row) => row.errorMessage || "-",
     },
     {
       field: "createdAt",

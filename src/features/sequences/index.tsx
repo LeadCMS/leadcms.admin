@@ -104,9 +104,9 @@ const getStatusIcon = (status: SequenceStatus) => {
 };
 
 const formatDateTime = (dateValue: string | null | undefined) => {
-  if (!dateValue) return "—";
+  if (!dateValue) return "-";
   const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleString(undefined, {
     year: "numeric",
     month: "2-digit",
@@ -375,7 +375,7 @@ export const Sequences = () => {
       field: "language",
       headerName: "Language",
       width: 130,
-      valueGetter: (_value, row) => row.language || "—",
+      valueGetter: (_value, row) => row.language || "-",
     },
     {
       field: "stepsCount",

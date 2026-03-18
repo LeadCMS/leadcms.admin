@@ -437,7 +437,7 @@ const renderEmailBody = (body?: string | null) => {
 
 const formatUtcOffset = (offsetMinutes: number | null | undefined) => {
   if (offsetMinutes == null) {
-    return "—";
+    return "-";
   }
 
   const sign = offsetMinutes >= 0 ? "+" : "-";
@@ -458,7 +458,7 @@ const getContactDisplayName = (
   }
 
   const contactId = contact?.id ?? fallbackContactId;
-  return contactId ? `Contact #${contactId}` : "—";
+  return contactId ? `Contact #${contactId}` : "-";
 };
 
 const getContactRoute = (contactId?: number | null) => {
@@ -746,7 +746,7 @@ const SequenceContactAutocomplete = ({
           <Box>
             <Typography variant="body2">{getContactDisplayName(option, option.id)}</Typography>
             <Typography variant="caption" color="text.secondary">
-              {option.email || "—"}
+              {option.email || "-"}
             </Typography>
           </Box>
         </li>
@@ -912,25 +912,25 @@ const getContactColumns = <TRow extends { contact?: ContactDetailsDto | null; co
     field: "contactId",
     headerName: "Contact ID",
     minWidth: 120,
-    valueGetter: (_value: unknown, row: TRow) => row.contactId ?? row.contact?.id ?? "—",
+    valueGetter: (_value: unknown, row: TRow) => row.contactId ?? row.contact?.id ?? "-",
   },
   {
     field: "contact.email",
     headerName: "Email",
     minWidth: 220,
-    valueGetter: (_value: unknown, row: TRow) => row.contact?.email || "—",
+    valueGetter: (_value: unknown, row: TRow) => row.contact?.email || "-",
   },
   {
     field: "contact.companyName",
     headerName: "Company",
     minWidth: 180,
-    valueGetter: (_value: unknown, row: TRow) => row.contact?.companyName || "—",
+    valueGetter: (_value: unknown, row: TRow) => row.contact?.companyName || "-",
   },
   {
     field: "contact.phone",
     headerName: "Phone",
     minWidth: 160,
-    valueGetter: (_value: unknown, row: TRow) => row.contact?.phone || "—",
+    valueGetter: (_value: unknown, row: TRow) => row.contact?.phone || "-",
   },
   {
     field: "contact.timezone",
@@ -942,7 +942,7 @@ const getContactColumns = <TRow extends { contact?: ContactDetailsDto | null; co
     field: "contact.language",
     headerName: "Language",
     minWidth: 120,
-    valueGetter: (_value: unknown, row: TRow) => row.contact?.language || "—",
+    valueGetter: (_value: unknown, row: TRow) => row.contact?.language || "-",
   },
   {
     field: "contact.ordersCount",
@@ -1009,7 +1009,7 @@ const getSequenceStepDisplayName = (
     return `Step ${fallbackIndex + 1}`;
   }
 
-  return "—";
+  return "-";
 };
 
 const buildEnrollmentColumns = (
@@ -1073,7 +1073,7 @@ const buildEnrollmentColumns = (
       field: "enrollmentReason",
       headerName: "Reason",
       minWidth: 220,
-      valueGetter: (_value, row) => row.enrollmentReason || "—",
+      valueGetter: (_value, row) => row.enrollmentReason || "-",
     },
     {
       field: "enteredAt",
@@ -1110,7 +1110,7 @@ const buildEnrollmentColumns = (
       minWidth: 180,
       valueGetter: (_value, row) =>
         row.lastCompletedStep?.name?.trim() ||
-        (row.lastCompletedStepId ? `Step #${row.lastCompletedStepId}` : "—"),
+        (row.lastCompletedStepId ? `Step #${row.lastCompletedStepId}` : "-"),
     },
     {
       field: "completedAt",
@@ -1137,14 +1137,14 @@ const buildEnrollmentColumns = (
       field: "enrollmentSource",
       headerName: "Source",
       minWidth: 140,
-      valueGetter: (_value, row) => row.enrollmentSource || "—",
+      valueGetter: (_value, row) => row.enrollmentSource || "-",
     },
     {
       field: "exitReason",
       headerName: "Exit Reason",
       minWidth: 160,
       valueGetter: (_value, row) =>
-        row.exitReason && row.exitReason !== "None" ? row.exitReason : "—",
+        row.exitReason && row.exitReason !== "None" ? row.exitReason : "-",
     },
     {
       field: "createdAt",
@@ -1184,7 +1184,7 @@ const buildDeliveryColumns = (
       valueGetter: (_value, row) => {
         const step = sequence?.steps?.find((item) => item.id === row.sequenceStepId);
         if (!step) {
-          return row.sequenceStepId ? `Step #${row.sequenceStepId}` : "—";
+          return row.sequenceStepId ? `Step #${row.sequenceStepId}` : "-";
         }
         return getSequenceStepDisplayName(step, step.position ?? 0);
       },
@@ -1242,12 +1242,12 @@ const buildDeliveryColumns = (
       filterable: false,
       renderCell: ({ row }) => {
         const previewLabel =
-          row.emailLog?.subject?.trim() || (row.emailLogId ? `Email #${row.emailLogId}` : "—");
+          row.emailLog?.subject?.trim() || (row.emailLogId ? `Email #${row.emailLogId}` : "-");
         const previewSnippet = getEmailPreviewSnippet(row.emailLog?.body);
         const canPreview = Boolean(row.emailLog);
 
         if (!row.emailLog && !row.emailLogId) {
-          return "—";
+          return "-";
         }
 
         return (
@@ -1307,13 +1307,13 @@ const buildDeliveryColumns = (
       field: "skipReason",
       headerName: "Skip Reason",
       minWidth: 160,
-      valueGetter: (_value, row) => row.skipReason || "—",
+      valueGetter: (_value, row) => row.skipReason || "-",
     },
     {
       field: "errorMessage",
       headerName: "Error",
       minWidth: 240,
-      valueGetter: (_value, row) => row.errorMessage || "—",
+      valueGetter: (_value, row) => row.errorMessage || "-",
     },
     getColumn("contact.email"),
     getColumn("contact.companyName"),
@@ -1326,13 +1326,13 @@ const buildDeliveryColumns = (
       field: "sequenceEnrollmentId",
       headerName: "Enrollment ID",
       minWidth: 140,
-      valueGetter: (_value, row) => row.sequenceEnrollmentId ?? "—",
+      valueGetter: (_value, row) => row.sequenceEnrollmentId ?? "-",
     },
     {
       field: "emailLogId",
       headerName: "Email Log ID",
       minWidth: 140,
-      valueGetter: (_value, row) => row.emailLogId ?? "—",
+      valueGetter: (_value, row) => row.emailLogId ?? "-",
     },
     {
       field: "createdAt",
