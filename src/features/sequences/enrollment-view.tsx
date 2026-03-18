@@ -142,6 +142,7 @@ const formatDateTimeAtOffset = (iso: string, offsetMinutes: number) => {
   if (Number.isNaN(date.getTime())) return null;
   const shifted = new Date(date.getTime() + offsetMinutes * 60_000);
   return shifted.toLocaleString(undefined, {
+    year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",

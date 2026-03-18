@@ -552,6 +552,7 @@ const formatDateTimeAtOffset = (iso: string, offsetMinutes: number) => {
 
   const shiftedDate = new Date(date.getTime() + offsetMinutes * 60_000);
   return shiftedDate.toLocaleString(undefined, {
+    year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
