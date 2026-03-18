@@ -433,7 +433,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
   const buildCreatePayload = (): SequenceCreateDto => ({
     name: name.trim(),
     description: description.trim() || undefined,
-    language: effectiveSequenceLanguage || undefined,
+    language: effectiveSequenceLanguage,
     stopOnReply,
     useContactTimeZone,
     timeZone: timeZone || undefined,
@@ -491,7 +491,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
   const buildEditPayload = (): SequenceUpdateDto => ({
     name: name.trim(),
     description: description.trim() || undefined,
-    language: effectiveSequenceLanguage || undefined,
+    language: effectiveSequenceLanguage,
     stopOnReply,
     useContactTimeZone,
     timeZone: timeZone || undefined,

@@ -17,6 +17,8 @@ import {
   SequenceDetailsDto,
   SequenceDeliveryDetailsDto,
   SequenceEnrollmentDetailsDto,
+  SequenceEnrollmentCreateDto,
+  SequenceEnrollmentStopDto,
   SequenceStatisticsDto,
 } from "lib/network/swagger-client";
 import { getWhereFilterQuery } from "@providers/query-provider";
@@ -50,7 +52,7 @@ import {
   useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { GridColDef } from "@mui/x-data-grid";
+import { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import useLocalStorage from "use-local-storage";
 import {
   Users,
@@ -67,6 +69,8 @@ import {
   CheckCircle2,
   Archive,
   Eye,
+  UserPlus,
+  StopCircle,
 } from "lucide-react";
 import { showApiError } from "@utils/api-error-parser";
 
@@ -1407,6 +1411,17 @@ export const SequenceView = () => {
   const [hydratedEnrollmentToolbarSlot, setHydratedEnrollmentToolbarSlot] =
     useState(sequenceStorageSlot);
   const [enrollmentRefreshFlag, setEnrollmentRefreshFlag] = useState(0);
+  const [enrollmentRowSelectionModel, setEnrollmentRowSelectionModel] =
+    useState<GridRowSelectionModel>({ type: "include", ids: new Set() });
+  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [enrollContactOptions, setEnrollContactOptions] = useState<ContactDetailsDto[]>([]);
+  const [enrollContactSearch, setEnrollContactSearch] = useState("");
+  const [enrollContactSearchLoading, setEnrollContactSearchLoading] = useState(false);
+  const [enrollSelectedContacts, setEnrollSelectedContacts] = useState<ContactDetailsDto[]>([]);
+  const enrollContactSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [stopDialogOpen, setStopDialogOpen] = useState(false);
+  const [stopLoading, setStopLoading] = useState(false);
   const [deliverySearchTerm, setDeliverySearchTerm] = useState(
     () =>
       storedDeliveryToolbarState[sequenceStorageSlot]?.searchTerm ||
@@ -1586,6 +1601,104 @@ export const SequenceView = () => {
       setDeliveryTotalCount(0);
     }
   }, [id, client]);
+
+  const fetchEnrollContactOptions = useCallback(
+    async (queryText?: string) => {
+      setEnrollContactSearchLoading(true);
+      try {
+        const params: { query?: string } = {};
+        const filterParts = ["filter[limit]=50", "filter[order]=createdAt desc", "filter[skip]=0"];
+        if (queryText) {
+          filterParts.unshift(queryText);
+        }
+        params.query = filterParts.join("&");
+        const result = await client.api.contactsList(params);
+        setEnrollContactOptions(result.data || []);
+      } catch {
+        setEnrollContactOptions([]);
+      } finally {
+        setEnrollContactSearchLoading(false);
+      }
+    },
+    [client]
+  );
+
+  useEffect(() => {
+    if (!enrollDialogOpen) return;
+    void fetchEnrollContactOptions();
+  }, [enrollDialogOpen, fetchEnrollContactOptions]);
+
+  useEffect(() => {
+    if (!enrollDialogOpen) return;
+    if (enrollContactSearchTimer.current) {
+      clearTimeout(enrollContactSearchTimer.current);
+    }
+    enrollContactSearchTimer.current = setTimeout(
+      () => {
+        void fetchEnrollContactOptions(enrollContactSearch || undefined);
+      },
+      enrollContactSearch ? 400 : 0
+    );
+    return () => {
+      if (enrollContactSearchTimer.current) {
+        clearTimeout(enrollContactSearchTimer.current);
+      }
+    };
+  }, [enrollContactSearch, enrollDialogOpen, fetchEnrollContactOptions]);
+
+  const handleEnrollContacts = async () => {
+    if (!sequence?.id || enrollSelectedContacts.length === 0) return;
+    setEnrollLoading(true);
+    try {
+      const dto: SequenceEnrollmentCreateDto = {
+        contactIds: enrollSelectedContacts
+          .map((c) => c.id)
+          .filter((cid): cid is number => cid != null),
+      };
+      await client.api.sequencesEnrollmentsCreate(sequence.id, dto);
+      notificationsService.success(
+        `Enrolled ${dto.contactIds.length} contact${dto.contactIds.length !== 1 ? "s" : ""}.`
+      );
+      setEnrollDialogOpen(false);
+      setEnrollSelectedContacts([]);
+      setEnrollContactSearch("");
+      setEnrollmentRefreshFlag((prev) => prev + 1);
+      loadStatistics();
+    } catch (error) {
+      showApiError(error, notificationsService, undefined, "Failed to enroll contacts.");
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
+
+  const selectedEnrollmentIds = Array.from(enrollmentRowSelectionModel.ids).map(Number);
+
+  const handleStopEnrollments = async () => {
+    if (!sequence?.id || selectedEnrollmentIds.length === 0) return;
+    setStopLoading(true);
+    try {
+      const dto: SequenceEnrollmentStopDto = {
+        enrollmentIds: selectedEnrollmentIds,
+      };
+      await client.api.sequencesEnrollmentsStopCreate(sequence.id, dto);
+      notificationsService.success(
+        `Stopped ${selectedEnrollmentIds.length} enrollment${
+          selectedEnrollmentIds.length !== 1 ? "s" : ""
+        }.`
+      );
+      setStopDialogOpen(false);
+      setEnrollmentRowSelectionModel({
+        type: "include",
+        ids: new Set(),
+      });
+      setEnrollmentRefreshFlag((prev) => prev + 1);
+      loadStatistics();
+    } catch (error) {
+      showApiError(error, notificationsService, undefined, "Failed to stop enrollments.");
+    } finally {
+      setStopLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadSequence();
@@ -1868,6 +1981,8 @@ export const SequenceView = () => {
   const isEditable = status === "Draft" || status === "Paused";
   const isActivatable = status === "Draft" || status === "Paused";
   const isPausable = status === "Active";
+  const isManualMode = (sequence.enrollment?.modes || []).includes("manual");
+  const canEnroll = isManualMode && status !== "Archived";
 
   const activeCount = statistics?.activeEnrollmentCount ?? sequence.activeEnrollmentCount ?? 0;
   const completedCount =
@@ -2357,6 +2472,28 @@ export const SequenceView = () => {
                   ))}
               </Select>
             </FormControl>
+            <Box sx={{ flexGrow: 1 }} />
+            {canEnroll && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<UserPlus size={16} />}
+                onClick={() => setEnrollDialogOpen(true)}
+              >
+                Enroll Contacts
+              </Button>
+            )}
+            {selectedEnrollmentIds.length > 0 && (
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                startIcon={<StopCircle size={16} />}
+                onClick={() => setStopDialogOpen(true)}
+              >
+                Stop Selected ({selectedEnrollmentIds.length})
+              </Button>
+            )}
           </Box>
 
           <DataList
@@ -2393,9 +2530,132 @@ export const SequenceView = () => {
               },
             }}
             showActionsColumn={false}
-            enableRowSelection={false}
+            enableRowSelection={true}
+            rowSelectionModel={enrollmentRowSelectionModel}
+            onRowSelectionModelChange={setEnrollmentRowSelectionModel}
             refreshFlag={enrollmentRefreshFlag}
           />
+
+          {/* Enroll Contacts Dialog */}
+          <Dialog
+            open={enrollDialogOpen}
+            onClose={() => {
+              if (!enrollLoading) {
+                setEnrollDialogOpen(false);
+                setEnrollSelectedContacts([]);
+                setEnrollContactSearch("");
+              }
+            }}
+            maxWidth="sm"
+            fullWidth
+          >
+            <DialogTitle>Enroll Contacts</DialogTitle>
+            <DialogContent>
+              <DialogContentText sx={{ mb: 2 }}>
+                Select contacts to enroll in this sequence.
+              </DialogContentText>
+              <Autocomplete
+                multiple
+                options={enrollContactOptions}
+                getOptionLabel={(option) => getContactDisplayName(option, option.id)}
+                value={enrollSelectedContacts}
+                loading={enrollContactSearchLoading}
+                filterSelectedOptions
+                filterOptions={(x) => x}
+                onInputChange={(_event, nextValue, reason) => {
+                  if (reason === "input" || reason === "clear") {
+                    setEnrollContactSearch(nextValue);
+                  }
+                }}
+                onChange={(_event, nextValue) => setEnrollSelectedContacts(nextValue)}
+                isOptionEqualToValue={(left, right) => left.id === right.id}
+                noOptionsText="No contacts found"
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>
+                    <Box>
+                      <Typography variant="body2">
+                        {getContactDisplayName(option, option.id)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {option.email || "—"}
+                      </Typography>
+                    </Box>
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Contacts"
+                    placeholder="Search by name or email"
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {enrollContactSearchLoading ? (
+                              <CircularProgress color="inherit" size={16} />
+                            ) : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => {
+                  setEnrollDialogOpen(false);
+                  setEnrollSelectedContacts([]);
+                  setEnrollContactSearch("");
+                }}
+                disabled={enrollLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => void handleEnrollContacts()}
+                disabled={enrollLoading || enrollSelectedContacts.length === 0}
+                startIcon={enrollLoading ? <CircularProgress size={16} /> : <UserPlus size={16} />}
+              >
+                {enrollLoading ? "Enrolling..." : `Enroll ${enrollSelectedContacts.length || ""}`}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Stop Enrollments Dialog */}
+          <Dialog
+            open={stopDialogOpen}
+            onClose={() => {
+              if (!stopLoading) setStopDialogOpen(false);
+            }}
+          >
+            <DialogTitle>Stop Enrollments</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Are you sure you want to stop {selectedEnrollmentIds.length} selected enrollment
+                {selectedEnrollmentIds.length !== 1 ? "s" : ""}? This will exit them from the
+                sequence.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setStopDialogOpen(false)} disabled={stopLoading}>
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => void handleStopEnrollments()}
+                disabled={stopLoading}
+                startIcon={stopLoading ? <CircularProgress size={16} /> : <StopCircle size={16} />}
+              >
+                {stopLoading ? "Stopping..." : "Stop"}
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       )}
 

@@ -9718,6 +9718,11 @@ export interface SequenceEnrollmentDetailsDto {
   steps?: EnrollmentStepTimelineEntryDto[] | null;
 }
 
+export interface SequenceEnrollmentStopDto {
+  /** Enrollment Ids */
+  enrollmentIds: number[];
+}
+
 export interface SequenceStatisticsDto {
   /**
    * Active Enrollment Count
@@ -18993,6 +18998,29 @@ export class Api<
         path: `/api/sequences/${sequenceId}/enrollments/${enrollmentId}`,
         method: "DELETE",
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SequenceEnrollments
+     * @name SequencesEnrollmentsStopCreate
+     * @request POST:/api/sequences/{sequenceId}/enrollments/stop
+     * @secure
+     */
+    sequencesEnrollmentsStopCreate: (
+      sequenceId: number,
+      data: SequenceEnrollmentStopDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<SequenceEnrollmentDetailsDto[], void | ProblemDetails>({
+        path: `/api/sequences/${sequenceId}/enrollments/stop`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

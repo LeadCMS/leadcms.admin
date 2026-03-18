@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useRef, useState } from "react";
-import { OrderDetailsDto } from "lib/network/swagger-client";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { OrderDetailsDto, OrderItemDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import {
   defaultFilterOrderColumn,
@@ -11,6 +11,7 @@ import {
 } from "./constants";
 import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { GridColDef } from "@mui/x-data-grid";
+import type { GridRowId } from "@mui/x-data-grid/models/gridRows";
 import { CoreModule, getAddFormRoute } from "lib/router";
 import { dataListBreadcrumbLinks } from "utils/constants";
 import useLocalStorage from "use-local-storage";
@@ -18,8 +19,18 @@ import { DataListSettings } from "types";
 import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { SearchBar } from "@components/search-bar";
-import { Button, Chip } from "@mui/material";
-import { Plus, Upload, Download, Filter, Settings2 } from "lucide-react";
+import {
+  Button,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
+import { Plus, Upload, Download, Filter, Settings2, Package } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
@@ -27,6 +38,96 @@ import { ToolbarButton } from "@components/tool-bar-button";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { useCurrencyFormatter } from "@hooks";
+
+const OrderItemsPreview = ({
+  items,
+  currency,
+  formatByCode,
+  formatMoney,
+}: {
+  items: OrderItemDetailsDto[];
+  currency: string;
+  formatByCode: (value: number, code: string) => string;
+  formatMoney: (value: number) => string;
+}) => {
+  if (!items || items.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+        No items in this order.
+      </Typography>
+    );
+  }
+
+  return (
+    <TableContainer
+      sx={{
+        maxWidth: 700,
+        bgcolor: "background.paper",
+        borderRadius: 1,
+        border: 1,
+        borderColor: "divider",
+      }}
+    >
+      <Table size="small">
+        <TableHead>
+          <TableRow
+            sx={{
+              bgcolor: "grey.100",
+            }}
+          >
+            <TableCell sx={{ fontWeight: 600, width: 40 }}>#</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Product</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>
+              Qty
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>
+              Unit Price
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>
+              Total
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {items.map((item, idx) => (
+            <TableRow
+              key={item.id ?? idx}
+              sx={{
+                "&:last-child td": {
+                  borderBottom: 0,
+                },
+              }}
+            >
+              <TableCell>{item.lineNumber ?? idx + 1}</TableCell>
+              <TableCell
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Package size={14} style={{ flexShrink: 0 }} />
+                {item.productName}
+              </TableCell>
+              <TableCell align="right">{item.quantity}</TableCell>
+              <TableCell align="right">
+                {item.unitPrice != null
+                  ? formatByCode(item.unitPrice, item.currency || currency) ||
+                    formatMoney(item.unitPrice)
+                  : "-"}
+              </TableCell>
+              <TableCell align="right">
+                {item.total != null
+                  ? formatByCode(item.total, item.currency || currency) || formatMoney(item.total)
+                  : "-"}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
 
 export const Orders = () => {
   const { client } = useRequestContext();
@@ -44,6 +145,7 @@ export const Orders = () => {
   const [columnsPanelOpen, setColumnsPanelOpen] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [expandedRowIds, setExpandedRowIds] = useState<Set<GridRowId>>(new Set());
   const dataExportQuery = useRef("");
 
   // Trigger refresh when global language filter changes
@@ -53,7 +155,7 @@ export const Orders = () => {
 
   const getOrderList = async (mainQuery: string, exportQuery?: string) => {
     dataExportQuery.current = exportQuery || "";
-    const includeFilter = "filter[include]=Contact";
+    const includeFilter = "filter[include]=Contact" + "&filter[include]=OrderItems";
 
     // Add global language filter if active (filter by contact language)
     let globalLanguageQuery = "";
@@ -70,6 +172,30 @@ export const Orders = () => {
     });
     return result;
   };
+
+  const handleDetailPanelToggle = useCallback((rowId: GridRowId) => {
+    setExpandedRowIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowId)) {
+        next.delete(rowId);
+      } else {
+        next.add(rowId);
+      }
+      return next;
+    });
+  }, []);
+
+  const getDetailPanelContent = useCallback(
+    (row: OrderDetailsDto) => (
+      <OrderItemsPreview
+        items={row.orderItems || []}
+        currency={row.currency || ""}
+        formatByCode={formatByCode}
+        formatMoney={formatMoney}
+      />
+    ),
+    [formatByCode, formatMoney]
+  );
 
   const ordersExportApi: (query: string, accept: string) => Promise<Response> = (query, accept) =>
     client.api.ordersExportList({ query }, { headers: { Accept: accept } });
@@ -327,6 +453,9 @@ export const Orders = () => {
           await client.api.ordersBulkDelete(ids.map(Number));
         }}
         bulkDeleteEntityName="order"
+        getDetailPanelContent={getDetailPanelContent}
+        detailPanelExpandedRowIds={expandedRowIds}
+        onDetailPanelToggle={handleDetailPanelToggle}
       ></DataList>
     </ModuleWrapper>
   );

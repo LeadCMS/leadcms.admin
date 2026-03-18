@@ -6,16 +6,46 @@ import {
   GridRowSelectionModel,
   GridCallbackDetails,
   GridColumnResizeParams,
+  GridRow,
 } from "@mui/x-data-grid";
 import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { ActionButtonContainer, DataTableContainer } from "./index.styled";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
-import { Pencil, Eye } from "lucide-react";
+import { Pencil, Eye, ChevronRight, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getEditFormRoute, getViewFormRoute } from "lib/router";
-import { IconButton } from "@mui/material";
+import { Box, Collapse, IconButton } from "@mui/material";
 import { GridDataFilterState } from "types";
-import { useEffect, useState } from "react";
+import { forwardRef, ReactNode, useEffect, useState } from "react";
+
+// Custom row component for expandable detail panels
+const DetailPanelRow = forwardRef<HTMLDivElement, any>(function DetailPanelRow(props, ref) {
+  const { detailPanelExpandedRowIds, getDetailPanelContent, ...gridRowProps } = props;
+  const rowId = gridRowProps.rowId;
+  const row = gridRowProps.row;
+  const isExpanded = detailPanelExpandedRowIds?.has(rowId);
+
+  return (
+    <Box ref={ref}>
+      <GridRow {...gridRowProps} />
+      {getDetailPanelContent && (
+        <Collapse in={isExpanded} unmountOnExit>
+          <Box
+            sx={{
+              px: 6,
+              py: 2,
+              bgcolor: "grey.50",
+              borderBottom: 1,
+              borderColor: "divider",
+            }}
+          >
+            {getDetailPanelContent(row)}
+          </Box>
+        </Collapse>
+      )}
+    </Box>
+  );
+});
 
 type DataTableProps = {
   columns: GridColDef[];
@@ -42,6 +72,9 @@ type DataTableProps = {
   rowSelectionModel?: GridRowSelectionModel;
   columnWidths?: Record<string, number>;
   saveColumnWidths?: (newWidths: Record<string, number>) => void;
+  getDetailPanelContent?: (row: GridValidRowModel) => ReactNode;
+  detailPanelExpandedRowIds?: Set<GridRowId>;
+  onDetailPanelToggle?: (rowId: GridRowId) => void;
 };
 
 export const DataTableGrid = ({
@@ -66,6 +99,9 @@ export const DataTableGrid = ({
   rowSelectionModel,
   columnWidths,
   saveColumnWidths,
+  getDetailPanelContent,
+  detailPanelExpandedRowIds,
+  onDetailPanelToggle,
 }: DataTableProps) => {
   const empty: readonly GridValidRowModel[] = [];
 
@@ -151,9 +187,39 @@ export const DataTableGrid = ({
     localWidths[col.field] !== undefined ? { ...col, width: localWidths[col.field] } : col
   );
 
-  const gridFinalizedColumns = showActionsColumn
-    ? displayedColumns.concat(actionsColumn)
-    : displayedColumns;
+  const hasDetailPanel = !!getDetailPanelContent;
+
+  const expandColumn: GridColDef = {
+    field: "__expand__",
+    headerName: "",
+    width: 50,
+    minWidth: 50,
+    maxWidth: 50,
+    sortable: false,
+    filterable: false,
+    disableColumnMenu: true,
+    resizable: false,
+    renderCell: ({ row }) => {
+      const isExpanded = detailPanelExpandedRowIds?.has(row.id);
+      return (
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDetailPanelToggle?.(row.id);
+          }}
+        >
+          {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+        </IconButton>
+      );
+    },
+  };
+
+  const gridFinalizedColumns = [
+    ...(hasDetailPanel ? [expandColumn] : []),
+    ...displayedColumns,
+    ...(showActionsColumn ? [actionsColumn] : []),
+  ];
 
   const handleColumnWidthChange = (params: GridColumnResizeParams) => {
     const newWidths = {
@@ -196,6 +262,18 @@ export const DataTableGrid = ({
         onRowSelectionModelChange={onRowSelectionModelChange}
         rowSelectionModel={rowSelectionModel}
         initialState={initialState}
+        {...(hasDetailPanel
+          ? {
+              slots: { row: DetailPanelRow },
+              slotProps: {
+                row: {
+                  detailPanelExpandedRowIds,
+                  getDetailPanelContent,
+                },
+              },
+              disableVirtualization: true,
+            }
+          : {})}
       />
     </DataTableContainer>
   );

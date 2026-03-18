@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   defaultFilterLimit,
   getBasicExportFilterQuery,
@@ -12,6 +12,7 @@ import {
   GridValidRowModel,
   GridColumnVisibilityModel,
 } from "@mui/x-data-grid";
+import type { GridRowId } from "@mui/x-data-grid/models/gridRows";
 import { GridInitialStateCommunity } from "@mui/x-data-grid/models/gridStateCommunity";
 import { DataListContainer } from "./index.styled";
 import { DataTableGrid } from "@components/data-table";
@@ -70,6 +71,9 @@ type dataListProps<TModel extends GridValidRowModel> = {
   rowSelectionModel?: GridRowSelectionModel;
   onRowSelectionModelChange?: (rowSelectionModel: GridRowSelectionModel) => void;
   filterFields?: FieldDefinition[];
+  getDetailPanelContent?: (row: TModel) => ReactNode;
+  detailPanelExpandedRowIds?: Set<GridRowId>;
+  onDetailPanelToggle?: (rowId: GridRowId) => void;
 };
 
 export const DataList = <TModel extends GridValidRowModel>({
@@ -102,6 +106,9 @@ export const DataList = <TModel extends GridValidRowModel>({
   rowSelectionModel: controlledRowSelectionModel,
   onRowSelectionModelChange,
   filterFields,
+  getDetailPanelContent,
+  detailPanelExpandedRowIds,
+  onDetailPanelToggle,
 }: dataListProps<TModel>) => {
   const { notificationsService } = useNotificationsService();
   const { setBusy } = useModuleWrapperContext();
@@ -599,6 +606,16 @@ export const DataList = <TModel extends GridValidRowModel>({
           rowSelectionModel={rowSelectionModel}
           columnWidths={columnWidths}
           saveColumnWidths={saveColumnWidths}
+          getDetailPanelContent={
+            getDetailPanelContent as
+              | ((
+                  // eslint-disable-next-line
+                  row: any
+                ) => ReactNode)
+              | undefined
+          }
+          detailPanelExpandedRowIds={detailPanelExpandedRowIds}
+          onDetailPanelToggle={onDetailPanelToggle}
         />
       )}
     </DataListContainer>
