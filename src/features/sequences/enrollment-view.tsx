@@ -192,6 +192,24 @@ const formatEmailSender = (preview?: StepEmailPreviewDto | null) => {
   return fromName || fromEmail || null;
 };
 
+const formatEmailRecipient = (
+  contact?: ContactDetailsDto | null,
+  fallbackContactId?: number | null
+) => {
+  const contactDisplayName = contact?.fullName?.trim();
+  const contactEmail = contact?.email?.trim();
+
+  if (contactDisplayName && contactEmail) {
+    return `${contactDisplayName} <${contactEmail}>`;
+  }
+
+  if (contactDisplayName || contactEmail) {
+    return contactDisplayName || contactEmail || null;
+  }
+
+  return fallbackContactId ? `Contact #${fallbackContactId}` : null;
+};
+
 const renderEmailBody = (body?: string | null) => {
   const content = (body || "").trim();
   if (!content) {
@@ -342,6 +360,7 @@ export const SequenceEnrollmentView = () => {
 
   const contact = enrollment.contact;
   const contactName = getContactDisplayName(contact, enrollment.contactId);
+  const contactRecipient = formatEmailRecipient(contact, enrollment.contactId);
   const contactRoute = getContactRoute(contact?.id ?? enrollment.contactId);
   const status = enrollment.status || "Active";
   const isCompleted = status === "Completed";
@@ -833,6 +852,15 @@ export const SequenceEnrollmentView = () => {
                                     From: {formatEmailSender(step.emailPreview)}
                                   </Typography>
                                 )}
+                                {contactRecipient && (
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ mb: 0.75 }}
+                                  >
+                                    To: {contactRecipient}
+                                  </Typography>
+                                )}
                                 <Typography
                                   component="button"
                                   type="button"
@@ -993,17 +1021,13 @@ export const SequenceEnrollmentView = () => {
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              From name
-            </Typography>
-            <Typography variant="body2">{emailPreview?.fromName || "-"}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              From email
-            </Typography>
-            <Typography variant="body2">{emailPreview?.fromEmail || "-"}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              Sender
+              From:
             </Typography>
             <Typography variant="body2">{formatEmailSender(emailPreview) || "-"}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              To:
+            </Typography>
+            <Typography variant="body2">{contactRecipient || "-"}</Typography>
           </Box>
           {renderEmailBody(emailPreview?.body)}
         </DialogContent>
