@@ -184,7 +184,7 @@ export const EmailTemplatesList = () => {
         <Select
           labelId="email-group-filter-label"
           label="Group"
-          value={selectedGroupId}
+          value={emailGroups.some((g) => g.id === selectedGroupId) ? selectedGroupId : ""}
           onChange={(e) => setSelectedGroupId(e.target.value as number | "")}
         >
           <MenuItem value="">All groups</MenuItem>
