@@ -126,8 +126,10 @@ export const LeadCaptureSettings: React.FC<LeadCaptureSettingsProps> = ({
                 <Grid container spacing={2} sx={{ mt: 1 }}>
                   {strategy.fields.map((field) => {
                     const key = field.key || "";
+                    const isTextArea = field.type === "textarea";
+
                     return (
-                      <Grid size={{ xs: 12, sm: 6 }} key={key}>
+                      <Grid size={{ xs: 12, sm: isTextArea ? 12 : 6 }} key={key}>
                         <DynamicSettingField
                           setting={field}
                           value={formData[key] || ""}

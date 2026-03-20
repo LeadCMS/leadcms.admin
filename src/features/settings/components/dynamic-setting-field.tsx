@@ -90,7 +90,7 @@ export const DynamicSettingField: React.FC<DynamicSettingFieldProps> = ({
   const description = setting.description || "";
   const label = labelOverride || keyToLabel(key.split(".").slice(-1)[0] || key);
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(key, e.target.value);
   };
 
@@ -190,8 +190,7 @@ export const DynamicSettingField: React.FC<DynamicSettingFieldProps> = ({
       <TextField
         fullWidth
         multiline
-        minRows={3}
-        maxRows={8}
+        minRows={4}
         label={label}
         value={value}
         onChange={handleTextChange}
