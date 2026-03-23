@@ -58,7 +58,11 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  Paperclip,
+  Plus,
+  FolderOpen,
 } from "lucide-react";
+import { ImageSelectionDialog } from "@components/image-selection-dialog/image-selection-dialog";
 import { HtmlVisualEditor } from "@components/html-visual-editor";
 import { TemplatePreview, normalizePlaceholders } from "@components/template-preview";
 import MonacoEditor, { DiffEditor as MonacoDiffEditor, loader } from "@monaco-editor/react";
@@ -253,6 +257,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const [aiDraftError, setAiDraftError] = useState<string | null>(null);
   const [aiDraftLoading, setAiDraftLoading] = useState(false);
   const [aiDraftPrompt, setAiDraftPrompt] = useState("");
+  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
 
   // Form
   const submitFunc = async (
@@ -312,6 +317,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
       bodyTemplate: "",
       emailGroupId: 0,
       category: "General",
+      attachments: [],
     } as EmailTemplateDetailsDto,
     onSubmit: submit,
     validateOnChange: false,
@@ -1269,6 +1275,90 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                         </Typography>
                       </Grid>
                     )}
+
+                    {/* Attachments */}
+                    <Grid size={{ xs: 12 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          mb: 1,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Paperclip size={16} />
+                          <Typography variant="subtitle2">Attachments</Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          <Button
+                            size="small"
+                            startIcon={<FolderOpen size={16} />}
+                            onClick={() => setAttachmentDialogOpen(true)}
+                            disabled={readonly}
+                          >
+                            Browse Media
+                          </Button>
+                          <Button
+                            size="small"
+                            startIcon={<Plus size={16} />}
+                            onClick={() => {
+                              const current = formik.values.attachments || [];
+                              autoCompleteValueUpdate("attachments", [...current, ""]);
+                            }}
+                            disabled={readonly}
+                          >
+                            Add
+                          </Button>
+                        </Box>
+                      </Box>
+                      {(formik.values.attachments || []).length > 0 ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                          {(formik.values.attachments || []).map((attachment, index) => (
+                            <Box key={index} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                value={attachment}
+                                disabled={readonly}
+                                placeholder="e.g. scope/file.pdf or {{ variable }}"
+                                onChange={(e) => {
+                                  const updated = [...(formik.values.attachments || [])];
+                                  updated[index] = e.target.value;
+                                  autoCompleteValueUpdate("attachments", updated);
+                                }}
+                              />
+                              <IconButton
+                                size="small"
+                                disabled={readonly}
+                                onClick={() => {
+                                  const updated = (formik.values.attachments || []).filter(
+                                    (_, i) => i !== index
+                                  );
+                                  autoCompleteValueUpdate("attachments", updated);
+                                }}
+                              >
+                                <XCircle size={18} />
+                              </IconButton>
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          No attachments added yet.
+                        </Typography>
+                      )}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 0.5, display: "block" }}
+                      >
+                        Supports Liquid syntax for dynamic paths, e.g. {"{{ fileName }}"}.
+                        Parameters are set by the site when sending a contact form request and can
+                        be any of the ContactUs fields (firstName, lastName, email, companyName,
+                        subject, message, phone, title, etc.) or custom values passed via ExtraData.
+                      </Typography>
+                    </Grid>
                   </Grid>
                 )}
               </Box>
@@ -1379,6 +1469,23 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
           category: (formik.values.category || "General") as EmailTemplateCategory,
           prompt: aiDraftPrompt || undefined,
         }}
+      />
+
+      {/* Attachment Media Selection Dialog */}
+      <ImageSelectionDialog
+        open={attachmentDialogOpen}
+        onClose={() => setAttachmentDialogOpen(false)}
+        onSelect={() => undefined}
+        onSelectMultipleItems={(items) => {
+          const current = formik.values.attachments || [];
+          const paths = items.map((item) =>
+            item.scopeUid ? `${item.scopeUid}/${item.name}` : item.name
+          );
+          autoCompleteValueUpdate("attachments", [...current, ...paths]);
+          setAttachmentDialogOpen(false);
+        }}
+        selectionMode="multiple"
+        acceptAllFiles
       />
     </form>
   );

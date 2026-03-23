@@ -6883,6 +6883,11 @@ export interface EmailTemplateCreateDto {
    */
   translationKey?: string | null;
   /**
+   * Attachments
+   * @example ["string1","string2"]
+   */
+  attachments?: string[];
+  /**
    * Email Group Id
    * @format int32
    * @example 1
@@ -6949,6 +6954,11 @@ export interface EmailTemplateDetailsDto {
    * @example "string"
    */
   translationKey?: string | null;
+  /**
+   * Attachments
+   * @example ["string1","string2"]
+   */
+  attachments?: string[];
   /**
    * Email Group Id
    * @format int32
@@ -7045,6 +7055,11 @@ export interface EmailTemplateEditRequest {
    * @example "string"
    */
   translationKey?: string | null;
+  /**
+   * Attachments
+   * @example ["string1","string2"]
+   */
+  attachments?: string[] | null;
   /**
    * Email Group Id
    * @format int32
@@ -7315,6 +7330,11 @@ export interface EmailTemplateUpdateDto {
    * @example "string"
    */
   translationKey?: string | null;
+  /**
+   * Attachments
+   * @example ["string1","string2"]
+   */
+  attachments?: string[] | null;
   /**
    * Email Group Id
    * @format int32
@@ -9786,12 +9806,6 @@ export interface SequenceStepCreateDto {
    */
   name: string;
   /**
-   * Position
-   * @format int32
-   * @example 1
-   */
-  position?: number | null;
-  /**
    * Type
    * @example "Email"
    */
@@ -9832,12 +9846,6 @@ export interface SequenceStepDetailsDto {
    * @example 1
    */
   emailTemplateId?: number;
-  /**
-   * Position
-   * @format int32
-   * @example 1
-   */
-  position?: number;
   /**
    * Name
    * @example "string"
@@ -9889,11 +9897,6 @@ export interface SequenceStepDetailsDto {
   updatedAt?: string | null;
 }
 
-export interface SequenceStepReorderDto {
-  /** Step Ids */
-  stepIds: number[];
-}
-
 export interface SequenceStepTiming {
   delay?: SequenceStepDelay;
   /**
@@ -9906,21 +9909,6 @@ export interface SequenceStepTiming {
    * @example ["string1","string2"]
    */
   allowedWeekDays?: string[] | null;
-}
-
-export interface SequenceStepUpdateDto {
-  /**
-   * Email Template Id
-   * @format int32
-   * @example 1
-   */
-  emailTemplateId?: number | null;
-  /**
-   * Name
-   * @example "string"
-   */
-  name?: string | null;
-  timing?: SequenceStepTiming;
 }
 
 export interface SequenceUpdateDto {
@@ -10982,7 +10970,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.4.16.0
+ * @version 1.5.5.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -19283,134 +19271,6 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags SequenceSteps
-     * @name SequencesStepsList
-     * @request GET:/api/sequences/{sequenceId}/steps
-     * @secure
-     */
-    sequencesStepsList: (sequenceId: number, params: RequestParams = {}) =>
-      this.request<SequenceStepDetailsDto[], void | ProblemDetails>({
-        path: `/api/sequences/${sequenceId}/steps`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags SequenceSteps
-     * @name SequencesStepsCreate
-     * @request POST:/api/sequences/{sequenceId}/steps
-     * @secure
-     */
-    sequencesStepsCreate: (
-      sequenceId: number,
-      data: SequenceStepCreateDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<SequenceStepDetailsDto, void | ProblemDetails>({
-        path: `/api/sequences/${sequenceId}/steps`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags SequenceSteps
-     * @name SequencesStepsDetail
-     * @request GET:/api/sequences/{sequenceId}/steps/{stepId}
-     * @secure
-     */
-    sequencesStepsDetail: (
-      sequenceId: number,
-      stepId: number,
-      params: RequestParams = {},
-    ) =>
-      this.request<SequenceStepDetailsDto, void | ProblemDetails>({
-        path: `/api/sequences/${sequenceId}/steps/${stepId}`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags SequenceSteps
-     * @name SequencesStepsPartialUpdate
-     * @request PATCH:/api/sequences/{sequenceId}/steps/{stepId}
-     * @secure
-     */
-    sequencesStepsPartialUpdate: (
-      sequenceId: number,
-      stepId: number,
-      data: SequenceStepUpdateDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<SequenceStepDetailsDto, void | ProblemDetails>({
-        path: `/api/sequences/${sequenceId}/steps/${stepId}`,
-        method: "PATCH",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags SequenceSteps
-     * @name SequencesStepsDelete
-     * @request DELETE:/api/sequences/{sequenceId}/steps/{stepId}
-     * @secure
-     */
-    sequencesStepsDelete: (
-      sequenceId: number,
-      stepId: number,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, void | ProblemDetails>({
-        path: `/api/sequences/${sequenceId}/steps/${stepId}`,
-        method: "DELETE",
-        secure: true,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags SequenceSteps
-     * @name SequencesStepsReorderCreate
-     * @request POST:/api/sequences/{sequenceId}/steps/reorder
-     * @secure
-     */
-    sequencesStepsReorderCreate: (
-      sequenceId: number,
-      data: SequenceStepReorderDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<SequenceStepDetailsDto[], void | ProblemDetails>({
-        path: `/api/sequences/${sequenceId}/steps/reorder`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
         ...params,
       }),
 

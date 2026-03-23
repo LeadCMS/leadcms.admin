@@ -40,9 +40,11 @@ interface ImageSelectionDialogProps {
   onSelect: (imageUrl: string) => void;
   onSelectItem?: (item: MediaItem) => void;
   onSelectMultiple?: (imageUrls: string[]) => void;
+  onSelectMultipleItems?: (items: MediaItem[]) => void;
   initialFolder?: string;
   selectionMode?: "single" | "multiple";
   maxSelection?: number;
+  acceptAllFiles?: boolean;
 }
 
 // Helper for file size formatting
@@ -60,9 +62,11 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
   onSelect,
   onSelectItem,
   onSelectMultiple,
+  onSelectMultipleItems,
   initialFolder = "",
   selectionMode = "single",
   maxSelection,
+  acceptAllFiles = false,
 }) => {
   const { client } = useRequestContext();
   const api = useMemo(() => wrapApiClient(client.api), [client.api]);
@@ -91,10 +95,13 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
     }
   }, [initialFolder]);
 
-  // Filter items to only show images
+  // Filter items to show images or all files
   const imageItems = useMemo(
-    () => items.filter((item) => item.mimeType.startsWith("image/")),
-    [items]
+    () =>
+      acceptAllFiles
+        ? items.filter((item) => item.mimeType !== "inode/directory")
+        : items.filter((item) => item.mimeType.startsWith("image/")),
+    [items, acceptAllFiles]
   );
 
   const folderItems = useMemo(
@@ -194,6 +201,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
     if (isMultiSelect) {
       if (selectedItems.length > 0) {
         onSelectMultiple?.(selectedItems.map((item) => item.location));
+        onSelectMultipleItems?.(selectedItems);
       }
       return;
     }
@@ -209,7 +217,13 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h6">
-            {isMultiSelect ? "Select Images" : "Select Image"}
+            {isMultiSelect
+              ? acceptAllFiles
+                ? "Select Files"
+                : "Select Images"
+              : acceptAllFiles
+              ? "Select File"
+              : "Select Image"}
             {isMultiSelect && selectedCount > 0 ? ` (${selectedCount})` : ""}
           </Typography>
           <IconButton onClick={onClose}>
@@ -225,7 +239,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
             <TextField
               fullWidth
               size="small"
-              placeholder="Search images..."
+              placeholder={acceptAllFiles ? "Search files..." : "Search images..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               InputProps={{
@@ -333,11 +347,11 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                   </Box>
                 )}
 
-                {/* Images */}
+                {/* Files */}
                 {imageItems.length > 0 ? (
                   <Box>
                     <Typography variant="subtitle2" gutterBottom>
-                      Images ({imageItems.length})
+                      {acceptAllFiles ? "Files" : "Images"} ({imageItems.length})
                     </Typography>
                     <Grid container spacing={2}>
                       {imageItems.map((item) => (
@@ -382,29 +396,55 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                             <Box
                               sx={{
                                 position: "relative",
-                                paddingBottom: "75%", // 4:3 aspect ratio
+                                paddingBottom: "75%",
                                 overflow: "hidden",
                                 bgcolor: "#F5F5F5",
                               }}
                             >
-                              <Box
-                                component="img"
-                                src={buildAbsoluteUrlWithCacheBust(
-                                  item.location,
-                                  item.size,
-                                  item.updatedAt
-                                )}
-                                alt={item.name}
-                                title={item.description || ""}
-                                sx={{
-                                  position: "absolute",
-                                  top: 0,
-                                  left: 0,
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                }}
-                              />
+                              {item.mimeType.startsWith("image/") ? (
+                                <Box
+                                  component="img"
+                                  src={buildAbsoluteUrlWithCacheBust(
+                                    item.location,
+                                    item.size,
+                                    item.updatedAt
+                                  )}
+                                  alt={item.name}
+                                  title={item.description || ""}
+                                  sx={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  <Typography
+                                    variant="h5"
+                                    color="text.secondary"
+                                    sx={{
+                                      textTransform: "uppercase",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    {item.extension.replace(".", "")}
+                                  </Typography>
+                                </Box>
+                              )}
                             </Box>
                             <Box p={1.5}>
                               <Typography
@@ -442,7 +482,13 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                 ) : (
                   <Box textAlign="center" py={4}>
                     <Typography color="text.secondary">
-                      {search ? "No images found for your search" : "No images in this folder"}
+                      {search
+                        ? acceptAllFiles
+                          ? "No files found for your search"
+                          : "No images found for your search"
+                        : acceptAllFiles
+                        ? "No files in this folder"
+                        : "No images in this folder"}
                     </Typography>
                   </Box>
                 )}
@@ -455,7 +501,13 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button variant="contained" onClick={handleConfirmSelection} disabled={selectedCount === 0}>
-          {isMultiSelect ? "Select Images" : "Select Image"}
+          {isMultiSelect
+            ? acceptAllFiles
+              ? "Select Files"
+              : "Select Images"
+            : acceptAllFiles
+            ? "Select File"
+            : "Select Image"}
         </Button>
       </DialogActions>
     </Dialog>
