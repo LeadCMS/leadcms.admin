@@ -33,7 +33,7 @@ import {
   SegmentRule,
   SegmentUpdateDto,
 } from "lib/network/swagger-client";
-import { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { DataList } from "@components/data-list";
 import { useRequestContext } from "providers/request-provider";
 import { RuleBuilder } from "../components/rule-builder";
@@ -44,7 +44,6 @@ import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { parseApiError, toPromiseError } from "@utils/api-error-parser";
 import { useConfig } from "@providers/config-provider";
 import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
-import { getFormattedDateOnly } from "utils/general-helper";
 import { useSearchParams } from "react-router-dom";
 
 const defaultRuleGroup: RuleGroup = {
@@ -788,96 +787,35 @@ export const SegmentForm = ({
           />
         ) : segmentType === "dynamic" ? (
           previewContacts.length > 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {previewContacts.map((contact) => (
-                <Box
-                  key={contact.id}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    p: 2,
-                    border: 1,
-                    borderColor: "divider",
-                    borderRadius: 1,
-                    "&:hover": { backgroundColor: "grey.50" },
-                  }}
-                >
-                  {contact.avatarUrl && (
-                    <Box
-                      component="img"
-                      src={contact.avatarUrl}
-                      alt="Avatar"
-                      sx={{ width: 32, height: 32, borderRadius: "50%" }}
-                    />
-                  )}
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography variant="body1" fontWeight="500">
-                      {contact.firstName || contact.lastName
-                        ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
-                        : "Unnamed Contact"}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      {contact.email}
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      flexShrink: 0,
-                      flexWrap: "wrap",
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    {contact.countryCode && (
-                      <Chip
-                        label={contact.countryCode}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
-                    )}
-                    {hasOrders && (contact.ordersCount ?? 0) > 0 && (
-                      <Chip
-                        label={`${contact.ordersCount} orders`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
-                    )}
-                    {hasDeals && (contact.dealsCount ?? 0) > 0 && (
-                      <Chip
-                        label={`${contact.dealsCount} deals`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
-                    )}
-                    {hasOrders && (contact.totalRevenue ?? 0) > 0 && (
-                      <Chip
-                        label={`$${contact.totalRevenue?.toLocaleString()}`}
-                        size="small"
-                        color="success"
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
-                    )}
-                    {hasOrders && contact.lastOrderDate && (
-                      <Chip
-                        label={`Last order: ${getFormattedDateOnly(contact.lastOrderDate)}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
-                    )}
-                  </Box>
-                </Box>
-              ))}
-            </Box>
+            <DataGrid
+              rows={previewContacts}
+              columns={staticContactsColumns}
+              disableRowSelectionOnClick
+              pageSizeOptions={[10, 25, 50]}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 10 },
+                },
+                columns: {
+                  columnVisibilityModel: {
+                    firstName: false,
+                    lastName: false,
+                    companyName: false,
+                    phone: false,
+                    createdAt: false,
+                    updatedAt: false,
+                  },
+                },
+              }}
+            />
           ) : (
-            <Box sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 6,
+                color: "text.secondary",
+              }}
+            >
               <Box component={Users} size={48} sx={{ opacity: 0.5 }} />
               <Typography variant="h6" sx={{ mt: 2 }}>
                 Matching contacts will appear here automatically
@@ -888,12 +826,18 @@ export const SegmentForm = ({
             </Box>
           )
         ) : (
-          <Box sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
+          <Box
+            sx={{
+              textAlign: "center",
+              py: 6,
+              color: "text.secondary",
+            }}
+          >
             <Users size={48} style={{ opacity: 0.5 }} />
             <Typography variant="h6" sx={{ mt: 2 }}>
               {staticContactIds.length === 0
                 ? "No contacts selected yet"
-                : "Contacts will be shown here after saving"}
+                : "Contacts will appear after saving"}
             </Typography>
           </Box>
         )}
