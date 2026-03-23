@@ -40,7 +40,8 @@ export type FieldCategory =
   | "Orders"
   | "Order Items"
   | "Deals"
-  | "Email Logs";
+  | "Email Logs"
+  | "Last Email";
 
 // Available field definitions
 export interface FieldDefinition {
@@ -797,6 +798,73 @@ export const contactFields: FieldDefinition[] = [
     operators: numericOperators,
     requiredEntities: ["emailtemplate"],
   },
+
+  // ── Last Email (virtual) attributes ──
+  {
+    id: "lastEmail.status",
+    name: "Status",
+    type: "select",
+    category: "Last Email",
+    operators: selectOperators,
+    options: emailLogStatusOptions,
+  },
+  {
+    id: "lastEmail.subject",
+    name: "Subject",
+    type: "text",
+    category: "Last Email",
+    operators: textOperators,
+  },
+  {
+    id: "lastEmail.fromEmail",
+    name: "From Email",
+    type: "text",
+    category: "Last Email",
+    operators: textOperators,
+  },
+  {
+    id: "lastEmail.fromName",
+    name: "From Name",
+    type: "text",
+    category: "Last Email",
+    operators: textOperators,
+  },
+  {
+    id: "lastEmail.recipients",
+    name: "Recipients",
+    type: "text",
+    category: "Last Email",
+    operators: textOperators,
+  },
+  {
+    id: "lastEmail.createdAt",
+    name: "Created At",
+    type: "date",
+    category: "Last Email",
+    operators: dateOperators,
+  },
+  {
+    id: "lastEmail.campaignId",
+    name: "Campaign ID",
+    type: "number",
+    category: "Last Email",
+    operators: nullableNumericOperators,
+    requiredEntities: ["campaign"],
+  },
+  {
+    id: "lastEmail.sequenceId",
+    name: "Sequence ID",
+    type: "number",
+    category: "Last Email",
+    operators: nullableNumericOperators,
+  },
+  {
+    id: "lastEmail.scheduleId",
+    name: "Schedule ID",
+    type: "number",
+    category: "Last Email",
+    operators: nullableNumericOperators,
+  },
 ];
 
 // Group fields by category for the field selector
@@ -808,6 +876,7 @@ export const fieldCategories: FieldCategory[] = [
   "Order Items",
   "Deals",
   "Email Logs",
+  "Last Email",
 ];
 
 export const getAvailableContactFields = (availableEntities?: string[]): FieldDefinition[] => {

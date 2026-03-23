@@ -256,6 +256,16 @@ const fieldGroupHeaderSx = {
   zIndex: 2,
 };
 
+const getCategoryDisplayName = (category: string): string => {
+  if (category === "Email Logs") {
+    return "Email Logs (any match)";
+  }
+  if (category === "Last Email") {
+    return "Last Email (most recent)";
+  }
+  return category;
+};
+
 const buildFieldMenuItems = (availableEntities?: string[]) => {
   const availableFieldIds = new Set(
     getAvailableContactFields(availableEntities).map((field) => field.id)
@@ -266,7 +276,7 @@ const buildFieldMenuItems = (availableEntities?: string[]) => {
     if (fields.length === 0) continue;
     items.push(
       <ListSubheader key={`header-${category}`} sx={fieldGroupHeaderSx}>
-        {category}
+        {getCategoryDisplayName(category)}
       </ListSubheader>
     );
     for (const f of fields) {
