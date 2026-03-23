@@ -9,6 +9,7 @@ import {
 } from "@features/contacts/index.styled";
 import { ContactDetailsDto } from "lib/network/swagger-client";
 import type { PrimaryCurrencyConfig } from "@utils/currency-formatter";
+import { CoreModule, getViewFormRoute } from "lib/router";
 
 export const getSegmentContactColumns = (
   primaryCurrency: PrimaryCurrencyConfig | null | undefined,
@@ -85,7 +86,11 @@ export const getSegmentContactColumns = (
             <Avatar src={row.avatarUrl || undefined}></Avatar>
           </ListItemAvatar>
           <ContactNameListItemText
-            primary={displayName || "Unnamed Contact"}
+            primary={
+              <ContactHref href={`/${CoreModule.contacts}/${getViewFormRoute(row.id)}`}>
+                {displayName || "Unnamed Contact"}
+              </ContactHref>
+            }
             secondary={
               <Box
                 component="span"
