@@ -41,6 +41,7 @@ import {
   DialogContentText,
   DialogTitle,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
@@ -73,6 +74,7 @@ import {
   StopCircle,
 } from "lucide-react";
 import { showApiError } from "@utils/api-error-parser";
+import { TemplatePreviewDialog } from "@components/template-preview-dialog";
 
 const enrollmentGridSettingsStorageKey = "sequence-enrollments-grid-settings-v4";
 const deliveryGridSettingsStorageKey = "sequence-deliveries-grid-settings-v4";
@@ -1356,6 +1358,7 @@ export const SequenceView = () => {
   const [sequence, setSequence] = useState<SequenceDetailsDto | null>(null);
   const [statistics, setStatistics] = useState<SequenceStatisticsDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [previewStepIndex, setPreviewStepIndex] = useState<number | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const sequenceStorageSlot = String(id || "0");
   const [storedEnrollmentToolbarState, setStoredEnrollmentToolbarState] = useLocalStorage<
@@ -2394,12 +2397,29 @@ export const SequenceView = () => {
                               />
                             </Box>
                           </Box>
-                          <Chip
-                            label="Email"
-                            size="small"
-                            variant="outlined"
-                            icon={<Mail size={12} />}
-                          />
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Chip
+                              label="Email"
+                              size="small"
+                              variant="outlined"
+                              icon={<Mail size={12} />}
+                            />
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<Eye size={14} />}
+                              onClick={() => setPreviewStepIndex(idx)}
+                              disabled={!step.emailTemplateId}
+                            >
+                              Preview
+                            </Button>
+                          </Box>
                         </Box>
                       </CardContent>
                     </Card>
@@ -2850,6 +2870,16 @@ export const SequenceView = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <TemplatePreviewDialog
+        open={previewStepIndex !== null}
+        onClose={() => setPreviewStepIndex(null)}
+        steps={orderedSteps.map((s, i) => ({
+          name: getSequenceStepDisplayName(s, i),
+          templateId: s.emailTemplateId ?? null,
+        }))}
+        initialStepIndex={previewStepIndex ?? 0}
+      />
     </ModuleWrapper>
   );
 };

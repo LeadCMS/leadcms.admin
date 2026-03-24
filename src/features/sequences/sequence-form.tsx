@@ -56,6 +56,7 @@ import {
   ArrowUp,
   Calendar,
   Clock,
+  Eye,
   Info,
   Mail,
   Plus,
@@ -65,6 +66,7 @@ import {
   X,
 } from "lucide-react";
 import { showApiError } from "@utils/api-error-parser";
+import { TemplatePreviewDialog } from "@components/template-preview-dialog";
 import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { timezones } from "utils/constants";
 import { formatTimezoneLong } from "utils/timezone-helpers";
@@ -194,6 +196,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
   const [loading, setLoading] = useState(isEdit);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [previewStepIndex, setPreviewStepIndex] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [pendingActivateAction, setPendingActivateAction] = useState<(() => Promise<void>) | null>(
     null
@@ -1269,6 +1272,13 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
                             >
                               <IconButton
                                 size="small"
+                                onClick={() => setPreviewStepIndex(idx)}
+                                disabled={!step.emailTemplateId}
+                              >
+                                <Eye size={14} />
+                              </IconButton>
+                              <IconButton
+                                size="small"
                                 onClick={() => moveStep(step.localId, "up")}
                                 disabled={isReadOnly || idx === 0}
                               >
@@ -1991,6 +2001,17 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <TemplatePreviewDialog
+        open={previewStepIndex !== null}
+        onClose={() => setPreviewStepIndex(null)}
+        steps={sequenceSteps.map((s, i) => ({
+          name: s.name.trim() || `Step ${i + 1}`,
+          template: templates.find((t) => t.id === s.emailTemplateId) || null,
+          templateId: (s.emailTemplateId as number) || null,
+        }))}
+        initialStepIndex={previewStepIndex ?? 0}
+      />
     </ModuleWrapper>
   );
 };

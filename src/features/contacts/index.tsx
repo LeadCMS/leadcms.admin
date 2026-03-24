@@ -109,7 +109,8 @@ export const Contacts = () => {
 
   const getContactList = async (mainQuery: string, exportQuery?: string) => {
     dataExportQuery.current = exportQuery || "";
-    const includeFilter = "filter[include]=Account&filter[include]=Domain";
+    const includeFilter =
+      "filter[include]=Account&filter[include]=Domain" + "&filter[include]=Unsubscribe";
 
     // Add global language filter if active
     let globalLanguageQuery = "";
@@ -475,6 +476,13 @@ export const Contacts = () => {
       valueGetter: (value, row) =>
         row.domain?.disposable == null ? "null" : String(row.domain.disposable),
     },
+    {
+      field: "unsubscribe.reason",
+      headerName: "Unsubscribe Reason",
+      width: 200,
+      type: "string",
+      valueGetter: (value, row) => row.unsubscribe?.reason || "",
+    },
   ];
 
   const [columns, setColumns] = useState<GridColDef<ContactDetailsDto>[]>(buildColumns());
@@ -592,6 +600,7 @@ export const Contacts = () => {
               email: false,
               "domain.free": false,
               "domain.disposable": false,
+              "unsubscribe.reason": false,
             },
           },
           sorting: {

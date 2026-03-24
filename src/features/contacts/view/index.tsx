@@ -9,6 +9,7 @@ import {
   Divider,
   Tab,
   Tabs,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { Briefcase, Edit, Mail, MailX } from "lucide-react";
@@ -209,14 +210,16 @@ export const ContactBase = () => {
                 {contactName}
               </Typography>
               {contact?.unsubscribeId && (
-                <Chip
-                  icon={<MailX size={14} />}
-                  label="Unsubscribed"
-                  color="error"
-                  size="small"
-                  variant="outlined"
-                  sx={{ mx: 1, gap: 0.5, pl: 1 }}
-                />
+                <Tooltip title={contact.unsubscribe?.reason || "No reason provided"} arrow>
+                  <Chip
+                    icon={<MailX size={14} />}
+                    label="Unsubscribed"
+                    color="error"
+                    size="small"
+                    variant="outlined"
+                    sx={{ mx: 1, gap: 0.5, pl: 1 }}
+                  />
+                </Tooltip>
               )}
             </Box>
             {subtitleParts.length > 0 ? (

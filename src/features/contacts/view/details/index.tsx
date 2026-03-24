@@ -5,6 +5,7 @@ import {
   CardActionArea,
   CardContent,
   Chip,
+  CircularProgress,
   Divider,
   Grid,
   Typography,
@@ -17,6 +18,7 @@ import {
   Globe,
   Hash,
   Landmark,
+  ListOrdered,
   Mail,
   MailX,
   MapPin,
@@ -34,6 +36,7 @@ import { useConfig } from "@providers/config-provider";
 import { useCurrencyFormatter } from "@hooks";
 import { useRequestContext } from "@providers/request-provider";
 import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
+import { SequenceDetailsDto, SequenceEnrollmentDetailsDto } from "@lib/network/swagger-client";
 import {
   getContinentByCode,
   getCountryByCode,
@@ -43,6 +46,10 @@ import {
 import { timezones } from "utils/constants";
 import { formatTimezoneShort } from "utils/timezone-helpers";
 import { ContactViewOutletContext } from "../types";
+
+type EnrollmentWithSequence = SequenceEnrollmentDetailsDto & {
+  sequenceName: string;
+};
 
 type DetailRow = {
   label: string;
@@ -246,14 +253,17 @@ const SectionCard = ({ title, icon, rows, linkTo }: SectionProps) => {
 };
 
 export const ContactView = () => {
-  const { contact, isLoading } = useOutletContext<ContactViewOutletContext>();
+  const { contact, contactId, isLoading } = useOutletContext<ContactViewOutletContext>();
   const context = useRequestContext();
   const { config } = useConfig();
   const languages = config?.languages || [];
   const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
   const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
+  const hasSequences = hasEntity(config?.entities, ENTITY_KEYS.sequence);
   const [countryName, setCountryName] = useState<string>("");
   const [continentName, setContinentName] = useState<string>("");
+  const [enrollments, setEnrollments] = useState<EnrollmentWithSequence[]>([]);
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
 
   const { formatMoney } = useCurrencyFormatter();
 
@@ -280,6 +290,44 @@ export const ContactView = () => {
 
     loadLocationNames();
   }, [contact, context]);
+
+  useEffect(() => {
+    const cId = contactId ?? contact?.id;
+    if (!cId || !hasSequences) return;
+
+    let cancelled = false;
+    const loadEnrollments = async () => {
+      setEnrollmentsLoading(true);
+      try {
+        const client = context.client;
+        const seqRes = await client.api.sequencesList();
+        const sequences: SequenceDetailsDto[] = seqRes.data || [];
+
+        const contactFilter = `filter[where][contactId]=${cId}`;
+        const results = await Promise.all(
+          sequences.map(async (seq) => {
+            if (!seq.id) return [];
+            const res = await client.api.sequencesEnrollmentsList(seq.id, { query: contactFilter });
+            return (res.data || []).map((e) => ({
+              ...e,
+              sequenceName: seq.name,
+            }));
+          })
+        );
+
+        if (!cancelled) {
+          setEnrollments(results.flat());
+        }
+      } finally {
+        if (!cancelled) setEnrollmentsLoading(false);
+      }
+    };
+
+    loadEnrollments();
+    return () => {
+      cancelled = true;
+    };
+  }, [contactId, contact?.id, context, hasSequences]);
 
   if (!contact && isLoading) {
     return (
@@ -772,6 +820,125 @@ export const ContactView = () => {
                 </CardContent>
               </Card>
             </Grid>
+
+            {hasSequences && (
+              <Grid size={{ xs: 12 }}>
+                <Card variant="outlined">
+                  <CardContent sx={{ p: 3 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          color: "text.secondary",
+                          display: "flex",
+                        }}
+                      >
+                        <ListOrdered size={18} />
+                      </Box>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        Sequence Enrollments
+                      </Typography>
+                    </Box>
+                    {enrollmentsLoading ? (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          py: 2,
+                        }}
+                      >
+                        <CircularProgress size={24} />
+                      </Box>
+                    ) : enrollments.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        No sequence enrollments found.
+                      </Typography>
+                    ) : (
+                      <Box
+                        sx={{
+                          display: "grid",
+                          rowGap: 1.5,
+                        }}
+                      >
+                        {enrollments.map((enrollment) => (
+                          <Box
+                            key={enrollment.id}
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 1,
+                              border: "1px solid",
+                              borderColor: "divider",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mb: 0.5,
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                fontWeight={600}
+                                component="a"
+                                href={`/${CoreModule.sequences}/${getViewFormRoute(
+                                  enrollment.sequenceId ?? 0
+                                )}`}
+                                sx={{
+                                  color: "primary.main",
+                                  textDecoration: "none",
+                                  "&:hover": {
+                                    textDecoration: "underline",
+                                  },
+                                }}
+                              >
+                                {enrollment.sequenceName}
+                              </Typography>
+                              <Chip
+                                size="small"
+                                label={enrollment.status}
+                                color={
+                                  enrollment.status === "Active"
+                                    ? "success"
+                                    : enrollment.status === "Completed"
+                                    ? "info"
+                                    : "default"
+                                }
+                                variant="outlined"
+                              />
+                            </Box>
+                            <Typography variant="caption" color="text.secondary">
+                              Enrolled:{" "}
+                              {enrollment.enteredAt
+                                ? getFormattedDateTime(enrollment.enteredAt)
+                                : "—"}
+                            </Typography>
+                            {enrollment.exitReason && enrollment.exitReason !== "None" && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display: "block",
+                                }}
+                              >
+                                Exit reason: {enrollment.exitReason}
+                              </Typography>
+                            )}
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
 
             {socialRows.length > 0 && (
               <Grid size={{ xs: 12 }}>
