@@ -1182,11 +1182,13 @@ const buildDeliveryColumns = (
       headerName: "Step",
       minWidth: 220,
       valueGetter: (_value, row) => {
-        const step = sequence?.steps?.find((item) => item.id === row.sequenceStepId);
+        const stepIndex =
+          sequence?.steps?.findIndex((item) => item.id === row.sequenceStepId) ?? -1;
+        const step = stepIndex >= 0 ? sequence?.steps?.[stepIndex] : undefined;
         if (!step) {
           return row.sequenceStepId ? `Step #${row.sequenceStepId}` : "-";
         }
-        return getSequenceStepDisplayName(step, step.position ?? 0);
+        return getSequenceStepDisplayName(step, stepIndex);
       },
     },
     {
@@ -1769,10 +1771,9 @@ export const SequenceView = () => {
         useContactTimeZone: sequence.useContactTimeZone,
         timeZone: sequence.timeZone,
         enrollment: sequence.enrollment || undefined,
-        steps: (sequence.steps || []).map((step) => ({
+        steps: (sequence.steps || []).map((step, idx) => ({
           emailTemplateId: step.emailTemplateId as number,
-          name: step.name?.trim() || `Step ${(step.position ?? 0) + 1}`,
-          position: step.position,
+          name: step.name?.trim() || `Step ${idx + 1}`,
           type: step.type,
           timing: step.timing as {
             delay?: {
@@ -1991,9 +1992,7 @@ export const SequenceView = () => {
   const sentCount = statistics?.sentCount ?? sequence.sentCount ?? 0;
   const stepsCount = statistics?.stepsCount ?? sequence.steps?.length ?? 0;
   const totalEnrollments = activeCount + completedCount + exitedCount;
-  const orderedSteps = [...(sequence.steps || [])].sort(
-    (left, right) => (left.position || 0) - (right.position || 0)
-  );
+  const orderedSteps = sequence.steps || [];
   const fallbackDeliveryTotal = orderedSteps.reduce(
     (total, step) =>
       total +
@@ -2462,14 +2461,11 @@ export const SequenceView = () => {
                 }}
               >
                 <MenuItem value="">All steps</MenuItem>
-                {(sequence.steps || [])
-                  .slice()
-                  .sort((left, right) => (left.position || 0) - (right.position || 0))
-                  .map((step, index) => (
-                    <MenuItem key={step.id || index} value={step.id || ""}>
-                      {getSequenceStepDisplayName(step, step.position ?? index)}
-                    </MenuItem>
-                  ))}
+                {(sequence.steps || []).map((step, index) => (
+                  <MenuItem key={step.id || index} value={step.id || ""}>
+                    {getSequenceStepDisplayName(step, index)}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <Box sx={{ flexGrow: 1 }} />

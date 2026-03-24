@@ -263,18 +263,16 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
         }
         if (data.steps && data.steps.length > 0) {
           setSequenceSteps(
-            [...data.steps]
-              .sort((left, right) => (left.position || 0) - (right.position || 0))
-              .map((s: SequenceStepDetailsDto, idx: number) => ({
-                id: s.id ?? null,
-                localId: `step-${s.id || idx}`,
-                emailTemplateId: s.emailTemplateId || "",
-                name: s.name || "",
-                delayValue: s.timing?.delay?.value ?? 0,
-                delayUnit: s.timing?.delay?.unit ?? "days",
-                sendAt: s.timing?.sendAt ?? "",
-                allowedWeekDays: s.timing?.allowedWeekDays ?? [],
-              }))
+            (data.steps || []).map((s: SequenceStepDetailsDto, idx: number) => ({
+              id: s.id ?? null,
+              localId: `step-${s.id || idx}`,
+              emailTemplateId: s.emailTemplateId || "",
+              name: s.name || "",
+              delayValue: s.timing?.delay?.value ?? 0,
+              delayUnit: s.timing?.delay?.unit ?? "days",
+              sendAt: s.timing?.sendAt ?? "",
+              allowedWeekDays: s.timing?.allowedWeekDays ?? [],
+            }))
           );
         }
       } catch (error) {
@@ -418,7 +416,6 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
       id: s.id ?? undefined,
       emailTemplateId: s.emailTemplateId as number,
       name: s.name.trim() || `Step ${idx + 1}`,
-      position: idx,
       type: "Email" as const,
       timing: {
         delay: {

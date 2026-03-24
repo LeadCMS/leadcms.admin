@@ -187,10 +187,9 @@ export const Sequences = () => {
         useContactTimeZone: src.useContactTimeZone,
         timeZone: src.timeZone,
         enrollment: src.enrollment || undefined,
-        steps: (src.steps || []).map((step) => ({
+        steps: (src.steps || []).map((step, idx) => ({
           emailTemplateId: step.emailTemplateId as number,
-          name: step.name?.trim() || `Step ${((step.position ?? 0) as number) + 1}`,
-          position: step.position,
+          name: step.name?.trim() || `Step ${idx + 1}`,
           type: step.type,
           timing: step.timing as {
             delay?: {
@@ -333,10 +332,11 @@ export const Sequences = () => {
               color="text.secondary"
               sx={{
                 lineHeight: 1.3,
-                maxWidth: 250,
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
               }}
             >
               {row.description}
