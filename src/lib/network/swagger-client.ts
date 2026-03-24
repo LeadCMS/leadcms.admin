@@ -3381,6 +3381,8 @@ export interface ContactDetailsDto {
   unsubscribe?: UnsubscribeDetailsDto;
   /** Orders */
   orders?: OrderDetailsDto[] | null;
+  /** Enrollments */
+  enrollments?: SequenceEnrollmentDetailsDto[] | null;
 }
 
 export interface ContactDetailsDtoInt32SyncResponseDto {
@@ -10970,7 +10972,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.5.6.0
+ * @version 1.5.7.0
  */
 export class Api<
   SecurityDataType extends unknown,

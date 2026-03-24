@@ -98,6 +98,7 @@ export const ContactBase = () => {
   const contactName = getContactDisplayName(contact);
   const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
   const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
+  const hasSequences = hasEntity(config?.entities, ENTITY_KEYS.sequence);
 
   useEffect(() => {
     const nextTab = getTabFromPathname(pathname);
@@ -146,7 +147,8 @@ export const ContactBase = () => {
           contactId +
           "?filter%5Binclude%5D=Account" +
           "&filter%5Binclude%5D=Domain" +
-          "&filter%5Binclude%5D=Unsubscribe";
+          "&filter%5Binclude%5D=Unsubscribe" +
+          (hasSequences ? "&filter%5Binclude%5D=Enrollments" : "");
 
         const paramsWithIncludes = {
           path: includeRelationsPath,
