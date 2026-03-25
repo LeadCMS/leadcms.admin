@@ -12,7 +12,7 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 export interface BulkDeleteToolbarProps {
   selectedCount: number;
@@ -22,6 +22,7 @@ export interface BulkDeleteToolbarProps {
   onDeleteSuccess: () => void;
   onClearSelection: () => void;
   onToggleSelectAll: () => void;
+  onModifySelected?: () => void;
   notificationsService?: {
     success: (message: string) => void;
     error: (message: string) => void;
@@ -36,6 +37,7 @@ export const BulkDeleteToolbar = ({
   onDeleteSuccess,
   onClearSelection,
   onToggleSelectAll,
+  onModifySelected,
   notificationsService,
 }: BulkDeleteToolbarProps) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -91,6 +93,17 @@ export const BulkDeleteToolbar = ({
         >
           Delete Selected
         </Button>
+        {onModifySelected && (
+          <Button
+            size="small"
+            variant="outlined"
+            color="primary"
+            startIcon={<Pencil size={16} />}
+            onClick={onModifySelected}
+          >
+            Modify Selected
+          </Button>
+        )}
         <Button size="small" variant="text" onClick={onClearSelection}>
           Clear Selection
         </Button>

@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { OrderDetailsDto, OrderItemDetailsDto } from "lib/network/swagger-client";
+import { OrderDetailsDto, OrderImportDto, OrderItemDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import {
   defaultFilterOrderColumn,
@@ -22,12 +22,18 @@ import { SearchBar } from "@components/search-bar";
 import {
   Button,
   Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { Plus, Upload, Download, Filter, Settings2, Package } from "lucide-react";
@@ -38,6 +44,7 @@ import { ToolbarButton } from "@components/tool-bar-button";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { getWhereFilterQuery } from "@providers/query-provider";
 import { useCurrencyFormatter } from "@hooks";
+import type { BulkEditFieldOption } from "@components/bulk-edit-dialog";
 
 const OrderItemsPreview = ({
   items,
@@ -152,6 +159,72 @@ export const Orders = () => {
   useEffect(() => {
     setRefreshTrigger((prev) => prev + 1);
   }, [selectedLanguage]);
+
+  const orderBulkEditFields: BulkEditFieldOption[] = [
+    { key: "status", label: "Status" },
+    { key: "exchangeRate", label: "Exchange Rate" },
+    {
+      key: "affiliateName",
+      label: "Affiliate",
+      nullable: true,
+    },
+  ];
+
+  const orderStatuses = ["Pending", "Paid", "Cancelled", "Refunded", "Failed"] as const;
+
+  const renderOrderBulkEditField = (
+    fieldKey: string,
+    value: unknown,
+    onChange: (value: unknown) => void
+  ) => {
+    switch (fieldKey) {
+      case "status":
+        return (
+          <FormControl fullWidth size="small">
+            <InputLabel>Status</InputLabel>
+            <Select
+              label="Status"
+              value={(value as string) || ""}
+              onChange={(e) => onChange(e.target.value)}
+            >
+              {orderStatuses.map((s) => (
+                <MenuItem key={s} value={s}>
+                  {s}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        );
+      case "exchangeRate":
+        return (
+          <Tooltip title="Must contain only numbers">
+            <TextField
+              size="small"
+              fullWidth
+              type="number"
+              label="Exchange Rate"
+              value={value !== null && value !== undefined ? value : ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                onChange(val === "" ? null : parseFloat(val));
+              }}
+            />
+          </Tooltip>
+        );
+      case "affiliateName":
+        return (
+          <TextField
+            size="small"
+            fullWidth
+            label="Affiliate Name"
+            value={(value as string) ?? ""}
+            onChange={(e) => onChange(e.target.value || null)}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   const getOrderList = async (mainQuery: string, exportQuery?: string) => {
     dataExportQuery.current = exportQuery || "";
@@ -453,6 +526,18 @@ export const Orders = () => {
           await client.api.ordersBulkDelete(ids.map(Number));
         }}
         bulkDeleteEntityName="order"
+        onBulkEdit={async (ids, fields) => {
+          const payload = ids.map(
+            (id) =>
+              ({
+                id: Number(id),
+                ...fields,
+              } as OrderImportDto)
+          );
+          await client.api.ordersImportCreate(payload);
+        }}
+        bulkEditFieldOptions={orderBulkEditFields}
+        renderBulkEditField={renderOrderBulkEditField}
         getDetailPanelContent={getDetailPanelContent}
         detailPanelExpandedRowIds={expandedRowIds}
         onDetailPanelToggle={handleDetailPanelToggle}

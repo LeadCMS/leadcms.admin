@@ -1,5 +1,6 @@
 import {
   Avatar,
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -24,7 +25,7 @@ import {
 import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
 import { GridColDef } from "@mui/x-data-grid";
 import { CoreModule, getAddFormRoute } from "lib/router";
-import { dataListBreadcrumbLinks } from "utils/constants";
+import { dataListBreadcrumbLinks, timezones } from "utils/constants";
 import { getTimezoneInfo } from "utils/timezone-helpers";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
@@ -43,6 +44,9 @@ import { getWhereFilterQuery } from "@providers/query-provider";
 import { useConfig } from "@providers/config-provider";
 import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { useCurrencyFormatter } from "@hooks";
+import { getCountryList } from "@utils/general-helper";
+import { KnownTagsAutocomplete } from "@components/known-tags-autocomplete";
+import type { BulkEditFieldOption } from "@components/bulk-edit-dialog";
 
 type ContactGridSettings = DataListSettings & {
   segmentId?: number | "";
@@ -73,6 +77,10 @@ export const Contacts = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [segments, setSegments] = useState<SegmentDetailsDto[]>([]);
   const [segmentsLoaded, setSegmentsLoaded] = useState(false);
+  const [countryList, setCountryList] = useState<{ code: string; name: string }[]>([]);
+
+  const requestContext = { client };
+  const languages = config?.languages || [];
 
   const dataExportQuery = useRef("");
 
@@ -92,6 +100,16 @@ export const Contacts = () => {
   }, [client]);
 
   useEffect(() => {
+    const loadCountries = async () => {
+      const data = await getCountryList(requestContext);
+      if (data) {
+        setCountryList(Object.entries(data).map(([code, name]) => ({ code, name })));
+      }
+    };
+    void loadCountries();
+  }, [client]);
+
+  useEffect(() => {
     if (selectedSegmentId === "" || !segmentsLoaded) {
       return;
     }
@@ -106,6 +124,87 @@ export const Contacts = () => {
   useEffect(() => {
     setRefreshTrigger((prev) => prev + 1);
   }, [selectedLanguage, selectedSegmentId]);
+
+  const contactBulkEditFields: BulkEditFieldOption[] = [
+    { key: "language", label: "Language", nullable: true },
+    { key: "timezone", label: "Timezone", nullable: true },
+    { key: "countryCode", label: "Country", nullable: true },
+    { key: "companyName", label: "Company Name", nullable: true },
+    { key: "tags", label: "Tags", nullable: true },
+  ];
+
+  const renderContactBulkEditField = (
+    fieldKey: string,
+    value: unknown,
+    onChange: (value: unknown) => void
+  ) => {
+    switch (fieldKey) {
+      case "language":
+        return (
+          <Autocomplete
+            size="small"
+            fullWidth
+            options={languages}
+            getOptionLabel={(o) => o.name || ""}
+            value={languages.find((l) => l.code === value) || null}
+            onChange={(_, val) => onChange(val?.code || null)}
+            renderInput={(params) => (
+              <TextField {...params} label="Language" placeholder="Select language" />
+            )}
+          />
+        );
+      case "timezone":
+        return (
+          <Autocomplete
+            size="small"
+            fullWidth
+            options={timezones}
+            getOptionLabel={(o) => o.label}
+            value={timezones.find((t) => t.value === value) || null}
+            onChange={(_, val) => onChange(val?.value ?? null)}
+            renderInput={(params) => (
+              <TextField {...params} label="Timezone" placeholder="Select timezone" />
+            )}
+          />
+        );
+      case "countryCode":
+        return (
+          <Autocomplete
+            size="small"
+            fullWidth
+            options={countryList}
+            getOptionLabel={(o) => o.name}
+            value={countryList.find((c) => c.code === value) || null}
+            onChange={(_, val) => onChange(val?.code || null)}
+            renderInput={(params) => (
+              <TextField {...params} label="Country" placeholder="Select country" />
+            )}
+          />
+        );
+      case "companyName":
+        return (
+          <TextField
+            size="small"
+            fullWidth
+            label="Company Name"
+            value={(value as string) ?? ""}
+            onChange={(e) => onChange(e.target.value || null)}
+          />
+        );
+      case "tags":
+        return (
+          <KnownTagsAutocomplete
+            entityType="contacts"
+            label="Tags"
+            placeholder="Add tag"
+            value={(value as string[]) || []}
+            onChange={(val) => onChange(val)}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   const getContactList = async (mainQuery: string, exportQuery?: string) => {
     dataExportQuery.current = exportQuery || "";
@@ -621,6 +720,12 @@ export const Contacts = () => {
           await client.api.contactsBulkDelete(ids.map(Number));
         }}
         bulkDeleteEntityName="contact"
+        onBulkEdit={async (ids, fields) => {
+          const payload: ContactImportDto[] = ids.map((id) => ({ id: Number(id), ...fields }));
+          await client.api.contactsImportCreate(payload);
+        }}
+        bulkEditFieldOptions={contactBulkEditFields}
+        renderBulkEditField={renderContactBulkEditField}
       ></DataList>
     </ModuleWrapper>
   );

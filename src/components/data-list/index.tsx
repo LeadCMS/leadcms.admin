@@ -30,6 +30,11 @@ import { buildExportQueryString } from "@components/export";
 import { getModuleNameFromUrl } from "@utils/general-helper";
 import { downloadExportFile } from "@components/download";
 import { BulkDeleteToolbar } from "@components/bulk-delete-toolbar";
+import {
+  BulkEditDialog,
+  BulkEditFieldOption,
+  BulkEditFieldRenderer,
+} from "@components/bulk-edit-dialog";
 import { parseApiError } from "@utils/api-error-parser";
 import { AlertCircle } from "lucide-react";
 import { Box, Typography } from "@mui/material";
@@ -66,6 +71,9 @@ type dataListProps<TModel extends GridValidRowModel> = {
   refreshFlag?: number;
   onBulkDelete?: (ids: (string | number)[]) => Promise<void>;
   bulkDeleteEntityName?: string;
+  onBulkEdit?: (ids: (string | number)[], fields: Record<string, unknown>) => Promise<void>;
+  bulkEditFieldOptions?: BulkEditFieldOption[];
+  renderBulkEditField?: BulkEditFieldRenderer;
   showActionsColumn?: boolean;
   enableRowSelection?: boolean;
   rowSelectionModel?: GridRowSelectionModel;
@@ -101,6 +109,9 @@ export const DataList = <TModel extends GridValidRowModel>({
   refreshFlag = 0,
   onBulkDelete,
   bulkDeleteEntityName = "record",
+  onBulkEdit,
+  bulkEditFieldOptions,
+  renderBulkEditField,
   showActionsColumn = true,
   enableRowSelection = true,
   rowSelectionModel: controlledRowSelectionModel,
@@ -141,6 +152,7 @@ export const DataList = <TModel extends GridValidRowModel>({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const defaultFilterState = {
     filterLimit: defaultFilterLimit,
@@ -525,6 +537,30 @@ export const DataList = <TModel extends GridValidRowModel>({
                 ids: new Set((modelData || []).map((row) => row.id)),
               });
             }
+          }}
+          onModifySelected={
+            onBulkEdit && bulkEditFieldOptions ? () => setBulkEditOpen(true) : undefined
+          }
+          notificationsService={notificationsService}
+        />
+      )}
+      {onBulkEdit && bulkEditFieldOptions && renderBulkEditField && (
+        <BulkEditDialog
+          open={bulkEditOpen}
+          onClose={() => {
+            setBulkEditOpen(false);
+          }}
+          entityName={bulkDeleteEntityName}
+          selectedCount={selectedRows.length}
+          fieldOptions={bulkEditFieldOptions}
+          renderFieldInput={renderBulkEditField}
+          onSave={async (fields) => {
+            await onBulkEdit(selectedRows, fields);
+            updateRowSelectionModel({
+              type: "include",
+              ids: new Set(),
+            });
+            getDataListAsync();
           }}
           notificationsService={notificationsService}
         />
