@@ -1,4 +1,5 @@
 import { ModuleWrapper } from "@components/module-wrapper";
+import { KnownTagsAutocomplete } from "@components/known-tags-autocomplete";
 import { useCoreModuleNavigation, useNotificationsService, useSaveShortcut } from "@hooks";
 import { AccountDetailsDto } from "@lib/network/swagger-client";
 import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "@lib/router";
@@ -765,24 +766,15 @@ export const AccountForm = ({ account, handleSave, handleDelete, isEdit }: Accou
             <AccordionDetails>
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Autocomplete
-                    multiple
-                    freeSolo
-                    size="small"
+                  <KnownTagsAutocomplete
+                    entityType="accounts"
+                    label="Tags"
+                    placeholder="Add tag"
                     disabled={isLoading || formik.isSubmitting}
-                    options={[]}
                     value={formik.values.tags || []}
-                    onChange={(e, value) => {
+                    onChange={(value) => {
                       formik.setFieldValue("tags", value);
                     }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Tags"
-                        placeholder="Add tag"
-                        variant="outlined"
-                      />
-                    )}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>

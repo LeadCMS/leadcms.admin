@@ -206,6 +206,9 @@ export function GenericForm<TView extends BasicTypeForGeneric, TCreate, TUpdate>
         case "number":
           initValues[field.name] = 0;
           break;
+        case "array":
+          initValues[field.name] = [];
+          break;
         default:
           initValues[field.name] = "";
           break;

@@ -10972,12 +10972,29 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.5.7.0
+ * @version 1.5.8.0
  */
 export class Api<
   SecurityDataType extends unknown,
 > extends HttpClient<SecurityDataType> {
   api = {
+    /**
+     * No description
+     *
+     * @tags Accounts
+     * @name AccountsTagsList
+     * @request GET:/api/accounts/tags
+     * @secure
+     */
+    accountsTagsList: (params: RequestParams = {}) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/accounts/tags`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
     /**
      * No description
      *
@@ -11651,6 +11668,29 @@ export class Api<
      * No description
      *
      * @tags Comments
+     * @name CommentsTagsList
+     * @request GET:/api/comments/tags
+     * @secure
+     */
+    commentsTagsList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string[], ProblemDetails>({
+        path: `/api/comments/tags`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Comments
      * @name CommentsTranslationDraftDetail
      * @request GET:/api/comments/{id}/translation-draft/{language}
      * @secure
@@ -11895,6 +11935,29 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
+     * @name ContactsTagsList
+     * @request GET:/api/contacts/tags
+     * @secure
+     */
+    contactsTagsList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/contacts/tags`,
+        method: "GET",
+        query: query,
+        secure: true,
         format: "json",
         ...params,
       }),
@@ -16015,6 +16078,23 @@ export class Api<
      * No description
      *
      * @tags Deals
+     * @name DealsTagsList
+     * @request GET:/api/deals/tags
+     * @secure
+     */
+    dealsTagsList: (params: RequestParams = {}) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/deals/tags`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deals
      * @name DealsCreate
      * @request POST:/api/deals
      * @secure
@@ -16269,6 +16349,23 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Domains
+     * @name DomainsTagsList
+     * @request GET:/api/domains/tags
+     * @secure
+     */
+    domainsTagsList: (params: RequestParams = {}) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/domains/tags`,
+        method: "GET",
+        secure: true,
         format: "json",
         ...params,
       }),
@@ -17751,6 +17848,23 @@ export class Api<
      * No description
      *
      * @tags Media
+     * @name MediaTagsList
+     * @request GET:/api/media/tags
+     * @secure
+     */
+    mediaTagsList: (params: RequestParams = {}) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/media/tags`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Media
      * @name MediaOptimizeAllCreate
      * @request POST:/api/media/optimize-all
      * @secure
@@ -18186,6 +18300,23 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Orders
+     * @name OrdersTagsList
+     * @request GET:/api/orders/tags
+     * @secure
+     */
+    ordersTagsList: (params: RequestParams = {}) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/orders/tags`,
+        method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 

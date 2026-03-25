@@ -1,5 +1,6 @@
 import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { ModuleWrapper } from "@components/module-wrapper";
+import { KnownTagsAutocomplete } from "@components/known-tags-autocomplete";
 import { useNotificationsService, useSaveShortcut } from "@hooks";
 import { ContactDetailsDto, OrderDetailsDto } from "@lib/network/swagger-client";
 import { defaultFilterLimit } from "@providers/query-provider";
@@ -793,18 +794,13 @@ export const OrderForm = ({ order, handleSave, handleDelete, isEdit }: OrderForm
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Autocomplete
+                    <KnownTagsAutocomplete
+                      entityType="orders"
+                      label="Tags"
+                      placeholder="Add tag"
                       disabled={formik.isSubmitting}
-                      options={[]}
-                      freeSolo
-                      multiple
-                      size="small"
-                      fullWidth
                       value={formik.values.tags || []}
-                      onChange={(e, val) => formik.setFieldValue("tags", val)}
-                      renderInput={(params) => (
-                        <TextField {...params} label="Tags" placeholder="Add tag" />
-                      )}
+                      onChange={(value) => formik.setFieldValue("tags", value)}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>

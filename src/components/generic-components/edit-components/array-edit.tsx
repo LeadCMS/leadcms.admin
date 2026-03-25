@@ -1,6 +1,10 @@
 import { ReactNode, useState } from "react";
 import { EditProps } from "@components/generic-components/edit-components/common";
 import {
+  KnownTagsAutocomplete,
+  type KnownTagsEntityType,
+} from "@components/known-tags-autocomplete";
+import {
   Dialog,
   DialogTitle,
   Table,
@@ -11,14 +15,27 @@ import {
   TextField,
 } from "@mui/material";
 import { camelCaseToTitleCase } from "../common";
+import { getModuleNameFromUrl } from "@utils/general-helper";
 
 type JsonArray = {
   [key: string]: any;
 };
 
-const isJsonArray = (item: any): item is JsonArray => {
-  return typeof item === "object" && item !== null;
+const tagEntityTypeByModuleName: Record<string, KnownTagsEntityType> = {
+  Accounts: "accounts",
+  Comments: "comments",
+  Contacts: "contacts",
+  Content: "content",
+  Deals: "deals",
+  Domains: "domains",
+  Media: "media",
+  Orders: "orders",
 };
+
+const isObjectArray = (item: unknown): item is JsonArray[] =>
+  Array.isArray(item) &&
+  item.length > 0 &&
+  item.every((entry) => typeof entry === "object" && entry !== null && !Array.isArray(entry));
 
 export const ArrayEdit = ({
   key,
@@ -26,17 +43,39 @@ export const ArrayEdit = ({
   example,
   required,
   value,
+  disabled,
+  onChangeValue,
   error,
 }: EditProps<any>): ReactNode => {
   const [open, setOpen] = useState(false);
+  const moduleName = getModuleNameFromUrl();
+  const tagEntityType = tagEntityTypeByModuleName[moduleName];
+  const stringArrayValue = Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+
+  if (key === "tags" && tagEntityType) {
+    return (
+      <KnownTagsAutocomplete
+        entityType={tagEntityType}
+        label={label}
+        placeholder="Add tag"
+        disabled={disabled}
+        error={!!error}
+        helperText={error}
+        value={stringArrayValue}
+        onChange={onChangeValue}
+      />
+    );
+  }
 
   if (!value)
     return (
       <TextField key={key} label={label} value={"N/A"} disabled={true} size={"small"} fullWidth />
     );
 
-  if (!isJsonArray(value)) {
-    const arrayString = value.join(",");
+  if (!isObjectArray(value)) {
+    const arrayString = Array.isArray(value) ? value.join(", ") : String(value);
     return (
       <TextField
         key={key}
@@ -55,7 +94,7 @@ export const ArrayEdit = ({
     );
   }
 
-  const headers = Object.keys(value![0]);
+  const headers = Object.keys(value[0]);
 
   const handleOpen = () => {
     setOpen(true);
@@ -94,7 +133,7 @@ export const ArrayEdit = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {value!.map((record: any) => (
+            {value.map((record: any) => (
               <TableRow key={record.domainName}>
                 {headers.map((header) => (
                   <TableCell key={header}>{record[header]}</TableCell>

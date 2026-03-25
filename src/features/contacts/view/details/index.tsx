@@ -468,6 +468,10 @@ export const ContactView = () => {
   const domainRoute = contact.domain?.id
     ? `/${CoreModule.domains}/${getViewFormRoute(contact.domain.id)}`
     : "";
+  const getEnrollmentRoute = (sequenceId?: number | null, enrollmentId?: number | null) =>
+    sequenceId && enrollmentId
+      ? `/${CoreModule.sequences}/${sequenceId}/view/enrollments/${enrollmentId}`
+      : "";
 
   const socialRows = compactRows(
     Object.entries(contact.socialMedia || {}).map(([key, value]) => ({
@@ -829,9 +833,7 @@ export const ContactView = () => {
                               variant="body2"
                               fontWeight={600}
                               component="a"
-                              href={`/${CoreModule.sequences}/${getViewFormRoute(
-                                enrollment.sequenceId ?? 0
-                              )}`}
+                              href={getEnrollmentRoute(enrollment.sequenceId, enrollment.id)}
                               sx={{
                                 color: "primary.main",
                                 textDecoration: "none",

@@ -61,6 +61,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { KnownTagsAutocomplete } from "@components/known-tags-autocomplete";
 
 interface ContactFormProps {
   contact: ContactDetailsDto;
@@ -976,24 +977,16 @@ export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: Conta
             <AccordionDetails>
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Autocomplete
-                    multiple
-                    freeSolo
-                    size="small"
+                  <KnownTagsAutocomplete
+                    entityType="contacts"
+                    label="Tags"
+                    placeholder="Add tag"
                     disabled={isLoading || formik.isSubmitting}
-                    options={[]}
+                    language={formik.values.language || null}
                     value={formik.values.tags || []}
-                    onChange={(e, value) => {
+                    onChange={(value) => {
                       formik.setFieldValue("tags", value);
                     }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Tags"
-                        placeholder="Add tag"
-                        variant="outlined"
-                      />
-                    )}
                   />
                 </Grid>
               </Grid>

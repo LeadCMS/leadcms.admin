@@ -436,6 +436,24 @@ export const Sequences = () => {
       ),
     },
     {
+      field: "exitedEnrollmentCount",
+      headerName: "Exited",
+      width: 120,
+      renderCell: ({ row }) => (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
+          <Typography variant="body2">
+            {(row.exitedEnrollmentCount ?? 0).toLocaleString()}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
       field: "sentCount",
       headerName: "Sent",
       width: 100,

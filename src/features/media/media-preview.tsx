@@ -35,6 +35,7 @@ import { useRequestContext } from "@providers/request-provider";
 import { useAuthState } from "@providers/auth-provider";
 import { useNotificationsService } from "@hooks";
 import { ApiErrorDisplay } from "@components/api-error-display";
+import { KnownTagsAutocomplete } from "@components/known-tags-autocomplete";
 import { parseApiError } from "@utils/api-error-parser";
 import { ApiError } from "@lib/network/wrapApiClient";
 import { useConfig } from "@providers/config-provider";
@@ -1431,46 +1432,26 @@ export const MediaPreview = ({
                             </Box>
                           ) : (
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                              <Autocomplete
-                                multiple
-                                freeSolo
-                                options={[]}
+                              <KnownTagsAutocomplete
+                                entityType="media"
+                                label="Tags"
+                                placeholder="Add tag"
+                                size="small"
                                 value={tagsValue}
-                                onChange={(_, newValue) => setTagsValue(newValue)}
-                                renderTags={(value, getTagProps) =>
-                                  value.map((option, index) => {
-                                    const { key, ...tagProps } = getTagProps({ index });
-                                    return (
-                                      <Chip
-                                        key={key}
-                                        variant="outlined"
-                                        label={option}
-                                        size="small"
-                                        {...tagProps}
-                                      />
-                                    );
-                                  })
-                                }
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    placeholder="Add tag"
-                                    size="small"
-                                    helperText="Ctrl+Enter to confirm"
-                                    onKeyDown={(e) => {
-                                      if (
-                                        e.key === "Enter" &&
-                                        (e.ctrlKey || e.metaKey) &&
-                                        !isSavingTags &&
-                                        !areTagsUnchanged
-                                      ) {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleSaveTags();
-                                      }
-                                    }}
-                                  />
-                                )}
+                                onChange={setTagsValue}
+                                helperText="Ctrl+Enter to confirm"
+                                onInputKeyDown={(e) => {
+                                  if (
+                                    e.key === "Enter" &&
+                                    (e.ctrlKey || e.metaKey) &&
+                                    !isSavingTags &&
+                                    !areTagsUnchanged
+                                  ) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleSaveTags();
+                                  }
+                                }}
                               />
                               <Box sx={{ display: "flex", gap: 1 }}>
                                 <Button
