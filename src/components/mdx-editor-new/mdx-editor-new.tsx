@@ -328,10 +328,36 @@ const MDXEditorNew = ({
       },
     }));
 
+    // Catch-all descriptor for any unrecognized component names
+    const catchAllDescriptor = {
+      name: "*" as const,
+      kind: "flow" as const,
+      hasChildren: true,
+      props: [],
+      Editor: ({ mdastNode }: { mdastNode: { name: string } }) => {
+        return React.createElement(
+          "div",
+          {
+            style: {
+              padding: "8px",
+              border: "1px dashed #f44336",
+              borderRadius: "4px",
+              backgroundColor: "#fff3f0",
+              margin: "4px 0",
+              fontSize: "0.875rem",
+              color: "#d32f2f",
+            },
+          },
+          `<${mdastNode.name} /> unknown component`
+        );
+      },
+    };
+
     // Combine known components with content components, avoiding duplicates
     const uniqueComponents = [
       ...knownComponents,
       ...contentComponents.filter((c) => !mdxComponents.some((mc) => mc.name === c.name)),
+      catchAllDescriptor,
     ];
 
     return uniqueComponents;

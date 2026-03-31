@@ -41,6 +41,7 @@ import { AIEditDialog } from "@components/ai-edit-dialog";
 import { AICoverDialog } from "@components/ai-cover-dialog";
 import { TranslateDialog } from "@components/translate-dialog";
 import { PublicationStatusDialog, PublicationStatus } from "@components/publication-status-dialog";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { ModuleWrapper } from "@components/module-wrapper";
 
@@ -1418,27 +1419,72 @@ export const ContentEdit = (props: ContentEditProps) => {
                                     </Stack>
                                   </Box>
                                 )}
-                              <MDXEditorNew
-                                key={mdxEditorKey}
-                                onChange={async (value) => {
-                                  contentFormOps.setWasModified(true);
-                                  await contentFormOps.formik.setFieldValue("body", value || "");
+                              <ErrorBoundary
+                                resetKeys={[mdxEditorKey]}
+                                fallbackRender={({ error, resetErrorBoundary }) => (
+                                  <Box
+                                    sx={{
+                                      p: 3,
+                                      border: "1px solid",
+                                      borderColor: "error.light",
+                                      borderRadius: 1,
+                                      backgroundColor: "#fff3f0",
+                                      minHeight: 200,
+                                    }}
+                                  >
+                                    <Typography variant="subtitle1" color="error" gutterBottom>
+                                      Editor crashed
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                      sx={{ mb: 2 }}
+                                    >
+                                      {error.message}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                      sx={{ mb: 2 }}
+                                    >
+                                      Your changes are preserved. Click below to reload the editor.
+                                    </Typography>
+                                    <Button
+                                      variant="outlined"
+                                      color="error"
+                                      size="small"
+                                      onClick={resetErrorBoundary}
+                                    >
+                                      Reload Editor
+                                    </Button>
+                                  </Box>
+                                )}
+                                onReset={() => {
+                                  contentFormOps.setRefreshKey(Date.now());
                                 }}
-                                onContentChangeStatus={(hasChanged) => {
-                                  contentFormOps.setHasContentChanged(hasChanged);
-                                }}
-                                value={contentFormOps.formik.values.body}
-                                isReadOnly={props.readonly}
-                                contentDetails={contentFormOps.formik.values}
-                                livePreview={
-                                  contentFormOps.useLivePreview && canShowLivePreviewPane
-                                }
-                                livePreviewTemplate={getPreviewTemplate()}
-                                isMetadataCollapsed={isMetadataCollapsed}
-                                preloadedMdxComponents={contentDataOps.preloadedMdxComponents}
-                                originalContentForDiff={contentFormOps.originalContent}
-                                contentFormat={resolvedFormat as ContentFormat}
-                              />
+                              >
+                                <MDXEditorNew
+                                  key={mdxEditorKey}
+                                  onChange={async (value) => {
+                                    contentFormOps.setWasModified(true);
+                                    await contentFormOps.formik.setFieldValue("body", value || "");
+                                  }}
+                                  onContentChangeStatus={(hasChanged) => {
+                                    contentFormOps.setHasContentChanged(hasChanged);
+                                  }}
+                                  value={contentFormOps.formik.values.body}
+                                  isReadOnly={props.readonly}
+                                  contentDetails={contentFormOps.formik.values}
+                                  livePreview={
+                                    contentFormOps.useLivePreview && canShowLivePreviewPane
+                                  }
+                                  livePreviewTemplate={getPreviewTemplate()}
+                                  isMetadataCollapsed={isMetadataCollapsed}
+                                  preloadedMdxComponents={contentDataOps.preloadedMdxComponents}
+                                  originalContentForDiff={contentFormOps.originalContent}
+                                  contentFormat={resolvedFormat as ContentFormat}
+                                />
+                              </ErrorBoundary>
                               {/* Show validation bubble when preview pane is not visible */}
                               {(!canShowLivePreviewPane ||
                                 !contentFormOps.useLivePreview ||
