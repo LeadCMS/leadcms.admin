@@ -257,6 +257,7 @@ export const ContactView = () => {
   const hasSequences = hasEntity(config?.entities, ENTITY_KEYS.sequence);
   const [countryName, setCountryName] = useState<string>("");
   const [continentName, setContinentName] = useState<string>("");
+  const [sequenceNames, setSequenceNames] = useState<Record<number, string>>({});
   const enrollments = contact?.enrollments ?? [];
 
   const { formatMoney } = useCurrencyFormatter();
@@ -284,6 +285,28 @@ export const ContactView = () => {
 
     loadLocationNames();
   }, [contact, context]);
+
+  useEffect(() => {
+    if (!hasSequences || enrollments.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await context.client.api.sequencesList();
+        if (cancelled || !data) return;
+        const map: Record<number, string> = {};
+        for (const seq of data) {
+          if (seq.id != null) map[seq.id] = seq.name;
+        }
+        setSequenceNames(map);
+      } catch {
+        // sequence names are best-effort
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [context.client, hasSequences, enrollments.length]);
 
   if (!contact && isLoading) {
     return (
@@ -842,7 +865,9 @@ export const ContactView = () => {
                                 },
                               }}
                             >
-                              {`Sequence #${enrollment.sequenceId}`}
+                              {enrollment.sequenceId && sequenceNames[enrollment.sequenceId]
+                                ? sequenceNames[enrollment.sequenceId]
+                                : `Sequence #${enrollment.sequenceId}`}
                             </Typography>
                             <Chip
                               size="small"
