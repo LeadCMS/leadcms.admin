@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";
 import { useUserInfo } from "@providers/user-provider";
@@ -77,6 +77,7 @@ import { generateDefaultValues, idToDisplayName, ContentFormat } from "../conten
 import MDXEditorNew from "@components/mdx-editor-new";
 import ValidationStatusBubble from "@components/validation-status-bubble";
 import CoverImageEditor from "@components/image-selection-dialog";
+import { SeoEditor } from "@components/seo-editor";
 import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
 import { LanguageSelect } from "@components/language-select";
@@ -102,6 +103,7 @@ interface ExtendedConfig {
   settings?: {
     LivePreviewUrlTemplate?: string;
     PreviewUrlTemplate?: string;
+    "General.SiteUrl"?: string;
   };
   defaultLanguage?: string;
   capabilities?: string[];
@@ -139,7 +141,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     targetLanguage: routeTargetLanguage,
     type: routeType,
   } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Support both route params (new) and query params (legacy)
   const sourceId = routeSourceId || searchParams.get("sourceId");
@@ -155,8 +157,28 @@ export const ContentEdit = (props: ContentEditProps) => {
   const isTranslationMode = !!translateToParam;
   const isCreateMode = !id && !isDuplicateMode && !isTranslationMode && !isAIDraftMode;
 
-  // UI state
-  const [activeTab, setActiveTab] = useState<string>("content");
+  // UI state — persist active tab in URL
+  const [activeTab, setActiveTabState] = useState<string>(
+    () => searchParams.get("tab") || "content"
+  );
+  const setActiveTab = useCallback(
+    (tab: string) => {
+      setActiveTabState(tab);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (tab === "content") {
+            next.delete("tab");
+          } else {
+            next.set("tab", tab);
+          }
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
   const [storedMetadataCollapsed, setStoredMetadataCollapsed] = useLocalStorage(
     METADATA_COLLAPSED_STORAGE_KEY,
     false
@@ -217,6 +239,30 @@ export const ContentEdit = (props: ContentEditProps) => {
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
 
   const contentDataOps = useContentDataOperations();
+
+  // Compute safe tab value: if the SEO tab isn't available, fall back
+  const hasSeoTab = !!contentDataOps.contentType?.supportsSEO;
+  const hasCoverTab = !!contentDataOps.contentType?.supportsCoverImage;
+  const safeActiveTab =
+    (activeTab === "seo" && !hasSeoTab) || (activeTab === "cover" && !hasCoverTab)
+      ? "content"
+      : activeTab;
+
+  // Sync URL when tab was corrected
+  useEffect(() => {
+    if (safeActiveTab !== activeTab) {
+      setActiveTabState("content");
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("tab");
+          return next;
+        },
+        { replace: true }
+      );
+    }
+  }, [safeActiveTab, activeTab, setSearchParams]);
+
   const contentFormOps = useContentFormOperations(id, hasLivePreview, contentDataOps.contentTypes);
   const aiContentOps = useAIContentOperations();
   const translationOps = useTranslationOperations();
@@ -1171,7 +1217,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                   }}
                 >
                   <Tabs
-                    value={activeTab}
+                    value={safeActiveTab}
                     onChange={(_, v) => setActiveTab(v)}
                     sx={{ minHeight: 36 }}
                   >
@@ -1195,6 +1241,19 @@ export const ContentEdit = (props: ContentEditProps) => {
                           fontWeight: hasCoverErrors ? 600 : 400,
                           "&.Mui-selected": {
                             color: hasCoverErrors ? "error.main" : "primary.main",
+                          },
+                        }}
+                      />
+                    )}
+                    {contentDataOps.contentType?.supportsSEO && (
+                      <Tab
+                        label="SEO"
+                        value="seo"
+                        sx={{
+                          color: "inherit",
+                          fontWeight: 400,
+                          "&.Mui-selected": {
+                            color: "primary.main",
                           },
                         }}
                       />
@@ -1331,7 +1390,7 @@ export const ContentEdit = (props: ContentEditProps) => {
 
                 {/* Tab Content */}
                 <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                  {activeTab === "content" && (
+                  {safeActiveTab === "content" && (
                     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
                       <Grid container spacing={2} sx={{ flex: 1, minHeight: 0 }}>
                         <Grid
@@ -1507,7 +1566,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     </Box>
                   )}
 
-                  {activeTab === "cover" && contentDataOps.contentType?.supportsCoverImage && (
+                  {safeActiveTab === "cover" && contentDataOps.contentType?.supportsCoverImage && (
                     <Box sx={{ pt: 4 }}>
                       <Grid container spacing={2} alignItems="flex-start">
                         <Grid size={{ xs: 12, md: 7 }}>
@@ -1560,7 +1619,25 @@ export const ContentEdit = (props: ContentEditProps) => {
                     </Box>
                   )}
 
-                  {activeTab === "settings" && (
+                  {safeActiveTab === "seo" && contentDataOps.contentType?.supportsSEO && (
+                    <SeoEditor
+                      seo={contentFormOps.formik.values.seo}
+                      contentDefaults={{
+                        title: contentFormOps.formik.values.title,
+                        description: contentFormOps.formik.values.description,
+                        coverImageUrl: contentFormOps.formik.values.coverImageUrl || null,
+                        slug: contentFormOps.formik.values.slug,
+                      }}
+                      siteUrl={(config as ExtendedConfig)?.settings?.["General.SiteUrl"] ?? ""}
+                      onChange={(seo) => {
+                        contentFormOps.formik.setFieldValue("seo", seo);
+                        contentFormOps.setWasModified(true);
+                      }}
+                      disabled={props.readonly}
+                    />
+                  )}
+
+                  {safeActiveTab === "settings" && (
                     <Grid container spacing={6} sx={{ mt: 2 }}>
                       <Grid size={{ xs: 12 }}>
                         <TextField
@@ -1716,7 +1793,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     </Grid>
                   )}
 
-                  {activeTab === "changelog" && !isCreateMode && id && (
+                  {safeActiveTab === "changelog" && !isCreateMode && id && (
                     <ContentChangeLog
                       contentId={id}
                       contentType={contentFormOps.formik.values.type}

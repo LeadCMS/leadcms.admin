@@ -51,6 +51,7 @@ export const addContentType = async (
     format: ContentFormat;
     supportsComments: boolean;
     supportsCoverImage: boolean;
+    supportsSEO: boolean;
   }
 ): Promise<ContentTypeDetailsDto> => {
   const payload: ContentTypeCreateDto = {
@@ -58,6 +59,7 @@ export const addContentType = async (
     format: newType.format === "Plain Text" ? "PlainText" : newType.format,
     supportsComments: newType.supportsComments,
     supportsCoverImage: newType.supportsCoverImage,
+    supportsSEO: newType.supportsSEO,
   };
   const res = await client.api.contentTypesCreate(payload);
   return res.data;

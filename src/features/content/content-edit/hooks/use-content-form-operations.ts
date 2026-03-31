@@ -231,16 +231,16 @@ export const useContentFormOperations = (
       // Cover image is already uploaded via the CoverImageEditor component
       // No need for additional processing here
 
+      const apiPayload = {
+        ...values,
+        slug: trimmedSlug,
+        seo: values.seo ?? undefined,
+      };
+
       if (values?.id) {
-        response = await client.api.contentUpdate(Number(values.id), {
-          ...values,
-          slug: trimmedSlug,
-        });
+        response = await client.api.contentUpdate(Number(values.id), apiPayload);
       } else {
-        response = await client.api.contentCreate({
-          ...values,
-          slug: trimmedSlug,
-        });
+        response = await client.api.contentCreate(apiPayload);
       }
 
       const patched: ContentDetails = {
@@ -325,6 +325,7 @@ export const useContentFormOperations = (
       coverImageUrl: "",
       createdAt: null,
       updatedAt: null,
+      seo: null,
     },
     onSubmit: submit,
     validateOnChange: false, // Disable real-time validation

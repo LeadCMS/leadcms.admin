@@ -15,6 +15,7 @@ import "./styles.css";
 import { useUserInfo } from "@providers/user-provider";
 import { useConfig } from "@providers/config-provider";
 import { generateSitePreviewUrl } from "@utils/preview-helper";
+import { loadStored, saveStored } from "@utils/template-preview-utils";
 
 const REQUIRED_KEYS = ["type", "slug", "body"];
 
@@ -22,6 +23,9 @@ const ZOOM_MIN = 25;
 const ZOOM_MAX = 200;
 const ZOOM_STEP = 25;
 const MOBILE_WIDTH = 375;
+
+const STORAGE_KEY_ZOOM = "live-preview-zoom";
+const STORAGE_KEY_DEVICE = "live-preview-device";
 
 type DeviceMode = "desktop" | "mobile";
 
@@ -32,8 +36,18 @@ const MarkdownLiveViewer = ({ params, template, viewerKey }: MarkdownLiveViewerP
   const [error, setError] = useState<string | null>(null);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const [zoom, setZoom] = useState(100);
-  const [deviceMode, setDeviceMode] = useState<DeviceMode>("desktop");
+  const [zoom, setZoom] = useState(() => loadStored(STORAGE_KEY_ZOOM, 100));
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>(() =>
+    loadStored<DeviceMode>(STORAGE_KEY_DEVICE, "desktop")
+  );
+
+  useEffect(() => {
+    saveStored(STORAGE_KEY_ZOOM, zoom);
+  }, [zoom]);
+
+  useEffect(() => {
+    saveStored(STORAGE_KEY_DEVICE, deviceMode);
+  }, [deviceMode]);
 
   const defaultLanguage = config?.defaultLanguage;
 
@@ -206,7 +220,7 @@ const MarkdownLiveViewer = ({ params, template, viewerKey }: MarkdownLiveViewerP
             py: 0.5,
             borderBottom: "1px solid #e0e0e0",
             backgroundColor: "#fafafa",
-            minHeight: 36,
+            minHeight: 44,
             flexShrink: 0,
           }}
         >

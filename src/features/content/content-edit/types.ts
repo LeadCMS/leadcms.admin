@@ -1,3 +1,5 @@
+import { SeoMetadataDto } from "@lib/network/swagger-client";
+
 export interface ContentDetails {
   id: string | null;
   type: string;
@@ -16,6 +18,7 @@ export interface ContentDetails {
   createdAt: string | null;
   updatedAt: string | null;
   publishedAt: string | null;
+  seo?: SeoMetadataDto | null;
 }
 
 export interface ContentEditorAutoSave {
