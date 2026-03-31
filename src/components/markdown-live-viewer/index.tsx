@@ -1,5 +1,15 @@
 import { useMemo, useEffect, useState, useRef } from "react";
-import { Box, CircularProgress, Typography, Alert } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  Alert,
+  IconButton,
+  ToggleButtonGroup,
+  ToggleButton,
+  Tooltip,
+} from "@mui/material";
+import { ZoomIn, ZoomOut, Monitor, Smartphone, RotateCcw } from "lucide-react";
 import { MarkdownLiveViewerProps } from "./types";
 import "./styles.css";
 import { useUserInfo } from "@providers/user-provider";
@@ -8,6 +18,13 @@ import { generateSitePreviewUrl } from "@utils/preview-helper";
 
 const REQUIRED_KEYS = ["type", "slug", "body"];
 
+const ZOOM_MIN = 25;
+const ZOOM_MAX = 200;
+const ZOOM_STEP = 25;
+const MOBILE_WIDTH = 375;
+
+type DeviceMode = "desktop" | "mobile";
+
 const MarkdownLiveViewer = ({ params, template, viewerKey }: MarkdownLiveViewerProps) => {
   const userInfo = useUserInfo();
   const { config } = useConfig();
@@ -15,6 +32,8 @@ const MarkdownLiveViewer = ({ params, template, viewerKey }: MarkdownLiveViewerP
   const [error, setError] = useState<string | null>(null);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [zoom, setZoom] = useState(100);
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>("desktop");
 
   const defaultLanguage = config?.defaultLanguage;
 
@@ -167,17 +186,133 @@ const MarkdownLiveViewer = ({ params, template, viewerKey }: MarkdownLiveViewerP
 
   // Show iframe if available
   if (iframeUrl) {
+    const scale = zoom / 100;
     return (
-      <Box className="markdown-live-viewer-container" sx={{ height: "100%" }}>
-        <iframe
-          key={viewerKey}
-          src={iframeUrl}
-          className="markdown-live-viewer-iframe"
-          title="Preview"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          loading="lazy"
-          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-        />
+      <Box
+        className="markdown-live-viewer-container"
+        sx={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Preview toolbar */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 1,
+            py: 0.5,
+            borderBottom: "1px solid #e0e0e0",
+            backgroundColor: "#fafafa",
+            minHeight: 36,
+            flexShrink: 0,
+          }}
+        >
+          <ToggleButtonGroup
+            value={deviceMode}
+            exclusive
+            onChange={(_, v) => v && setDeviceMode(v)}
+            size="small"
+          >
+            <ToggleButton value="desktop" aria-label="Desktop preview" sx={{ px: 1, py: 0.5 }}>
+              <Monitor size={16} />
+            </ToggleButton>
+            <ToggleButton value="mobile" aria-label="Mobile preview" sx={{ px: 1, py: 0.5 }}>
+              <Smartphone size={16} />
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+            }}
+          >
+            <Tooltip title="Zoom out">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
+                  disabled={zoom <= ZOOM_MIN}
+                >
+                  <ZoomOut size={16} />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Typography
+              variant="caption"
+              sx={{
+                minWidth: 40,
+                textAlign: "center",
+                userSelect: "none",
+              }}
+            >
+              {zoom}%
+            </Typography>
+            <Tooltip title="Zoom in">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
+                  disabled={zoom >= ZOOM_MAX}
+                >
+                  <ZoomIn size={16} />
+                </IconButton>
+              </span>
+            </Tooltip>
+            {zoom !== 100 && (
+              <Tooltip title="Reset zoom">
+                <IconButton size="small" onClick={() => setZoom(100)}>
+                  <RotateCcw size={14} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        </Box>
+
+        {/* Preview area */}
+        <Box
+          sx={{
+            flex: 1,
+            overflow: "hidden",
+            display: "flex",
+            justifyContent: "center",
+            backgroundColor: deviceMode === "mobile" ? "#f0f0f0" : "transparent",
+          }}
+        >
+          <Box
+            sx={{
+              width: deviceMode === "mobile" ? MOBILE_WIDTH : "100%",
+              maxWidth: "100%",
+              height: "100%",
+              transition: "width 0.3s ease",
+              backgroundColor: "white",
+              overflow: "hidden",
+              ...(deviceMode === "mobile" && {
+                boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+              }),
+            }}
+          >
+            <iframe
+              key={viewerKey}
+              src={iframeUrl}
+              className={"markdown-live-viewer-iframe"}
+              title="Preview"
+              sandbox={"allow-scripts allow-same-origin" + " allow-forms allow-popups"}
+              loading="lazy"
+              style={{
+                width: `${10000 / zoom}%`,
+                height: `${10000 / zoom}%`,
+                transform: `scale(${scale})`,
+                transformOrigin: "0 0",
+                border: "none",
+                display: "block",
+              }}
+            />
+          </Box>
+        </Box>
       </Box>
     );
   }
