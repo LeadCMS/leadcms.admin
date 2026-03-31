@@ -4529,6 +4529,7 @@ export interface ContentCreateDto {
    * @example "string"
    */
   previewSlug?: string | null;
+  seo?: SeoMetadataDto;
   /**
    * Type
    * @minLength 1
@@ -4621,6 +4622,7 @@ export interface ContentDetailsDto {
    * @example "string"
    */
   previewSlug?: string | null;
+  seo?: SeoMetadataDto;
   /**
    * Type
    * @minLength 1
@@ -4760,6 +4762,7 @@ export interface ContentEditRequest {
    * @example "string"
    */
   previewSlug?: string | null;
+  seo?: SeoMetadataDto;
   /**
    * Type
    * @minLength 1
@@ -5092,6 +5095,11 @@ export interface ContentTypeCreateDto {
    * @example true
    */
   supportsPreviewSlug?: boolean;
+  /**
+   * Supports S E O
+   * @example true
+   */
+  supportsSEO?: boolean;
 }
 
 export interface ContentTypeDetailsDto {
@@ -5121,6 +5129,11 @@ export interface ContentTypeDetailsDto {
    * @example true
    */
   supportsPreviewSlug?: boolean;
+  /**
+   * Supports S E O
+   * @example true
+   */
+  supportsSEO?: boolean;
   /**
    * Id
    * @format int32
@@ -5239,6 +5252,11 @@ export interface ContentTypeImportDto {
    * @example true
    */
   supportsPreviewSlug?: boolean | null;
+  /**
+   * Supports S E O
+   * @example true
+   */
+  supportsSEO?: boolean | null;
 }
 
 export interface ContentTypeUpdateDto {
@@ -5267,6 +5285,11 @@ export interface ContentTypeUpdateDto {
    * @example true
    */
   supportsPreviewSlug?: boolean | null;
+  /**
+   * Supports S E O
+   * @example true
+   */
+  supportsSEO?: boolean | null;
 }
 
 export interface ContentUpdateDto {
@@ -5309,6 +5332,7 @@ export interface ContentUpdateDto {
    * @example "string"
    */
   previewSlug?: string | null;
+  seo?: SeoMetadataDto;
   /**
    * Type
    * @minLength 1
@@ -8507,10 +8531,9 @@ export interface OrderImportDto {
   exchangeRate?: number | null;
   /**
    * Currency
-   * @minLength 1
    * @example "string"
    */
-  currency: string;
+  currency?: string | null;
   /**
    * Contact Id
    * @format int32
@@ -9360,6 +9383,49 @@ export interface SegmentUpdateDto {
   definition?: SegmentDefinition;
   /** Contact Ids */
   contactIds?: number[] | null;
+}
+
+export interface SeoMetadataDto {
+  /**
+   * Meta Title
+   * @example "string"
+   */
+  metaTitle?: string | null;
+  /**
+   * Meta Description
+   * @example "string"
+   */
+  metaDescription?: string | null;
+  /**
+   * Canonical Url
+   * @example "string"
+   */
+  canonicalUrl?: string | null;
+  /**
+   * Open Graph Title
+   * @example "string"
+   */
+  openGraphTitle?: string | null;
+  /**
+   * Open Graph Description
+   * @example "string"
+   */
+  openGraphDescription?: string | null;
+  /**
+   * Open Graph Image Url
+   * @example "string"
+   */
+  openGraphImageUrl?: string | null;
+  /**
+   * Robots
+   * @example "string"
+   */
+  robots?: string | null;
+  /**
+   * Keywords
+   * @example ["string1","string2"]
+   */
+  keywords?: string[] | null;
 }
 
 export interface SequenceCreateDto {
@@ -10972,7 +11038,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.5.8.0
+ * @version 1.5.10.0
  */
 export class Api<
   SecurityDataType extends unknown,
