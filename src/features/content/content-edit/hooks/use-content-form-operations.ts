@@ -120,11 +120,7 @@ export const useContentFormOperations = (
   };
 
   const saveDraft = useDebouncedCallback(async (values: ContentDetails) => {
-    if (
-      !useLivePreview ||
-      !hasLivePreview ||
-      (!wasModified && !coverWasModified && !hasContentChanged)
-    ) {
+    if (!hasLivePreview || (!wasModified && !coverWasModified && !hasContentChanged)) {
       return;
     }
 

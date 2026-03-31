@@ -62,8 +62,12 @@ import {
   Checkbox,
   Stack,
   Skeleton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
-import { RefreshCw, ExternalLink } from "lucide-react";
+import { RefreshCw, ExternalLink, ChevronDown, Save, Eye } from "lucide-react";
 
 // Import existing components and utilities
 import { ContentEditContainer } from "../index.styled";
@@ -574,20 +578,41 @@ export const ContentEdit = (props: ContentEditProps) => {
     navigate(`/content/${id}/translate/${targetLanguage}`);
   };
 
-  // Site preview handler
+  // Site preview handlers
+  const [previewMenuAnchor, setPreviewMenuAnchor] = useState<null | HTMLElement>(null);
+
   const handleSitePreview = () => {
+    if (hasLivePreview) {
+      setPreviewMenuAnchor(document.getElementById("preview-on-site-btn"));
+      return;
+    }
+    openSavedPreview();
+  };
+
+  const openSavedPreview = () => {
+    setPreviewMenuAnchor(null);
     const params = {
       ...contentFormOps.formik.values,
       userId: userInfo?.details?.id || "",
     };
-    const success = openSitePreview(
+    openSitePreview(
       params as unknown as Record<string, unknown>,
       configSettings?.PreviewUrlTemplate || "",
       config?.defaultLanguage
     );
-    if (!success) {
-      // notificationsService.error is available in the hook
-    }
+  };
+
+  const openLivePreview = () => {
+    setPreviewMenuAnchor(null);
+    const params = {
+      ...contentFormOps.formik.values,
+      userId: userInfo?.details?.id || "",
+    };
+    openSitePreview(
+      params as unknown as Record<string, unknown>,
+      configSettings?.LivePreviewUrlTemplate || "",
+      config?.defaultLanguage
+    );
   };
 
   // Publication status dialog handlers
@@ -1254,22 +1279,52 @@ export const ContentEdit = (props: ContentEditProps) => {
 
                   {/* Site Preview Button */}
                   {hasSitePreview && id && (
-                    <Button
-                      variant="text"
-                      onClick={handleSitePreview}
-                      endIcon={<ExternalLink size={20} />}
-                      sx={{
-                        color: "#1976d2",
-                        textTransform: "none",
-                        fontSize: 14,
-                        pl: 0,
-                        pr: 3,
-                        minWidth: 0,
-                        "&:hover": { textDecoration: "underline", background: "none" },
-                      }}
-                    >
-                      Preview on Site
-                    </Button>
+                    <>
+                      <Button
+                        id="preview-on-site-btn"
+                        variant="text"
+                        onClick={handleSitePreview}
+                        endIcon={
+                          hasLivePreview ? <ChevronDown size={16} /> : <ExternalLink size={20} />
+                        }
+                        sx={{
+                          color: "#1976d2",
+                          textTransform: "none",
+                          fontSize: 14,
+                          pl: 0,
+                          pr: 3,
+                          minWidth: 0,
+                          "&:hover": {
+                            textDecoration: "underline",
+                            background: "none",
+                          },
+                        }}
+                      >
+                        Preview on Site
+                      </Button>
+                      <Menu
+                        anchorEl={previewMenuAnchor}
+                        open={Boolean(previewMenuAnchor)}
+                        onClose={() => setPreviewMenuAnchor(null)}
+                        anchorOrigin={{
+                          vertical: "bottom",
+                          horizontal: "left",
+                        }}
+                      >
+                        <MenuItem onClick={openSavedPreview}>
+                          <ListItemIcon>
+                            <Save size={16} />
+                          </ListItemIcon>
+                          <ListItemText>Saved Version</ListItemText>
+                        </MenuItem>
+                        <MenuItem onClick={openLivePreview}>
+                          <ListItemIcon>
+                            <Eye size={16} />
+                          </ListItemIcon>
+                          <ListItemText>Live Changes</ListItemText>
+                        </MenuItem>
+                      </Menu>
+                    </>
                   )}
                 </Box>
 
