@@ -68,7 +68,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
-import { RefreshCw, ExternalLink, ChevronDown, Save, Eye } from "lucide-react";
+import { RefreshCw, ExternalLink, ChevronDown, Save, Eye, FileX } from "lucide-react";
 
 // Import existing components and utilities
 import { ContentEditContainer } from "../index.styled";
@@ -228,6 +228,12 @@ export const ContentEdit = (props: ContentEditProps) => {
   const [aiCoverDialogOpen, setAiCoverDialogOpen] = useState(false);
   const [aiCoverDialogMode, setAiCoverDialogMode] = useState<"generate" | "edit">("generate");
   const [coverImageRefreshKey, setCoverImageRefreshKey] = useState<string | number | null>(null);
+
+  // Error state for content loading failures (e.g. 404)
+  const [loadError, setLoadError] = useState<{
+    status: number;
+    message: string;
+  } | null>(null);
 
   // Initialize custom hooks
   const configSettings = (config as ExtendedConfig)?.settings;
@@ -861,6 +867,7 @@ export const ContentEdit = (props: ContentEditProps) => {
     const loadForEdit = async () => {
       if (!id || isDuplicateMode || isTranslationMode || isAIDraftMode) return;
       contentDataOps.setIsInitialLoading(true);
+      setLoadError(null);
       try {
         const content = await contentDataOps.loadContent(id);
 
@@ -882,6 +889,13 @@ export const ContentEdit = (props: ContentEditProps) => {
           `loadForEdit completed, types: ${contentDataOps.contentTypes.length}, ` +
             `type: ${content.type}`
         );
+      } catch (error) {
+        const status = (error as { status?: number }).status || 0;
+        const is404 = status === 404;
+        setLoadError({
+          status,
+          message: is404 ? "Content not found" : "Failed to load content",
+        });
       } finally {
         contentDataOps.setIsInitialLoading(false);
       }
@@ -1150,7 +1164,34 @@ export const ContentEdit = (props: ContentEditProps) => {
         }
       >
         <ContentEditContainer>
-          {shouldShowForm ? (
+          {loadError ? (
+            <Card>
+              <CardContent>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    py: 8,
+                    gap: 2,
+                  }}
+                >
+                  <FileX size={48} color="#9e9e9e" />
+                  <Typography variant="h6">{loadError.message}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {loadError.status === 404
+                      ? "The content you are looking for" +
+                        " does not exist or has" +
+                        " been deleted."
+                      : "An error occurred while" + " loading the content." + " Please try again."}
+                  </Typography>
+                  <Button variant="contained" onClick={() => navigate("/content")} sx={{ mt: 1 }}>
+                    Back to Content List
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          ) : shouldShowForm ? (
             <Card sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <CardContent
                 sx={{ display: "flex", flexDirection: "column", flex: 1, height: "100%" }}
