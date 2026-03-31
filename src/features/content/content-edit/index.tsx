@@ -240,6 +240,9 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   const contentDataOps = useContentDataOperations();
 
+  // Check if current content type supports preview slug
+  const hasPreviewSlugSupport = !!contentDataOps.contentType?.supportsPreviewSlug;
+
   // Compute safe tab value: if the SEO tab isn't available, fall back
   const hasSeoTab = !!contentDataOps.contentType?.supportsSEO;
   const hasCoverTab = !!contentDataOps.contentType?.supportsCoverImage;
@@ -267,6 +270,8 @@ export const ContentEdit = (props: ContentEditProps) => {
   const aiContentOps = useAIContentOperations();
   const translationOps = useTranslationOperations();
   const publicationDialogPreference = usePublicationDialogPreference();
+
+  const hasPreviewSlugValue = !!contentFormOps.formik.values.previewSlug;
 
   const handleCoverImageChange = (imageUrl: string | null) => {
     contentFormOps.onCoverImageChange(imageUrl);
@@ -1288,7 +1293,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                   {/* Live Preview Toggle */}
                   {hasLivePreview &&
                     hasSitePreview &&
-                    (resolvedFormat === "MDX" || resolvedFormat === "MD") && (
+                    (resolvedFormat === "MDX" ||
+                      resolvedFormat === "MD" ||
+                      (hasPreviewSlugSupport && hasPreviewSlugValue)) && (
                       <FormControlLabel
                         control={
                           contentFormOps.isDraftSaving ? (
@@ -1326,7 +1333,9 @@ export const ContentEdit = (props: ContentEditProps) => {
                   {/* Manual refresh button */}
                   {hasLivePreview &&
                     contentFormOps.useLivePreview &&
-                    (resolvedFormat === "MDX" || resolvedFormat === "MD") && (
+                    (resolvedFormat === "MDX" ||
+                      resolvedFormat === "MD" ||
+                      (hasPreviewSlugSupport && hasPreviewSlugValue)) && (
                       <IconButton
                         aria-label="Refresh preview"
                         onClick={() => contentFormOps.setRefreshKey(Date.now())}
@@ -1658,6 +1667,21 @@ export const ContentEdit = (props: ContentEditProps) => {
                           fullWidth
                         />
                       </Grid>
+                      {hasPreviewSlugSupport && (
+                        <Grid size={{ xs: 12 }}>
+                          <TextField
+                            disabled={props.readonly}
+                            label="Preview Slug"
+                            name="previewSlug"
+                            value={contentFormOps.formik.values.previewSlug || ""}
+                            placeholder="Enter preview page slug"
+                            variant="outlined"
+                            onChange={contentFormOps.valueUpdate}
+                            fullWidth
+                            helperText={"Page slug used to preview this" + " content on the site"}
+                          />
+                        </Grid>
+                      )}
                       {hasMultipleLanguages && (
                         <Grid size={{ xs: 12, sm: 4 }}>
                           <LanguageSelect

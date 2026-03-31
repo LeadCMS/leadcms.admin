@@ -227,6 +227,9 @@ export const useContentFormOperations = (
       }
 
       const trimmedSlug = values.slug ? values.slug.replace(/^\/+|\/+$/g, "") : values.slug;
+      const trimmedPreviewSlug = values.previewSlug
+        ? values.previewSlug.replace(/^\/+|\/+$/g, "")
+        : values.previewSlug;
 
       // Cover image is already uploaded via the CoverImageEditor component
       // No need for additional processing here
@@ -234,6 +237,7 @@ export const useContentFormOperations = (
       const apiPayload = {
         ...values,
         slug: trimmedSlug,
+        previewSlug: trimmedPreviewSlug || null,
         seo: values.seo ?? undefined,
       };
 
@@ -312,6 +316,7 @@ export const useContentFormOperations = (
       description: "",
       body: "",
       slug: "",
+      previewSlug: "",
       type: "",
       author: "",
       language: "",

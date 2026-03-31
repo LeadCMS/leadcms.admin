@@ -51,6 +51,7 @@ export const addContentType = async (
     format: ContentFormat;
     supportsComments: boolean;
     supportsCoverImage: boolean;
+    supportsPreviewSlug: boolean;
     supportsSEO: boolean;
   }
 ): Promise<ContentTypeDetailsDto> => {
@@ -59,6 +60,7 @@ export const addContentType = async (
     format: newType.format === "Plain Text" ? "PlainText" : newType.format,
     supportsComments: newType.supportsComments,
     supportsCoverImage: newType.supportsCoverImage,
+    supportsPreviewSlug: newType.supportsPreviewSlug,
     supportsSEO: newType.supportsSEO,
   };
   const res = await client.api.contentTypesCreate(payload);
@@ -77,6 +79,7 @@ export const generateDefaultValues = (contentUid: string, authorName?: string): 
 
     coverImageAlt: "",
     slug: "",
+    previewSlug: "",
     author: authorName || "",
     language: "",
     translationKey: null,

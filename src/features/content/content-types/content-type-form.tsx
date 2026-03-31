@@ -36,6 +36,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
   const [format, setFormat] = useState<ContentFormat>("MD");
   const [supportsComments, setSupportsComments] = useState(false);
   const [supportsCoverImage, setSupportsCoverImage] = useState(false);
+  const [supportsPreviewSlug, setSupportsPreviewSlug] = useState(false);
   const [supportsSEO, setSupportsSEO] = useState(false);
   const [nameError, setNameError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -53,6 +54,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
         format,
         supportsComments,
         supportsCoverImage,
+        supportsPreviewSlug,
         supportsSEO,
       });
       onSave(newContentType); // Pass newContentType up for selection
@@ -72,6 +74,7 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
     setFormat("MD");
     setSupportsComments(false);
     setSupportsCoverImage(false);
+    setSupportsPreviewSlug(false);
     setSupportsSEO(false);
     setNameError("");
   };
@@ -151,6 +154,15 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
                   />
                 }
                 label="Supports Comments"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={supportsPreviewSlug}
+                    onChange={(e) => setSupportsPreviewSlug(e.target.checked)}
+                  />
+                }
+                label="Supports Preview Slug"
               />
               <FormControlLabel
                 control={

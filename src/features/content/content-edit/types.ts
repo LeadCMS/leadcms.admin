@@ -9,6 +9,7 @@ export interface ContentDetails {
   coverImageUrl: string;
   coverImageAlt: string;
   slug: string;
+  previewSlug: string;
   author: string;
   language: string;
   translationKey?: string | null;

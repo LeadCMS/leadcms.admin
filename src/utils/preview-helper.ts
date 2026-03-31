@@ -8,6 +8,16 @@ export const generateSitePreviewUrl = (
   // Create enhanced params with calculated fields
   const enhancedParams = { ...params };
 
+  // Use previewSlug for URL generation when available
+  const effectiveSlug = params.previewSlug
+    ? String(params.previewSlug)
+    : params.slug
+    ? String(params.slug)
+    : "";
+  if (effectiveSlug) {
+    enhancedParams["slug"] = effectiveSlug;
+  }
+
   // Calculate lang parameter
   if (params.language) {
     const langPrefix = calculateLangPrefix(String(params.language), defaultLanguage);
@@ -16,9 +26,9 @@ export const generateSitePreviewUrl = (
   }
 
   // Calculate lang+slug parameter
-  if (params.language && params.slug) {
+  if (params.language && effectiveSlug) {
     const lang = calculateLangPrefix(String(params.language), defaultLanguage);
-    enhancedParams["lang+slug"] = `${lang}${params.slug}`;
+    enhancedParams["lang+slug"] = `${lang}${effectiveSlug}`;
   }
 
   Object.keys(enhancedParams).forEach((key) => {

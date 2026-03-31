@@ -91,6 +91,7 @@ export const ContentTypeDropdown = ({
                   {selected.format} format
                   {selected.supportsCoverImage ? ", supports cover image" : ""}
                   {selected.supportsComments ? ", supports comments" : ""}
+                  {selected.supportsPreviewSlug ? ", supports preview slug" : ""}
                   {selected.supportsSEO ? ", supports SEO" : ""}
                 </>
               );
