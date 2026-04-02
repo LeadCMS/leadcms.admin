@@ -740,10 +740,12 @@ const ItemCard = ({
         borderRadius: 3,
         overflow: "hidden",
         boxShadow: 1,
+        cursor: "pointer",
         transition: "box-shadow 0.2s",
         "&:hover": { boxShadow: 6 },
       }}
       variant="outlined"
+      onClick={onClickEdit}
     >
       <Box
         sx={{
@@ -853,13 +855,16 @@ const ItemCard = ({
           {item.description}
         </Typography>
       </CardContent>
-      <CardActions sx={{ justifyContent: "space-between", pl: 4, pr: 4, pt: 0, pb: 3 }}>
-        <Box display="flex" alignItems="center" gap={1.5}>
-          <Typography variant="body2" color="text.secondary">
+      <CardActions
+        sx={{ justifyContent: "space-between", pl: 4, pr: 4, pt: 0, pb: 3 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Box display="flex" alignItems="center" gap={1.5} minWidth={0}>
+          <Typography variant="body2" color="text.secondary" noWrap title={item.author}>
             {item.author}
           </Typography>
         </Box>
-        <Box display="flex" gap={1.5}>
+        <Box display="flex" gap={1.5} flexShrink={0}>
           <Tooltip title="Edit">
             <IconButton size="small" onClick={onClickEdit}>
               <Edit fontSize="small" />
