@@ -236,13 +236,18 @@ export const ContentList = () => {
       contentTypeQuery = getWhereFilterQuery("type", selectedContentType, "equals");
     }
 
-    // Combine all queries
-    const combinedQuery = [whereQuery, globalLanguageQuery, contentTypeQuery]
-      .filter(Boolean)
-      .join("");
-    if (combinedQuery) {
-      filter.query = (filter.query || "") + combinedQuery;
-    }
+    // Add where filter parameters directly to the filter object
+    [whereQuery, globalLanguageQuery, contentTypeQuery].filter(Boolean).forEach((queryString) => {
+      const parts = queryString.split(/\s*&\s*/).filter(Boolean);
+      for (const part of parts) {
+        const eqIdx = part.indexOf("=");
+        if (eqIdx > 0) {
+          const key = part.substring(0, eqIdx).trim();
+          const value = part.substring(eqIdx + 1).trim();
+          if (key) filter[key] = value;
+        }
+      }
+    });
 
     try {
       setLoadError(null);
@@ -272,6 +277,10 @@ export const ContentList = () => {
         const count = headers.get("x-total-count");
         if (count) totalCount = parseInt(count, 10);
       }
+      // Stop pagination if no new items were returned
+      if (contentData.length === 0 && totalCount > 0) {
+        totalCount = contentItems.length;
+      }
       setContentItemsCount(totalCount);
     } catch (e) {
       const apiError = parseApiError(e, "Failed to load content");
@@ -295,12 +304,7 @@ export const ContentList = () => {
     setWhereFilters(storedSettings.whereFilters);
     setSortField(storedSettings.sortField);
     setSortDirection(storedSettings.sortDirection);
-
-    // Restore selectedContentType from localStorage if not in URL
-    if (!searchParams.get("contentType") && storedSettings.selectedContentType) {
-      setSelectedContentType(storedSettings.selectedContentType);
-    }
-  }, [storedSettings, searchParams]);
+  }, [storedSettings]);
 
   // Initial load and search
   useEffect(() => {

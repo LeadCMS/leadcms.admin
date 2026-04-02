@@ -245,11 +245,18 @@ export const CommentsList: React.FC = () => {
       globalLanguageQuery = getWhereFilterQuery("language", selectedLanguage, "equals");
     }
 
-    // Combine all queries
-    const combinedQuery = [whereQuery, globalLanguageQuery].filter(Boolean).join("");
-    if (combinedQuery) {
-      filter.query = (filter.query || "") + combinedQuery;
-    }
+    // Add where filter parameters directly to the filter object
+    [whereQuery, globalLanguageQuery].filter(Boolean).forEach((queryString) => {
+      const parts = queryString.split(/\s*&\s*/).filter(Boolean);
+      for (const part of parts) {
+        const eqIdx = part.indexOf("=");
+        if (eqIdx > 0) {
+          const key = part.substring(0, eqIdx).trim();
+          const value = part.substring(eqIdx + 1).trim();
+          if (key) filter[key] = value;
+        }
+      }
+    });
 
     // Add tab filter
     if (activeTab !== "All" && activeTab !== "Unanswered") {
