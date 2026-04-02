@@ -9,6 +9,7 @@ import {
   styled,
   IconButton,
 } from "@mui/material";
+import { ElementType } from "react";
 
 export const SidebarTopContainer = styled("div")<{
   isMobile?: boolean;
@@ -128,6 +129,8 @@ export const ListSubheaderStyled = styled(ListSubheader, {
 
 type SidebarLinkProps = ListItemButtonProps & {
   isCollapsed?: boolean;
+  component?: ElementType;
+  to?: string;
 };
 
 export const SidebarLink = styled(ListItemButton, {

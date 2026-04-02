@@ -8,7 +8,7 @@ import {
   Collapse,
   Box,
 } from "@mui/material";
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { PanelRightOpen, PanelLeftOpen, ChevronDown, ChevronRight } from "lucide-react";
 import {
   ListItemIconStyled,
@@ -23,13 +23,13 @@ import { getCoreModuleRoute, CoreModule } from "lib/router";
 import { useSidebar } from "@providers/sidebar-provider";
 import { LogoComponent } from "@components/app-header/index.styled";
 import Typography from "@mui/material/Typography";
-import { useNavigate } from "react-router-dom";
+import { GhostLink } from "@components/ghost-link";
 
 interface SidebarMenuItem {
   id: string;
   label: string;
   icon: React.ReactNode;
-  onClick: (navigate: (to: string) => void) => void;
+  route: string;
   isSelected: boolean;
 }
 
@@ -67,7 +67,6 @@ export const Sidebar = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { isOpen, isCollapsed, isMobileOpen, toggleCollapse, toggleMobile } = useSidebar();
-  const navigate = useNavigate();
   const [openSections, setOpenSections] = useState<string[]>(() =>
     getInitialSectionsState(menuItems)
   );
@@ -96,10 +95,6 @@ export const Sidebar = ({
     );
   };
 
-  const navigateToDashboard = useCallback(() => {
-    navigate(getCoreModuleRoute(CoreModule.dashboard));
-  }, [navigate]);
-
   const effectiveOpen = isMobile ? isMobileOpen : isOpen;
   const showCollapsed = !isMobile && isCollapsed;
 
@@ -113,17 +108,20 @@ export const Sidebar = ({
       >
         <SidebarTopContainer isMobile={isMobile} isOpen={effectiveOpen} isCollapsed={showCollapsed}>
           {!showCollapsed && (
-            <div
+            <GhostLink
+              to={getCoreModuleRoute(CoreModule.dashboard)}
               className="sidebar-logo sidebar-link"
-              style={{ display: "flex", alignItems: "center", cursor: "pointer", flex: 1 }}
-              onClick={navigateToDashboard}
-              tabIndex={0}
-              role="button"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                flex: 1,
+              }}
               aria-label="Go to dashboard"
             >
               <LogoComponent />
               <Typography className="sidebar-app-name">LeadCMS</Typography>
-            </div>
+            </GhostLink>
           )}
 
           {!isMobile && (
@@ -187,31 +185,22 @@ export const Sidebar = ({
                           title={showCollapsed ? menuItem.label : ""}
                           placement="right"
                         >
-                          <span>
-                            <SidebarLink
-                              sx={{
-                                ...(showCollapsed && {
-                                  justifyContent: "center",
-                                  padding: (theme) => theme.spacing(1, 0),
-                                }),
-                              }}
-                              onClick={(e: React.MouseEvent) => {
-                                e.preventDefault();
-                                if (typeof menuItem.onClick === "function") {
-                                  menuItem.onClick(navigate);
-                                }
-                                if (isMobile) toggleMobile();
-                              }}
-                              selected={menuItem.isSelected}
-                              isCollapsed={showCollapsed}
-                            >
-                              <ListItemIconStyled>{menuItem.icon}</ListItemIconStyled>
-                              <SidebarLinkText
-                                primary={menuItem.label}
-                                isCollapsed={showCollapsed}
-                              />
-                            </SidebarLink>
-                          </span>
+                          <SidebarLink
+                            component={GhostLink}
+                            to={menuItem.route}
+                            sx={{
+                              ...(showCollapsed && {
+                                justifyContent: "center",
+                                padding: (theme) => theme.spacing(1, 0),
+                              }),
+                            }}
+                            onClick={isMobile ? () => toggleMobile() : undefined}
+                            selected={menuItem.isSelected}
+                            isCollapsed={showCollapsed}
+                          >
+                            <ListItemIconStyled>{menuItem.icon}</ListItemIconStyled>
+                            <SidebarLinkText primary={menuItem.label} isCollapsed={showCollapsed} />
+                          </SidebarLink>
                         </Tooltip>
                       ))}
                     </List>

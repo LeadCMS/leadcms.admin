@@ -24,7 +24,7 @@ export function buildMenuItems(
       })
       .map((item) => ({
         ...item,
-        onClick: (navigate: (to: string) => void) => navigate(item.route),
+        route: item.route,
         isSelected: selectedModule === item.id,
       }));
     if (filteredItems.length === 0) return null;
