@@ -72,6 +72,10 @@ interface SettingsFormData {
 
 const availableVariables = [
   { name: "{lang}", description: "Language code (e.g., en, es, fr)" },
+  {
+    name: "{langPrefix}",
+    description: "Language code, empty when default language",
+  },
   { name: "{slug}", description: "Content slug" },
   { name: "{userId}", description: "User ID" },
   { name: "{lang+slug}", description: "Language code combined with slug" },

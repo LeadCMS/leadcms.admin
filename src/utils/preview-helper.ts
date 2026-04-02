@@ -18,11 +18,15 @@ export const generateSitePreviewUrl = (
     enhancedParams["slug"] = effectiveSlug;
   }
 
-  // Calculate lang parameter
+  // Calculate lang parameter (always the content language)
   if (params.language) {
-    const langPrefix = calculateLangPrefix(String(params.language), defaultLanguage);
-    // Remove trailing slash for standalone lang parameter
-    enhancedParams["lang"] = langPrefix.replace(/\/$/, "");
+    enhancedParams["lang"] = String(params.language);
+  }
+
+  // Calculate langPrefix parameter (empty when equal to default)
+  if (params.language) {
+    const prefix = calculateLangPrefix(String(params.language), defaultLanguage);
+    enhancedParams["langPrefix"] = prefix.replace(/\/$/, "");
   }
 
   // Calculate lang+slug parameter
