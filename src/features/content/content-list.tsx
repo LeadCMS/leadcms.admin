@@ -673,6 +673,7 @@ const ItemCard = ({
   const open = Boolean(anchorEl);
   const theme = useTheme();
   const { notificationsService } = useNotificationsService();
+  const slug = item.slug.trim();
 
   const onClickEdit = () => {
     navigate(`/content/${item.id}/edit`);
@@ -736,7 +737,7 @@ const ItemCard = ({
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: 414,
+        height: 432,
         borderRadius: 3,
         overflow: "hidden",
         boxShadow: 1,
@@ -845,15 +846,44 @@ const ItemCard = ({
           variant="body2"
           color="text.secondary"
           sx={{
-            mb: 2.5,
+            mb: 2,
             display: "-webkit-box",
-            WebkitLineClamp: 3,
+            WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
           }}
         >
           {item.description}
         </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            minWidth: 0,
+            px: 1.5,
+            py: 1,
+            borderRadius: 2,
+            backgroundColor: "action.hover",
+          }}
+        >
+          <Tooltip title={slug} placement="top-start" arrow>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                flexGrow: 1,
+                minWidth: 0,
+                fontFamily: "monospace",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {slug}
+            </Typography>
+          </Tooltip>
+        </Box>
       </CardContent>
       <CardActions
         sx={{ justifyContent: "space-between", pl: 4, pr: 4, pt: 0, pb: 3 }}
