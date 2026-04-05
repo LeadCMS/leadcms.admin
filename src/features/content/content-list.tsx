@@ -745,6 +745,7 @@ const ItemCard = ({
     lastReleaseDate,
     item.createdAt
   );
+  const coverColors = getTypeCoverColors(item.type || "", theme);
   const publishedTooltipTitle = contentStatus.tooltip || "";
   let metaDateLabel = "Updated:";
   let metaDateValue = "—";
@@ -761,7 +762,7 @@ const ItemCard = ({
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: 404,
+        height: 420,
         borderRadius: 3,
         overflow: "hidden",
         boxShadow: 1,
@@ -776,6 +777,7 @@ const ItemCard = ({
         sx={{
           position: "relative",
           height: 180,
+          flexShrink: 0,
           width: "100%",
           overflow: "hidden",
         }}
@@ -819,22 +821,65 @@ const ItemCard = ({
             }}
           />
         </Tooltip>
-        <CardMedia
-          component="img"
-          image={getContentCoverImageUrl(
-            item.coverImageUrl,
-            item.updatedAt || item.createdAt || undefined
-          )}
-          alt={item.coverImageAlt || item.title || ""}
-          sx={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transition: "transform 0.3s cubic-bezier(.4,2,.6,1)",
-            "&:hover": { transform: "scale(1.05)" },
-          }}
-        />
-        {/* Future: badges/overlays can be placed here */}
+        {item.coverImageUrl ? (
+          <CardMedia
+            component="img"
+            image={getContentCoverImageUrl(
+              item.coverImageUrl,
+              item.updatedAt || item.createdAt || undefined
+            )}
+            alt={item.coverImageAlt || item.title || ""}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              transition: "transform 0.3s cubic-bezier(.4,2,.6,1)",
+              "&:hover": {
+                transform: "scale(1.05)",
+              },
+            }}
+          />
+        ) : (
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+              bgcolor: coverColors.bg,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
+              p: 3,
+              pt: 6,
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: coverColors.text,
+                fontWeight: 700,
+                lineHeight: 1.3,
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {item.title}
+            </Typography>
+            {item.category && (
+              <Typography
+                variant="caption"
+                sx={{
+                  color: coverColors.text,
+                  opacity: 0.7,
+                  mt: 0.5,
+                }}
+              >
+                {item.category}
+              </Typography>
+            )}
+          </Box>
+        )}
       </Box>
       <CardContent sx={{ display: "flex", flexDirection: "column", flexGrow: 1, p: 4, pb: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={2.5}>
@@ -853,6 +898,7 @@ const ItemCard = ({
           sx={{
             mb: 2,
             lineHeight: 1.3,
+            minHeight: "2.6em",
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
@@ -992,4 +1038,19 @@ function getTypeColor(type: string, theme: Theme): string {
   if (hue > 360) hue = 360;
   const lightness = theme.palette.mode === "dark" ? 32 : 48;
   return `hsl(${hue}, 65%, ${lightness}%)`;
+}
+
+function getTypeCoverColors(type: string, theme: Theme): { bg: string; text: string } {
+  const processedType = type.includes(" ") ? type.toLowerCase().replace(/\s+/g, "-") : type;
+  let hash = 0;
+  for (let i = 0; i < processedType.length; i++) {
+    hash = processedType.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let hue = (Math.abs(hash) % 320) + 20;
+  if (hue > 360) hue = 360;
+  const isDark = theme.palette.mode === "dark";
+  return {
+    bg: isDark ? `hsl(${hue}, 30%, 18%)` : `hsl(${hue}, 40%, 90%)`,
+    text: isDark ? `hsl(${hue}, 50%, 75%)` : `hsl(${hue}, 55%, 30%)`,
+  };
 }
