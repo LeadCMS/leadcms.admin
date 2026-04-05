@@ -22,9 +22,12 @@ import {
   FormGroup,
   MenuItem,
   Select,
+  IconButton,
+  InputAdornment,
+  Tooltip,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
-import { Save, Info } from "lucide-react";
+import { Save, Info, RefreshCw, Copy, Check } from "lucide-react";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { ModuleWrapper } from "@components/module-wrapper";
@@ -49,7 +52,8 @@ interface SettingsFormData {
   "General.SiteUrl": string;
   "General.UnsubscribeUrl": string;
   "General.PrivacyUrl": string;
-  "General.LastReleaseDate": string;
+  "Deployment.LastSuccessDate": string;
+  "Deployment.WebhooksApiKey": string;
   LivePreviewUrlTemplate: string;
   PreviewUrlTemplate: string;
   "Content.MinTitleLength": string;
@@ -72,6 +76,14 @@ interface SettingsFormData {
   "Media.Quality": string;
   "Media.EnableOptimisation": string;
 }
+
+const SECRET_MASK = "••••••••";
+
+const generateApiKey = (): string => {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+};
 
 const availableVariables = [
   { name: "{lang}", description: "Language code (e.g., en, es, fr)" },
@@ -110,7 +122,8 @@ const Settings = () => {
     "General.SiteUrl": "",
     "General.UnsubscribeUrl": "",
     "General.PrivacyUrl": "",
-    "General.LastReleaseDate": "",
+    "Deployment.LastSuccessDate": "",
+    "Deployment.WebhooksApiKey": "",
     LivePreviewUrlTemplate: "",
     PreviewUrlTemplate: "",
     "Content.MinTitleLength": "",
@@ -147,6 +160,10 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Partial<SettingsFormData>>({});
+  const [cicdEnabled, setCicdEnabled] = useState(false);
+  const [secretKeys, setSecretKeys] = useState<Set<string>>(new Set());
+  const [apiKeyRevealed, setApiKeyRevealed] = useState(false);
+  const [apiKeyCopied, setApiKeyCopied] = useState(false);
 
   // Set full width layout for settings page
   useEffect(() => {
@@ -212,7 +229,8 @@ const Settings = () => {
         "General.SiteUrl": "",
         "General.UnsubscribeUrl": "",
         "General.PrivacyUrl": "",
-        "General.LastReleaseDate": "",
+        "Deployment.LastSuccessDate": "",
+        "Deployment.WebhooksApiKey": "",
         LivePreviewUrlTemplate: "",
         PreviewUrlTemplate: "",
         "Content.MinTitleLength": "",
@@ -237,12 +255,17 @@ const Settings = () => {
       };
 
       const newDynamicData: Record<string, string> = {};
+      const newSecretKeys = new Set<string>();
 
       if (settings) {
         setAllSettings(settings);
 
         settings.forEach((setting: SettingDetailsDto) => {
           const key = setting.key || "";
+
+          if (setting.type === "secret") {
+            newSecretKeys.add(key);
+          }
 
           // Dynamic settings: AI.SiteProfile.* and LeadCapture.*
           if (key.startsWith("AI.SiteProfile.") || key.startsWith("LeadCapture.")) {
@@ -262,8 +285,10 @@ const Settings = () => {
             newFormData["General.UnsubscribeUrl"] = setting.value || "";
           } else if (key === "General.PrivacyUrl") {
             newFormData["General.PrivacyUrl"] = setting.value || "";
-          } else if (key === "General.LastReleaseDate") {
-            newFormData["General.LastReleaseDate"] = setting.value || "";
+          } else if (key === "Deployment.LastSuccessDate") {
+            newFormData["Deployment.LastSuccessDate"] = setting.value || "";
+          } else if (key === "Deployment.WebhooksApiKey") {
+            newFormData["Deployment.WebhooksApiKey"] = setting.value || "";
           } else if (key === "LivePreviewUrlTemplate") {
             newFormData.LivePreviewUrlTemplate = setting.value || "";
           } else if (key === "PreviewUrlTemplate") {
@@ -320,6 +345,12 @@ const Settings = () => {
 
       setFormData(newFormData);
       setDynamicFormData(newDynamicData);
+      setSecretKeys(newSecretKeys);
+      setApiKeyRevealed(false);
+      setApiKeyCopied(false);
+      // Detect CI/CD enabled: key is set if we got a mask or a real value
+      const apiKeyVal = newFormData["Deployment.WebhooksApiKey"];
+      setCicdEnabled(!!apiKeyVal && apiKeyVal !== "");
     } catch (err: unknown) {
       notificationsService.error("Failed to load settings");
     } finally {
@@ -586,8 +617,12 @@ const Settings = () => {
             value: formData["General.PrivacyUrl"],
           },
           {
-            key: "General.LastReleaseDate",
-            value: formData["General.LastReleaseDate"],
+            key: "Deployment.LastSuccessDate",
+            value: formData["Deployment.LastSuccessDate"],
+          },
+          {
+            key: "Deployment.WebhooksApiKey",
+            value: formData["Deployment.WebhooksApiKey"],
           },
           {
             key: "LivePreviewUrlTemplate",
@@ -713,10 +748,22 @@ const Settings = () => {
         }
 
         // Set language on each item when a specific language is selected
-        const settingsWithLanguage = settingsToSave.map((s) => ({
-          ...s,
-          language: languageParam || null,
-        }));
+        // Filter out secret settings that still have the mask value
+        // and skip manual deployment date when CI/CD manages it
+        const settingsWithLanguage = settingsToSave
+          .filter((s) => {
+            if (secretKeys.has(s.key) && s.value === SECRET_MASK) {
+              return false;
+            }
+            if (s.key === "Deployment.LastSuccessDate" && cicdEnabled) {
+              return false;
+            }
+            return true;
+          })
+          .map((s) => ({
+            ...s,
+            language: languageParam || null,
+          }));
 
         // Use the batch import endpoint to save all settings at once
         const importResult = await client.api.settingsImportCreate(settingsWithLanguage);
@@ -818,6 +865,7 @@ const Settings = () => {
                 {hasAIAssistance && <Tab label="AI Profile" value="siteProfile" />}
                 <Tab label="Preview" value="preview" />
                 <Tab label="Media" value="media" />
+                <Tab label="Deployment" value="deployment" />
                 {hasSiteCapability && (
                   <Tab
                     label={
@@ -929,38 +977,189 @@ const Settings = () => {
                     />
                   </Grid>
                 </Grid>
+              </Box>
+            )}
 
+            {/* Deployment Settings Tab */}
+            {activeTab === "deployment" && (
+              <Box sx={{ mt: "20px", maxWidth: 900, mr: "auto" }}>
                 <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                  Release
+                  Last Deployment
                 </Typography>
                 <Grid container spacing={3} marginBottom={4}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <DateTimePicker
-                      label="Last Release Date"
+                      label="Last Successful Deployment"
                       format="L HH:mm"
                       value={
-                        formData["General.LastReleaseDate"]
-                          ? dayjs(formData["General.LastReleaseDate"])
+                        formData["Deployment.LastSuccessDate"]
+                          ? dayjs(formData["Deployment.LastSuccessDate"])
                           : null
                       }
                       onChange={(val: Dayjs | null) => {
                         setFormData((prev) => ({
                           ...prev,
-                          "General.LastReleaseDate": val ? val.toISOString() : "",
+                          "Deployment.LastSuccessDate": val ? val.toISOString() : "",
                         }));
                       }}
+                      disabled={cicdEnabled}
                       slotProps={{
                         textField: {
                           fullWidth: true,
                           size: "small",
-                          helperText:
-                            "Date and time of the last production release." +
-                            " Used to determine content deployment status.",
+                          helperText: cicdEnabled
+                            ? "Automatically updated by CI/CD on deployment."
+                            : "Date and time of the last production deployment." +
+                              " Used to determine content deployment status.",
                         },
                       }}
                     />
                   </Grid>
                 </Grid>
+
+                <Typography variant="h6" sx={{ mb: 3, mt: 2, fontWeight: 600 }}>
+                  CI/CD Integration
+                </Typography>
+
+                <FormGroup sx={{ mb: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={cicdEnabled}
+                        onChange={(e) => {
+                          const enabled = e.target.checked;
+                          setCicdEnabled(enabled);
+                          if (enabled) {
+                            const newKey = generateApiKey();
+                            setFormData((prev) => ({
+                              ...prev,
+                              "Deployment.WebhooksApiKey": newKey,
+                            }));
+                            setApiKeyRevealed(true);
+                            setApiKeyCopied(false);
+                          } else {
+                            setFormData((prev) => ({
+                              ...prev,
+                              "Deployment.WebhooksApiKey": "",
+                            }));
+                            setApiKeyRevealed(false);
+                            setApiKeyCopied(false);
+                          }
+                        }}
+                      />
+                    }
+                    label="Update the date automatically from CI/CD"
+                  />
+                </FormGroup>
+
+                {cicdEnabled && (
+                  <>
+                    <Grid container spacing={3} marginBottom={3}>
+                      <Grid size={{ xs: 12, sm: 8 }}>
+                        <TextField
+                          fullWidth
+                          required
+                          label="Deployment API Key"
+                          value={
+                            apiKeyRevealed ? formData["Deployment.WebhooksApiKey"] : SECRET_MASK
+                          }
+                          onChange={handleInputChange("Deployment.WebhooksApiKey")}
+                          variant="outlined"
+                          size="small"
+                          slotProps={{
+                            input: {
+                              readOnly: !apiKeyRevealed,
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  {apiKeyRevealed && (
+                                    <Tooltip title={apiKeyCopied ? "Copied!" : "Copy key"}>
+                                      <IconButton
+                                        size="small"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(
+                                            formData["Deployment.WebhooksApiKey"]
+                                          );
+                                          setApiKeyCopied(true);
+                                          setTimeout(() => setApiKeyCopied(false), 2000);
+                                        }}
+                                      >
+                                        {apiKeyCopied ? <Check size={16} /> : <Copy size={16} />}
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                  <Tooltip title="Regenerate key">
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => {
+                                        const newKey = generateApiKey();
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          "Deployment.WebhooksApiKey": newKey,
+                                        }));
+                                        setApiKeyRevealed(true);
+                                        setApiKeyCopied(false);
+                                      }}
+                                    >
+                                      <RefreshCw size={16} />
+                                    </IconButton>
+                                  </Tooltip>
+                                </InputAdornment>
+                              ),
+                            },
+                          }}
+                          helperText={
+                            apiKeyRevealed
+                              ? "Copy this key now — it will not be shown again after saving."
+                              : "Key is set. Click regenerate to create a new one."
+                          }
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {apiKeyRevealed && (
+                      <Alert severity="warning" sx={{ mb: 3 }}>
+                        <Typography variant="body2">
+                          Save this key before leaving — it will only be displayed once. After
+                          saving, the key will be masked and cannot be retrieved.
+                        </Typography>
+                      </Alert>
+                    )}
+
+                    <Alert severity="info" icon={<Info size={20} />}>
+                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
+                        How to notify from your CI/CD pipeline
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1.5 }}>
+                        After a successful production deployment, send a POST request to update the
+                        last deployment date automatically:
+                      </Typography>
+                      <Box
+                        component="pre"
+                        sx={{
+                          bgcolor: "action.hover",
+                          p: 2,
+                          borderRadius: 1,
+                          fontSize: 13,
+                          fontFamily: "monospace",
+                          overflow: "auto",
+                          mb: 1.5,
+                        }}
+                      >
+                        {[
+                          "curl -X POST \\",
+                          `  ${process.env.CORE_API}/api/deployments/notify \\`,
+                          // eslint-disable-next-line quotes
+                          '  -H "X-Deployment-Api-Key: YOUR_KEY"',
+                        ].join("\n")}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Authenticates via the <strong>X-Deployment-Api-Key</strong> header and
+                        updates the deployment date to the current UTC time. If you have multiple
+                        environments, only trigger this for <strong>production</strong> deploys.
+                      </Typography>
+                    </Alert>
+                  </>
+                )}
               </Box>
             )}
 

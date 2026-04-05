@@ -104,6 +104,7 @@ interface ExtendedConfig {
     LivePreviewUrlTemplate?: string;
     PreviewUrlTemplate?: string;
     "General.SiteUrl"?: string;
+    "Deployment.LastSuccessDate"?: string;
   };
   defaultLanguage?: string;
   capabilities?: string[];
@@ -1862,7 +1863,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                     <ContentChangeLog
                       contentId={id}
                       contentType={contentFormOps.formik.values.type}
-                      lastReleaseDate={config?.settings?.["General.LastReleaseDate"] ?? null}
+                      lastReleaseDate={config?.settings?.["Deployment.LastSuccessDate"] ?? null}
                       contentCreatedAt={contentFormOps.formik.values.createdAt ?? null}
                     />
                   )}

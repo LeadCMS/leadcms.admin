@@ -74,7 +74,7 @@ interface ExtendedConfig {
   settings?: {
     LivePreviewUrlTemplate?: string;
     PreviewUrlTemplate?: string;
-    "General.LastReleaseDate"?: string;
+    "Deployment.LastSuccessDate"?: string;
   };
   defaultLanguage?: string;
 }
@@ -134,7 +134,7 @@ export const ContentList = () => {
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
   const defaultLanguage = config?.defaultLanguage;
-  const lastReleaseDate = configSettings?.["General.LastReleaseDate"] ?? null;
+  const lastReleaseDate = configSettings?.["Deployment.LastSuccessDate"] ?? null;
 
   const contentFilterColumns: GridColDef[] = [
     { field: "title", headerName: "Title" },
