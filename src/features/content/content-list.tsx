@@ -335,6 +335,19 @@ export const ContentList = () => {
     // eslint-disable-next-line
   }, [searchTerm, whereFilters, sortField, sortDirection, selectedLanguage, selectedContentType]);
 
+  // Auto-load more when content fits on screen without scrollbar
+  useEffect(() => {
+    if (isLoading || contentItems.length === 0) return;
+    if (contentItems.length >= contentItemsCount) return;
+    const rafId = requestAnimationFrame(() => {
+      const el = document.getElementById("scrollTarget");
+      if (el && el.scrollHeight <= el.clientHeight) {
+        fetchData();
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [contentItems.length, contentItemsCount, isLoading]);
+
   // AI Draft handlers
   const handleAIDraftClick = () => {
     navigate("/content/ai-draft", {
