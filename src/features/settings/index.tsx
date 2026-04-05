@@ -25,6 +25,8 @@ import {
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
 import { Save, Info } from "lucide-react";
+import { DateTimePicker } from "@mui/x-date-pickers";
+import dayjs, { Dayjs } from "dayjs";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
@@ -47,6 +49,7 @@ interface SettingsFormData {
   "General.SiteUrl": string;
   "General.UnsubscribeUrl": string;
   "General.PrivacyUrl": string;
+  "General.LastReleaseDate": string;
   LivePreviewUrlTemplate: string;
   PreviewUrlTemplate: string;
   "Content.MinTitleLength": string;
@@ -107,6 +110,7 @@ const Settings = () => {
     "General.SiteUrl": "",
     "General.UnsubscribeUrl": "",
     "General.PrivacyUrl": "",
+    "General.LastReleaseDate": "",
     LivePreviewUrlTemplate: "",
     PreviewUrlTemplate: "",
     "Content.MinTitleLength": "",
@@ -208,6 +212,7 @@ const Settings = () => {
         "General.SiteUrl": "",
         "General.UnsubscribeUrl": "",
         "General.PrivacyUrl": "",
+        "General.LastReleaseDate": "",
         LivePreviewUrlTemplate: "",
         PreviewUrlTemplate: "",
         "Content.MinTitleLength": "",
@@ -257,6 +262,8 @@ const Settings = () => {
             newFormData["General.UnsubscribeUrl"] = setting.value || "";
           } else if (key === "General.PrivacyUrl") {
             newFormData["General.PrivacyUrl"] = setting.value || "";
+          } else if (key === "General.LastReleaseDate") {
+            newFormData["General.LastReleaseDate"] = setting.value || "";
           } else if (key === "LivePreviewUrlTemplate") {
             newFormData.LivePreviewUrlTemplate = setting.value || "";
           } else if (key === "PreviewUrlTemplate") {
@@ -577,6 +584,10 @@ const Settings = () => {
           {
             key: "General.PrivacyUrl",
             value: formData["General.PrivacyUrl"],
+          },
+          {
+            key: "General.LastReleaseDate",
+            value: formData["General.LastReleaseDate"],
           },
           {
             key: "LivePreviewUrlTemplate",
@@ -915,6 +926,38 @@ const Settings = () => {
                       helperText="Public URL pointing to your privacy policy."
                       variant="outlined"
                       size="small"
+                    />
+                  </Grid>
+                </Grid>
+
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+                  Release
+                </Typography>
+                <Grid container spacing={3} marginBottom={4}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <DateTimePicker
+                      label="Last Release Date"
+                      format="L HH:mm"
+                      value={
+                        formData["General.LastReleaseDate"]
+                          ? dayjs(formData["General.LastReleaseDate"])
+                          : null
+                      }
+                      onChange={(val: Dayjs | null) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          "General.LastReleaseDate": val ? val.toISOString() : "",
+                        }));
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          size: "small",
+                          helperText:
+                            "Date and time of the last production release." +
+                            " Used to determine content deployment status.",
+                        },
+                      }}
                     />
                   </Grid>
                 </Grid>

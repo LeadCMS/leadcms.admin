@@ -21,8 +21,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Checkbox,
 } from "@mui/material";
-import { History, Eye, User, Calendar, GitCompare } from "lucide-react";
+import { History, Eye, User, Calendar, GitCompare, Rocket } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import MonacoEditor from "@monaco-editor/react";
@@ -36,6 +37,8 @@ dayjs.extend(relativeTime);
 export interface ContentChangeLogProps {
   contentId: string;
   contentType?: string;
+  lastReleaseDate?: string | null;
+  contentCreatedAt?: string | null;
 }
 
 interface ChangeLogEntry extends ContentUpdateDtoChangeLogDetailsDto {
@@ -43,7 +46,12 @@ interface ChangeLogEntry extends ContentUpdateDtoChangeLogDetailsDto {
   relativeTime: string;
 }
 
-export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogProps) => {
+export const ContentChangeLog = ({
+  contentId,
+  contentType,
+  lastReleaseDate,
+  contentCreatedAt,
+}: ContentChangeLogProps) => {
   const { client } = useRequestContext();
   const { Show: showErrorModal } = useErrorDetailsModal();
   const [loading, setLoading] = useState(true);
@@ -55,6 +63,9 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
   const [compareToEntry, setCompareToEntry] = useState<ChangeLogEntry | null>(null);
   const [isDialogStable, setIsDialogStable] = useState(false);
   const [contentTypeDetails, setContentTypeDetails] = useState<{ format?: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const componentMountedRef = useRef(true);
 
   useEffect(() => {
@@ -89,19 +100,28 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
     };
   }, []);
 
-  const fetchChangeLog = async () => {
+  const PAGE_SIZE = 50;
+
+  const fetchChangeLog = async (skip = 0) => {
     try {
-      setLoading(true);
+      if (skip === 0) setLoading(true);
+      else setLoadingMore(true);
 
       const filter: Record<string, unknown> = {
         ["filter[order]"]: "createdAt desc",
+        ["filter[limit]"]: PAGE_SIZE,
+        ["filter[skip]"]: skip,
       };
 
       // Fetch change log and content type details in parallel
-      const [changeLogResponse, contentTypesResponse] = await Promise.all([
+      const requests: [
+        Promise<{ data: ContentUpdateDtoChangeLogDetailsDto[] }>,
+        Promise<{ data: { uid: string; format?: string }[] }>
+      ] = [
         client.api.contentChangeLogList(parseInt(contentId), filter),
-        contentType ? client.api.contentTypesList() : Promise.resolve({ data: [] }),
-      ]);
+        contentType && skip === 0 ? client.api.contentTypesList() : Promise.resolve({ data: [] }),
+      ];
+      const [changeLogResponse, contentTypesResponse] = await Promise.all(requests);
 
       // Find the specific content type details
       if (contentType) {
@@ -119,12 +139,18 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
         relativeTime: entry.createdAt ? dayjs(entry.createdAt).fromNow() : "Unknown",
       }));
 
-      setEntries(formattedEntries);
+      setHasMore(formattedEntries.length >= PAGE_SIZE);
+      if (skip === 0) {
+        setEntries(formattedEntries);
+      } else {
+        setEntries((prev) => [...prev, ...formattedEntries]);
+      }
     } catch (error) {
       console.error("Failed to fetch change log:", error);
       showErrorModal(String(error));
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -149,6 +175,51 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
     // Open dialog immediately, stability check will handle rendering delay
     setCompareDialogOpen(true);
   }, []);
+
+  // Determine if the content was never deployed using the content
+  // record's createdAt — this is reliable regardless of changelog
+  // pagination or history availability.
+  const neverDeployed = (() => {
+    if (!lastReleaseDate || !contentCreatedAt) return false;
+    return new Date(contentCreatedAt) > new Date(lastReleaseDate);
+  })();
+
+  // Find the deployed version: the first entry whose createdAt <= lastReleaseDate
+  // (entries are sorted desc, so this is the most recent version included in the release)
+  const deployedEntryId = (() => {
+    if (!lastReleaseDate || neverDeployed) return null;
+    const releaseTime = new Date(lastReleaseDate).getTime();
+    for (const entry of entries) {
+      if (entry.createdAt && new Date(entry.createdAt).getTime() <= releaseTime) {
+        return entry.id ?? null;
+      }
+    }
+    return null;
+  })();
+
+  const handleToggleSelect = (entryId: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(entryId)) {
+        next.delete(entryId);
+      } else if (next.size < 2) {
+        next.add(entryId);
+      }
+      return next;
+    });
+  };
+
+  const handleCompareSelected = () => {
+    const selected = entries.filter((e) => e.id != null && selectedIds.has(e.id));
+    if (selected.length !== 2) return;
+    // Sort so older is "from" and newer is "to"
+    const sorted = [...selected].sort(
+      (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+    );
+    handleCompareEntries(sorted[0], sorted[1]);
+  };
+
+  const handleClearSelection = () => setSelectedIds(new Set());
 
   // Helper function to get Monaco language from content type format
   const getMonacoLanguageFromFormat = (format?: string): string => {
@@ -538,10 +609,54 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
             </Typography>
           </Box>
 
+          {lastReleaseDate && neverDeployed && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                mb: 2,
+                p: 1.5,
+                borderRadius: 1,
+                backgroundColor: "info.50",
+                border: "1px solid",
+                borderColor: "info.200",
+              }}
+            >
+              <Rocket size={16} />
+              <Typography variant="body2" color="text.secondary">
+                This content has never been deployed. All versions were created after the last
+                deployment.
+              </Typography>
+            </Box>
+          )}
+
+          {selectedIds.size > 0 && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                {selectedIds.size} of 2 versions selected
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                color="secondary"
+                startIcon={<GitCompare size={16} />}
+                disabled={selectedIds.size !== 2}
+                onClick={handleCompareSelected}
+              >
+                Compare selected
+              </Button>
+              <Button size="small" onClick={handleClearSelection}>
+                Clear
+              </Button>
+            </Box>
+          )}
+
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell padding="checkbox" />
                   <TableCell>Status</TableCell>
                   <TableCell>Date & Time</TableCell>
                   <TableCell>Modified By</TableCell>
@@ -550,88 +665,130 @@ export const ContentChangeLog = ({ contentId, contentType }: ContentChangeLogPro
                 </TableRow>
               </TableHead>
               <TableBody>
-                {entries.map((entry, index) => (
-                  <TableRow key={entry.id || index}>
-                    <TableCell>
-                      <Chip
-                        label={entry.entityState || "Unknown"}
-                        color={getEntityStateColor(entry.entityState)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {entry.formattedDate}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {entry.relativeTime}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      {entry.updatedBy || entry.createdBy ? (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <User size={12} />
-                          <Typography variant="body2">
-                            {entry.updatedBy || entry.createdBy}
+                {entries.map((entry, index) => {
+                  const isDeployed = entry.id != null && entry.id === deployedEntryId;
+                  const isChecked = entry.id != null && selectedIds.has(entry.id);
+                  const canCheck = isChecked || selectedIds.size < 2;
+                  return (
+                    <TableRow
+                      key={entry.id || index}
+                      sx={
+                        isDeployed
+                          ? {
+                              backgroundColor: "success.50",
+                              borderLeft: "4px solid",
+                              borderLeftColor: "success.main",
+                            }
+                          : undefined
+                      }
+                    >
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          size="small"
+                          checked={isChecked}
+                          disabled={!canCheck}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => entry.id != null && handleToggleSelect(entry.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Chip
+                            label={entry.entityState || "Unknown"}
+                            color={getEntityStateColor(entry.entityState)}
+                            size="small"
+                          />
+                          {isDeployed && (
+                            <Tooltip title="This version is currently deployed on the site">
+                              <Chip
+                                icon={<Rocket size={14} />}
+                                label="Deployed"
+                                color="success"
+                                size="small"
+                                variant="outlined"
+                              />
+                            </Tooltip>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {entry.formattedDate}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {entry.relativeTime}
                           </Typography>
                         </Box>
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ fontStyle: "italic" }}
-                        >
-                          Unknown
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {entry.data
-                          ? `${(new Blob([JSON.stringify(entry.data)]).size / 1024).toFixed(1)} KB`
-                          : "-"}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<Eye size={16} />}
-                          onClick={() => handleViewEntry(entry)}
-                        >
-                          View
-                        </Button>
-                        {index < entries.length - 1 && (
-                          <Tooltip
-                            title={`Compare with ${entries[index + 1].formattedDate}${
-                              entries[index + 1].updatedBy || entries[index + 1].createdBy
-                                ? ` by ${
-                                    entries[index + 1].updatedBy || entries[index + 1].createdBy
-                                  }`
-                                : ""
-                            }`}
+                      </TableCell>
+                      <TableCell>
+                        {entry.updatedBy || entry.createdBy ? (
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                            <User size={12} />
+                            <Typography variant="body2">
+                              {entry.updatedBy || entry.createdBy}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ fontStyle: "italic" }}
                           >
+                            Unknown
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {entry.data
+                            ? `${(new Blob([JSON.stringify(entry.data)]).size / 1024).toFixed(
+                                1
+                              )} KB`
+                            : "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Eye size={16} />}
+                            onClick={() => handleViewEntry(entry)}
+                          >
+                            View
+                          </Button>
+                          {index < entries.length - 1 && (
                             <Button
                               variant="outlined"
                               size="small"
-                              color="secondary"
                               startIcon={<GitCompare size={16} />}
                               onClick={() => handleCompareEntries(entries[index + 1], entry)}
                             >
-                              Compare
+                              View Changes
                             </Button>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          )}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
+
+          {hasMore && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Button
+                variant="text"
+                onClick={() => fetchChangeLog(entries.length)}
+                disabled={loadingMore}
+                startIcon={loadingMore ? <CircularProgress size={16} /> : undefined}
+              >
+                {loadingMore ? "Loading..." : "Load more"}
+              </Button>
+            </Box>
+          )}
         </CardContent>
       </Card>
 

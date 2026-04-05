@@ -44,7 +44,12 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import Chip from "@mui/material/Chip";
 import { Theme, useTheme } from "@mui/material/styles";
 import { idToDisplayName } from "./content-types";
-import { getContentStatus } from "@utils/content-status-helper";
+import {
+  getContentStatus,
+  basicStatuses,
+  deploymentStatuses,
+  getStatusFilterQuery,
+} from "@utils/content-status-helper";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { parseApiError } from "@utils/api-error-parser";
@@ -69,6 +74,7 @@ interface ExtendedConfig {
   settings?: {
     LivePreviewUrlTemplate?: string;
     PreviewUrlTemplate?: string;
+    "General.LastReleaseDate"?: string;
   };
   defaultLanguage?: string;
 }
@@ -128,6 +134,7 @@ export const ContentList = () => {
   const configSettings = (config as ExtendedConfig)?.settings;
   const hasSitePreview = !!configSettings?.PreviewUrlTemplate;
   const defaultLanguage = config?.defaultLanguage;
+  const lastReleaseDate = configSettings?.["General.LastReleaseDate"] ?? null;
 
   const contentFilterColumns: GridColDef[] = [
     { field: "title", headerName: "Title" },
@@ -139,6 +146,12 @@ export const ContentList = () => {
     { field: "language", headerName: "Language" },
     { field: "category", headerName: "Category" },
     { field: "tags", headerName: "Tags" },
+    {
+      field: "status",
+      headerName: "Status",
+      type: "singleSelect",
+      valueOptions: (lastReleaseDate ? deploymentStatuses : basicStatuses) as unknown as string[],
+    },
     { field: "publishedAt", headerName: "Published At" },
     { field: "createdAt", headerName: "Created At" },
     { field: "updatedAt", headerName: "Updated At" },
@@ -189,6 +202,9 @@ export const ContentList = () => {
   const buildWhereQuery = () => {
     const queries = whereFilters
       .map((f) => {
+        if (f.whereField === "status") {
+          return getStatusFilterQuery(f.whereFieldValue as never, lastReleaseDate);
+        }
         const query = getWhereFilterQuery(
           f.whereField || "",
           f.whereFieldValue || "",
@@ -616,6 +632,7 @@ export const ContentList = () => {
                       previewUrlTemplate={configSettings?.PreviewUrlTemplate}
                       defaultLanguage={defaultLanguage}
                       hasMultipleLanguages={(config?.languages?.length || 0) > 1}
+                      lastReleaseDate={lastReleaseDate}
                       key={`content-card-${item.id}`}
                     />
                   </Grid>
@@ -656,6 +673,7 @@ interface ItemProps {
   previewUrlTemplate?: string;
   defaultLanguage?: string;
   hasMultipleLanguages?: boolean;
+  lastReleaseDate?: string | null;
 }
 
 const ItemCard = ({
@@ -666,6 +684,7 @@ const ItemCard = ({
   previewUrlTemplate,
   defaultLanguage,
   hasMultipleLanguages = true,
+  lastReleaseDate,
 }: ItemProps) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -720,7 +739,12 @@ const ItemCard = ({
     setAnchorEl(null);
   };
 
-  const contentStatus = getContentStatus(item.publishedAt ?? null);
+  const contentStatus = getContentStatus(
+    item.publishedAt ?? null,
+    item.updatedAt,
+    lastReleaseDate,
+    item.createdAt
+  );
   const publishedTooltipTitle = contentStatus.tooltip || "";
   let metaDateLabel = "Updated:";
   let metaDateValue = "—";
@@ -737,7 +761,7 @@ const ItemCard = ({
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: 432,
+        height: 404,
         borderRadius: 3,
         overflow: "hidden",
         boxShadow: 1,
@@ -812,7 +836,7 @@ const ItemCard = ({
         />
         {/* Future: badges/overlays can be placed here */}
       </Box>
-      <CardContent sx={{ flexGrow: 1, p: 4, pb: 3 }}>
+      <CardContent sx={{ display: "flex", flexDirection: "column", flexGrow: 1, p: 4, pb: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={2.5}>
           <Typography variant="caption" color="text.secondary">
             {metaDateLabel}
@@ -857,6 +881,7 @@ const ItemCard = ({
         </Typography>
         <Box
           sx={{
+            mt: "auto",
             display: "flex",
             alignItems: "center",
             gap: 1,

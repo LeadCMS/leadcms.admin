@@ -1862,6 +1862,8 @@ export const ContentEdit = (props: ContentEditProps) => {
                     <ContentChangeLog
                       contentId={id}
                       contentType={contentFormOps.formik.values.type}
+                      lastReleaseDate={config?.settings?.["General.LastReleaseDate"] ?? null}
+                      contentCreatedAt={contentFormOps.formik.values.createdAt ?? null}
                     />
                   )}
                 </Box>
