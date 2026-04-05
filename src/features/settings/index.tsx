@@ -33,6 +33,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
+import { buildAbsoluteUrl } from "@lib/network/utils";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { SettingDetailsDto } from "@lib/network/swagger-client";
 import { toPromiseError } from "@utils/api-error-parser";
@@ -1147,7 +1148,7 @@ const Settings = () => {
                       >
                         {[
                           "curl -X POST \\",
-                          `  ${process.env.CORE_API}/api/deployments/notify \\`,
+                          `  ${buildAbsoluteUrl("/api/deployments/notify")} \\`,
                           // eslint-disable-next-line quotes
                           '  -H "X-Deployment-Api-Key: YOUR_KEY"',
                         ].join("\n")}
