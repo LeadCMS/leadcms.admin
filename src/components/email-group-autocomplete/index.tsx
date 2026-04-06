@@ -3,6 +3,7 @@ import { TextField, MenuItem, CircularProgress, Grid, Chip, Box } from "@mui/mat
 import { Plus } from "lucide-react";
 import { CreateNewEmailGroup } from "./create-new";
 import { useRequestContext } from "@providers/request-provider";
+import { useConfig } from "@providers/config-provider";
 import { useNotificationsService } from "@hooks";
 import { showApiError } from "@utils/api-error-parser";
 import { EmailGroupAutoCompleteProps, EmailGroupOption } from "./types";
@@ -14,15 +15,41 @@ export function EmailGroupAutocomplete({
   defaultLanguage,
   onChange,
   onChangeWithLabel,
+  onBlur,
   error,
   helperText,
   disabled,
 }: EmailGroupAutoCompleteProps) {
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const [options, setOptions] = useState<EmailGroupOption[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const preferredLanguage = defaultLanguage || config?.defaultLanguage || "";
+  const sortedOptions = [...options].sort((left, right) => {
+    const preferredPrefix = preferredLanguage.split("-")[0].toLowerCase();
+    const leftLang = (left.language || "").toLowerCase();
+    const rightLang = (right.language || "").toLowerCase();
+    const leftScore =
+      leftLang === preferredLanguage.toLowerCase()
+        ? 0
+        : leftLang.startsWith(preferredPrefix)
+        ? 1
+        : 2;
+    const rightScore =
+      rightLang === preferredLanguage.toLowerCase()
+        ? 0
+        : rightLang.startsWith(preferredPrefix)
+        ? 1
+        : 2;
+
+    if (leftScore !== rightScore) {
+      return leftScore - rightScore;
+    }
+
+    return left.label.localeCompare(right.label);
+  });
 
   const requestData = async () => {
     setIsLoading(true);
@@ -78,15 +105,17 @@ export function EmailGroupAutocomplete({
             error={!!error}
             helperText={helperText}
             placeholder={placeholder}
+            onBlur={onBlur}
             fullWidth
             disabled={disabled}
+            slotProps={{ formHelperText: { sx: { ml: 0 } } }}
             InputProps={{
               endAdornment: (
                 <>{isLoading ? <CircularProgress color="inherit" size={20} /> : null}</>
               ),
             }}
           >
-            {options.map((opt) => (
+            {sortedOptions.map((opt) => (
               <MenuItem key={opt.id} value={opt.id}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   {opt.label}

@@ -10,6 +10,7 @@ export interface RemoteAutoCompleteProps {
   error: boolean | undefined;
   helperText: string | string[] | false | undefined;
   onChange: (event: React.SyntheticEvent<Element, Event>, value: string | string[] | null) => void;
+  onInputChange?: (value: string) => void;
   type: RemoteValues;
   contentType?: string;
   language?: string;
@@ -19,4 +20,6 @@ export enum RemoteValues {
   TAGS = 1,
   CATEGORIES,
   AUTHORS,
+  SENDER_NAMES,
+  SENDER_EMAILS,
 }

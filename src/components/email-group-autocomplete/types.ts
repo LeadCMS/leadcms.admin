@@ -8,6 +8,7 @@ export interface EmailGroupAutoCompleteProps {
   helperText: string | string[] | false | undefined;
   onChange: (value: number) => void;
   onChangeWithLabel?: (value: number, label: string) => void;
+  onBlur?: () => void;
 }
 
 export interface EmailGroupOption {

@@ -37,6 +37,7 @@ export const LanguageSelect = ({
       helperText={helperText}
       disabled={disabled}
       required={required}
+      slotProps={{ formHelperText: { sx: { ml: 0 } } }}
     >
       {languages.map((lang) => (
         <MenuItem key={lang.code} value={lang.code}>

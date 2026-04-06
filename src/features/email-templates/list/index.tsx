@@ -1,9 +1,8 @@
 import { DataList, DateValueFormatter, DateValueGetter } from "@components/data-list";
-import { GhostLink } from "@components/ghost-link";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { SearchBar } from "@components/search-bar";
+import { AddTemplateDialog, AddTemplateDialogResult } from "@components/add-template-dialog";
 import { EmailGroupDetailsDto, EmailTemplateDetailsDto } from "@lib/network/swagger-client";
-import { getAddFormRoute } from "@lib/router";
 import { Plus, Download, Filter, Settings2, Sparkles } from "lucide-react";
 import Button from "@mui/material/Button";
 import { Box, Chip, FormControl, InputLabel, MenuItem, Select } from "@mui/material";
@@ -47,6 +46,7 @@ export const EmailTemplatesList = () => {
   );
   const [allEmailGroups, setAllEmailGroups] = useState<EmailGroupDetailsDto[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [addTemplateDialogOpen, setAddTemplateDialogOpen] = useState(false);
   const dataExportQuery = useRef("");
 
   useEffect(() => {
@@ -68,6 +68,33 @@ export const EmailTemplatesList = () => {
           );
         })
       : allEmailGroups;
+  const preferredGroupLanguage =
+    (isLanguageFilterActive && selectedLanguage !== "all" ? selectedLanguage : "") ||
+    config?.defaultLanguage ||
+    "";
+  const sortedEmailGroups = [...emailGroups].sort((left, right) => {
+    const preferredPrefix = preferredGroupLanguage.split("-")[0].toLowerCase();
+    const leftLang = (left.language || "").toLowerCase();
+    const rightLang = (right.language || "").toLowerCase();
+    const leftScore =
+      leftLang === preferredGroupLanguage.toLowerCase()
+        ? 0
+        : leftLang.startsWith(preferredPrefix)
+        ? 1
+        : 2;
+    const rightScore =
+      rightLang === preferredGroupLanguage.toLowerCase()
+        ? 0
+        : rightLang.startsWith(preferredPrefix)
+        ? 1
+        : 2;
+
+    if (leftScore !== rightScore) {
+      return leftScore - rightScore;
+    }
+
+    return left.name.localeCompare(right.name);
+  });
 
   // Clear stored selection when the selected group no longer belongs to the visible list
   useEffect(() => {
@@ -110,6 +137,15 @@ export const EmailTemplatesList = () => {
 
   const handleExportOpen = () => {
     openExport ? setOpenExport(false) : setOpenExport(true);
+  };
+
+  const handleAddTemplate = (result: AddTemplateDialogResult) => {
+    setAddTemplateDialogOpen(false);
+    navigate("/email-templates/add", {
+      state: {
+        prefill: result,
+      },
+    });
   };
 
   const [columns, setColumns] = useState<GridColDef<EmailTemplateDetailsDto>[]>([
@@ -184,11 +220,11 @@ export const EmailTemplatesList = () => {
         <Select
           labelId="email-group-filter-label"
           label="Group"
-          value={emailGroups.some((g) => g.id === selectedGroupId) ? selectedGroupId : ""}
+          value={sortedEmailGroups.some((g) => g.id === selectedGroupId) ? selectedGroupId : ""}
           onChange={(e) => setSelectedGroupId(e.target.value as number | "")}
         >
           <MenuItem value="">All groups</MenuItem>
-          {emailGroups.map((g) => (
+          {sortedEmailGroups.map((g) => (
             <MenuItem key={g.id} value={g.id}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 {g.name}
@@ -236,11 +272,10 @@ export const EmailTemplatesList = () => {
     <Box sx={{ display: "flex", gap: 1 }}>
       <Button
         variant="contained"
-        to={getAddFormRoute()}
-        component={GhostLink}
+        onClick={() => setAddTemplateDialogOpen(true)}
         startIcon={<Plus size={18} />}
       >
-        Add template
+        Add Template
       </Button>
       {config?.capabilities?.includes("AIAssistance") && (
         <Button
@@ -285,6 +320,12 @@ export const EmailTemplatesList = () => {
         onExportClose={handleExportOpen}
         exportApiCall={emailTemplatesExportApi}
       ></DataList>
+      <AddTemplateDialog
+        open={addTemplateDialogOpen}
+        onClose={() => setAddTemplateDialogOpen(false)}
+        onAdd={handleAddTemplate}
+        defaultEmailGroupId={selectedGroupId}
+      />
     </ModuleWrapper>
   );
 };

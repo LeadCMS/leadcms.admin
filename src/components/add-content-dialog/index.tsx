@@ -289,7 +289,7 @@ export const AddContentDialog = ({
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
         <Button onClick={handleAdd} variant="contained" disabled={!isValid}>
-          Add
+          Continue to Content Editor
         </Button>
       </DialogActions>
     </Dialog>

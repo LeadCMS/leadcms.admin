@@ -17148,6 +17148,52 @@ export class Api<
      * No description
      *
      * @tags EmailTemplates
+     * @name EmailTemplatesSenderNamesList
+     * @request GET:/api/email-templates/sender-names
+     * @secure
+     */
+    emailTemplatesSenderNamesList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/email-templates/sender-names`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
+     * @name EmailTemplatesSenderEmailsList
+     * @request GET:/api/email-templates/sender-emails
+     * @secure
+     */
+    emailTemplatesSenderEmailsList: (
+      query?: {
+        language?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string[], void | ProblemDetails>({
+        path: `/api/email-templates/sender-emails`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags EmailTemplates
      * @name EmailTemplatesTranslationDraftDetail
      * @request GET:/api/email-templates/{id}/translation-draft/{language}
      * @secure

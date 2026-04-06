@@ -13,6 +13,7 @@ export function RemoteAutocomplete({
   multiple,
   value,
   onChange,
+  onInputChange,
   limit,
   type,
   error,
@@ -63,6 +64,16 @@ export function RemoteAutocomplete({
             language: language,
           });
           break;
+        case RemoteValues.SENDER_NAMES:
+          response = await client.api.emailTemplatesSenderNamesList({
+            language: language,
+          });
+          break;
+        case RemoteValues.SENDER_EMAILS:
+          response = await client.api.emailTemplatesSenderEmailsList({
+            language: language,
+          });
+          break;
       }
     } catch (e) {
       showApiError(e, notificationsService, undefined, "Failed to get options");
@@ -103,6 +114,7 @@ export function RemoteAutocomplete({
       autoSelect
       value={value}
       onChange={onChange}
+      onInputChange={(_event, newValue) => onInputChange?.(newValue)}
       renderInput={(params) => (
         <TextField
           {...params}

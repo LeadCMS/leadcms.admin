@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";
 import { useLayout } from "@providers/layout-provider";
+import { useUserInfo } from "@providers/user-provider";
 import { useCoreModuleNavigation, useNotificationsService, useSaveShortcut } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useRequestContext } from "@providers/request-provider";
@@ -20,6 +21,7 @@ import { emailTemplateFormBreadcrumbLinks, emailTemplateGroupFilterStorageKey } 
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { EmailTemplateEditContainer } from "./index.styled";
 import {
+  Alert,
   Button,
   Card,
   CardContent,
@@ -47,6 +49,8 @@ import useLocalStorage from "use-local-storage";
 import { EmailTemplateEditProps } from "./types";
 import { LanguageSelect } from "@components/language-select";
 import { EmailGroupAutocomplete } from "@components/email-group-autocomplete";
+import { RemoteAutocomplete } from "@components/remote-autocomplete";
+import { RemoteValues } from "@components/remote-autocomplete/types";
 import { execSubmitWithToast } from "utils/formik-helper";
 import { CoreModule } from "@lib/router";
 import {
@@ -197,6 +201,7 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   const hasAIAssistance = config?.capabilities?.includes("AIAssistance") || false;
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
   const { selectedLanguage: globalLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
+  const userInfo = useUserInfo();
   const [storedGroupId] = useLocalStorage<number | "">(emailTemplateGroupFilterStorageKey, "");
 
   // Full-width layout
@@ -206,6 +211,17 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   }, [setFullWidth]);
 
   // Determine modes
+  const prefillData = location.state?.prefill as
+    | {
+        language?: string;
+        subject?: string;
+        emailGroupId?: number;
+        name?: string;
+        fromName?: string;
+        fromEmail?: string;
+        category?: EmailTemplateCategory;
+      }
+    | undefined;
   const isAIDraftRoute = location.pathname.includes("/ai-draft");
   const isTranslationMode = !!routeTargetLanguage;
   const isDuplicateMode = !!routeSourceId && !id && !isTranslationMode;
@@ -350,15 +366,37 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
   // Set defaults for new templates (create or AI draft)
   useEffect(() => {
     if (!isCreateMode && !isAIDraftRoute) return;
+
     const lang =
+      prefillData?.language ||
       (isLanguageFilterActive && globalLanguage !== "all" ? globalLanguage : "") ||
       config?.defaultLanguage ||
       "";
+    const defaultSenderName =
+      prefillData?.fromName || userInfo?.details?.displayName || userInfo?.details?.userName || "";
+    const defaultSenderEmail = prefillData?.fromEmail || userInfo?.details?.email || "";
+    const defaultGroupId = prefillData?.emailGroupId || (storedGroupId ? Number(storedGroupId) : 0);
+
     if (lang && !formik.values.language) {
       formik.setFieldValue("language", lang);
     }
-    if (storedGroupId && !formik.values.emailGroupId) {
-      formik.setFieldValue("emailGroupId", Number(storedGroupId));
+    if (defaultGroupId && !formik.values.emailGroupId) {
+      formik.setFieldValue("emailGroupId", defaultGroupId);
+    }
+    if (prefillData?.subject && !formik.values.subject) {
+      formik.setFieldValue("subject", prefillData.subject);
+    }
+    if (prefillData?.name && !formik.values.name) {
+      formik.setFieldValue("name", prefillData.name);
+    }
+    if (defaultSenderName && !formik.values.fromName) {
+      formik.setFieldValue("fromName", defaultSenderName);
+    }
+    if (defaultSenderEmail && !formik.values.fromEmail) {
+      formik.setFieldValue("fromEmail", defaultSenderEmail);
+    }
+    if (prefillData?.category && !formik.values.category) {
+      formik.setFieldValue("category", prefillData.category);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -367,7 +405,11 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
     config?.defaultLanguage,
     globalLanguage,
     isLanguageFilterActive,
+    prefillData,
     storedGroupId,
+    userInfo?.details?.displayName,
+    userInfo?.details?.email,
+    userInfo?.details?.userName,
   ]);
 
   const valueUpdate = (event: React.SyntheticEvent<Element, Event>) => {
@@ -1013,16 +1055,24 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                         label="Email Group"
                         value={formik.values.emailGroupId}
                         defaultLanguage={defaultEmailGroupLanguage}
-                        error={formik.touched.emailGroupId && Boolean(formik.errors.emailGroupId)}
-                        helperText={formik.touched.emailGroupId && formik.errors.emailGroupId}
+                        error={
+                          (formik.touched.emailGroupId || formik.submitCount > 0) &&
+                          Boolean(formik.errors.emailGroupId)
+                        }
+                        helperText={
+                          (formik.touched.emailGroupId || formik.submitCount > 0) &&
+                          formik.errors.emailGroupId
+                        }
                         placeholder="Select group"
                         onChange={(value) => {
                           setWasModified(true);
+                          formik.setFieldTouched("emailGroupId", true, false);
                           formik.setFieldValue("emailGroupId", value);
                         }}
                         onChangeWithLabel={(_, label) => {
                           setEmailGroupDisplayName(label);
                         }}
+                        onBlur={() => formik.setFieldTouched("emailGroupId", true, false)}
                       />
                     </Grid>
                   </Grid>
@@ -1224,32 +1274,54 @@ export const EmailTemplateEdit = ({ readonly }: EmailTemplateEditProps) => {
                       </Grid>
                     )}
                     <Grid size={{ xs: 12, sm: 4 }}>
-                      <TextField
-                        disabled={readonly}
+                      <RemoteAutocomplete
                         label="Sender Email"
-                        name="fromEmail"
-                        value={formik.values.fromEmail}
+                        placeholder="Enter sender email"
+                        type={RemoteValues.SENDER_EMAILS}
+                        freeSolo
+                        multiple={false}
+                        limit={1}
+                        value={formik.values.fromEmail || ""}
                         error={formik.touched.fromEmail && Boolean(formik.errors.fromEmail)}
                         helperText={formik.touched.fromEmail && formik.errors.fromEmail}
-                        placeholder="Enter sender email"
-                        variant="outlined"
-                        onChange={valueUpdate}
-                        fullWidth
+                        language={formik.values.language}
+                        onChange={(_event, value) => {
+                          setWasModified(true);
+                          formik.setFieldValue("fromEmail", (value as string) || "");
+                        }}
+                        onInputChange={(value) => {
+                          setWasModified(true);
+                          formik.setFieldValue("fromEmail", value);
+                        }}
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
-                      <TextField
-                        disabled={readonly}
+                      <RemoteAutocomplete
                         label="Sender Name"
-                        name="fromName"
-                        value={formik.values.fromName}
+                        placeholder="Enter sender name"
+                        type={RemoteValues.SENDER_NAMES}
+                        freeSolo
+                        multiple={false}
+                        limit={1}
+                        value={formik.values.fromName || ""}
                         error={formik.touched.fromName && Boolean(formik.errors.fromName)}
                         helperText={formik.touched.fromName && formik.errors.fromName}
-                        placeholder="Enter sender name"
-                        variant="outlined"
-                        onChange={valueUpdate}
-                        fullWidth
+                        language={formik.values.language}
+                        onChange={(_event, value) => {
+                          setWasModified(true);
+                          formik.setFieldValue("fromName", (value as string) || "");
+                        }}
+                        onInputChange={(value) => {
+                          setWasModified(true);
+                          formik.setFieldValue("fromName", value);
+                        }}
                       />
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <Alert severity="warning" sx={{ py: 0.5, alignItems: "center" }}>
+                        Sender must be trusted or allowed in your email provider, or sending may
+                        fail.
+                      </Alert>
                     </Grid>
                     {hasAIAssistance && (
                       <Grid size={{ xs: 12, sm: 4 }}>
