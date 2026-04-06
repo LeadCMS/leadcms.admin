@@ -153,6 +153,16 @@ export const ContentEdit = (props: ContentEditProps) => {
 
   // Determine operation modes
   const aiGeneratedContent = location.state?.aiGeneratedContent;
+  const prefillData = location.state?.prefill as
+    | {
+        contentType?: string;
+        language?: string;
+        title?: string;
+        description?: string;
+        slug?: string;
+        category?: string;
+      }
+    | undefined;
   const isAIDraftRoute = location.pathname.includes("/ai-draft");
   const isAIDraftMode = !!aiGeneratedContent || isAIDraftRoute;
   const isDuplicateMode = !!sourceId && !translateToParam;
@@ -1046,8 +1056,9 @@ export const ContentEdit = (props: ContentEditProps) => {
     const applyCreateDefaults = async () => {
       if (!isCreateMode) return;
       // Language default
-      if (!contentFormOps.formik.values.language && preferredLanguage) {
-        contentFormOps.formik.setFieldValue("language", preferredLanguage);
+      if (!contentFormOps.formik.values.language) {
+        const lang = prefillData?.language || preferredLanguage;
+        if (lang) contentFormOps.formik.setFieldValue("language", lang);
       }
       // Author default - use current user's display name if not set
       if (!contentFormOps.formik.values.author && userInfo?.details?.displayName) {
@@ -1055,15 +1066,16 @@ export const ContentEdit = (props: ContentEditProps) => {
       }
       // Type default when content types are loaded
       if (contentDataOps.contentTypes.length > 0 && !contentFormOps.formik.values.type) {
-        // Use URL parameter if available and valid
+        // Use prefill or URL parameter if available and valid
         let selectedType = null;
-        if (urlContentType) {
-          const validType = contentDataOps.contentTypes.find((t) => t.uid === urlContentType);
+        const preferredType = prefillData?.contentType || urlContentType;
+        if (preferredType) {
+          const validType = contentDataOps.contentTypes.find((t) => t.uid === preferredType);
           if (validType) {
-            selectedType = urlContentType;
+            selectedType = preferredType;
           }
         }
-        // Fallback to first content type if no valid URL parameter
+        // Fallback to first content type if no valid parameter
         if (!selectedType) {
           selectedType = contentDataOps.contentTypes[0]?.uid;
         }
@@ -1073,6 +1085,21 @@ export const ContentEdit = (props: ContentEditProps) => {
           await setContentTypeAndMaybePreload(selectedType);
           // Apply type defaults for body and flags
           await setContentTypeDefaults(selectedType);
+        }
+      }
+      // Apply prefill values for title, description, slug, category
+      if (prefillData) {
+        if (prefillData.title && !contentFormOps.formik.values.title) {
+          contentFormOps.formik.setFieldValue("title", prefillData.title);
+        }
+        if (prefillData.description && !contentFormOps.formik.values.description) {
+          contentFormOps.formik.setFieldValue("description", prefillData.description);
+        }
+        if (prefillData.slug && !contentFormOps.formik.values.slug) {
+          contentFormOps.formik.setFieldValue("slug", prefillData.slug);
+        }
+        if (prefillData.category && !contentFormOps.formik.values.category) {
+          contentFormOps.formik.setFieldValue("category", prefillData.category);
         }
       }
     };

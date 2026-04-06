@@ -68,6 +68,7 @@ import { TranslateDialog, TranslationType } from "@components/translate-dialog";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { ContentLanguageBadges } from "@components/content-language-badges";
 import { ContentTypeFilter } from "@components/content-type-filter";
+import { AddContentDialog, AddContentDialogResult } from "@components/add-content-dialog";
 
 // Extended config interface to handle settings not in the swagger definition
 interface ExtendedConfig {
@@ -105,6 +106,7 @@ export const ContentList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const scrollTargetRef = useRef<HTMLDivElement>(null);
+  const [addContentDialogOpen, setAddContentDialogOpen] = useState(false);
   const initialLoadRef = useRef(false);
   const [sortAnchorEl, setSortAnchorEl] = useState<HTMLElement | null>(null);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
@@ -355,6 +357,22 @@ export const ContentList = () => {
     });
   };
 
+  const handleAddContent = (result: AddContentDialogResult) => {
+    setAddContentDialogOpen(false);
+    navigate("/content/new", {
+      state: {
+        prefill: {
+          contentType: result.contentType,
+          language: result.language,
+          title: result.title,
+          description: result.description,
+          slug: result.slug,
+          category: result.category,
+        },
+      },
+    });
+  };
+
   // Clear all filters handler
   const handleClearAllFilters = () => {
     setSearchTerm("");
@@ -481,12 +499,7 @@ export const ContentList = () => {
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
             variant="contained"
-            to={
-              selectedContentType
-                ? `/content/new?contentType=${selectedContentType}`
-                : "/content/new"
-            }
-            component={GhostLink}
+            onClick={() => setAddContentDialogOpen(true)}
             startIcon={<Plus size={18} />}
           >
             Add Content
@@ -674,6 +687,12 @@ export const ContentList = () => {
           </DialogActions>
         </Dialog>
       </ContentListContainer>
+      <AddContentDialog
+        open={addContentDialogOpen}
+        onClose={() => setAddContentDialogOpen(false)}
+        onAdd={handleAddContent}
+        defaultContentType={selectedContentType}
+      />
     </ModuleWrapper>
   );
 };
@@ -704,8 +723,20 @@ const ItemCard = ({
   const [translateDialogOpen, setTranslateDialogOpen] = useState(false);
   const open = Boolean(anchorEl);
   const theme = useTheme();
+  const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
   const slug = item.slug.trim();
+  const supportedLanguages = config?.languages || [];
+  const maxLanguageCodeLength = Math.max(
+    ...supportedLanguages.map((lang) => (lang.code || "").length),
+    0
+  );
+  const languagesPerLine = maxLanguageCodeLength > 2 ? 4 : 6;
+  const languageBadgeLines =
+    hasMultipleLanguages && supportedLanguages.length > 1
+      ? Math.ceil(supportedLanguages.length / languagesPerLine)
+      : 0;
+  const extraCardHeight = languageBadgeLines * 20;
 
   const onClickEdit = () => {
     navigate(`/content/${item.id}/edit`);
@@ -775,7 +806,7 @@ const ItemCard = ({
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: 420,
+        height: 420 + extraCardHeight,
         borderRadius: 3,
         overflow: "hidden",
         boxShadow: 1,

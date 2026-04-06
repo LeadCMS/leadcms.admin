@@ -110,6 +110,7 @@ export function RemoteAutocomplete({
           placeholder={placeholder}
           error={error}
           helperText={helperText}
+          slotProps={{ formHelperText: { sx: { ml: 0 } } }}
           InputProps={{
             ...params.InputProps,
             endAdornment: (

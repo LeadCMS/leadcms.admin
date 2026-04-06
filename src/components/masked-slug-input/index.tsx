@@ -76,6 +76,7 @@ export const MaskedSlugInput = ({
       onChange={handleChange}
       fullWidth
       slotProps={{
+        formHelperText: { sx: { ml: 0 } },
         input: {
           ...(normalizedPrefix
             ? {
