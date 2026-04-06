@@ -318,12 +318,6 @@ export const ContentList = () => {
     });
   }, [whereFilters, sortField, sortDirection, searchTerm, selectedContentType, setStoredSettings]);
 
-  useEffect(() => {
-    setWhereFilters(storedSettings.whereFilters);
-    setSortField(storedSettings.sortField);
-    setSortDirection(storedSettings.sortDirection);
-  }, [storedSettings]);
-
   // Initial load and search
   useEffect(() => {
     setContentItems([]);
