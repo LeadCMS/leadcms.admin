@@ -403,29 +403,37 @@ export const AIDraftDialog = ({
             you want to create, and AI will generate a draft for you to edit further.
           </Typography>
 
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel>Language</InputLabel>
-            <Select
-              value={language}
-              label="Language"
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                // Clear error when user changes form fields
-                if (error && onErrorClear) {
-                  onErrorClear();
-                }
-              }}
-              disabled={isLoading}
-            >
-              {languages.map((lang) => (
-                <MenuItem key={lang.code} value={lang.code}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <span>{lang.name}</span>
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {languages.length > 1 && (
+            <FormControl fullWidth sx={{ mb: 3 }}>
+              <InputLabel>Language</InputLabel>
+              <Select
+                value={language}
+                label="Language"
+                onChange={(e) => {
+                  setLanguage(e.target.value);
+                  // Clear error when user changes form fields
+                  if (error && onErrorClear) {
+                    onErrorClear();
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {languages.map((lang) => (
+                  <MenuItem key={lang.code} value={lang.code}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <span>{lang.name}</span>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <FormControl fullWidth sx={{ mb: 4 }}>
             <InputLabel>Content Type</InputLabel>

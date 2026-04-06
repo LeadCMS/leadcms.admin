@@ -189,6 +189,7 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
   const navigate = useNavigate();
   const isEdit = mode === "edit";
   const hasSegments = hasEntity(config?.entities, ENTITY_KEYS.segment);
+  const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
 
   const [activeStep, setActiveStep] = useState(0);
   const [savingAction, setSavingAction] = useState<"draft" | "activate" | "save" | null>(null);
@@ -206,9 +207,15 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
   // Form state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [language, setLanguage] = useState(
-    !isEdit && isLanguageFilterActive && selectedLanguage !== "all" ? selectedLanguage : ""
-  );
+  const [language, setLanguage] = useState(() => {
+    if (!isEdit && isLanguageFilterActive && selectedLanguage !== "all") {
+      return selectedLanguage;
+    }
+    if (!hasMultipleLanguages) {
+      return config?.defaultLanguage || "";
+    }
+    return "";
+  });
   const [stopOnReply, setStopOnReply] = useState(true);
   const [useContactTimeZone, setUseContactTimeZone] = useState(false);
   const [timeZone, setTimeZone] = useState<number>(getBrowserTimezoneOffset());
@@ -849,15 +856,17 @@ export const SequenceForm = ({ mode, sequenceId }: SequenceFormProps) => {
                   disabled={!canEditDetails}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <LanguageSelect
-                  value={language}
-                  onChange={(value) => setLanguage(value)}
-                  label="Language"
-                  disabled={!canEditDetails}
-                  required
-                />
-              </Grid>
+              {hasMultipleLanguages && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <LanguageSelect
+                    value={language}
+                    onChange={(value) => setLanguage(value)}
+                    label="Language"
+                    disabled={!canEditDetails}
+                    required
+                  />
+                </Grid>
+              )}
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth

@@ -367,24 +367,26 @@ export const AIEmailDraftDialog = ({
             subject line, and metadata for you to review and edit.
           </Typography>
 
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel>Language</InputLabel>
-            <Select
-              value={language}
-              label="Language"
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                if (error && onErrorClear) onErrorClear();
-              }}
-              disabled={isLoading}
-            >
-              {languages.map((lang) => (
-                <MenuItem key={lang.code} value={lang.code}>
-                  {lang.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {languages.length > 1 && (
+            <FormControl fullWidth sx={{ mb: 3 }}>
+              <InputLabel>Language</InputLabel>
+              <Select
+                value={language}
+                label="Language"
+                onChange={(e) => {
+                  setLanguage(e.target.value);
+                  if (error && onErrorClear) onErrorClear();
+                }}
+                disabled={isLoading}
+              >
+                {languages.map((lang) => (
+                  <MenuItem key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <FormControl fullWidth sx={{ mb: 3 }}>
             <InputLabel>Email Group</InputLabel>

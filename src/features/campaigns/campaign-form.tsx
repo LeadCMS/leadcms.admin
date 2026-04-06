@@ -93,6 +93,7 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const isEdit = mode === "edit";
   const hasSegments = hasEntity(config?.entities, ENTITY_KEYS.segment);
+  const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
 
   const [activeStep, setActiveStep] = useState(0);
   const [savingAction, setSavingAction] = useState<"draft" | "launch" | "save" | null>(null);
@@ -126,9 +127,15 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
   const [timeZone, setTimeZone] = useState<number>(getBrowserTimezoneOffset());
   const [useContactTimeZone, setUseContactTimeZone] = useState(false);
   const [allowPastTimeZones, setAllowPastTimeZones] = useState(false);
-  const [language, setLanguage] = useState(
-    !isEdit && isLanguageFilterActive && selectedLanguage !== "all" ? selectedLanguage : ""
-  );
+  const [language, setLanguage] = useState(() => {
+    if (!isEdit && isLanguageFilterActive && selectedLanguage !== "all") {
+      return selectedLanguage;
+    }
+    if (!hasMultipleLanguages) {
+      return config?.defaultLanguage || "";
+    }
+    return "";
+  });
 
   // Data lists
   const [segments, setSegments] = useState<SegmentDetailsDto[]>([]);
@@ -523,18 +530,20 @@ export const CampaignForm = ({ mode, campaignId }: CampaignFormProps) => {
                 required
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <LanguageSelect
-                value={language}
-                onChange={(val) => {
-                  setLanguage(val);
-                  setSelectedTemplateId("");
-                }}
-                label="Language"
-                disabled={!canEditDetails}
-                required
-              />
-            </Grid>
+            {hasMultipleLanguages && (
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <LanguageSelect
+                  value={language}
+                  onChange={(val) => {
+                    setLanguage(val);
+                    setSelectedTemplateId("");
+                  }}
+                  label="Language"
+                  disabled={!canEditDetails}
+                  required
+                />
+              </Grid>
+            )}
             <Grid size={{ xs: 12 }}>
               <TextField
                 label="Description"

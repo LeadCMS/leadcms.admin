@@ -18,6 +18,7 @@ import { EmailGroupEditValidationScheme } from "./validation";
 import { Box, TextField } from "@mui/material";
 import { CreateNewEmailGroupProps } from "./types";
 import { LanguageSelect } from "@components/language-select";
+import { useConfig } from "@providers/config-provider";
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
@@ -37,6 +38,8 @@ export const CreateNewEmailGroup = ({
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
   const { client } = useRequestContext();
+  const { config } = useConfig();
+  const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
 
   const submitFunc = async (
     values: EmailGroupCreateDto,
@@ -118,16 +121,18 @@ export const CreateNewEmailGroup = ({
               sx={{ mt: 2 }}
             />
             <Box sx={{ mt: 3 }}>
-              <LanguageSelect
-                value={formik.values.language || ""}
-                onChange={(value) => {
-                  formik.setFieldValue("language", value);
-                }}
-                error={formik.touched.language && Boolean(formik.errors.language)}
-                helperText={formik.touched.language && formik.errors.language}
-                disabled={formik.isSubmitting}
-                label="Language"
-              />
+              {hasMultipleLanguages && (
+                <LanguageSelect
+                  value={formik.values.language || ""}
+                  onChange={(value) => {
+                    formik.setFieldValue("language", value);
+                  }}
+                  error={formik.touched.language && Boolean(formik.errors.language)}
+                  helperText={formik.touched.language && formik.errors.language}
+                  disabled={formik.isSubmitting}
+                  label="Language"
+                />
+              )}
             </Box>
           </DialogContent>
           <DialogActions>
