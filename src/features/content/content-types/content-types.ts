@@ -53,6 +53,8 @@ export const addContentType = async (
     supportsCoverImage: boolean;
     supportsPreviewSlug: boolean;
     supportsSEO: boolean;
+    slugPrefix?: string | null;
+    slugPostfix?: string | null;
   }
 ): Promise<ContentTypeDetailsDto> => {
   const payload: ContentTypeCreateDto = {
@@ -62,6 +64,8 @@ export const addContentType = async (
     supportsCoverImage: newType.supportsCoverImage,
     supportsPreviewSlug: newType.supportsPreviewSlug,
     supportsSEO: newType.supportsSEO,
+    slugPrefix: newType.slugPrefix,
+    slugPostfix: newType.slugPostfix,
   };
   const res = await client.api.contentTypesCreate(payload);
   return res.data;

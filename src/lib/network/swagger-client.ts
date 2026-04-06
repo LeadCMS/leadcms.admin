@@ -5100,6 +5100,16 @@ export interface ContentTypeCreateDto {
    * @example true
    */
   supportsSEO?: boolean;
+  /**
+   * Slug Prefix
+   * @example "string"
+   */
+  slugPrefix?: string | null;
+  /**
+   * Slug Postfix
+   * @example "string"
+   */
+  slugPostfix?: string | null;
 }
 
 export interface ContentTypeDetailsDto {
@@ -5134,6 +5144,16 @@ export interface ContentTypeDetailsDto {
    * @example true
    */
   supportsSEO?: boolean;
+  /**
+   * Slug Prefix
+   * @example "string"
+   */
+  slugPrefix?: string | null;
+  /**
+   * Slug Postfix
+   * @example "string"
+   */
+  slugPostfix?: string | null;
   /**
    * Id
    * @format int32
@@ -5257,6 +5277,16 @@ export interface ContentTypeImportDto {
    * @example true
    */
   supportsSEO?: boolean | null;
+  /**
+   * Slug Prefix
+   * @example "string"
+   */
+  slugPrefix?: string | null;
+  /**
+   * Slug Postfix
+   * @example "string"
+   */
+  slugPostfix?: string | null;
 }
 
 export interface ContentTypeUpdateDto {
@@ -5290,6 +5320,16 @@ export interface ContentTypeUpdateDto {
    * @example true
    */
   supportsSEO?: boolean | null;
+  /**
+   * Slug Prefix
+   * @example "string"
+   */
+  slugPrefix?: string | null;
+  /**
+   * Slug Postfix
+   * @example "string"
+   */
+  slugPostfix?: string | null;
 }
 
 export interface ContentUpdateDto {
@@ -11038,7 +11078,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.5.10.0
+ * @version 1.5.13.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -12344,29 +12384,6 @@ export class Api<
      * No description
      *
      * @tags Content
-     * @name ContentUpdate
-     * @request PUT:/api/content/{id}
-     * @secure
-     */
-    contentUpdate: (
-      id: number,
-      data: ContentCreateDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<ContentDetailsDto, void | ProblemDetails>({
-        path: `/api/content/${id}`,
-        method: "PUT",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Content
      * @name ContentPartialUpdate
      * @request PATCH:/api/content/{id}
      * @secure
@@ -12379,6 +12396,29 @@ export class Api<
       this.request<ContentDetailsDto, void | ProblemDetails>({
         path: `/api/content/${id}`,
         method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Content
+     * @name ContentUpdate
+     * @request PUT:/api/content/{id}
+     * @secure
+     */
+    contentUpdate: (
+      id: number,
+      data: ContentCreateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContentDetailsDto, void | ProblemDetails>({
+        path: `/api/content/${id}`,
+        method: "PUT",
         body: data,
         secure: true,
         type: ContentType.Json,
@@ -16416,6 +16456,22 @@ export class Api<
         secure: true,
         type: ContentType.Json,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Deployments
+     * @name DeploymentsNotifyCreate
+     * @request POST:/api/deployments/notify
+     * @secure
+     */
+    deploymentsNotifyCreate: (params: RequestParams = {}) =>
+      this.request<void, ProblemDetails>({
+        path: `/api/deployments/notify`,
+        method: "POST",
+        secure: true,
         ...params,
       }),
 

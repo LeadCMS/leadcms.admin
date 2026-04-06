@@ -81,6 +81,7 @@ import { SeoEditor } from "@components/seo-editor";
 import { RemoteAutocomplete } from "@components/remote-autocomplete";
 import { RemoteValues } from "@components/remote-autocomplete/types";
 import { LanguageSelect } from "@components/language-select";
+import { MaskedSlugInput } from "@components/masked-slug-input";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import MonacoEditor, { loader } from "@monaco-editor/react";
@@ -1691,11 +1692,13 @@ export const ContentEdit = (props: ContentEditProps) => {
                   {safeActiveTab === "settings" && (
                     <Grid container spacing={6} sx={{ mt: 2 }}>
                       <Grid size={{ xs: 12 }}>
-                        <TextField
+                        <MaskedSlugInput
                           disabled={props.readonly}
                           label="Slug"
                           name="slug"
                           value={contentFormOps.formik.values.slug}
+                          prefix={contentDataOps.contentType?.slugPrefix}
+                          postfix={contentDataOps.contentType?.slugPostfix}
                           error={
                             contentFormOps.formik.touched.slug &&
                             Boolean(contentFormOps.formik.errors.slug)
@@ -1703,10 +1706,11 @@ export const ContentEdit = (props: ContentEditProps) => {
                           helperText={
                             contentFormOps.formik.touched.slug && contentFormOps.formik.errors.slug
                           }
-                          placeholder="Enter slug"
-                          variant="outlined"
-                          onChange={contentFormOps.valueUpdate}
-                          fullWidth
+                          placeholder="enter-your-slug"
+                          onChange={(fullSlug) => {
+                            contentFormOps.formik.setFieldValue("slug", fullSlug);
+                            contentFormOps.setWasModified(true);
+                          }}
                         />
                       </Grid>
                       {hasPreviewSlugSupport && (

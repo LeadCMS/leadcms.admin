@@ -38,6 +38,8 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
   const [supportsCoverImage, setSupportsCoverImage] = useState(false);
   const [supportsPreviewSlug, setSupportsPreviewSlug] = useState(false);
   const [supportsSEO, setSupportsSEO] = useState(false);
+  const [slugPrefix, setSlugPrefix] = useState("");
+  const [slugPostfix, setSlugPostfix] = useState("");
   const [nameError, setNameError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -56,6 +58,8 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
         supportsCoverImage,
         supportsPreviewSlug,
         supportsSEO,
+        slugPrefix: slugPrefix || null,
+        slugPostfix: slugPostfix || null,
       });
       onSave(newContentType); // Pass newContentType up for selection
       resetForm();
@@ -76,6 +80,8 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
     setSupportsCoverImage(false);
     setSupportsPreviewSlug(false);
     setSupportsSEO(false);
+    setSlugPrefix("");
+    setSlugPostfix("");
     setNameError("");
   };
 
@@ -174,6 +180,37 @@ export const ContentTypeForm = ({ open, onClose, onSave }: ContentTypeFormProps)
                 label="Supports SEO"
               />
             </FormGroup>
+          </Grid>
+
+          <Grid size={{ xs: 12 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, display: "flex", alignItems: "center" }}>
+              Slug Settings
+              <Tooltip title="Optional prefix and postfix applied to content slugs">
+                <IconButton size="small" sx={{ ml: 0.5, p: 0 }}>
+                  <Info size={20} />
+                </IconButton>
+              </Tooltip>
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              fullWidth
+              label="Slug Prefix"
+              value={slugPrefix}
+              onChange={(e) => setSlugPrefix(e.target.value)}
+              placeholder="e.g. blog/"
+              helperText="Prepended to content slugs"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              fullWidth
+              label="Slug Postfix"
+              value={slugPostfix}
+              onChange={(e) => setSlugPostfix(e.target.value)}
+              placeholder="e.g. /overview"
+              helperText="Appended to content slugs"
+            />
           </Grid>
         </Grid>
       </DialogContent>

@@ -24,6 +24,25 @@ export const getContentEditAvailableTypeIds = async (client: ContentApi): Promis
 
 export const ContentEditMaximumImageSize = 3 * 1000 * 1000; // 3 megabytes
 
+// Slug must be a valid URL path segment: letters (any language),
+// digits, hyphens, forward slashes, dots, and underscores.
+const slugValidation = zod
+  .string()
+  .min(1, "Slug is required")
+  .regex(
+    /^[\p{L}\p{N}][\p{L}\p{N}\-_./]*[\p{L}\p{N}]$|^[\p{L}\p{N}]$/u,
+    "Slug may contain letters, numbers, hyphens, " + "underscores, dots, and forward slashes"
+  )
+  .refine((val) => !val.includes(" "), {
+    message: "Slug must not contain spaces",
+  })
+  .refine((val) => !val.includes("--"), {
+    message: "Slug must not contain consecutive hyphens",
+  })
+  .refine((val) => !/\/\//.test(val), {
+    message: "Slug must not contain consecutive slashes",
+  });
+
 // Base validation schema without length constraints
 export const ContentEditValidationScheme = zod.object({
   type: zod.string(),
@@ -31,7 +50,7 @@ export const ContentEditValidationScheme = zod.object({
   description: zod.string(),
   body: zod.string(),
   coverImageAlt: zod.string().optional().nullable(),
-  slug: zod.string(),
+  slug: slugValidation,
   author: zod.string(),
   language: zod.string(),
   translationKey: zod.string().optional().nullable(),
@@ -75,7 +94,7 @@ export const createContentEditValidationSchema = (config: ConfigDto | null) => {
     description: descriptionValidation,
     body: zod.string(),
     coverImageAlt: zod.string().optional().nullable(),
-    slug: zod.string(),
+    slug: slugValidation,
     author: zod.string(),
     language: zod.string(),
     translationKey: zod.string().optional().nullable(),
