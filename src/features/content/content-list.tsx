@@ -715,6 +715,7 @@ const ItemCard = ({
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [translateDialogOpen, setTranslateDialogOpen] = useState(false);
+  const [slugCopied, setSlugCopied] = useState(false);
   const open = Boolean(anchorEl);
   const theme = useTheme();
   const { config } = useConfig();
@@ -734,6 +735,13 @@ const ItemCard = ({
 
   const onClickEdit = () => {
     navigate(`/content/${item.id}/edit`);
+  };
+  const handleCopySlug = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(slug).then(() => {
+      setSlugCopied(true);
+      setTimeout(() => setSlugCopied(false), 1500);
+    });
   };
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -964,14 +972,15 @@ const ItemCard = ({
           {item.description}
         </Typography>
         <Box
+          onClick={(e) => e.stopPropagation()}
           sx={{
             mt: "auto",
             display: "flex",
             alignItems: "center",
-            gap: 1,
+            gap: 0.5,
             minWidth: 0,
             px: 1.5,
-            py: 1,
+            py: 0.5,
             borderRadius: 2,
             backgroundColor: "action.hover",
           }}
@@ -987,10 +996,17 @@ const ItemCard = ({
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                userSelect: "text",
+                cursor: "text",
               }}
             >
               {slug}
             </Typography>
+          </Tooltip>
+          <Tooltip title={slugCopied ? "Copied!" : "Copy slug"} placement="top">
+            <IconButton size="small" onClick={handleCopySlug} sx={{ flexShrink: 0 }}>
+              <Copy size={12} />
+            </IconButton>
           </Tooltip>
         </Box>
       </CardContent>
