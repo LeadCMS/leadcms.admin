@@ -56,8 +56,8 @@ import {
 } from "@components/image-selection-dialog/image-selection-dialog";
 import { toast } from "react-toastify";
 
-require("@mdxeditor/editor/style.css");
-require("./styles.css");
+import "@mdxeditor/editor/style.css";
+import "./styles.css";
 
 const MDXEditorNew = ({
   value,

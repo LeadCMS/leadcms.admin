@@ -343,6 +343,22 @@ const createImageDragDropExtension = (
         return true; // Handled but couldn't determine position
       }
 
+      // Context-aware: a single image dropped inside `"…"` / `(…)` / an
+      // existing URL token replaces just that range with the uploaded URL.
+      if (imageFiles.length === 1) {
+        const ctx = analyzeInsertionContext(view.state.doc.toString(), pos);
+        if (ctx.kind !== "none") {
+          uploadImageAsUrlReplacement(
+            view,
+            imageFiles[0],
+            { from: ctx.from, to: ctx.to },
+            uploadHandler,
+            callbacks
+          );
+          return true;
+        }
+      }
+
       uploadImagesAtPos(view, imageFiles, pos, uploadHandler, callbacks);
       return true;
     },
