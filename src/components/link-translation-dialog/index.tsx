@@ -29,6 +29,7 @@ export interface LinkableItem {
   id?: number;
   language?: string | null;
   translationKey?: string | null;
+  slug?: string;
   /** Display label (content title or template name) */
   displayTitle: string;
   /** Secondary text (content description or template subject) */
@@ -42,6 +43,7 @@ function contentToLinkable(c: ContentDetailsDto): LinkableItem {
     id: c.id,
     language: c.language,
     translationKey: c.translationKey,
+    slug: c.slug || undefined,
     displayTitle: c.title || "Untitled",
     displaySubtitle: c.description || undefined,
     chips: [
@@ -221,7 +223,7 @@ export const LinkTranslationDialog = ({
           placeholder={
             contentType === "emailTemplate"
               ? "Search email templates by name or subject..."
-              : "Search content by title, description, or body..."
+              : "Search content by slug, title, description, or body..."
           }
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -300,16 +302,46 @@ export const LinkTranslationDialog = ({
                     {item.displaySubtitle}
                   </Typography>
                 )}
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                  {item.chips.map((chip, idx) => (
-                    <Chip
-                      key={idx}
-                      size="small"
-                      label={chip.label}
-                      variant="outlined"
-                      sx={{ fontSize: "0.75rem" }}
-                    />
-                  ))}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", flex: "1 1 240px" }}>
+                    {item.chips.map((chip, idx) => (
+                      <Chip
+                        key={idx}
+                        size="small"
+                        label={chip.label}
+                        variant="outlined"
+                        sx={{ fontSize: "0.75rem" }}
+                      />
+                    ))}
+                  </Box>
+                  {item.slug && (
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", flex: "0 1 auto" }}>
+                      <Chip
+                        size="small"
+                        label={`slug: ${item.slug}`}
+                        color="primary"
+                        variant={selectedItem?.id === item.id ? "filled" : "outlined"}
+                        sx={{
+                          fontFamily: "monospace",
+                          fontWeight: 700,
+                          maxWidth: "100%",
+                          "& .MuiChip-label": {
+                            display: "block",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
                 </Box>
               </CardContent>
             </Card>
