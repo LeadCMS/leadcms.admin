@@ -46,6 +46,7 @@ import { SearchBar } from "@components/search-bar";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { useNotificationsService } from "@hooks";
 import { showApiError, parseApiError } from "@utils/api-error-parser";
+import { CommentBody } from "@components/comment-body";
 import { CommentDetailsDto } from "@lib/network/swagger-client";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
@@ -318,54 +319,6 @@ export const CommentsList: React.FC = () => {
     if (!email) return undefined;
     // You could integrate with Gravatar or other avatar services
     return `https://www.gravatar.com/avatar/${btoa(email)}?d=mp&s=40`;
-  };
-
-  // Helper function to decode HTML entities and render HTML content safely
-  const renderCommentBody = (body: string | undefined) => {
-    if (!body) return null;
-
-    // Create a temporary div to decode HTML entities
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = body;
-    const decodedText = tempDiv.textContent || tempDiv.innerText || body;
-
-    // Normalize line breaks - replace multiple consecutive line breaks with single ones
-    const normalizedText = decodedText.replace(/\n{3,}/g, "\n\n").trim();
-
-    // Check if the content contains HTML tags
-    const hasHtmlTags = /<[^>]*>/g.test(body);
-
-    if (hasHtmlTags) {
-      // For HTML content, normalize and use dangerouslySetInnerHTML
-      // Note: In production, you should use a proper HTML sanitizer like DOMPurify
-      const normalizedHtml = body
-        .replace(/\n{3,}/g, "\n\n")
-        .replace(/(<\/p>\s*){2,}/gi, "</p>")
-        .replace(/(<br\s*\/?>){3,}/gi, "<br><br>")
-        .trim();
-
-      return (
-        <Typography
-          variant="body2"
-          component="div"
-          sx={{
-            whiteSpace: "normal",
-            "& p": { margin: 0, marginBottom: 1 },
-            "& a": { color: "primary.main", textDecoration: "underline" },
-            "& strong, & b": { fontWeight: 600 },
-            "& em, & i": { fontStyle: "italic" },
-          }}
-          dangerouslySetInnerHTML={{ __html: normalizedHtml }}
-        />
-      );
-    } else {
-      // For plain text or text with entities, render as text
-      return (
-        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-          {normalizedText}
-        </Typography>
-      );
-    }
   };
 
   // Get status counts from API statistics
@@ -880,7 +833,7 @@ export const CommentsList: React.FC = () => {
                   overflow: "auto",
                 }}
               >
-                {renderCommentBody(comment.body)}
+                <CommentBody body={comment.body} />
               </Box>
 
               {/* Actions */}
@@ -1420,7 +1373,9 @@ export const CommentsList: React.FC = () => {
                 Replying to comment by {selectedComment?.authorName}
               </Typography>
               <Card variant="outlined" sx={{ bgcolor: "grey.50" }}>
-                <CardContent>{renderCommentBody(selectedComment?.body)}</CardContent>
+                <CardContent>
+                  <CommentBody body={selectedComment?.body} />
+                </CardContent>
               </Card>
             </Box>
           )}

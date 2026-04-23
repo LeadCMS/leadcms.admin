@@ -34,6 +34,7 @@ import {
   ContentEditActionButtons,
   ContentEditMetadataSection,
   ContentChangeLog,
+  ContentCommentsTab,
 } from "./components";
 import { UnifiedAIProgress } from "@components/unified-ai-progress";
 import { AIDraftDialog, TokenEstimation } from "@components/ai-draft-dialog";
@@ -261,16 +262,39 @@ export const ContentEdit = (props: ContentEditProps) => {
   // Check if current content type supports preview slug
   const hasPreviewSlugSupport = !!contentDataOps.contentType?.supportsPreviewSlug;
 
+  const contentFormOps = useContentFormOperations(id, hasLivePreview, contentDataOps.contentTypes);
+  const aiContentOps = useAIContentOperations();
+  const translationOps = useTranslationOperations();
+  const publicationDialogPreference = usePublicationDialogPreference();
+
   // Compute safe tab value: if the SEO tab isn't available, fall back
   const hasSeoTab = !!contentDataOps.contentType?.supportsSEO;
   const hasCoverTab = !!contentDataOps.contentType?.supportsCoverImage;
+  const isCommentEntityEnabled = !!config?.entities?.includes("Comment");
+  const hasCommentsTab =
+    !!contentDataOps.contentType?.supportsComments &&
+    isCommentEntityEnabled &&
+    !!contentFormOps.formik.values.allowComments &&
+    !isCreateMode &&
+    !!id;
   const safeActiveTab =
-    (activeTab === "seo" && !hasSeoTab) || (activeTab === "cover" && !hasCoverTab)
+    (activeTab === "seo" && !hasSeoTab) ||
+    (activeTab === "cover" && !hasCoverTab) ||
+    (activeTab === "comments" && !hasCommentsTab)
       ? "content"
       : activeTab;
 
-  // Sync URL when tab was corrected
+  // Sync URL when tab was corrected.
+  // Wait until initial data is fully loaded AND the content type object is resolved
+  // (or confirmed absent by the content types list finishing loading). Otherwise the
+  // tab-availability flags (hasCommentsTab, hasSeoTab, hasCoverTab) read their defaults
+  // (false) during the load race and a deep-linked `?tab=comments` URL gets stripped.
   useEffect(() => {
+    if (contentDataOps.isInitialLoading) return;
+    // Content types list is still loading — availability flags aren't trustworthy yet.
+    if (contentDataOps.contentTypes.length === 0) return;
+    // The form has a type but the contentType object hasn't been resolved yet.
+    if (contentFormOps.formik.values.type && !contentDataOps.contentType) return;
     if (safeActiveTab !== activeTab) {
       setActiveTabState("content");
       setSearchParams(
@@ -282,12 +306,15 @@ export const ContentEdit = (props: ContentEditProps) => {
         { replace: true }
       );
     }
-  }, [safeActiveTab, activeTab, setSearchParams]);
-
-  const contentFormOps = useContentFormOperations(id, hasLivePreview, contentDataOps.contentTypes);
-  const aiContentOps = useAIContentOperations();
-  const translationOps = useTranslationOperations();
-  const publicationDialogPreference = usePublicationDialogPreference();
+  }, [
+    safeActiveTab,
+    activeTab,
+    setSearchParams,
+    contentDataOps.isInitialLoading,
+    contentDataOps.contentTypes.length,
+    contentDataOps.contentType,
+    contentFormOps.formik.values.type,
+  ]);
 
   const hasPreviewSlugValue = !!contentFormOps.formik.values.previewSlug;
 
@@ -1344,6 +1371,19 @@ export const ContentEdit = (props: ContentEditProps) => {
                         },
                       }}
                     />
+                    {hasCommentsTab && (
+                      <Tab
+                        label="Comments"
+                        value="comments"
+                        sx={{
+                          color: "inherit",
+                          fontWeight: 400,
+                          "&.Mui-selected": {
+                            color: "primary.main",
+                          },
+                        }}
+                      />
+                    )}
                     {!isCreateMode && id && (
                       <Tab
                         label="Change Log"
@@ -1823,7 +1863,7 @@ export const ContentEdit = (props: ContentEditProps) => {
                           language={contentFormOps.formik.values.language}
                         />
                       </Grid>
-                      {contentDataOps.contentType?.supportsComments && (
+                      {contentDataOps.contentType?.supportsComments && isCommentEntityEnabled && (
                         <Grid size={{ xs: 12, sm: 4 }}>
                           <FormControlLabel
                             label="Allow Comments"
@@ -1897,6 +1937,10 @@ export const ContentEdit = (props: ContentEditProps) => {
                       lastReleaseDate={config?.settings?.["Deployment.LastSuccessDate"] ?? null}
                       contentCreatedAt={contentFormOps.formik.values.createdAt ?? null}
                     />
+                  )}
+
+                  {safeActiveTab === "comments" && hasCommentsTab && id && (
+                    <ContentCommentsTab contentId={parseInt(id, 10)} />
                   )}
                 </Box>
               </CardContent>
