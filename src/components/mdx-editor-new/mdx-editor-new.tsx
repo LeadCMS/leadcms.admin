@@ -464,10 +464,10 @@ const MDXEditorNew = ({
               flex: 1,
               overflow: "auto", // Enable scrolling for the editor
               width: "100%", // Ensure full width utilization
-              "& .mdx-editor-new": {
-                height: "100%",
-                width: "100%",
-              },
+              // "& .mdx-editor-new": {
+              //   height: "100%",
+              //   width: "100%",
+              // },
               "& .mdx-editor-content": {
                 minHeight: "100%",
                 overflow: "auto",
