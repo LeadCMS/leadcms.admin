@@ -4,6 +4,8 @@ import { Box, Grid, IconButton, Drawer, Typography, Chip } from "@mui/material";
 import { Component, ImagePlus } from "lucide-react";
 import {
   MDXEditor,
+  type JsxComponentDescriptor,
+  type JsxEditorProps,
   type MDXEditorMethods,
   headingsPlugin,
   quotePlugin,
@@ -35,8 +37,13 @@ import { MDXEditorNewProps } from "./types";
 import { useRequestContext } from "@providers/request-provider";
 import { useMdxComponents } from "./hooks";
 import { MdxComponentsPanel } from "./components";
-import { buildSourceModeExtensions, buildCodeBlockExtensions } from "./codemirror-extensions";
+import {
+  buildSourceModeExtensions,
+  buildCodeBlockExtensions,
+  extractImageFiles,
+} from "./codemirror-extensions";
 import type { ImageUploadCallbacks, ImageUploadError } from "./codemirror-extensions";
+import { getActiveCodeMirrorView, insertImageIntoCodeMirror } from "./image-insertion";
 import { useConfig } from "@providers/config-provider";
 import { isCodeEditorLineNumbersEnabled } from "@utils/config-helpers";
 import { useNotificationsService } from "@hooks";
@@ -48,8 +55,9 @@ import {
   type MediaItem,
 } from "@components/image-selection-dialog/image-selection-dialog";
 import { toast } from "react-toastify";
-import "@mdxeditor/editor/style.css";
-import "./styles.css";
+
+require("@mdxeditor/editor/style.css");
+require("./styles.css");
 
 const MDXEditorNew = ({
   value,
@@ -69,6 +77,7 @@ const MDXEditorNew = ({
   const { notificationsService } = useNotificationsService();
   const { Show: showErrorModal } = useErrorDetailsModal();
   const mdxEditorRef = useRef<MDXEditorMethods>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   const [initialContent, setInitialContent] = useState<string>("");
   const [previewKey, setPreviewKey] = useState<number>(Date.now());
   const [hasContentChanged, setHasContentChanged] = useState<boolean>(false);
@@ -89,9 +98,19 @@ const MDXEditorNew = ({
 
   const insertImageFromLibrary = useCallback((item: MediaItem) => {
     const altText = item.description?.trim() || item.name || "";
-    const markdown = `![${altText}](${item.location})`;
+    const url = item.location || "";
+    // Prefer context-aware insertion on the active CodeMirror view (source
+    // mode). This covers: caret inside a `"…"` / `(…)` → replace URL only;
+    // caret in plain text → insert full `![alt](url)` markdown.
+    const view = getActiveCodeMirrorView(editorContainerRef.current);
+    if (insertImageIntoCodeMirror(view, url, altText)) {
+      return;
+    }
+    // Rich-text mode fallback: MDXEditor inserts markdown at the active
+    // selection automatically.
+    const markdown = `![${altText}](${url})`;
     mdxEditorRef.current?.focus(() => {
-      mdxEditorRef.current?.insertMarkdown(`${markdown}\n`);
+      mdxEditorRef.current?.insertMarkdown(markdown);
     });
   }, []);
 
@@ -255,9 +274,95 @@ const MDXEditorNew = ({
     [notificationsService, showErrorModal, onChange]
   );
 
+  // Rich-text mode image paste: CodeMirror has its own paste extension; this
+  // listener only fires when the caret is in the Lexical/ProseMirror area
+  // (i.e. the CM view is not active for the container). Uploads images from
+  // the clipboard (files or raw bitmaps) and inserts the resulting markdown
+  // at the current selection via `insertMarkdown`.
+  useEffect(() => {
+    const container = editorContainerRef.current;
+    if (!container) return undefined;
+
+    const onPaste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented) return;
+      // If CodeMirror (source mode) is active, its own paste extension will
+      // handle this event; skip here to avoid double processing.
+      if (getActiveCodeMirrorView(container)) return;
+
+      const imageFiles = extractImageFiles(event.clipboardData);
+      if (imageFiles.length === 0) return;
+
+      event.preventDefault();
+      setPendingChanges(true);
+
+      let completed = 0;
+      let hadSuccess = false;
+      const total = imageFiles.length;
+
+      imageFiles.forEach(async (file) => {
+        setUploadingImages((prev) => new Set(prev).add(file.name));
+        try {
+          const url = await dragDropImageUploadHandler(file);
+          const altText = file.name.replace(/\.[^/.]+$/, "");
+          mdxEditorRef.current?.focus(() => {
+            mdxEditorRef.current?.insertMarkdown(`![${altText}](${url})`);
+          });
+          hadSuccess = true;
+          notificationsService.success(`Image "${file.name}" uploaded successfully`);
+        } catch (error) {
+          const errorDetails: string[] = [];
+          let message = "Upload failed";
+          if (error instanceof Error) {
+            message = error.message;
+            const maybe = error as Error & { details?: string[] };
+            if (Array.isArray(maybe.details)) errorDetails.push(...maybe.details);
+          }
+          const baseErrorMessage = `Failed to upload "${file.name}"`;
+          if (errorDetails.length > 0) {
+            notificationsService.errorWithContent(
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toast.dismiss();
+                  showErrorModal([message, ...errorDetails]);
+                }}
+              >
+                {baseErrorMessage} - Click for details
+              </div>,
+              { closeOnClick: false }
+            );
+          } else {
+            notificationsService.error(`${baseErrorMessage}: ${message}`);
+          }
+        } finally {
+          setUploadingImages((prev) => {
+            const next = new Set(prev);
+            next.delete(file.name);
+            return next;
+          });
+          completed++;
+          if (completed === total) {
+            setPendingChanges(false);
+            if (hadSuccess) {
+              // Flush the now-final markdown to the parent. `getMarkdown`
+              // reflects the inserts just made via `insertMarkdown`.
+              const finalContent = mdxEditorRef.current?.getMarkdown() ?? "";
+              onChange(finalContent);
+            }
+          }
+        }
+      });
+    };
+
+    container.addEventListener("paste", onPaste);
+    return () => {
+      container.removeEventListener("paste", onPaste);
+    };
+  }, [dragDropImageUploadHandler, notificationsService, showErrorModal, onChange]);
+
   // Create a comprehensive list of component descriptors including fallbacks for common patterns
-  const createJsxComponentDescriptors = useCallback(() => {
-    const knownComponents = mdxComponents.map((component) => ({
+  const createJsxComponentDescriptors = useCallback((): JsxComponentDescriptor[] => {
+    const knownComponents: JsxComponentDescriptor[] = mdxComponents.map((component) => ({
       name: component.name,
       kind: "flow" as const,
       props:
@@ -294,47 +399,50 @@ const MDXEditorNew = ({
     }
 
     // Create descriptors for components found in content
-    const contentComponents = Array.from(componentNamesFromContent).map((name) => ({
-      name,
-      kind: "flow" as const,
-      hasChildren: true,
-      props: [
-        { name: "children", type: "string" as const },
-        { name: "className", type: "string" as const },
-        { name: "src", type: "string" as const },
-        { name: "alt", type: "string" as const },
-        { name: "caption", type: "string" as const },
-        { name: "captionType", type: "string" as const },
-        { name: "to", type: "string" as const },
-        { name: "withTopPadding", type: "string" as const },
-      ],
-      Editor: () => {
-        return React.createElement(
-          "div",
-          {
-            style: {
-              padding: "8px",
-              border: "1px dashed #e0e0e0",
-              borderRadius: "4px",
-              backgroundColor: "#f8f9fa",
-              margin: "4px 0",
-              fontSize: "0.875rem",
-              color: "#666",
-              fontStyle: "italic",
+    const contentComponents: JsxComponentDescriptor[] = Array.from(componentNamesFromContent).map(
+      (name) => ({
+        name,
+        kind: "flow" as const,
+        hasChildren: true,
+        props: [
+          { name: "children", type: "string" as const },
+          { name: "className", type: "string" as const },
+          { name: "src", type: "string" as const },
+          { name: "alt", type: "string" as const },
+          { name: "caption", type: "string" as const },
+          { name: "captionType", type: "string" as const },
+          { name: "to", type: "string" as const },
+          { name: "withTopPadding", type: "string" as const },
+        ],
+        Editor: () => {
+          return React.createElement(
+            "div",
+            {
+              style: {
+                padding: "8px",
+                border: "1px dashed #e0e0e0",
+                borderRadius: "4px",
+                backgroundColor: "#f8f9fa",
+                margin: "4px 0",
+                fontSize: "0.875rem",
+                color: "#666",
+                fontStyle: "italic",
+              },
             },
-          },
-          `<${name} /> custom component`
-        );
-      },
-    }));
+            `<${name} /> custom component`
+          );
+        },
+      })
+    );
 
     // Catch-all descriptor for any unrecognized component names
-    const catchAllDescriptor = {
+    const catchAllDescriptor: JsxComponentDescriptor = {
       name: "*" as const,
       kind: "flow" as const,
       hasChildren: true,
       props: [],
-      Editor: ({ mdastNode }: { mdastNode: { name: string } }) => {
+      Editor: ({ mdastNode }: JsxEditorProps) => {
+        const componentName = mdastNode.name ?? "unknown";
         return React.createElement(
           "div",
           {
@@ -348,7 +456,7 @@ const MDXEditorNew = ({
               color: "#d32f2f",
             },
           },
-          `<${mdastNode.name} /> unknown component`
+          `<${componentName} /> unknown component`
         );
       },
     };
@@ -440,7 +548,7 @@ const MDXEditorNew = ({
   const shouldShowPreview = livePreview && livePreviewTemplate;
 
   return (
-    <div className="mdx-editor-container">
+    <div className="mdx-editor-container" ref={editorContainerRef}>
       <Grid container sx={{ height: editorHeight }}>
         {/* Editor Section - Full width when no preview available, half width when enabled */}
         <Grid
