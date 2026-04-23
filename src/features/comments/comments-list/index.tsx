@@ -163,6 +163,7 @@ export const CommentsList: React.FC = () => {
     { field: "authorName", headerName: "Author Name" },
     { field: "createdAt", headerName: "Created At" },
     { field: "updatedAt", headerName: "Updated At" },
+    { field: "publishedAt", headerName: "Published At" },
   ];
 
   // Filter helper functions
@@ -1013,6 +1014,8 @@ export const CommentsList: React.FC = () => {
         return "Status";
       case "language":
         return "Language";
+      case "publishedAt":
+        return "Published At";
       default:
         return sortField;
     }

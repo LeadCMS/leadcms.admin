@@ -13,6 +13,7 @@ const SORT_OPTIONS: SortOption[] = [
   { value: "body", label: "Body" },
   { value: "status", label: "Status" },
   { value: "language", label: "Language" },
+  { value: "publishedAt", label: "Published At" },
 ];
 
 type Props = {
