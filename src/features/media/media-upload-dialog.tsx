@@ -1,21 +1,21 @@
 import React, { useEffect } from "react";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import Tooltip from "@mui/material/Tooltip";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Box,
-  Typography,
-  Button,
-  CircularProgress,
-  IconButton,
-  Grid,
-  Paper,
-  Tooltip,
-} from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import DeleteIcon from "@mui/icons-material/Delete";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+  CloudUpload as CloudUploadIcon,
+  Trash2 as DeleteIcon,
+  Info as InfoOutlinedIcon
+} from 'lucide-react';
 import { ApiErrorDisplay } from "@components/api-error-display";
 
 export interface FileUploadStatus {
@@ -147,7 +147,7 @@ export const MediaUploadDialog = ({
           onDragOver={(e) => e.preventDefault()}
           onClick={() => document.getElementById("file-upload-input")?.click()}
         >
-          <CloudUploadIcon sx={{ fontSize: 48, color: "#bdbdbd", mb: 1 }} />
+          <CloudUploadIcon size={48} color="#bdbdbd" style={{ marginBottom: 8 }} />
           <Typography variant="body1" sx={{ mb: 1 }}>
             Drag and drop files here or click to browse
           </Typography>

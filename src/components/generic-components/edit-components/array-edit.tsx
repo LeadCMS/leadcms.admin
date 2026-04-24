@@ -4,16 +4,14 @@ import {
   KnownTagsAutocomplete,
   type KnownTagsEntityType,
 } from "@components/known-tags-autocomplete";
-import {
-  Dialog,
-  DialogTitle,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-} from "@mui/material";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TextField from "@mui/material/TextField";
 import { camelCaseToTitleCase } from "../common";
 import { getModuleNameFromUrl } from "@utils/general-helper";
 

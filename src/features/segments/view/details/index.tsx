@@ -1,18 +1,16 @@
 import { ReactNode, useEffect, useState } from "react";
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Divider,
-  Tab,
-  Tabs,
-  Typography,
-} from "@mui/material";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Divider from "@mui/material/Divider";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import { Edit, Users } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -22,7 +20,7 @@ import { SegmentsBreadcrumbLinks } from "../../constants";
 import { getFieldDisplayName, getOperatorDisplayName } from "../../types";
 import { useRequestContext } from "providers/request-provider";
 import { SegmentDetailsDto as ApiSegmentDetailsDto, SegmentRule } from "lib/network/swagger-client";
-import { CoreModule, getEditFormRoute } from "@lib/router";
+import { CoreModule, getEditFormRoute, type IdRouteParams } from "@lib/router";
 import { getFormattedDateOnly } from "utils/general-helper";
 
 type DetailRow = { label: string; value: ReactNode };
@@ -101,7 +99,7 @@ const getSegmentViewTabValue = (tabParam: string | null) => {
 };
 
 export const SegmentView = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<IdRouteParams>();
   const { client } = useRequestContext();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

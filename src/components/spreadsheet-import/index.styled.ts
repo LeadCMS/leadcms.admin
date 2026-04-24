@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
-import { Backdrop, Button } from "@mui/material";
+import Backdrop from "@mui/material/Backdrop";
+import Button from "@mui/material/Button";
 
 export const FileNameTextSpan = styled("span")({
   marginRight: "5px",

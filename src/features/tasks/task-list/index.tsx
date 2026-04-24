@@ -1,59 +1,57 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Chip,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Tabs,
-  Tab,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Tooltip,
-  IconButton,
-  Menu,
-  Skeleton,
-  InputAdornment,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Chip from "@mui/material/Chip";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import Tooltip from "@mui/material/Tooltip";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import Skeleton from "@mui/material/Skeleton";
+import InputAdornment from "@mui/material/InputAdornment";
 import Grid from "@mui/material/Grid";
 import {
-  PlayArrow,
-  Stop,
-  Refresh,
-  Schedule,
+  Play,
+  RefreshCw,
+  Clock,
   CheckCircle,
-  Cancel,
-  MoreVert,
+  X,
+  MoreVertical,
   Search,
-  Description,
-  CalendarToday,
-  Storage,
+  CalendarDays,
+  Database,
   Mail,
-  Delete,
-  Build,
-  Language,
+  Trash2,
+  Languages,
   TrendingUp,
-  PlayCircleOutline,
-  ToggleOn,
-  ToggleOff,
-  PhotoLibrary,
-} from "@mui/icons-material";
+  Building2,
+  Globe,
+  Images,
+  ToggleLeft,
+  ToggleRight,
+  FileText,
+  ChartColumnIncreasing,
+} from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { parseApiError, showApiError } from "@utils/api-error-parser";
@@ -64,17 +62,17 @@ import { getCategoryColor } from "../utils";
 import type { TaskCategory } from "../types";
 
 const categoryIcons: Record<TaskCategory, React.ReactNode> = {
-  "data-sync": <Storage sx={{ fontSize: 16 }} />,
-  maintenance: <Build sx={{ fontSize: 16 }} />,
-  reporting: <Description sx={{ fontSize: 16 }} />,
-  enrichment: <TrendingUp sx={{ fontSize: 16 }} />,
-  email: <Mail sx={{ fontSize: 16 }} />,
-  cleanup: <Delete sx={{ fontSize: 16 }} />,
-  other: <Language sx={{ fontSize: 16 }} />,
+  "data-sync": <Database />,
+  maintenance: <Building2 />,
+  reporting: <FileText />,
+  enrichment: <ChartColumnIncreasing />,
+  email: <Mail />,
+  cleanup: <Trash2 />,
+  other: <Languages />,
 };
 
 const taskIcons: Record<string, React.ReactNode> = {
-  MediaMetaUpdateTask: <PhotoLibrary sx={{ fontSize: 16 }} />,
+  MediaMetaUpdateTask: <Images />,
 };
 
 export const TasksList = () => {
@@ -413,7 +411,7 @@ export const TasksList = () => {
                 endAdornment: searchQuery ? (
                   <InputAdornment position="end">
                     <IconButton size="small" onClick={() => setSearchQuery("")} aria-label="Clear">
-                      <Cancel fontSize="small" />
+                      <X fontSize="small" />
                     </IconButton>
                   </InputAdornment>
                 ) : null,
@@ -523,7 +521,7 @@ export const TasksList = () => {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Schedule fontSize="small" color="action" />
+                        <Clock fontSize="small" color="action" />
                         <Typography variant="body2">
                           {describeCron(task.cronSchedule || "")}
                         </Typography>
@@ -543,14 +541,14 @@ export const TasksList = () => {
                         <Chip
                           size="small"
                           color="success"
-                          icon={<CheckCircle sx={{ fontSize: 16 }} />}
+                          icon={<CheckCircle />}
                           label="Enabled"
                         />
                       ) : (
                         <Chip
                           size="small"
                           color="default"
-                          icon={<Cancel sx={{ fontSize: 16 }} />}
+                          icon={<X />}
                           label="Disabled"
                         />
                       )}
@@ -569,7 +567,7 @@ export const TasksList = () => {
                             }
                             disabled={isExecuting}
                           >
-                            <PlayCircleOutline fontSize="small" />
+                            <Play fontSize="small" />
                           </IconButton>
                         </Tooltip>
 
@@ -585,7 +583,7 @@ export const TasksList = () => {
                                 })
                               }
                             >
-                              <ToggleOn sx={{ fontSize: 28, color: "success.main" }} />
+                              <ToggleRight fontSize="small" color="success.main" />
                             </IconButton>
                           </Tooltip>
                         ) : (
@@ -600,7 +598,7 @@ export const TasksList = () => {
                                 })
                               }
                             >
-                              <ToggleOff sx={{ fontSize: 28, color: "action.disabled" }} />
+                              <ToggleLeft fontSize="small" color="action.disabled" />
                             </IconButton>
                           </Tooltip>
                         )}
@@ -609,7 +607,7 @@ export const TasksList = () => {
                           size="small"
                           onClick={(e) => handleMenuOpen(e, task.name || "")}
                         >
-                          <MoreVert fontSize="small" />
+                          <MoreVertical fontSize="small" />
                         </IconButton>
                       </Box>
                     </TableCell>
@@ -699,7 +697,7 @@ export const TasksList = () => {
                           <Chip
                             size="small"
                             color="success"
-                            icon={<CheckCircle sx={{ fontSize: 16 }} />}
+                            icon={<CheckCircle />}
                             label="Success"
                           />
                         )}
@@ -707,7 +705,7 @@ export const TasksList = () => {
                           <Chip
                             size="small"
                             color="error"
-                            icon={<Cancel sx={{ fontSize: 16 }} />}
+                            icon={<X />}
                             label="Failed"
                           />
                         )}
@@ -715,7 +713,7 @@ export const TasksList = () => {
                           <Chip
                             size="small"
                             color="info"
-                            icon={<Refresh sx={{ fontSize: 16 }} />}
+                            icon={<RefreshCw />}
                             label="Running"
                           />
                         )}
@@ -723,7 +721,7 @@ export const TasksList = () => {
                           <Chip
                             size="small"
                             color="warning"
-                            icon={<Schedule sx={{ fontSize: 16 }} />}
+                            icon={<Clock />}
                             label="Pending"
                           />
                         )}
@@ -743,9 +741,9 @@ export const TasksList = () => {
                           variant="outlined"
                           icon={
                             log.triggeredBy === "Scheduled" ? (
-                              <CalendarToday sx={{ fontSize: 16 }} />
+                              <CalendarDays />
                             ) : (
-                              <PlayArrow sx={{ fontSize: 16 }} />
+                              <Play />
                             )
                           }
                           label={log.triggeredBy === "Scheduled" ? "Schedule" : "Manual"}
@@ -785,7 +783,7 @@ export const TasksList = () => {
       {/* Context Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuItem onClick={handleViewLogs}>
-          <Description fontSize="small" sx={{ mr: 1 }} />
+          <FileText fontSize="small" style={{ marginRight: 8 }} />
           View Logs
         </MenuItem>
       </Menu>

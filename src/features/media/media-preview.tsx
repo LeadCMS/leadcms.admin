@@ -12,7 +12,6 @@ import CircularProgress from "@mui/material/CircularProgress";
 import TextField from "@mui/material/TextField";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
-import Autocomplete from "@mui/material/Autocomplete";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Menu from "@mui/material/Menu";
@@ -21,14 +20,16 @@ import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
 import Tooltip from "@mui/material/Tooltip";
-import DownloadIcon from "@mui/icons-material/Download";
-import FileCopyIcon from "@mui/icons-material/FileCopy";
-import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import MovieIcon from "@mui/icons-material/Movie";
-import CoPresentIcon from "@mui/icons-material/CoPresent";
-import DeleteIcon from "@mui/icons-material/Delete";
+import {
+  Download as DownloadIcon,
+  Copy as FileCopyIcon,
+  ArrowLeftRight as SwapHorizIcon,
+  FileType as PictureAsPdfIcon,
+  Film as MovieIcon,
+  DeleteIcon,
+  MoreVertical as MoreVertIcon,
+  Gift
+} from 'lucide-react';
 import { buildAbsoluteUrl, buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { MediaDetailsDto, ProblemDetails } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
@@ -828,7 +829,7 @@ export const MediaPreview = ({
             >
               {isPdf && <PictureAsPdfIcon color="error" />}
               {isVideo && <MovieIcon color="secondary" />}
-              {isPptx && <CoPresentIcon color="warning" />}
+              {isPptx && <Gift color="var(--mui-palette-warning-main)" />}
               {file.name}
               <Chip
                 label={usageCount > 0 ? `Used in ${usageCount} place(s)` : "Not used"}
@@ -961,7 +962,7 @@ export const MediaPreview = ({
                         }}
                         sx={{ color: "error.main" }}
                       >
-                        <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                        <DeleteIcon size={16} style={{ marginRight: 8 }} />
                         Delete
                       </MenuItem>
                     )}
@@ -976,7 +977,7 @@ export const MediaPreview = ({
                       </Box>
                     ) : pdfError || !pdfBlobUrl ? (
                       <Box sx={{ textAlign: "center", p: 4 }}>
-                        <PictureAsPdfIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                        <PictureAsPdfIcon size={64} style={{ color: "text.secondary", marginBottom: 8 }} />
                         <Typography variant="h6" color="text.secondary" gutterBottom>
                           PDF Preview Not Available
                         </Typography>
@@ -1003,7 +1004,7 @@ export const MediaPreview = ({
                   ) : isVideo ? (
                     videoError ? (
                       <Box sx={{ textAlign: "center", p: 4 }}>
-                        <MovieIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                        <MovieIcon size={64} style={{ color: "text.secondary", marginBottom: 8 }} />
                         <Typography variant="h6" color="text.secondary" gutterBottom>
                           Video Preview Not Available
                         </Typography>
@@ -1680,7 +1681,7 @@ export const MediaPreview = ({
             control={
               <Switch
                 checked={maintainAspectRatio}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const checked = e.target.checked;
                   setMaintainAspectRatio(checked);
                   if (!checked) return;

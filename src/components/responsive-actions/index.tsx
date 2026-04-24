@@ -1,5 +1,10 @@
 import React, { useRef, useLayoutEffect, useState } from "react";
-import { IconButton, Menu, MenuItem, Box, Typography, useTheme } from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 import { MoreHorizontal } from "lucide-react";
 import { GhostLink } from "@components/ghost-link";
 

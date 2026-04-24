@@ -1,4 +1,8 @@
-import { Avatar, Card, ListItem, ListItemText, styled } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import Card from "@mui/material/Card";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import { styled } from "@mui/material/styles";
 
 export const AccountListItem = styled(ListItem)({
   alignItems: "center",

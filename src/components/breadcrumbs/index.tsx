@@ -1,5 +1,7 @@
 import { ChevronRight } from "lucide-react";
-import { Breadcrumbs, Link, Typography } from "@mui/material";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
 import { GhostLink } from "components/ghost-link";
 
 interface Links {

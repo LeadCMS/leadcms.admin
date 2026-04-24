@@ -1,14 +1,12 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Menu,
-  MenuItem,
-  Tooltip,
-  IconButton,
-  Avatar,
-  Divider,
-  ListItemIcon,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
+import IconButton from "@mui/material/IconButton";
+import Avatar from "@mui/material/Avatar";
+import Divider from "@mui/material/Divider";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import { LogOut } from "lucide-react";
 import { useUserInfo } from "@providers/user-provider";
 import { buildAbsoluteUrl } from "@lib/network/utils";

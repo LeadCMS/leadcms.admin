@@ -1,13 +1,11 @@
 import React from "react";
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-  Skeleton,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
+import Skeleton from "@mui/material/Skeleton";
 import { CheckCircle, XCircle } from "lucide-react";
 import { PasswordValidationResult, PasswordPolicySettings } from "../../hooks/use-password-policy";
 

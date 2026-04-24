@@ -1,25 +1,23 @@
 import React from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Tabs,
-  Tab,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Chip,
-  Stack,
-  Skeleton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ToggleButton,
-  ToggleButtonGroup,
-  Button,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import Skeleton from "@mui/material/Skeleton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { ArrowDown, ArrowUp, Building2, FileText, MessageSquare, ShoppingCart } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
@@ -167,8 +165,6 @@ const Card: React.FC<CardProps> = ({ title, subtitle, action, children }) => (
       gap: 1.25,
       borderRadius: 2,
       borderColor: (t) => t.palette.divider,
-      transition: "box-shadow 0.2s, border-color 0.2s",
-      "&:hover": { boxShadow: 6 },
     }}
   >
     {(title || action) && (

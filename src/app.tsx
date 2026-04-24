@@ -1,7 +1,7 @@
 import { BrowserRouter, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { ThemeProvider } from "providers/theme-provider";
 import { AppLayout } from "@components/app-layout";
-import { coreModuleRoute, rootRoute } from "@lib/router";
+import { rootRoute } from "@lib/router";
 import { ModuleLoader } from "@features/module-loader";
 import { RequestProvider } from "@providers/request-provider";
 import { AuthProvider } from "@providers/auth-provider";
@@ -124,11 +124,8 @@ export const App = () => {
                                 </AppLayoutWithAutoBreadcrumbs>
                               }
                             >
-                              <Route path={rootRoute} element={<ModuleLoader />} />
-                              <Route
-                                path={`${coreModuleRoute.template}/*`}
-                                element={<ModuleLoader />}
-                              />
+                              <Route index element={<ModuleLoader />} />
+                              <Route path=":moduleName/*" element={<ModuleLoader />} />
                             </Route>
                           </Routes>
                         </BrowserRouter>

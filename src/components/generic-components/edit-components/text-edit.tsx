@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { EditProps } from "@components/generic-components/edit-components/common";
-import { TextField } from "@mui/material";
+import TextField from "@mui/material/TextField";
 
 export const TextEdit = ({
   key,

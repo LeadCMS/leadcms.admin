@@ -1,33 +1,30 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Typography,
-  Button,
-  Chip,
-  Stack,
-  CircularProgress,
-  Alert,
-  Grid,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Tabs,
-  Tab,
-  FormControlLabel,
-  Switch,
-  FormGroup,
-  MenuItem,
-  Select,
-  IconButton,
-  InputAdornment,
-  Tooltip,
-} from "@mui/material";
-import { ExpandMore } from "@mui/icons-material";
-import { Save, Info, RefreshCw, Copy, Check } from "lucide-react";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import Grid from "@mui/material/Grid";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
+import FormGroup from "@mui/material/FormGroup";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Tooltip from "@mui/material/Tooltip";
+import { Save, Info, RefreshCw, Copy, Check, ChevronDown } from "lucide-react";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { ModuleWrapper } from "@components/module-wrapper";
@@ -1202,7 +1199,7 @@ const Settings = () => {
 
                 <Accordion sx={{ mt: 3 }}>
                   <AccordionSummary
-                    expandIcon={<ExpandMore />}
+                    expandIcon={<ChevronDown />}
                     sx={{
                       backgroundColor: "rgba(0, 0, 0, 0.02)",
                       borderBottom: "1px solid rgba(0, 0, 0, 0.08)",

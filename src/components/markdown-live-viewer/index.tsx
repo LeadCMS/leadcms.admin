@@ -1,14 +1,12 @@
 import { useMemo, useEffect, useState, useRef } from "react";
-import {
-  Box,
-  CircularProgress,
-  Typography,
-  Alert,
-  IconButton,
-  ToggleButtonGroup,
-  ToggleButton,
-  Tooltip,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
+import IconButton from "@mui/material/IconButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import ToggleButton from "@mui/material/ToggleButton";
+import Tooltip from "@mui/material/Tooltip";
 import { ZoomIn, ZoomOut, Monitor, Smartphone, RotateCcw } from "lucide-react";
 import { MarkdownLiveViewerProps } from "./types";
 import "./styles.css";

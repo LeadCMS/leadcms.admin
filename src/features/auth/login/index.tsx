@@ -1,15 +1,13 @@
 import { useMsal } from "@azure/msal-react";
 import { useState, useEffect } from "react";
-import {
-  Button,
-  Typography,
-  TextField,
-  IconButton,
-  InputAdornment,
-  Box,
-  CircularProgress,
-  Link,
-} from "@mui/material";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Link from "@mui/material/Link";
 import { Eye, EyeOff } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { LoginDto } from "@lib/network/swagger-client";

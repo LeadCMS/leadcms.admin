@@ -1,14 +1,7 @@
 import {
-  addFormRoute,
-  contactActivityRoute,
-  contactCommunicationsRoute,
-  contactDealsRoute,
-  contactInvoicesRoute,
-  contactOrdersRoute,
-  detailsRoute,
-  contactLogsRoute,
-  editFormRoute,
-  viewFormRoute,
+  getAddFormRoute,
+  getEditFormRoute,
+  getViewFormRoute,
 } from "lib/router";
 import { Outlet, Route, Routes } from "react-router-dom";
 import { ContactAdd } from "./add";
@@ -26,19 +19,19 @@ export const ContactsModule = () => {
     <>
       <Routes>
         <Route index element={<ContactsLazy />} />
-        <Route path={editFormRoute.template} element={<ContactEdit />} />
-        <Route path={viewFormRoute.template} element={<ContactBase />}>
+        <Route path={getEditFormRoute()} element={<ContactEdit />} />
+        <Route path={getViewFormRoute()} element={<ContactBase />}>
           <Route index element={<ContactView />} />
-          <Route path={detailsRoute.template} element={<ContactView />} />
-          <Route path={contactCommunicationsRoute.template} element={<ContactCommunications />} />
-          <Route path={contactActivityRoute.template} element={<ContactActivity />} />
-          <Route path={contactOrdersRoute.template} element={<ContactOrders />} />
-          <Route path={contactDealsRoute.template} element={<ContactDeals />} />
+          <Route path="details" element={<ContactView />} />
+          <Route path="communications" element={<ContactCommunications />} />
+          <Route path="activity" element={<ContactActivity />} />
+          <Route path="orders" element={<ContactOrders />} />
+          <Route path="deals" element={<ContactDeals />} />
           {/* Legacy paths retained for compatibility */}
-          <Route path={contactLogsRoute.template} element={<ContactActivity />} />
-          <Route path={contactInvoicesRoute.template} element={<ContactOrders />} />
+          <Route path="logs" element={<ContactActivity />} />
+          <Route path="invoices" element={<ContactOrders />} />
         </Route>
-        <Route path={addFormRoute.template} element={<ContactAdd />} />
+        <Route path={getAddFormRoute()} element={<ContactAdd />} />
       </Routes>
       <Outlet />
     </>

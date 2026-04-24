@@ -1,10 +1,10 @@
 import { GenericForm, GenericFormProps } from "@components/generic-components";
 import { ModuleWrapper } from "@components/module-wrapper";
-import { SavingBar } from "@components/saving-bar";
 import { DomainCreateDto, DomainDetailsDto, DomainUpdateDto } from "@lib/network/swagger-client";
 import { domainFormBreadcrumbLinks } from "../constants";
 import { useState } from "react";
-import { Button, Box } from "@mui/material";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 import { XCircle, Save } from "lucide-react";
 import { DataManagementBlock } from "@components/data-management";
 

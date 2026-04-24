@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Button, Typography, TextField, Box, CircularProgress } from "@mui/material";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import CircularProgress from "@mui/material/CircularProgress";
 import { LoginContainer, StyledForm, Logo, LogoRow } from "./index.styled";
 import { useForm } from "react-hook-form";
 import { z } from "zod";

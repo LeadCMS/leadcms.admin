@@ -1,13 +1,11 @@
 import React from "react";
-import {
-  Box,
-  Typography,
-  Tooltip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Stack,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Tooltip from "@mui/material/Tooltip";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import Stack from "@mui/material/Stack";
 import { ChevronDown, Copy } from "lucide-react";
 import { MdxComponentDto, MdxComponentPropertyDto } from "@lib/network/swagger-client";
 import { MdxCodeBlock } from "./mdx-code-block";

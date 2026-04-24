@@ -1,22 +1,19 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Box,
-  Button,
-  Grid,
-  TextField,
-  Typography,
-  CircularProgress,
-  Breadcrumbs,
-  Paper,
-  IconButton,
-  InputAdornment,
-} from "@mui/material";
-import { Search, X } from "lucide-react";
-import FolderIcon from "@mui/icons-material/Folder";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import Paper from "@mui/material/Paper";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import { Search, X, Folder as FolderIcon } from "lucide-react";
 import { useRequestContext } from "@providers/request-provider";
 import { wrapApiClient } from "@lib/network/wrapApiClient";
 import { buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
@@ -321,11 +318,9 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                               }}
                             >
                               <FolderIcon
-                                sx={{
-                                  fontSize: 48,
-                                  color: "#FFA726",
-                                  mb: 1,
-                                }}
+                                size={48}
+                                color="#FFA726"
+                                style={{ marginBottom: 8 }}
                               />
                               <Typography
                                 variant="body2"
@@ -385,11 +380,6 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
                                 : "#e0e0e0",
                               borderRadius: 2,
                               overflow: "hidden",
-                              transition: "all 0.2s",
-                              "&:hover": {
-                                elevation: 3,
-                                transform: "translateY(-2px)",
-                              },
                             }}
                             onClick={() => handleImageSelect(item)}
                           >

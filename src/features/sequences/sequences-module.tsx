@@ -1,4 +1,4 @@
-import { addFormRoute, editFormRoute, viewFormRoute } from "lib/router";
+import { getAddFormRoute, getEditFormRoute, getViewFormRoute } from "lib/router";
 import { Outlet, Route, Routes } from "react-router-dom";
 import { Sequences } from "./index";
 import { SequenceAdd } from "./add";
@@ -11,9 +11,9 @@ export const SequencesModule = () => {
     <>
       <Routes>
         <Route index element={<Sequences />} />
-        <Route path={addFormRoute.template} element={<SequenceAdd />} />
-        <Route path={editFormRoute.template} element={<SequenceEdit />} />
-        <Route path={viewFormRoute.template} element={<SequenceView />} />
+        <Route path={getAddFormRoute()} element={<SequenceAdd />} />
+        <Route path={getEditFormRoute()} element={<SequenceEdit />} />
+        <Route path={getViewFormRoute()} element={<SequenceView />} />
         <Route path=":id/view/enrollments/:enrollmentId" element={<SequenceEnrollmentView />} />
       </Routes>
       <Outlet />

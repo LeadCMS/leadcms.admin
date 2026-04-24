@@ -1,19 +1,17 @@
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  Box,
-  TextField,
-  Alert,
-  Stack,
-  Link,
-  IconButton,
-  Backdrop,
-  CircularProgress,
-} from "@mui/material";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import Alert from "@mui/material/Alert";
+import Stack from "@mui/material/Stack";
+import Link from "@mui/material/Link";
+import IconButton from "@mui/material/IconButton";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 import type { Theme } from "@mui/material/styles";
 import { X, Trash2, ImagePlus, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";

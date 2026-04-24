@@ -1,4 +1,9 @@
-import { Button, DialogActions, DialogContent, DialogTitle, Fade, Typography } from "@mui/material";
+import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Fade from "@mui/material/Fade";
+import Typography from "@mui/material/Typography";
 import Dialog from "@mui/material/Dialog";
 import { TransitionProps } from "@mui/material/transitions";
 import React from "react";

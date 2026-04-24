@@ -1,4 +1,7 @@
-import { TextField, MenuItem, Chip, ListSubheader } from "@mui/material";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import Chip from "@mui/material/Chip";
+import ListSubheader from "@mui/material/ListSubheader";
 import { useConfig } from "@providers/config-provider";
 import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
 import { Globe, Languages } from "lucide-react";

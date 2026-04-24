@@ -1,4 +1,6 @@
-import { Divider, ListItemText, styled } from "@mui/material";
+import Divider from "@mui/material/Divider";
+import ListItemText from "@mui/material/ListItemText";
+import { styled } from "@mui/material/styles";
 
 export const GenericViewDeleteContainer = styled("div")`
   margin-top: ${({ theme }) => theme.spacing(2)};

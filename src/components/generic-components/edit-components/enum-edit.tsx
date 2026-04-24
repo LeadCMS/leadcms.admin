@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { EditProps } from "@components/generic-components/edit-components/common";
-import { Autocomplete, TextField } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
 
 export const EnumEdit = ({
   key,

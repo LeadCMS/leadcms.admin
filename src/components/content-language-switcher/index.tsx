@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
+import Divider from "@mui/material/Divider";
 import {
-  Box,
-  Chip,
-  Typography,
-  CircularProgress,
-  Menu,
-  MenuItem,
-  Tooltip,
-  Divider,
-} from "@mui/material";
-import { Add, Translate, ExpandMore, Link } from "@mui/icons-material";
+  Plus as Add,
+  Languages as Translate,
+  ChevronDown as ExpandMore,
+  Link
+} from 'lucide-react';
 import { ContentDetailsDto, LanguageDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useConfig } from "@providers/config-provider";
@@ -272,12 +275,12 @@ export const ContentLanguageSwitcher = ({
           <Chip
             label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Translate sx={{ fontSize: 14 }} />
+                <Translate size={14} />
                 {getCurrentLanguageLabel()}
                 {loading ? (
                   <CircularProgress size={10} />
                 ) : (
-                  <ExpandMore sx={{ fontSize: "0.875rem" }} />
+                  <ExpandMore size={14} />
                 )}
               </Box>
             }
@@ -357,7 +360,7 @@ export const ContentLanguageSwitcher = ({
                       gap: 1,
                     }}
                   >
-                    <Add sx={{ fontSize: "1rem", color: "success.main" }} />
+                    <Add size={14} color="success.main" />
                     <Typography variant="body2">{lang.name}</Typography>
                   </MenuItem>
                 ))}
@@ -374,7 +377,7 @@ export const ContentLanguageSwitcher = ({
               gap: 1,
             }}
           >
-            <Link sx={{ fontSize: "1rem", color: "info.main" }} />
+            <Link size={14} color="info.main" />
             <Typography variant="body2">Link Translation</Typography>
           </MenuItem>
         </Menu>
@@ -398,7 +401,7 @@ export const ContentLanguageSwitcher = ({
   // Full mode
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      <Translate sx={{ fontSize: 16, color: "text.secondary" }} />
+      <Translate size={16} color="text.secondary" />
       <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.875rem" }}>
         Language:
       </Typography>
@@ -408,7 +411,7 @@ export const ContentLanguageSwitcher = ({
           label={
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               {getCurrentLanguageLabel()}
-              {loading ? <CircularProgress size={12} /> : <ExpandMore sx={{ fontSize: "1rem" }} />}
+              {loading ? <CircularProgress size={12} /> : <ExpandMore size={14} />}
             </Box>
           }
           size="small"
@@ -485,7 +488,7 @@ export const ContentLanguageSwitcher = ({
                     gap: 1,
                   }}
                 >
-                  <Add sx={{ fontSize: "1rem", color: "success.main" }} />
+                  <Add size={14} color="success.main" />
                   <Typography variant="body2">{lang.name}</Typography>
                 </MenuItem>
               ))}
@@ -502,7 +505,7 @@ export const ContentLanguageSwitcher = ({
             gap: 1,
           }}
         >
-          <Link sx={{ fontSize: "1rem", color: "info.main" }} />
+          <Link size={14} color="info.main" />
           <Typography variant="body2">Link Translation</Typography>
         </MenuItem>
       </Menu>
@@ -674,7 +677,7 @@ export const LanguageHighlights = ({
           <Chip
             label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
-                <Add sx={{ fontSize: "0.75rem" }} />
+                <Add size={12} />
                 {lang.name}
               </Box>
             }

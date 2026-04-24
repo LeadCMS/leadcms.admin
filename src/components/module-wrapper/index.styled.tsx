@@ -1,4 +1,5 @@
-import { CircularProgress, styled } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import { styled } from "@mui/material/styles";
 
 export const ActionsContainer = styled("div")`
   display: flex;

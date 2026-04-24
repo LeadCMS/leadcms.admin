@@ -1,58 +1,55 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tabs,
-  Tab,
-  Chip,
-  Skeleton,
-  LinearProgress,
-  Checkbox,
-  IconButton,
-  Tooltip,
-  Link,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Alert,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Chip from "@mui/material/Chip";
+import Skeleton from "@mui/material/Skeleton";
+import LinearProgress from "@mui/material/LinearProgress";
+import Checkbox from "@mui/material/Checkbox";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Link from "@mui/material/Link";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Alert from "@mui/material/Alert";
 import Grid from "@mui/material/Grid";
 import {
-  PlayArrow,
-  Refresh,
+  RefreshCw,
   CheckCircle,
-  Cancel,
-  Schedule,
-  CloudUpload,
-  TrendingUp,
-  AccessTime,
-  Error as ErrorIcon,
-  HourglassEmpty,
-  Visibility,
+  X,
+  Clock,
+  AlertCircle,
+  Loader,
+  Eye,
   Rocket,
-  Warning,
-} from "@mui/icons-material";
+  AlertTriangle,
+  CloudUpload,
+  CloudUploadIcon,
+  TrendingUp,
+  Play,
+} from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { parseApiError } from "@utils/api-error-parser";
-import { AlertCircle } from "lucide-react";
 import type { DeploymentRecordDto, DeploymentStatsDto, DeploymentTargetDto } from "../types";
 import {
   formatDuration,
@@ -389,7 +386,7 @@ export const DeploymentsList = () => {
         </Box>
         <Button
           variant="outlined"
-          startIcon={<Refresh />}
+          startIcon={<RefreshCw />}
           onClick={handleRefresh}
           disabled={loading}
         >
@@ -416,7 +413,7 @@ export const DeploymentsList = () => {
                     Lifetime total
                   </Typography>
                 </Box>
-                <CloudUpload sx={{ color: "text.secondary" }} />
+                <CloudUploadIcon color="text.secondary" />
               </Box>
             </CardContent>
           </Card>
@@ -442,7 +439,7 @@ export const DeploymentsList = () => {
                     color="success"
                   />
                 </Box>
-                <TrendingUp sx={{ color: "success.main", ml: 2 }} />
+                <TrendingUp color="success.main" style={{ marginLeft: 8 }} />
               </Box>
             </CardContent>
           </Card>
@@ -477,7 +474,7 @@ export const DeploymentsList = () => {
                     </Box>
                   </Box>
                 </Box>
-                <PlayArrow sx={{ color: "info.main" }} />
+                <Play color="info.main" />
               </Box>
             </CardContent>
           </Card>
@@ -504,7 +501,7 @@ export const DeploymentsList = () => {
                     Average deployment time
                   </Typography>
                 </Box>
-                <AccessTime sx={{ color: "text.secondary" }} />
+                <Clock color="text.secondary" />
               </Box>
             </CardContent>
           </Card>
@@ -546,7 +543,7 @@ export const DeploymentsList = () => {
             </Box>
           ) : targets.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 6 }}>
-              <Schedule sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
+              <Clock fontSize="large" color="text.disabled" style={{ marginBottom: 2 }} />
               <Typography color="text.secondary">No deployment targets configured yet</Typography>
               <Typography variant="caption" color="text.secondary">
                 Configure targets in your deployment settings to get started
@@ -586,7 +583,7 @@ export const DeploymentsList = () => {
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                           <Checkbox checked={isSelected} color="primary" />
                           {lastStatus === "Failed" ? (
-                            <ErrorIcon color="error" />
+                            <AlertCircle color="error" />
                           ) : lastStatus === "Completed" ? (
                             <CheckCircle color="success" />
                           ) : (
@@ -637,7 +634,7 @@ export const DeploymentsList = () => {
                                 "&:hover": { bgcolor: "primary.main", color: "white" },
                               }}
                             >
-                              <PlayArrow fontSize="small" />
+                              <Play fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         </Box>
@@ -664,7 +661,7 @@ export const DeploymentsList = () => {
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <Button
                     variant="outlined"
-                    startIcon={<PlayArrow />}
+                    startIcon={<Play />}
                     onClick={handleDeployAll}
                     disabled={deploying || targets.length === 0}
                   >
@@ -672,7 +669,7 @@ export const DeploymentsList = () => {
                   </Button>
                   <Button
                     variant="contained"
-                    startIcon={<PlayArrow />}
+                    startIcon={<Play />}
                     onClick={handleDeploySelected}
                     disabled={deploying || selectedTargets.length === 0}
                   >
@@ -743,13 +740,13 @@ export const DeploymentsList = () => {
                             deployment.status === "Completed" ? (
                               <CheckCircle fontSize="small" />
                             ) : deployment.status === "Failed" ? (
-                              <ErrorIcon fontSize="small" />
+                              <AlertCircle fontSize="small" />
                             ) : deployment.status === "InProgress" ? (
-                              <Schedule fontSize="small" />
+                              <Clock fontSize="small" />
                             ) : deployment.status === "Pending" ? (
-                              <HourglassEmpty fontSize="small" />
+                              <Loader fontSize="small" />
                             ) : (
-                              <Cancel fontSize="small" />
+                              <X fontSize="small" />
                             )
                           }
                         />
@@ -803,7 +800,7 @@ export const DeploymentsList = () => {
                               handleViewDeployment(deployment.id);
                             }}
                           >
-                            <Visibility fontSize="small" />
+                            <Eye fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </TableCell>
@@ -958,7 +955,7 @@ export const DeploymentsList = () => {
             </>
           )}
 
-          <Alert severity="warning" icon={<Warning />} sx={{ mt: 2 }}>
+          <Alert severity="warning" icon={<AlertTriangle />} sx={{ mt: 2 }}>
             <Typography variant="body2">
               Deployments will run in sequence. You can monitor progress in the History tab.
             </Typography>

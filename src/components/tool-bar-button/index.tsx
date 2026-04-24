@@ -1,5 +1,7 @@
 import React from "react";
-import { Button, ButtonProps, useTheme } from "@mui/material";
+import Button from "@mui/material/Button";
+import type { ButtonProps } from "@mui/material/Button";
+import { useTheme } from "@mui/material/styles";
 
 interface ToolbarButtonProps extends ButtonProps {
   startIcon?: React.ReactNode;

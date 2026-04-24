@@ -1,14 +1,13 @@
-import {
-  List,
-  useMediaQuery,
-  useTheme,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-  Collapse,
-  Box,
-} from "@mui/material";
 import { useEffect, useState } from "react";
+import {useTheme} from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import List from "@mui/material/List";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Collapse from "@mui/material/Collapse";
+import Box from "@mui/material/Box";
 import { PanelRightOpen, PanelLeftOpen, ChevronDown, ChevronRight } from "lucide-react";
 import {
   ListItemIconStyled,
@@ -22,7 +21,6 @@ import {
 import { getCoreModuleRoute, CoreModule } from "lib/router";
 import { useSidebar } from "@providers/sidebar-provider";
 import { LogoComponent } from "@components/app-header/index.styled";
-import Typography from "@mui/material/Typography";
 import { GhostLink } from "@components/ghost-link";
 
 interface SidebarMenuItem {
@@ -129,12 +127,19 @@ export const Sidebar = ({
               <IconButton
                 onClick={toggleCollapse}
                 size="small"
+                aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-expanded={!isCollapsed}
+                aria-controls="main-navigation"
                 sx={{
                   ml: showCollapsed ? 2 : 1,
                   pr: showCollapsed ? 2 : 0,
                 }}
               >
-                {isCollapsed ? <PanelLeftOpen /> : <PanelRightOpen />}
+                {isCollapsed ? (
+                  <PanelLeftOpen aria-hidden="true" focusable="false" />
+                ) : (
+                  <PanelRightOpen aria-hidden="true" focusable="false" />
+                )}
               </IconButton>
             </Tooltip>
           )}

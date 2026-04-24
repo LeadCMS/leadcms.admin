@@ -1,5 +1,8 @@
 import { ModuleWrapper } from "@components/module-wrapper";
-import { Card, CardContent, CircularProgress, Typography } from "@mui/material";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import { useRequestContext } from "@providers/request-provider";
 import { useEffect, useState } from "react";

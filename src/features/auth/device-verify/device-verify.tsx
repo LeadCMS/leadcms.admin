@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { Typography, CircularProgress, TextField, Box } from "@mui/material";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useRequestContext } from "@providers/request-provider";
 import { useAuthState } from "@providers/auth-provider";

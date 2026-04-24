@@ -1,7 +1,10 @@
 import { memo, PropsWithChildren, useCallback, useEffect, useState } from "react";
 import { PublicClientApplication, Configuration, InteractionStatus } from "@azure/msal-browser";
 import { MsalProvider, useMsal } from "@azure/msal-react";
-import { Box, CircularProgress, Typography, Alert } from "@mui/material";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
 import { useConfig } from "@providers/config-provider";
 import { Api } from "@lib/network/swagger-client";
 import { buildAbsoluteUrl } from "@lib/network/utils";

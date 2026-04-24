@@ -1,27 +1,25 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Grid,
-  Switch,
-  FormControlLabel,
-  TextField,
-  IconButton,
-  Paper,
-  Typography,
-  CircularProgress,
-  Breadcrumbs,
-  ToggleButtonGroup,
-  ToggleButton,
-  Tooltip,
-  InputAdornment,
-  Checkbox,
-  Chip,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Grid from "@mui/material/Grid";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import ToggleButton from "@mui/material/ToggleButton";
+import Tooltip from "@mui/material/Tooltip";
+import InputAdornment from "@mui/material/InputAdornment";
+import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
 import {
   DataGrid,
   GridColDef,
@@ -29,24 +27,9 @@ import {
   GridRowParams,
   GridRowSelectionModel,
 } from "@mui/x-data-grid";
-import FolderIcon from "@mui/icons-material/Folder";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import ImageIcon from "@mui/icons-material/Image";
-import MovieIcon from "@mui/icons-material/Movie";
-import MusicNoteIcon from "@mui/icons-material/MusicNote";
-import DescriptionIcon from "@mui/icons-material/Description";
-import CoPresentIcon from "@mui/icons-material/CoPresent";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import { useRequestContext } from "@providers/request-provider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import FileCopyIcon from "@mui/icons-material/FileCopy";
-import DownloadIcon from "@mui/icons-material/Download";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
-import RestoreIcon from "@mui/icons-material/Restore";
 import { useNavigate, useLocation } from "react-router-dom";
 import { buildAbsoluteUrl, buildAbsoluteUrlWithCacheBust } from "@lib/network/utils";
 import { MediaPreview } from "./media-preview";
@@ -59,16 +42,7 @@ import { MediaSortPopup } from "@components/media-sort-popup";
 import useLocalStorage from "use-local-storage";
 import { ToolbarButton } from "@components/tool-bar-button";
 import { DataTableContainer } from "@components/data-table/index.styled";
-import {
-  SortAsc,
-  SortDesc,
-  LayoutGrid,
-  Table as TableIcon,
-  File,
-  X,
-  Search,
-  AlertCircle,
-} from "lucide-react";
+import { SortAsc, SortDesc, LayoutGrid, Table as TableIcon, File, X, Search, ImageIcon, FileTextIcon, VideoIcon, MusicIcon, PackageIcon, Folder, MoreVerticalIcon, TrashIcon, Download, Copy, Pencil, Trash, Wand2, RotateCcw, AlertCircle, Gift } from "lucide-react";
 import { useConfig } from "@providers/config-provider";
 import { parseApiError } from "@utils/api-error-parser";
 
@@ -115,12 +89,12 @@ function buildBreadcrumbs(folder: string): { name: string; scopeUid: string }[] 
 
 const fileTypeIcons: Record<string, JSX.Element> = {
   image: <ImageIcon color="primary" />,
-  video: <MovieIcon color="secondary" />,
-  audio: <MusicNoteIcon color="success" />,
-  document: <DescriptionIcon color="error" />,
-  archive: <ArchiveIcon color="warning" />,
-  folder: <FolderIcon color="warning" />,
-  other: <InsertDriveFileIcon color="disabled" />,
+  video: <VideoIcon color="secondary" />,
+  audio: <MusicIcon color="success" />,
+  document: <FileTextIcon color="error" />,
+  archive: <PackageIcon color="warning" />,
+  folder: <Folder color="warning" />,
+  other: <File color="disabled" />,
 };
 
 const getFileType = (mimeType: string, extension: string) => {
@@ -147,7 +121,7 @@ const isPptxDocument = (mimeType: string, extension: string) => {
 
 const getFileIcon = (mimeType: string, extension: string, type: string): JSX.Element => {
   if (type === "document" && isPptxDocument(mimeType, extension)) {
-    return <CoPresentIcon color="warning" />;
+    return <Gift color="var(--mui-palette-warning-main)" />;
   }
 
   return fileTypeIcons[type] || fileTypeIcons.other;
@@ -1162,7 +1136,7 @@ const MediaManagement = () => {
                 handleMenuOpen(e, row);
               }}
             >
-              <MoreVertIcon fontSize="small" />
+              <MoreVerticalIcon fontSize="small" />
             </IconButton>
           ) : null;
         },
@@ -1311,7 +1285,7 @@ const MediaManagement = () => {
             onClick={(event) => setFolderMenuAnchorEl(event.currentTarget)}
             aria-label="Folder actions"
           >
-            <MoreVertIcon fontSize="small" />
+            <MoreVerticalIcon fontSize="small" />
           </IconButton>
           <Button variant="contained" onClick={() => setDialog("upload")}>
             Upload
@@ -1371,7 +1345,7 @@ const MediaManagement = () => {
             size="small"
             variant="outlined"
             color="error"
-            startIcon={<DeleteIcon />}
+            startIcon={<TrashIcon />}
             onClick={() => setIsBulkDeleteDialogOpen(true)}
           >
             Delete Selected
@@ -1476,7 +1450,6 @@ const MediaManagement = () => {
                     borderRadius: 3,
                     overflow: "hidden",
                     position: "relative",
-                    transition: "box-shadow 0.2s, border 0.2s",
                     boxShadow: 1,
                     border: "1px solid #e0e0e0",
                     cursor: isFolder ? "pointer" : "default",
@@ -1487,9 +1460,6 @@ const MediaManagement = () => {
                     flexDirection: "column",
                     justifyContent: "flex-start",
                     alignItems: "stretch",
-                    "&:hover": {
-                      boxShadow: 6,
-                    },
                   }}
                   onClick={() => {
                     if (isFolder) {
@@ -1619,7 +1589,7 @@ const MediaManagement = () => {
                     }}
                   >
                     <IconButton size="small" sx={{ bgcolor: "white", borderRadius: "50%" }}>
-                      <MoreVertIcon fontSize="small" />
+                      <MoreVerticalIcon fontSize="small" />
                     </IconButton>
                   </Box>
                   {/* Info */}
@@ -1803,17 +1773,17 @@ const MediaManagement = () => {
       >
         {menuItem && menuItem.mimeType !== "inode/directory" && (
           <MenuItem onClick={() => handlePreviewMenu(menuItem)}>
-            <ImageIcon fontSize="small" sx={{ mr: 1 }} /> Preview
+            <ImageIcon size={16} style={{ marginRight: 8 }} /> Preview
           </MenuItem>
         )}
         {menuItem && menuItem.mimeType !== "inode/directory" && (
           <MenuItem onClick={() => handleDownload(menuItem)}>
-            <DownloadIcon fontSize="small" sx={{ mr: 1 }} /> Download
+            <Download size={16} style={{ marginRight: 8 }} /> Download
           </MenuItem>
         )}
         {menuItem && menuItem.mimeType !== "inode/directory" && (
           <MenuItem onClick={() => handleCopyLink(menuItem)}>
-            <FileCopyIcon fontSize="small" sx={{ mr: 1 }} /> Copy Link
+            <Copy size={16} style={{ marginRight: 8 }} /> Copy Link
           </MenuItem>
         )}
         {menuItem && menuItem.mimeType !== "inode/directory" && (
@@ -1823,13 +1793,13 @@ const MediaManagement = () => {
               handleRenameOpen(menuItem);
             }}
           >
-            <DriveFileRenameOutlineIcon fontSize="small" sx={{ mr: 1 }} /> Move / Rename
+            <Pencil size={16} style={{ marginRight: 8 }} /> Move / Rename
           </MenuItem>
         )}
         {/* Only show Rename/Delete for files, not folders */}
         {menuItem && menuItem.mimeType !== "inode/directory" && (
           <MenuItem onClick={() => handleDelete(menuItem)}>
-            <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Delete
+            <Trash size={16} style={{ marginRight: 8 }} /> Delete
           </MenuItem>
         )}
       </Menu>
@@ -1847,7 +1817,7 @@ const MediaManagement = () => {
           }}
           disabled={!(folderMenuItem?.scopeUid || currentScopeUid)}
         >
-          <DriveFileRenameOutlineIcon fontSize="small" sx={{ mr: 1 }} /> Rename Folder
+          <Pencil size={16} style={{ marginRight: 8 }} /> Rename Folder
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -1857,7 +1827,7 @@ const MediaManagement = () => {
             setBulkDialog("optimize");
           }}
         >
-          <AutoFixHighIcon fontSize="small" sx={{ mr: 1 }} /> Optimize Folder
+          <Wand2 size={16} style={{ marginRight: 8 }} /> Optimize Folder
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -1867,7 +1837,7 @@ const MediaManagement = () => {
             setBulkDialog("reset");
           }}
         >
-          <RestoreIcon fontSize="small" sx={{ mr: 1 }} /> Reset Folder
+          <RotateCcw size={16} style={{ marginRight: 8 }} /> Reset Folder
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -1876,7 +1846,7 @@ const MediaManagement = () => {
           }}
           disabled={!(folderMenuItem?.scopeUid || currentScopeUid)}
         >
-          <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Delete Folder
+          <Trash size={16} style={{ marginRight: 8 }} /> Delete Folder
         </MenuItem>
       </Menu>
       <Dialog

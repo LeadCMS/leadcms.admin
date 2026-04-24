@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Box, Alert, Typography, Chip, CircularProgress } from "@mui/material";
+import Box from "@mui/material/Box";
+import Alert from "@mui/material/Alert";
+import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import { AlertTriangle, Code } from "lucide-react";
 import {
   validateContentSyntax,

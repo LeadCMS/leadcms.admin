@@ -1,11 +1,11 @@
 import { GenericFormProps, getSchemaDto } from "@components/generic-components";
 import { DomainCreateDto, DomainDetailsDto, DomainUpdateDto } from "@lib/network/swagger-client";
 import {
-  addFormRoute,
   CoreModule,
-  editFormRoute,
+  getAddFormRoute,
   getCoreModuleRoute,
-  viewFormRoute,
+  getEditFormRoute,
+  getViewFormRoute,
 } from "lib/router";
 import { Outlet, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { DomainsLazy } from "./lazy";
@@ -77,9 +77,9 @@ export const DomainsModule = () => {
     <>
       <Routes>
         <Route index element={<DomainsLazy />} />
-        <Route path={editFormRoute.template} element={domainEditForm} />
-        <Route path={viewFormRoute.template} element={domainViewForm} />
-        <Route path={addFormRoute.template} element={domainCreateForm} />
+        <Route path={getEditFormRoute()} element={domainEditForm} />
+        <Route path={getViewFormRoute()} element={domainViewForm} />
+        <Route path={getAddFormRoute()} element={domainCreateForm} />
       </Routes>
       <Outlet />
     </>

@@ -1,4 +1,6 @@
-import { AppBar, styled, Toolbar } from "@mui/material";
+import AppBar from "@mui/material/AppBar";
+import { styled } from "@mui/material/styles";
+import Toolbar from "@mui/material/Toolbar";
 
 export const AppBarStyled = styled(AppBar)`
   position: sticky;

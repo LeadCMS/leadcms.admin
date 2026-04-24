@@ -1,4 +1,6 @@
-import { Avatar, Button, ListItemAvatar } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
 import { AccountDetailsDto, AccountImportDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { AccountListItem, AccountListItemText, AccountUrlHref } from "./index.styled";

@@ -1,5 +1,9 @@
 import React from "react";
-import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
 import { ApiError } from "@lib/network/wrapApiClient";
 
 interface ApiErrorDisplayProps {

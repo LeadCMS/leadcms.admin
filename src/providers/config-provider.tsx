@@ -27,7 +27,8 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await client.api.configList();
+      // Config is required before auth bootstrap; do not attach auth requirements here.
+      const response = await client.api.configList({ secure: false });
       setConfig(response.data as ExtendedConfigDto);
     } catch (e: unknown) {
       let errorMessage = "Failed to load configuration from /api/config";
@@ -58,6 +59,12 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
           errorMessage = `Server error: ${error.error.message}`;
         } else if (error.error?.title) {
           errorMessage = `Server error: ${error.error.title}`;
+        } else if (
+          error.message?.includes("Unexpected token '<'") ||
+          error.message?.includes("<!DOCTYPE")
+        ) {
+          errorMessage =
+            "Configuration endpoint returned HTML instead of JSON. Verify API routing/auth rules for /api/config.";
         } else if (error.message) {
           errorMessage = error.message;
         }
@@ -73,7 +80,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   const reloadConfig = async () => {
     try {
       setError(null);
-      const response = await client.api.configList();
+      const response = await client.api.configList({ secure: false });
       setConfig(response.data as ExtendedConfigDto);
     } catch (e) {
       // Silent reload - don't update error state to avoid disrupting the UI

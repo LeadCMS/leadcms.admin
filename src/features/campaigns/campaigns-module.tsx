@@ -1,4 +1,4 @@
-import { addFormRoute, editFormRoute, viewFormRoute } from "lib/router";
+import { getAddFormRoute, getEditFormRoute, getViewFormRoute } from "lib/router";
 import { Outlet, Route, Routes } from "react-router-dom";
 import { Campaigns } from "./index";
 import { CampaignAdd } from "./add";
@@ -10,9 +10,9 @@ export const CampaignsModule = () => {
     <>
       <Routes>
         <Route index element={<Campaigns />} />
-        <Route path={addFormRoute.template} element={<CampaignAdd />} />
-        <Route path={editFormRoute.template} element={<CampaignEdit />} />
-        <Route path={viewFormRoute.template} element={<CampaignView />} />
+        <Route path={getAddFormRoute()} element={<CampaignAdd />} />
+        <Route path={getEditFormRoute()} element={<CampaignEdit />} />
+        <Route path={getViewFormRoute()} element={<CampaignView />} />
       </Routes>
       <Outlet />
     </>

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { TextField, Box, InputAdornment, IconButton } from "@mui/material";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
 import { Search, X } from "lucide-react";
 interface SearchBoxProps {
   setSearchTermOnChange: (searchTerm: string) => void;

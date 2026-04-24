@@ -1,5 +1,7 @@
-import { Box, Chip, Tooltip } from "@mui/material";
-import { Add, Language } from "@mui/icons-material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import { Plus as Add, Languages as Language } from 'lucide-react';
 import { ContentDetailsDto, LanguageDto } from "@lib/network/swagger-client";
 import { useConfig } from "@providers/config-provider";
 import { useNavigate } from "react-router-dom";
@@ -110,7 +112,7 @@ export const ContentLanguageBadges = ({
             <Chip
               label={
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
-                  <Add sx={{ fontSize: "0.6rem" }} />
+                  <Add size={12} />
                   {lang.code?.toUpperCase()}
                 </Box>
               }
@@ -139,7 +141,7 @@ export const ContentLanguageBadges = ({
   // Full view - show all languages
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, alignItems: "center" }}>
-      <Language sx={{ fontSize: 16, color: "text.secondary", mr: 0.5 }} />
+      <Language size={16} color="text.secondary" style={{ marginRight: 8 }} />
 
       {/* Existing translations */}
       {existingLanguages.map((lang) => (
@@ -168,7 +170,7 @@ export const ContentLanguageBadges = ({
       {missingLanguages.map((lang) => (
         <Tooltip key={lang.code} title={`Add ${lang.name} translation`}>
           <Chip
-            icon={<Add sx={{ fontSize: "1rem !important" }} />}
+            icon={<Add size={14} />}
             label={getLanguageName(lang.code || "")}
             size="small"
             variant="outlined"

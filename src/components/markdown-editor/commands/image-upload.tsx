@@ -1,5 +1,5 @@
 import { Image } from "lucide-react";
-import { Button } from "@mui/material";
+import Button from "@mui/material/Button";
 import { ExtendedCommandBase } from "../types";
 import { useRequestContext } from "@providers/request-provider";
 import { ContentDetails } from "@features/content/content-edit/types";

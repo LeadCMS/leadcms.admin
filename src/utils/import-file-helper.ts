@@ -1,4 +1,3 @@
-import { Dictionary } from "lodash";
 
 interface Validation {
   rule: string;
@@ -6,7 +5,7 @@ interface Validation {
   level: string;
 }
 
-const alternativeMatches: Dictionary<string[]> = {
+const alternativeMatches: Record<string, string[]> = {
   firstName: ["first name", "first"],
   lastName: ["last name", "last"],
   email: ["email address"],
@@ -59,7 +58,7 @@ const buildValidations = (key: string, property: any) => {
   return validations;
 };
 
-const typeMapping: Dictionary<string> = {
+const typeMapping: Record<string, string> = {
   string: "input",
   integer: "input",
   boolean: "checkbox",

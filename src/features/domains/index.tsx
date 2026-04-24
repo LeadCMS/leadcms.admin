@@ -1,4 +1,7 @@
-import { Avatar, ListItemAvatar } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import Button from "@mui/material/Button";
+
 import { DomainDetailsDto } from "lib/network/swagger-client";
 import { useRequestContext } from "providers/request-provider";
 import { DomainListItem, DomainListItemText } from "./index.styled";
@@ -20,7 +23,6 @@ import { Fragment, useRef, useState } from "react";
 import { getModelByName } from "@lib/network/swagger-models";
 import { Result } from "react-spreadsheet-import/types/types";
 import { SearchBar } from "@components/search-bar";
-import { Button } from "@mui/material";
 import { Plus, Download, Upload, Filter, Settings2 } from "lucide-react";
 import { CsvImport } from "@components/spreadsheet-import";
 import { GhostLink } from "@components/ghost-link";

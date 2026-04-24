@@ -47,28 +47,26 @@ import { ErrorBoundary } from "react-error-boundary";
 import { ModuleWrapper } from "@components/module-wrapper";
 
 // Import UI components
-import {
-  Card,
-  CardContent,
-  Tabs,
-  Tab,
-  Box,
-  CircularProgress,
-  Switch,
-  Typography,
-  FormControlLabel,
-  IconButton,
-  Button,
-  Grid,
-  TextField,
-  Checkbox,
-  Stack,
-  Skeleton,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Switch from "@mui/material/Switch";
+import Typography from "@mui/material/Typography";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import Checkbox from "@mui/material/Checkbox";
+import Stack from "@mui/material/Stack";
+import Skeleton from "@mui/material/Skeleton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import { RefreshCw, ExternalLink, ChevronDown, Save, Eye, FileX } from "lucide-react";
 
 // Import existing components and utilities

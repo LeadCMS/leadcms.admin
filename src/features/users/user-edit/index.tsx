@@ -21,23 +21,21 @@ import { useEffect, useRef, useState } from "react";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { UserEditBreadcrumbLinks } from "../constants";
 import { StyledAvatar } from "./styled";
-import {
-  Box,
-  Grid,
-  Typography,
-  Badge,
-  Avatar,
-  TextField,
-  Button,
-  FormControlLabel,
-  Checkbox,
-  Paper,
-  InputAdornment,
-  IconButton,
-  Tooltip,
-  useTheme,
-  useMediaQuery,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Badge from "@mui/material/Badge";
+import Avatar from "@mui/material/Avatar";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Paper from "@mui/material/Paper";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { Camera, XCircle, Save, Eye, EyeOff, User, Lock } from "lucide-react";
 import { UserEditProps } from "./types";
 import { buildAbsoluteUrl } from "@lib/network/utils";

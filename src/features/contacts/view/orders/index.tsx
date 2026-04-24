@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
-import { Box, Card, CardContent, CircularProgress, IconButton, Typography } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useConfig } from "@providers/config-provider";

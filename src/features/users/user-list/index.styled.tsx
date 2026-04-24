@@ -1,4 +1,5 @@
-import { ListItem, styled } from "@mui/material";
+import ListItem from "@mui/material/ListItem";
+import { styled } from "@mui/material/styles";
 import ListItemText from "@mui/material/ListItemText";
 
 export const UserNameListItem = styled(ListItem)({

@@ -1,15 +1,13 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Typography,
-  CircularProgress,
-  IconButton,
-  Paper,
-  Alert,
-  Stack,
-  Link,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Alert from "@mui/material/Alert";
+import Stack from "@mui/material/Stack";
+import Link from "@mui/material/Link";
 import { Upload, Trash2, Image as ImageIcon, ExternalLink, Sparkles } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { useRequestContext } from "@providers/request-provider";

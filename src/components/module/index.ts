@@ -1,4 +1,4 @@
-import { styled } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 export const ModuleContainer = styled("div")<{ fullWidth?: boolean }>`
   display: flex;
