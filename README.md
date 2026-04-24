@@ -21,6 +21,10 @@ Install dependencies:
 
 Create `.env` file and add configurations as shown in `.env.sample` file. Refer below example:
 
+    VITE_API_URL=http://localhost:45437
+
+Legacy key is still supported:
+
     CORE_API=http://localhost:45437
 
 Fix any code formatting errors/warnings before do git commit.
@@ -43,4 +47,4 @@ Start development server:
 
 Open the app:
 
-http://localhost:8080
+http://localhost:8081

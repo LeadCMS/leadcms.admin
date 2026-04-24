@@ -2,7 +2,7 @@ export const buildAbsoluteUrl = (localUrl: string | null | undefined) => {
   if (!localUrl || localUrl.length === 0) {
     return "";
   }
-  const coreApi = import.meta.env.VITE_API_URL;
+  const coreApi = import.meta.env.VITE_API_URL || import.meta.env.CORE_API;
   const base =
     coreApi && coreApi.trim().length > 0
       ? coreApi

@@ -124,11 +124,8 @@ export const App = () => {
                                 </AppLayoutWithAutoBreadcrumbs>
                               }
                             >
-                              <Route path={rootRoute} element={<ModuleLoader />} />
-<Route
-                              path="/:moduleName/*"
-                              element={<ModuleLoader />}
-                            />
+                              <Route index element={<ModuleLoader />} />
+                              <Route path=":moduleName/*" element={<ModuleLoader />} />
                             </Route>
                           </Routes>
                         </BrowserRouter>

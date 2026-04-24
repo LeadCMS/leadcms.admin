@@ -50,7 +50,6 @@ import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { parseApiError } from "@utils/api-error-parser";
-import { AlertCircle } from "lucide-react";
 import type { DeploymentRecordDto, DeploymentStatsDto, DeploymentTargetDto } from "../types";
 import {
   formatDuration,
