@@ -1,8 +1,9 @@
 import { memo, PropsWithChildren, useCallback, useEffect, useState } from "react";
 import { PublicClientApplication, Configuration, InteractionStatus } from "@azure/msal-browser";
 import { MsalProvider, useMsal } from "@azure/msal-react";
-import { Box, CircularProgress, Typography, Alert } from "@mui/material";
+import { Box, Typography, Alert } from "@mui/material";
 import { useConfig } from "@providers/config-provider";
+import "./auth-loading.css";
 import { Api } from "@lib/network/swagger-client";
 import { buildAbsoluteUrl } from "@lib/network/utils";
 
@@ -98,24 +99,15 @@ export const Loading = ({
   showProgress?: boolean;
 }>) => {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "background.default",
-        color: "text.primary",
-        gap: 2,
-      }}
-    >
-      {showProgress && <CircularProgress color="primary" />}
-      <Typography variant="h6" fontWeight={500}>
-        {message}
-      </Typography>
+    <div className="auth-loading-root">
+      {showProgress && (
+        <svg className="auth-loading-spinner" viewBox="22 22 44 44">
+          <circle cx="44" cy="44" r="20.2" fill="none" strokeWidth="3.6" />
+        </svg>
+      )}
+      <p className="auth-loading-message">{message}</p>
       {children}
-    </Box>
+    </div>
   );
 };
 

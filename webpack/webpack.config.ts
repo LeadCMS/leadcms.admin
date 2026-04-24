@@ -67,24 +67,35 @@ const createConfiguration = (
       ],
       splitChunks: {
         chunks: "all",
+        // Encourage webpack to split chunks larger than 500 KiB for better caching
+        maxSize: 500 * 1024,
         cacheGroups: {
-          // Split large, infrequently-changing vendor libs into their own chunks
           react: {
             test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom|scheduler)[\\/]/,
             name: "chunk-react",
             chunks: "all",
-            priority: 40,
+            priority: 50,
           },
           mui: {
             test: /[\\/]node_modules[\\/](@mui|@emotion)[\\/]/,
             name: "chunk-mui",
             chunks: "all",
-            priority: 30,
+            priority: 40,
+          },
+          // Heavy editing libs — only needed when content/email-template editing
+          editors: {
+            test: /[\\/]node_modules[\\/](@mdxeditor|@codemirror|@lezer|@lexical|monaco-editor|@monaco-editor)[\\/]/,
+            name: "chunk-editors",
+            chunks: "all",
+            priority: 35,
           },
           vendors: {
             test: /[\\/]node_modules[\\/]/,
-            name: "chunk-vendors",
-            chunks: "initial",
+            // No static name: webpack auto-names shared vendor chunks per usage
+            name: false,
+            chunks: "all",
+            // Only extract if shared across 2+ chunks — no point splitting unique deps
+            minChunks: 2,
             priority: -10,
             reuseExistingChunk: true,
           },
