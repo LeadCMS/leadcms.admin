@@ -11,6 +11,8 @@ import { Configuration as WebpackDevServerConfiguration } from "webpack-dev-serv
 import dotenv from "dotenv";
 import DotenvPlugin from "dotenv-webpack";
 import CopyWebpackPlugin from "copy-webpack-plugin";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import CssMinimizerPlugin from "css-minimizer-webpack-plugin";
 import * as fs from "fs";
 
 const packageJson = JSON.parse(fs.readFileSync(resolve(__dirname, "../package.json"), "utf-8"));
@@ -24,94 +26,139 @@ interface Configuration extends WebpackConfiguration {
 
 dotenv.config();
 
-const configuration: Configuration = {
-  entry: {
-    main: resolve(__dirname, "../src/index.ts"),
-  },
-  output: {
-    path: resolve(__dirname, "../dist"),
-    filename: "[name].[contenthash:8].js",
-    publicPath: "/",
-  },
-  cache: {
-    type: "filesystem", // Enable persistent caching
-  },
-  resolve: {
-    extensions: [".tsx", ".ts", ".js"], // Limit extensions to reduce overhead
-    plugins: [new TsconfigPathsPlugin({ configFile: resolve(__dirname, "../tsconfig.json") })],
-    alias: {
-      "@providers": resolve(__dirname, "../src/providers"),
-      "@lib": resolve(__dirname, "../src/lib"),
-      "@features": resolve(__dirname, "../src/features"),
-      "@components": resolve(__dirname, "../src/components"),
+const createConfiguration = (
+  _env: Record<string, string>,
+  argv: { mode?: string }
+): Configuration => {
+  const isProduction = argv.mode === "production";
+
+  const configuration: Configuration = {
+    entry: {
+      main: resolve(__dirname, "../src/index.ts"),
     },
-    fallback: {
-      buffer: require.resolve("buffer/"),
+    output: {
+      path: resolve(__dirname, "../dist"),
+      filename: "[name].[contenthash:8].js",
+      publicPath: "/",
     },
-  },
-  devtool:
-    process.env.NODE_ENV === "production"
+    cache: {
+      type: "filesystem", // Enable persistent caching
+    },
+    resolve: {
+      extensions: [".tsx", ".ts", ".js"], // Limit extensions to reduce overhead
+      plugins: [new TsconfigPathsPlugin({ configFile: resolve(__dirname, "../tsconfig.json") })],
+      alias: {
+        "@providers": resolve(__dirname, "../src/providers"),
+        "@lib": resolve(__dirname, "../src/lib"),
+        "@features": resolve(__dirname, "../src/features"),
+        "@components": resolve(__dirname, "../src/components"),
+      },
+      fallback: {
+        buffer: require.resolve("buffer/"),
+      },
+    },
+    devtool: isProduction
       ? false // Disable source maps in production
       : "source-map", // Enable source maps in development
-  module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [{ loader: "style-loader" }, { loader: "css-loader" }],
-      },
-      {
-        test: /\.tsx?$/,
-        include: resolve(__dirname, "../src"), // Use include instead of exclude
-        use: [
-          {
-            loader: "ts-loader",
-            options: {
-              transpileOnly: true, // Speed up compilation by skipping type checking
-            },
+    optimization: {
+      minimizer: [
+        "...", // Keep the default JS minimizer (TerserPlugin)
+        new CssMinimizerPlugin(),
+      ],
+      splitChunks: {
+        chunks: "all",
+        cacheGroups: {
+          // Split large, infrequently-changing vendor libs into their own chunks
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom|scheduler)[\\/]/,
+            name: "chunk-react",
+            chunks: "all",
+            priority: 40,
           },
-        ],
+          mui: {
+            test: /[\\/]node_modules[\\/](@mui|@emotion)[\\/]/,
+            name: "chunk-mui",
+            chunks: "all",
+            priority: 30,
+          },
+          vendors: {
+            test: /[\\/]node_modules[\\/]/,
+            name: "chunk-vendors",
+            chunks: "initial",
+            priority: -10,
+            reuseExistingChunk: true,
+          },
+        },
       },
-    ],
-  },
-  devServer: {
-    historyApiFallback: true,
-  },
-  plugins: [
-    new CleanWebpackPlugin(),
-    new DotenvPlugin(),
-    new HtmlWebpackPlugin({
-      template: resolve(__dirname, "../public/index.html"),
-    }),
-    new CopyWebpackPlugin({
-      patterns: [
+    },
+    module: {
+      rules: [
         {
-          from: resolve(__dirname, "../public"),
-          to: resolve(__dirname, "../dist"),
-          filter: (resourcePath) => !resourcePath.endsWith("index.html"),
+          test: /\.css$/,
+          use: [
+            isProduction ? MiniCssExtractPlugin.loader : "style-loader",
+            { loader: "css-loader" },
+          ],
+        },
+        {
+          test: /\.tsx?$/,
+          include: resolve(__dirname, "../src"), // Use include instead of exclude
+          use: [
+            {
+              loader: "ts-loader",
+              options: {
+                transpileOnly: true, // Speed up compilation by skipping type checking
+              },
+            },
+          ],
         },
       ],
-    }),
-    new ModuleFederationPlugin({
-      shared: {
-        react: {
-          requiredVersion: dependencies.react,
-          singleton: true,
+    },
+    devServer: {
+      historyApiFallback: true,
+    },
+    plugins: [
+      new CleanWebpackPlugin(),
+      new DotenvPlugin(),
+      new HtmlWebpackPlugin({
+        template: resolve(__dirname, "../public/index.html"),
+      }),
+      ...(isProduction
+        ? [new MiniCssExtractPlugin({ filename: "[name].[contenthash:8].css" })]
+        : []),
+      new CopyWebpackPlugin({
+        patterns: [
+          {
+            from: resolve(__dirname, "../public"),
+            to: resolve(__dirname, "../dist"),
+            filter: (resourcePath) => !resourcePath.endsWith("index.html"),
+          },
+        ],
+      }),
+      new ModuleFederationPlugin({
+        shared: {
+          react: {
+            requiredVersion: dependencies.react,
+            singleton: true,
+          },
+          "react/jsx-runtime": {
+            singleton: true,
+            requiredVersion: dependencies.react,
+          },
+          "react-dom": {
+            requiredVersion: dependencies["react-dom"],
+            singleton: true,
+          },
         },
-        "react/jsx-runtime": {
-          singleton: true,
-          requiredVersion: dependencies.react,
-        },
-        "react-dom": {
-          requiredVersion: dependencies["react-dom"],
-          singleton: true,
-        },
-      },
-    }),
-    new ProvidePlugin({
-      Buffer: ["buffer", "Buffer"],
-    }),
-    new ProgressPlugin(),
-  ],
+      }),
+      new ProvidePlugin({
+        Buffer: ["buffer", "Buffer"],
+      }),
+      new ProgressPlugin(),
+    ],
+  };
+
+  return configuration;
 };
 
-export default configuration;
+export default createConfiguration;

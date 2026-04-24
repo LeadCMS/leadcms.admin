@@ -1,31 +1,62 @@
 "use client";
-import { Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { useRouteParams } from "typesafe-routes";
 import { CoreModule, coreModuleRoute, defaultModuleRoute } from "lib/router";
-import { ContentModule } from "features/content";
-import { DashboardModule } from "features/dashboard";
-import { ContactsModule } from "features/contacts/contacts-module";
-import { AccountsModule } from "features/accounts/accounts-module";
-import { OrdersModule } from "features/orders/orders-module";
-import { DomainsModule } from "features/domains/domains-module";
-import { LinksModule } from "@features/links";
 import { ModuleWrapperProvider } from "@providers/module-wrapper-provider";
-import { CommentsModule } from "@features/comments";
-import { UnsubscribesModule } from "@features/unsubscribes";
-import { UserModule } from "@features/users";
-import { AboutModule } from "@features/about";
-import { SegmentsModule } from "@features/segments/segments-module";
 import { Navigate } from "react-router-dom";
-import { EmailTemplatesModule } from "@features/email-templates";
-import { ActivityLogModule } from "@features/activity-log";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorBoundaryFallbackPage } from "@components/error-boundary-fallback-page";
-import { MediaModule } from "@features/media/lazy";
-import { SettingsModule } from "@features/settings/lazy";
-import { TasksModule } from "@features/tasks";
-import { DeploymentsModule } from "@features/deployments";
-import { CampaignsModule } from "@features/campaigns/campaigns-module";
-import { SequencesModule } from "@features/sequences/sequences-module";
+
+const ContentModule = lazy(() =>
+  import("features/content").then((m) => ({ default: m.ContentModule }))
+);
+const DashboardModule = lazy(() =>
+  import("features/dashboard").then((m) => ({ default: m.DashboardModule }))
+);
+const ContactsModule = lazy(() =>
+  import("features/contacts/contacts-module").then((m) => ({ default: m.ContactsModule }))
+);
+const AccountsModule = lazy(() =>
+  import("features/accounts/accounts-module").then((m) => ({ default: m.AccountsModule }))
+);
+const OrdersModule = lazy(() =>
+  import("features/orders/orders-module").then((m) => ({ default: m.OrdersModule }))
+);
+const DomainsModule = lazy(() =>
+  import("features/domains/domains-module").then((m) => ({ default: m.DomainsModule }))
+);
+const LinksModule = lazy(() => import("@features/links").then((m) => ({ default: m.LinksModule })));
+const CommentsModule = lazy(() =>
+  import("@features/comments").then((m) => ({ default: m.CommentsModule }))
+);
+const UnsubscribesModule = lazy(() =>
+  import("@features/unsubscribes").then((m) => ({ default: m.UnsubscribesModule }))
+);
+const UserModule = lazy(() => import("@features/users").then((m) => ({ default: m.UserModule })));
+const AboutModule = lazy(() => import("@features/about").then((m) => ({ default: m.AboutModule })));
+const SegmentsModule = lazy(() =>
+  import("@features/segments/segments-module").then((m) => ({ default: m.SegmentsModule }))
+);
+const EmailTemplatesModule = lazy(() =>
+  import("@features/email-templates").then((m) => ({ default: m.EmailTemplatesModule }))
+);
+const ActivityLogModule = lazy(() =>
+  import("@features/activity-log").then((m) => ({ default: m.ActivityLogModule }))
+);
+const MediaModule = lazy(() => import("@features/media/media-module"));
+const SettingsModule = lazy(() =>
+  import("@features/settings/settings-module").then((m) => ({ default: m.SettingsModule }))
+);
+const TasksModule = lazy(() => import("@features/tasks").then((m) => ({ default: m.TasksModule })));
+const DeploymentsModule = lazy(() =>
+  import("@features/deployments").then((m) => ({ default: m.DeploymentsModule }))
+);
+const CampaignsModule = lazy(() =>
+  import("@features/campaigns/campaigns-module").then((m) => ({ default: m.CampaignsModule }))
+);
+const SequencesModule = lazy(() =>
+  import("@features/sequences/sequences-module").then((m) => ({ default: m.SequencesModule }))
+);
 
 export const ModuleLoader = () => {
   const { moduleName } = useRouteParams(coreModuleRoute);
