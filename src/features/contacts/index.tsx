@@ -59,6 +59,7 @@ export const Contacts = () => {
   const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
   const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
+  const hasAccounts = hasEntity(config?.entities, ENTITY_KEYS.account);
   const availableContactFields = getAvailableContactFields(config?.entities);
   const [gridSettings] = useLocalStorage<ContactGridSettings | undefined>(
     contactGridSettingsStorageKey,
@@ -344,14 +345,18 @@ export const Contacts = () => {
         );
       },
     },
-    {
-      field: "account.name",
-      headerName: "Account",
-      width: 200,
-      type: "string",
-      sortable: true,
-      valueGetter: (value, row) => row.account?.name || "",
-    },
+    ...(hasAccounts
+      ? [
+          {
+            field: "account.name",
+            headerName: "Account",
+            width: 200,
+            type: "string",
+            sortable: true,
+            valueGetter: (value, row) => row.account?.name || "",
+          } as GridColDef<ContactDetailsDto>,
+        ]
+      : []),
     ...(hasOrders
       ? [
           {
@@ -588,7 +593,7 @@ export const Contacts = () => {
 
   useEffect(() => {
     setColumns(buildColumns());
-  }, [hasDeals, hasOrders, primaryCurrency]);
+  }, [hasAccounts, hasDeals, hasOrders, primaryCurrency]);
 
   const searchBar = (
     <Box

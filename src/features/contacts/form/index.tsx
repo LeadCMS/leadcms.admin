@@ -38,6 +38,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { useConfig } from "@providers/config-provider";
 import { prefixOptions, timezones } from "utils/constants";
 import { execDeleteWithToast } from "utils/general-helper";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 
 // Icons
 import {
@@ -98,6 +99,7 @@ export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: Conta
   const { config } = useConfig();
   const navigate = useNavigate();
   const languages = config?.languages || [];
+  const hasAccounts = hasEntity(config?.entities, ENTITY_KEYS.account);
 
   const [countryList, setCountryList] = useState<Country[]>([]);
   const [continentList, setContinentList] = useState<Continent[]>([]);
@@ -613,33 +615,35 @@ export const ContactForm = ({ contact, handleSave, handleDelete, isEdit }: Conta
                   fullWidth
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Autocomplete
-                  disabled={isLoading || formik.isSubmitting}
-                  options={accountList}
-                  getOptionLabel={(option) => option.name}
-                  size="small"
-                  fullWidth
-                  open={accountSearchOpen}
-                  onOpen={() => {
-                    setAccountSearchOpen(true);
-                    loadInitialAccounts();
-                  }}
-                  onClose={() => setAccountSearchOpen(false)}
-                  loading={accountSearchLoading}
-                  value={accountList.find((acc) => acc.id === formik.values.accountId) || null}
-                  onChange={handleAccountChange}
-                  onInputChange={(e, value) => {
-                    if (e && e.type !== "blur") {
-                      handleAccountSearch(value);
-                    }
-                  }}
-                  filterOptions={(x) => x}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Account" placeholder="Search account..." />
-                  )}
-                />
-              </Grid>
+              {hasAccounts && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Autocomplete
+                    disabled={isLoading || formik.isSubmitting}
+                    options={accountList}
+                    getOptionLabel={(option) => option.name}
+                    size="small"
+                    fullWidth
+                    open={accountSearchOpen}
+                    onOpen={() => {
+                      setAccountSearchOpen(true);
+                      loadInitialAccounts();
+                    }}
+                    onClose={() => setAccountSearchOpen(false)}
+                    loading={accountSearchLoading}
+                    value={accountList.find((acc) => acc.id === formik.values.accountId) || null}
+                    onChange={handleAccountChange}
+                    onInputChange={(e, value) => {
+                      if (e && e.type !== "blur") {
+                        handleAccountSearch(value);
+                      }
+                    }}
+                    filterOptions={(x) => x}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Account" placeholder="Search account..." />
+                    )}
+                  />
+                </Grid>
+              )}
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Autocomplete
                   disabled={isLoading || formik.isSubmitting}

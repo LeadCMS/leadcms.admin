@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Box, Card, CardContent, Chip, Divider, Grid, Typography, useTheme } from "@mui/material";
 import {
+  Briefcase,
   Building,
   Globe,
   Hash,
@@ -195,6 +196,7 @@ export const AccountView = () => {
   const [continentName, setContinentName] = useState("");
   const { formatMoney } = useCurrencyFormatter();
   const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
+  const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
 
   useEffect(() => {
     const loadLocationNames = async () => {
@@ -349,6 +351,13 @@ export const AccountView = () => {
           label: "Orders",
           value: account.ordersCount ?? 0,
           icon: <ShoppingCart size={18} />,
+        }
+      : null,
+    hasDeals
+      ? {
+          label: "Deals",
+          value: account.dealsCount ?? 0,
+          icon: <Briefcase size={18} />,
         }
       : null,
     {

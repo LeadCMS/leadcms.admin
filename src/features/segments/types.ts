@@ -343,6 +343,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Account",
     operators: textOperators,
+    requiredEntities: ["account"],
   },
   {
     id: "account.tin",
@@ -350,6 +351,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Account",
     operators: textOperators,
+    requiredEntities: ["account"],
   },
   {
     id: "account.countryCode",
@@ -358,6 +360,7 @@ export const contactFields: FieldDefinition[] = [
     category: "Account",
     operators: selectOperators,
     autocompleteKey: "countries",
+    requiredEntities: ["account"],
   },
   {
     id: "account.state",
@@ -365,6 +368,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Account",
     operators: textOperators,
+    requiredEntities: ["account"],
   },
   {
     id: "account.cityName",
@@ -372,6 +376,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Account",
     operators: textOperators,
+    requiredEntities: ["account"],
   },
   {
     id: "account.employeesRange",
@@ -379,6 +384,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Account",
     operators: textOperators,
+    requiredEntities: ["account"],
   },
   {
     id: "account.revenue",
@@ -386,6 +392,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
+    requiredEntities: ["account"],
   },
   {
     id: "account.profit",
@@ -393,6 +400,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
+    requiredEntities: ["account"],
   },
   {
     id: "account.source",
@@ -400,6 +408,7 @@ export const contactFields: FieldDefinition[] = [
     type: "text",
     category: "Account",
     operators: textOperators,
+    requiredEntities: ["account"],
   },
   {
     id: "account.dealsCount",
@@ -407,7 +416,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
-    requiredEntities: ["deal"],
+    requiredEntities: ["account", "deal"],
   },
   {
     id: "account.ordersCount",
@@ -415,7 +424,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
-    requiredEntities: ["order"],
+    requiredEntities: ["account", "order"],
   },
   {
     id: "account.totalRevenue",
@@ -423,7 +432,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
-    requiredEntities: ["order"],
+    requiredEntities: ["account", "order"],
   },
   {
     id: "account.contactCount",
@@ -431,6 +440,7 @@ export const contactFields: FieldDefinition[] = [
     type: "number",
     category: "Account",
     operators: numericOperators,
+    requiredEntities: ["account"],
   },
 
   // ── Domain nested attributes ──
