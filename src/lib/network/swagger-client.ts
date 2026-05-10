@@ -2479,6 +2479,18 @@ export interface CommentUpdateDto {
    */
   language?: string | null;
   /**
+   * Commentable Id
+   * @format int32
+   * @example 1
+   */
+  commentableId?: number | null;
+  /**
+   * Parent Id
+   * @format int32
+   * @example 1
+   */
+  parentId?: number | null;
+  /**
    * Published At
    * @format date-time
    * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
@@ -5509,6 +5521,11 @@ export interface CoverImageEditRequest {
    */
   contentDescription: string;
   /**
+   * Content Body
+   * @example "string"
+   */
+  contentBody?: string | null;
+  /**
    * Prompt
    * @minLength 1
    * @example "string"
@@ -5540,6 +5557,11 @@ export interface CoverImageGenerationRequest {
    * @example "string"
    */
   contentSlug: string;
+  /**
+   * Content Body
+   * @example "string"
+   */
+  contentBody?: string | null;
   /**
    * Prompt
    * @example "string"
@@ -9145,33 +9167,234 @@ export interface PromotionUpdateDto {
   endDate?: string | null;
 }
 
-export interface RedirectDetailsDto {
+export interface RedirectCreateDto {
   /**
-   * Content Id
-   * @format int32
-   * @example 1
+   * Source Type
+   * @example "InternalPath"
    */
-  contentId?: number;
+  sourceType: "InternalPath" | "ContentSlug" | "ContentId";
   /**
-   * From Slug
+   * From Path
    * @example "string"
    */
-  fromSlug?: string;
-  /**
-   * To Slug
-   * @example "string"
-   */
-  toSlug?: string;
+  fromPath?: string | null;
   /**
    * From Language
    * @example "string"
    */
-  fromLanguage?: string;
+  fromLanguage?: string | null;
+  /**
+   * From Slug
+   * @example "string"
+   */
+  fromSlug?: string | null;
+  /**
+   * From Content Id
+   * @format int32
+   * @example 1
+   */
+  fromContentId?: number | null;
+  /**
+   * Kind
+   * @example "0"
+   */
+  kind: "Permanent" | "Temporary";
+  /**
+   * Target Type
+   * @example "ExternalUrl"
+   */
+  targetType: "ExternalUrl" | "InternalPath" | "ContentSlug" | "ContentId";
+  /**
+   * To Url
+   * @example "string"
+   */
+  toUrl?: string | null;
+  /**
+   * To Path
+   * @example "string"
+   */
+  toPath?: string | null;
   /**
    * To Language
    * @example "string"
    */
-  toLanguage?: string;
+  toLanguage?: string | null;
+  /**
+   * To Slug
+   * @example "string"
+   */
+  toSlug?: string | null;
+  /**
+   * To Content Id
+   * @format int32
+   * @example 1
+   */
+  toContentId?: number | null;
+}
+
+export interface RedirectDetailsDto {
+  /**
+   * Source Type
+   * @example "InternalPath"
+   */
+  sourceType: "InternalPath" | "ContentSlug" | "ContentId";
+  /**
+   * From Path
+   * @example "string"
+   */
+  fromPath?: string | null;
+  /**
+   * From Language
+   * @example "string"
+   */
+  fromLanguage?: string | null;
+  /**
+   * From Slug
+   * @example "string"
+   */
+  fromSlug?: string | null;
+  /**
+   * From Content Id
+   * @format int32
+   * @example 1
+   */
+  fromContentId?: number | null;
+  /**
+   * Kind
+   * @example "0"
+   */
+  kind: "Permanent" | "Temporary";
+  /**
+   * Target Type
+   * @example "ExternalUrl"
+   */
+  targetType: "ExternalUrl" | "InternalPath" | "ContentSlug" | "ContentId";
+  /**
+   * To Url
+   * @example "string"
+   */
+  toUrl?: string | null;
+  /**
+   * To Path
+   * @example "string"
+   */
+  toPath?: string | null;
+  /**
+   * To Language
+   * @example "string"
+   */
+  toLanguage?: string | null;
+  /**
+   * To Slug
+   * @example "string"
+   */
+  toSlug?: string | null;
+  /**
+   * To Content Id
+   * @format int32
+   * @example 1
+   */
+  toContentId?: number | null;
+  /**
+   * Id
+   * @format int32
+   * @example 1
+   */
+  id?: number;
+  /**
+   * Is Auto Discovered
+   * @example true
+   */
+  isAutoDiscovered?: boolean;
+  /**
+   * Is Auto Discovery Suppressed
+   * @example true
+   */
+  isAutoDiscoverySuppressed?: boolean;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt?: string;
+  /**
+   * Updated At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  updatedAt?: string | null;
+}
+
+export interface RedirectUpdateDto {
+  /**
+   * Source Type
+   * @example "InternalPath"
+   */
+  sourceType?: "InternalPath" | "ContentSlug" | "ContentId" | null;
+  /**
+   * From Path
+   * @example "string"
+   */
+  fromPath?: string | null;
+  /**
+   * From Language
+   * @example "string"
+   */
+  fromLanguage?: string | null;
+  /**
+   * From Slug
+   * @example "string"
+   */
+  fromSlug?: string | null;
+  /**
+   * From Content Id
+   * @format int32
+   * @example 1
+   */
+  fromContentId?: number | null;
+  /**
+   * Kind
+   * @example "0"
+   */
+  kind?: "Permanent" | "Temporary" | null;
+  /**
+   * Target Type
+   * @example "ExternalUrl"
+   */
+  targetType?:
+    | "ExternalUrl"
+    | "InternalPath"
+    | "ContentSlug"
+    | "ContentId"
+    | null;
+  /**
+   * To Url
+   * @example "string"
+   */
+  toUrl?: string | null;
+  /**
+   * To Path
+   * @example "string"
+   */
+  toPath?: string | null;
+  /**
+   * To Language
+   * @example "string"
+   */
+  toLanguage?: string | null;
+  /**
+   * To Slug
+   * @example "string"
+   */
+  toSlug?: string | null;
+  /**
+   * To Content Id
+   * @format int32
+   * @example 1
+   */
+  toContentId?: number | null;
 }
 
 export interface ResetPasswordDto {
@@ -11078,7 +11301,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title LeadCMS API
- * @version 1.5.13.0
+ * @version 1.5.16.0
  */
 export class Api<
   SecurityDataType extends unknown,
@@ -18895,16 +19118,183 @@ export class Api<
      * No description
      *
      * @tags Redirects
-     * @name RedirectsDiscoverList
-     * @request GET:/api/redirects/discover
+     * @name RedirectsCreate
+     * @request POST:/api/redirects
      * @secure
      */
-    redirectsDiscoverList: (params: RequestParams = {}) =>
+    redirectsCreate: (data: RedirectCreateDto, params: RequestParams = {}) =>
+      this.request<RedirectDetailsDto, void | ProblemDetails>({
+        path: `/api/redirects`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsList
+     * @request GET:/api/redirects
+     * @secure
+     */
+    redirectsList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<RedirectDetailsDto[], void | ProblemDetails>({
-        path: `/api/redirects/discover`,
+        path: `/api/redirects`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsPartialUpdate
+     * @request PATCH:/api/redirects/{id}
+     * @secure
+     */
+    redirectsPartialUpdate: (
+      id: number,
+      data: RedirectUpdateDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<RedirectDetailsDto, void | ProblemDetails>({
+        path: `/api/redirects/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsDelete
+     * @request DELETE:/api/redirects/{id}
+     * @secure
+     */
+    redirectsDelete: (id: number, params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/redirects/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsDetail
+     * @request GET:/api/redirects/{id}
+     * @secure
+     */
+    redirectsDetail: (id: number, params: RequestParams = {}) =>
+      this.request<RedirectDetailsDto, void | ProblemDetails>({
+        path: `/api/redirects/${id}`,
         method: "GET",
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsDiscoverCreate
+     * @request POST:/api/redirects/discover
+     * @secure
+     */
+    redirectsDiscoverCreate: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<RedirectDetailsDto[], void | ProblemDetails>({
+        path: `/api/redirects/discover`,
+        method: "POST",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsBulkDelete
+     * @request DELETE:/api/redirects/bulk
+     * @secure
+     */
+    redirectsBulkDelete: (data: number[], params: RequestParams = {}) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/redirects/bulk`,
+        method: "DELETE",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsExportList
+     * @request GET:/api/redirects/export
+     * @secure
+     */
+    redirectsExportList: (
+      query?: {
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, void | ProblemDetails>({
+        path: `/api/redirects/export`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Redirects
+     * @name RedirectsSyncList
+     * @request GET:/api/redirects/sync
+     * @secure
+     */
+    redirectsSyncList: (
+      query?: {
+        syncToken?: string;
+        query?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void | ProblemDetails>({
+        path: `/api/redirects/sync`,
+        method: "GET",
+        query: query,
+        secure: true,
         ...params,
       }),
 

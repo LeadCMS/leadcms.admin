@@ -57,6 +57,9 @@ const CampaignsModule = lazy(() =>
 const SequencesModule = lazy(() =>
   import("@features/sequences/sequences-module").then((m) => ({ default: m.SequencesModule }))
 );
+const RedirectsModule = lazy(() =>
+  import("@features/redirects").then((m) => ({ default: m.RedirectsModule }))
+);
 
 export const ModuleLoader = () => {
   const { moduleName } = useRouteParams(coreModuleRoute);
@@ -85,6 +88,7 @@ export const ModuleLoader = () => {
           {moduleName === CoreModule.deployments && <DeploymentsModule />}
           {moduleName === CoreModule.campaigns && <CampaignsModule />}
           {moduleName === CoreModule.sequences && <SequencesModule />}
+          {moduleName === CoreModule.redirects && <RedirectsModule />}
           {!moduleName && <Navigate to={defaultModuleRoute} replace />}
         </Suspense>
       </ErrorBoundary>

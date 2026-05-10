@@ -22,6 +22,7 @@ export const enum CoreModule {
   deployments = "deployments",
   campaigns = "campaigns",
   sequences = "sequences",
+  redirects = "redirects",
 }
 
 const coreModuleParser: Parser<CoreModule> = {

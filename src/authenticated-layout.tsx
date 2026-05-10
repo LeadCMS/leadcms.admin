@@ -16,6 +16,7 @@ const menuCategories: Record<string, { category: string; name: string }> = {
   comments: { category: "CMS", name: "Comments" },
   media: { category: "CMS", name: "Media" },
   links: { category: "CMS", name: "Links" },
+  redirects: { category: "CMS", name: "Redirects" },
   contacts: { category: "CRM", name: "Contacts" },
   accounts: { category: "CRM", name: "Accounts" },
   orders: { category: "CRM", name: "Orders" },

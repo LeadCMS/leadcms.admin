@@ -25,7 +25,7 @@
   "rules": {
     "prettier/prettier": ["error"],
     "linebreak-style": ["error", "unix"],
-    "quotes": ["error", "double"],
+    "quotes": ["error", "double", { "avoidEscape": true }],
     "semi": ["error", "always"],
     "max-len": ["error", 100]
   },

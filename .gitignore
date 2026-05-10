@@ -8,3 +8,5 @@ dist/
 
 # User-specific settings
 .vscode/settings.json
+
+.serena

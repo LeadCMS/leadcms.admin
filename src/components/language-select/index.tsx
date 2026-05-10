@@ -10,6 +10,7 @@ interface LanguageSelectProps {
   name?: string;
   disabled?: boolean;
   required?: boolean;
+  size?: "small" | "medium";
 }
 
 export const LanguageSelect = ({
@@ -21,6 +22,7 @@ export const LanguageSelect = ({
   name = "language",
   disabled = false,
   required = false,
+  size,
 }: LanguageSelectProps) => {
   const { config } = useConfig();
   const languages = config?.languages || [];
@@ -37,6 +39,7 @@ export const LanguageSelect = ({
       helperText={helperText}
       disabled={disabled}
       required={required}
+      size={size}
       slotProps={{ formHelperText: { sx: { ml: 0 } } }}
     >
       {languages.map((lang) => (

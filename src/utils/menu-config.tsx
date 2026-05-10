@@ -20,6 +20,7 @@ import {
   Rocket,
   Megaphone,
   Zap,
+  Shuffle,
 } from "lucide-react";
 
 export const MENU_CONFIG = [
@@ -65,6 +66,13 @@ export const MENU_CONFIG = [
         icon: <Link size={20} />,
         entity: "link",
         route: getCoreModuleRoute(CoreModule.links),
+      },
+      {
+        id: "redirects",
+        label: "Redirects",
+        icon: <Shuffle size={20} />,
+        entity: "redirect",
+        route: getCoreModuleRoute(CoreModule.redirects),
       },
     ],
   },
