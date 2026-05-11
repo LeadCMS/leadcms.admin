@@ -134,6 +134,7 @@ export const RedirectDialog = ({
   const [formState, setFormState] = useState<FormState>(defaultFormState);
   const [original, setOriginal] = useState<RedirectDetailsDto | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const isAutoDiscovered = mode === "edit" && original?.isAutoDiscovered === true;
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const handleDelete = () => {
@@ -345,9 +346,11 @@ export const RedirectDialog = ({
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>{mode === "create" ? "Add Redirect" : "Edit Redirect"}</DialogTitle>
         <DialogContent>
-          {mode === "edit" && original?.isAutoDiscovered && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              This redirect was created automatically by the system.
+          {isAutoDiscovered && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              This redirect was auto-detected from a content slug change. Only the redirect type
+              (301/302) can be changed. All other fields are locked. If you need to point this
+              source to a different target, please delete this redirect and create a new one.
             </Alert>
           )}
 
@@ -357,7 +360,7 @@ export const RedirectDialog = ({
             </Alert>
           )}
 
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
             {/* Kind */}
             <Grid size={{ xs: 12 }}>
               <FormControl>
@@ -380,6 +383,7 @@ export const RedirectDialog = ({
                 <Select
                   value={formState.sourceType}
                   label="Source Type"
+                  disabled={isAutoDiscovered}
                   onChange={(e) =>
                     handleSourceTypeChange(e.target.value as FormState["sourceType"])
                   }
@@ -398,6 +402,7 @@ export const RedirectDialog = ({
                   size="small"
                   label="From Path"
                   value={formState.fromPath ?? ""}
+                  disabled={isAutoDiscovered}
                   onChange={(e) => setField("fromPath", e.target.value)}
                   onBlur={(e) => setField("fromPath", trimSlashes(e.target.value))}
                   error={!!fieldErrors.fromPath}
@@ -416,6 +421,7 @@ export const RedirectDialog = ({
                     <LanguageSelect
                       size="small"
                       value={formState.fromLanguage ?? ""}
+                      disabled={isAutoDiscovered}
                       onChange={(v) => setField("fromLanguage", v)}
                       error={!!fieldErrors.fromLanguage}
                       helperText={fieldErrors.fromLanguage}
@@ -428,6 +434,7 @@ export const RedirectDialog = ({
                     size="small"
                     label="From Slug"
                     value={formState.fromSlug ?? ""}
+                    disabled={isAutoDiscovered}
                     onChange={(e) => setField("fromSlug", e.target.value)}
                     onBlur={(e) => setField("fromSlug", trimSlashes(e.target.value))}
                     error={!!fieldErrors.fromSlug}
@@ -442,6 +449,7 @@ export const RedirectDialog = ({
                 <ContentIdAutocomplete
                   label="From Content"
                   value={formState.fromContentId}
+                  disabled={isAutoDiscovered}
                   onChange={(id) => setField("fromContentId", id)}
                 />
                 {fieldErrors.fromContentId && (
@@ -459,6 +467,7 @@ export const RedirectDialog = ({
                 <Select
                   value={formState.targetType}
                   label="Target Type"
+                  disabled={isAutoDiscovered}
                   onChange={(e) =>
                     handleTargetTypeChange(e.target.value as FormState["targetType"])
                   }
@@ -478,6 +487,7 @@ export const RedirectDialog = ({
                   size="small"
                   label="URL"
                   value={formState.toUrl ?? ""}
+                  disabled={isAutoDiscovered}
                   onChange={(e) => setField("toUrl", e.target.value)}
                   error={!!fieldErrors.toUrl}
                   helperText={
@@ -494,6 +504,7 @@ export const RedirectDialog = ({
                   size="small"
                   label="To Path"
                   value={formState.toPath ?? ""}
+                  disabled={isAutoDiscovered}
                   onChange={(e) => setField("toPath", e.target.value)}
                   onBlur={(e) => setField("toPath", trimSlashes(e.target.value))}
                   error={!!fieldErrors.toPath}
@@ -512,6 +523,7 @@ export const RedirectDialog = ({
                     <LanguageSelect
                       size="small"
                       value={formState.toLanguage ?? ""}
+                      disabled={isAutoDiscovered}
                       onChange={(v) => setField("toLanguage", v)}
                       error={!!fieldErrors.toLanguage}
                       helperText={fieldErrors.toLanguage}
@@ -524,6 +536,7 @@ export const RedirectDialog = ({
                     size="small"
                     label="To Slug"
                     value={formState.toSlug ?? ""}
+                    disabled={isAutoDiscovered}
                     onChange={(e) => setField("toSlug", e.target.value)}
                     onBlur={(e) => setField("toSlug", trimSlashes(e.target.value))}
                     error={!!fieldErrors.toSlug}
@@ -538,6 +551,7 @@ export const RedirectDialog = ({
                 <ContentIdAutocomplete
                   label="To Content"
                   value={formState.toContentId}
+                  disabled={isAutoDiscovered}
                   onChange={(id) => setField("toContentId", id)}
                 />
                 {fieldErrors.toContentId && (

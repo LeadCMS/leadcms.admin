@@ -10,9 +10,15 @@ interface ContentIdAutocompleteProps {
   label: string;
   value: number | null;
   onChange: (id: number | null) => void;
+  disabled?: boolean;
 }
 
-export const ContentIdAutocomplete = ({ label, value, onChange }: ContentIdAutocompleteProps) => {
+export const ContentIdAutocomplete = ({
+  label,
+  value,
+  onChange,
+  disabled,
+}: ContentIdAutocompleteProps) => {
   const { client } = useRequestContext();
   const { notificationsService } = useNotificationsService();
   const [inputValue, setInputValue] = useState("");
@@ -86,6 +92,7 @@ export const ContentIdAutocomplete = ({ label, value, onChange }: ContentIdAutoc
       value={selectedContent}
       inputValue={inputValue}
       open={isOpen}
+      disabled={disabled}
       onOpen={() => setIsOpen(true)}
       onClose={() => setIsOpen(false)}
       onInputChange={(_, val) => setInputValue(val)}

@@ -16,6 +16,7 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import { Download, Filter, Pencil, Plus, Settings2, Trash2, Zap } from "lucide-react";
 import useLocalStorage from "use-local-storage";
@@ -35,6 +36,62 @@ import {
 } from "../constants";
 import { RedirectDialog } from "../dialog";
 import { useConfig } from "@providers/config-provider";
+
+interface ExtendedConfig {
+  settings?: {
+    "Deployment.LastSuccessDate"?: string;
+  };
+}
+
+type RedirectStatus = "New" | "Modified" | "Live";
+
+interface RedirectStatusInfo {
+  status: RedirectStatus;
+  color: "info" | "secondary" | "success";
+  tooltip: string;
+}
+
+function getRedirectStatus(
+  createdAt: string | undefined,
+  updatedAt: string | null | undefined,
+  lastReleaseDate: string | null
+): RedirectStatusInfo | null {
+  if (!lastReleaseDate || !createdAt) return null;
+  const fmtDateTime = (d: Date) =>
+    d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const releaseDate = new Date(lastReleaseDate);
+  const createdDate = new Date(createdAt);
+  const updatedDate = updatedAt ? new Date(updatedAt) : null;
+  if (createdDate > releaseDate) {
+    return {
+      status: "New",
+      color: "info",
+      tooltip:
+        "Created on " +
+        fmtDateTime(createdDate) +
+        " and not yet deployed. Last deployment: " +
+        fmtDateTime(releaseDate) +
+        ".",
+    };
+  }
+  if (updatedDate && updatedDate > releaseDate) {
+    return {
+      status: "Modified",
+      color: "secondary",
+      tooltip:
+        "Last edited on " +
+        fmtDateTime(updatedDate) +
+        ". Changes not yet deployed. Last deployment: " +
+        fmtDateTime(releaseDate) +
+        ".",
+    };
+  }
+  return {
+    status: "Live",
+    color: "success",
+    tooltip: "Included in the " + fmtDateTime(releaseDate) + " deployment and active on the site.",
+  };
+}
 
 function formatSource(row: RedirectDetailsDto, hasMultipleLanguages: boolean): string {
   switch (row.sourceType) {
@@ -73,6 +130,8 @@ export const RedirectsList = () => {
   const { notificationsService } = useNotificationsService();
   const { config } = useConfig();
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
+  const lastReleaseDate =
+    (config as ExtendedConfig)?.settings?.["Deployment.LastSuccessDate"] ?? null;
   const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
     redirectGridSettingsStorageKey,
     undefined
@@ -167,6 +226,21 @@ export const RedirectsList = () => {
       field: "id",
       headerName: "ID",
       width: 80,
+    },
+    {
+      field: "_status",
+      headerName: "Status",
+      width: 110,
+      sortable: false,
+      renderCell: ({ row }) => {
+        const info = getRedirectStatus(row.createdAt, row.updatedAt, lastReleaseDate);
+        if (!info) return null;
+        return (
+          <Tooltip title={info.tooltip} arrow>
+            <Chip label={info.status} color={info.color} size="small" variant="filled" />
+          </Tooltip>
+        );
+      },
     },
     {
       field: "sourceType",
