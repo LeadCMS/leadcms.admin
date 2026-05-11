@@ -164,6 +164,11 @@ export const RedirectsList = () => {
 
   const [columns, setColumns] = useState<GridColDef<RedirectDetailsDto>[]>([
     {
+      field: "id",
+      headerName: "ID",
+      width: 80,
+    },
+    {
       field: "sourceType",
       headerName: "Source Type",
       width: 140,
