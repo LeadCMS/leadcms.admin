@@ -66,6 +66,7 @@ type dataListProps<TModel extends GridValidRowModel> = {
   onExportOpen?: boolean;
   onExportClose?: () => void;
   exportApiCall?: (finalQueryString: string, accept: string) => Promise<Response>;
+  exportColumns?: GridColDef<TModel>[];
   hasAdditionalFilteredExportContext?: boolean;
   additionalStorageState?: Record<string, unknown>;
   refreshFlag?: number;
@@ -104,6 +105,7 @@ export const DataList = <TModel extends GridValidRowModel>({
     /* noop */
   },
   exportApiCall,
+  exportColumns,
   hasAdditionalFilteredExportContext = false,
   additionalStorageState,
   refreshFlag = 0,
@@ -495,7 +497,7 @@ export const DataList = <TModel extends GridValidRowModel>({
           open={onExportOpen}
           onClose={onExportClose}
           onExport={handleExport}
-          columns={columns}
+          columns={exportColumns ?? columns}
           selectedCount={selectedRows.length}
           filteredCount={totalRowCount}
           columnVisibilityModel={columnVisibilityModel}

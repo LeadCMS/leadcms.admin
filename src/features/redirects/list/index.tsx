@@ -396,6 +396,21 @@ export const RedirectsList = () => {
         onExportOpen={openExport}
         onExportClose={handleExportOpen}
         exportApiCall={redirectsExportApi}
+        exportColumns={[
+          { field: "id", headerName: "ID" },
+          { field: "kind", headerName: "Kind" },
+          { field: "sourceType", headerName: "Source Type" },
+          { field: "fromPath", headerName: "From Path" },
+          { field: "fromLanguage", headerName: "From Language" },
+          { field: "fromSlug", headerName: "From Slug" },
+          { field: "fromContentId", headerName: "From Content ID" },
+          { field: "targetType", headerName: "Target Type" },
+          { field: "toUrl", headerName: "To URL" },
+          { field: "toPath", headerName: "To Path" },
+          { field: "toLanguage", headerName: "To Language" },
+          { field: "toSlug", headerName: "To Slug" },
+          { field: "toContentId", headerName: "To Content ID" },
+        ]}
         onBulkDelete={async (ids) => {
           await client.api.redirectsBulkDelete(ids.map(Number));
         }}
