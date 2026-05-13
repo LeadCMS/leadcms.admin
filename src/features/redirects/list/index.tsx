@@ -5,7 +5,7 @@ import { ToolbarButton } from "@components/tool-bar-button";
 import { RedirectDetailsDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { GridColDef } from "@mui/x-data-grid";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -36,6 +36,8 @@ import {
 } from "../constants";
 import { RedirectDialog } from "../dialog";
 import { useConfig } from "@providers/config-provider";
+import { useGlobalLanguageFilter } from "@providers/global-language-filter-provider";
+import { getWhereFilterQuery } from "@providers/query-provider";
 
 interface ExtendedConfig {
   settings?: {
@@ -130,6 +132,7 @@ export const RedirectsList = () => {
   const { notificationsService } = useNotificationsService();
   const { config } = useConfig();
   const hasMultipleLanguages = (config?.languages?.length || 0) > 1;
+  const { selectedLanguage, isLanguageFilterActive } = useGlobalLanguageFilter();
   const lastReleaseDate =
     (config as ExtendedConfig)?.settings?.["Deployment.LastSuccessDate"] ?? null;
   const [gridSettings] = useLocalStorage<DataListSettings | undefined>(
@@ -150,9 +153,21 @@ export const RedirectsList = () => {
   const [editingRedirectId, setEditingRedirectId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
+  useEffect(() => {
+    setRefreshFlag((prev) => prev + 1);
+  }, [selectedLanguage]);
+
   const getRedirectsList = async (mainQuery: string, exportQuery?: string) => {
     dataExportQuery.current = exportQuery || "";
-    return client.api.redirectsList({ query: mainQuery });
+    let languageFilter = "";
+    if (isLanguageFilterActive && selectedLanguage !== "all") {
+      languageFilter = getWhereFilterQuery("fromLanguage", selectedLanguage, "equals").replace(
+        /^&/,
+        ""
+      );
+    }
+    const fullQuery = [mainQuery, languageFilter].filter(Boolean).join("&");
+    return client.api.redirectsList({ query: fullQuery });
   };
 
   const redirectsExportApi: (query: string, accept: string) => Promise<Response> = (
