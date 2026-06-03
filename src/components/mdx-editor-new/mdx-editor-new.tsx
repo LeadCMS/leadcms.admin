@@ -1,5 +1,3 @@
-import type { Paragraph as MdastParagraph } from "mdast";
-import { $createLineBreakNode, $createParagraphNode, type ElementNode } from "lexical";
 import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import React from "react";
 import { Box, Grid, IconButton, Drawer, Typography, Chip } from "@mui/material";
@@ -33,9 +31,6 @@ import {
   ListsToggle,
   Separator,
   DiffSourceToggleWrapper,
-  realmPlugin,
-  addImportVisitor$,
-  MdastImportVisitor,
 } from "@mdxeditor/editor";
 import SyntaxValidationPreview from "@components/syntax-validation-preview";
 import { MDXEditorNewProps } from "./types";
@@ -606,35 +601,6 @@ const MDXEditorNew = ({
               }}
               className="mdx-editor-new"
               plugins={[
-                realmPlugin({
-                  // eslint-disable-next-line max-len
-                  // Fixed version of https://github.com/mdx-editor/editor/blob/main/src/plugins/core/MdastParagraphVisitor.ts
-                  // Issue: https://github.com/mdx-editor/editor/issues/788#issuecomment-4233178769
-                  init: (realm) => {
-                    realm.pub(addImportVisitor$, {
-                      testNode: "paragraph",
-                      visitNode: function ({ mdastNode, lexicalParent, actions }): void {
-                        // markdown inserts paragraphs in lists. lexical does not.
-                        const parentType = lexicalParent.getType();
-                        if (["listitem", "admonition"].includes(parentType)) {
-                          if (
-                            parentType === "listitem" &&
-                            (lexicalParent as ElementNode).getChildrenSize() > 0
-                          ) {
-                            (lexicalParent as ElementNode).append(
-                              $createLineBreakNode(),
-                              $createLineBreakNode()
-                            );
-                          }
-                          actions.visitChildren(mdastNode, lexicalParent);
-                        } else {
-                          actions.addAndStepInto($createParagraphNode());
-                        }
-                      },
-                      priority: 1000,
-                    } as MdastImportVisitor<MdastParagraph>);
-                  },
-                })(),
                 // Enable diff/source mode plugin - start in source mode for custom components
                 diffSourcePlugin({
                   viewMode: "source",
