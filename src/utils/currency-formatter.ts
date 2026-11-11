@@ -24,29 +24,37 @@ export const normalizeNumber = (value: unknown): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const formatterCache = new Map<string, Intl.NumberFormat>();
+export const CURRENCY_CODE_MESSAGE = "Enter a valid currency code, e.g. USD";
+
+const formatterCache = new Map<string, Intl.NumberFormat | null>();
 
 /**
  * Builds an Intl.NumberFormat for a given currency code
  * and locale. Results are cached to avoid creating
- * duplicate formatters.
+ * duplicate formatters. Returns null when the code or
+ * locale is not accepted by Intl (e.g. "1"), so callers
+ * can fall back to a plain number instead of crashing.
  */
 const getCurrencyFormatter = (
   currencyCode: string,
   locale: string,
   maximumFractionDigits?: number
-): Intl.NumberFormat => {
+): Intl.NumberFormat | null => {
   const digits = maximumFractionDigits ?? 2;
   const key = `${locale}:${currencyCode}:${digits}`;
-  let fmt = formatterCache.get(key);
-  if (!fmt) {
+  const cached = formatterCache.get(key);
+  if (cached !== undefined) return cached;
+  let fmt: Intl.NumberFormat | null = null;
+  try {
     fmt = new Intl.NumberFormat(locale, {
       style: "currency",
       currency: currencyCode,
       maximumFractionDigits: digits,
     });
-    formatterCache.set(key, fmt);
+  } catch {
+    fmt = null;
   }
+  formatterCache.set(key, fmt);
   return fmt;
 };
 
@@ -66,7 +74,7 @@ export const formatPrimaryCurrency = (
   const locale = config.cultureName || "en-US";
   const digits = maximumFractionDigits ?? config.decimalDigits ?? 2;
   const fmt = getCurrencyFormatter(config.code, locale, digits);
-  return fmt.format(value);
+  return fmt ? fmt.format(value) : String(value);
 };
 
 /**
@@ -84,7 +92,7 @@ export const formatCurrencyByCode = (
   if (value === null || value === undefined) return "";
   if (!currencyCode) return String(value);
   const fmt = getCurrencyFormatter(currencyCode, locale || "en-US", maximumFractionDigits ?? 2);
-  return fmt.format(value);
+  return fmt ? fmt.format(value) : `${value} ${currencyCode}`;
 };
 
 /**
@@ -112,3 +120,11 @@ export const formatCompactCurrency = (
 
   return formatPrimaryCurrency(numericAmount, config, 0);
 };
+
+/**
+ * Tells whether a currency code can be formatted, i.e. is accepted
+ * by Intl.NumberFormat. Used to validate user input so that the form
+ * accepts exactly what the formatter is able to display.
+ */
+export const isValidCurrencyCode = (code: string | null | undefined): boolean =>
+  !!code && getCurrencyFormatter(code, "en-US", 2) !== null;

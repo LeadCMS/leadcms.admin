@@ -2,6 +2,7 @@ import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { KnownTagsAutocomplete } from "@components/known-tags-autocomplete";
 import { useNotificationsService, useSaveShortcut } from "@hooks";
+import { isValidCurrencyCode, CURRENCY_CODE_MESSAGE } from "@utils/currency-formatter";
 import { ContactDetailsDto, OrderDetailsDto } from "@lib/network/swagger-client";
 import { defaultFilterLimit } from "@providers/query-provider";
 import { CoreModule, getCoreModuleRoute, getViewFormRoute } from "@lib/router";
@@ -238,7 +239,7 @@ export const OrderForm = ({ order, handleSave, handleDelete, isEdit }: OrderForm
     contactId: zod.number().positive("Select a contact"),
     refNo: zod.string(),
     exchangeRate: zod.number().nullable().optional(),
-    currency: zod.string(),
+    currency: zod.string().refine(isValidCurrencyCode, CURRENCY_CODE_MESSAGE),
     orderNumber: zod.string().nullable().optional(),
     affiliateName: zod.string().nullable().optional(),
     source: zod.string().nullable().optional(),
@@ -709,7 +710,9 @@ export const OrderForm = ({ order, handleSave, handleDelete, isEdit }: OrderForm
                       loading={currenciesLoading}
                       onOpen={() => loadCurrencies()}
                       value={formik.values.currency || ""}
-                      onChange={(e, val) => formik.setFieldValue("currency", val || "")}
+                      onChange={(e, val) =>
+                        formik.setFieldValue("currency", (val || "").toUpperCase())
+                      }
                       renderInput={(params) => (
                         <TextField
                           {...params}
