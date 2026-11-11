@@ -4,4 +4,5 @@ export interface ContactViewOutletContext {
   contact: ContactDetailsDto | null;
   contactId?: number;
   isLoading: boolean;
+  reloadContact: () => Promise<void>;
 }

@@ -45,6 +45,7 @@ import {
 import { timezones } from "utils/constants";
 import { formatTimezoneShort } from "utils/timezone-helpers";
 import { ContactViewOutletContext } from "../types";
+import { PendingUpdates } from "./pending-updates";
 
 type DetailRow = {
   label: string;
@@ -248,7 +249,8 @@ const SectionCard = ({ title, icon, rows, linkTo }: SectionProps) => {
 };
 
 export const ContactView = () => {
-  const { contact, contactId, isLoading } = useOutletContext<ContactViewOutletContext>();
+  const { contact, contactId, isLoading, reloadContact } =
+    useOutletContext<ContactViewOutletContext>();
   const context = useRequestContext();
   const { config } = useConfig();
   const languages = config?.languages || [];
@@ -630,6 +632,12 @@ export const ContactView = () => {
 
   return (
     <Box sx={{ mt: 3 }}>
+      <PendingUpdates
+        contactId={contactId}
+        contact={contact}
+        pendingUpdates={contact.pendingUpdates ?? []}
+        onDecided={reloadContact}
+      />
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Grid container spacing={3}>
