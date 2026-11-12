@@ -5854,6 +5854,7 @@ export interface DealDetailsDto {
   account?: AccountDetailsDto;
   dealPipeline?: DealPipelineDetailsDto;
   pipelineStage?: DealPipelineStageDetailsDto;
+  createdBy?: UserDetailsDto;
   /** Contacts */
   contacts?: ContactDetailsDto[] | null;
 }

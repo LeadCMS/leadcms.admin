@@ -14,22 +14,28 @@ import { Edit, ExternalLink } from "lucide-react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AccountDetailsDto } from "@lib/network/swagger-client";
 import { CoreModule, getEditFormRoute } from "@lib/router";
+import { useConfig } from "@providers/config-provider";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService } from "@hooks";
 import { showApiError } from "@utils/api-error-parser";
+import { ENTITY_KEYS, hasEntity } from "@utils/entity-availability";
 import { ModuleWrapper } from "@components/module-wrapper";
 import { accountFormBreadcrumbLinks } from "../constants";
 import { AccountViewOutletContext } from "./types";
 
-type AccountTabValue = "overview";
+type AccountTabValue = "overview" | "deals";
 
 const accountDetailsCache = new Map<number, AccountDetailsDto>();
 
 const tabPathMap: Record<AccountTabValue, string> = {
   overview: "details",
+  deals: "deals",
 };
 
 const getTabFromPathname = (pathname: string): AccountTabValue => {
+  if (pathname.endsWith("/deals")) {
+    return "deals";
+  }
   return "overview";
 };
 
@@ -44,6 +50,7 @@ export const AccountViewBase = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { client } = useRequestContext();
+  const { config } = useConfig();
   const { notificationsService } = useNotificationsService();
 
   const initialState =
@@ -64,11 +71,24 @@ export const AccountViewBase = () => {
     return undefined;
   }, [accountIdFromPath, account?.id]);
 
+  const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
+
   const accountName = account?.name || "View Account";
 
   useEffect(() => {
-    setTabValue(getTabFromPathname(pathname));
-  }, [pathname]);
+    const nextTab = getTabFromPathname(pathname);
+
+    if (nextTab === "deals" && !hasDeals) {
+      setTabValue("overview");
+      navigate(tabPathMap.overview, {
+        replace: true,
+        state: account ?? initialState ?? undefined,
+      });
+      return;
+    }
+
+    setTabValue(nextTab);
+  }, [account, hasDeals, initialState, navigate, pathname]);
 
   useEffect(() => {
     if (initialState && !account) {
@@ -216,6 +236,7 @@ export const AccountViewBase = () => {
 
       <Tabs value={tabValue} onChange={handleTabChange}>
         <Tab value="overview" label="Overview" />
+        {hasDeals && <Tab value="deals" label="Deals" />}
       </Tabs>
       <Divider />
 
