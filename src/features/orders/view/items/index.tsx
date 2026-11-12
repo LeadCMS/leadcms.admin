@@ -17,6 +17,7 @@ import { useOutletContext } from "react-router-dom";
 import { OrderItemDetailsDto } from "@lib/network/swagger-client";
 import { useRequestContext } from "@providers/request-provider";
 import { useNotificationsService, useCurrencyFormatter } from "@hooks";
+import { isValidCurrencyCode, CURRENCY_CODE_MESSAGE } from "@utils/currency-formatter";
 import { useErrorDetailsModal } from "@providers/error-details-modal-provider";
 import { useFormik, FormikHelpers } from "formik";
 import zod from "zod";
@@ -185,7 +186,7 @@ export const OrderItems = () => {
   const OrderItemEditValidationScheme = zod.object({
     productName: zod.string(),
     unitPrice: zod.number().positive(),
-    currency: zod.string(),
+    currency: zod.string().refine(isValidCurrencyCode, CURRENCY_CODE_MESSAGE),
     quantity: zod.number().positive(),
     source: zod.string().optional().nullable(),
     id: zod.number().optional(),
@@ -314,7 +315,9 @@ export const OrderItems = () => {
                     size="small"
                     fullWidth
                     value={formik.values.currency || ""}
-                    onChange={(e, val) => formik.setFieldValue("currency", val || "")}
+                    onChange={(e, val) =>
+                      formik.setFieldValue("currency", (val || "").toUpperCase())
+                    }
                     renderInput={(params) => (
                       <TextField
                         {...params}
