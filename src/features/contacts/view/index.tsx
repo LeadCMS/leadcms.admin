@@ -1,4 +1,4 @@
-import { SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
+import { SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Avatar,
   Box,
@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Briefcase, Edit, Mail, MailX } from "lucide-react";
+import { Briefcase, Edit, Mail, MailX, ShieldQuestion } from "lucide-react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ContactDetailsDto, RequestParams } from "lib/network/swagger-client";
 import { contactFormBreadcrumbLinks } from "../constants";
@@ -96,6 +96,7 @@ export const ContactBase = () => {
   }, [contactIdFromPath, initialContactState?.id]);
 
   const contactName = getContactDisplayName(contact);
+  const pendingUpdatesCount = contact?.pendingUpdates?.length ?? 0;
   const hasOrders = hasEntity(config?.entities, ENTITY_KEYS.order);
   const hasDeals = hasEntity(config?.entities, ENTITY_KEYS.deal);
   const hasSequences = hasEntity(config?.entities, ENTITY_KEYS.sequence);
@@ -126,6 +127,39 @@ export const ContactBase = () => {
     }
   }, [contact, initialContactState]);
 
+  const loadContact = useCallback(
+    async (targetId: number) => {
+      setIsLoading(true);
+      try {
+        const includeRelationsPath =
+          "/api/contacts/" +
+          targetId +
+          "?filter%5Binclude%5D=Account" +
+          "&filter%5Binclude%5D=Domain" +
+          "&filter%5Binclude%5D=Unsubscribe" +
+          (hasSequences ? "&filter%5Binclude%5D=Enrollments" : "");
+
+        const paramsWithIncludes = {
+          path: includeRelationsPath,
+        } as unknown as RequestParams;
+
+        const { data } = await client.api.contactsDetail(targetId, paramsWithIncludes);
+        contactDetailsCache.set(targetId, data);
+        setContact(data);
+      } catch (error) {
+        showApiError(error, notificationsService, undefined, "Could not retrieve contact details.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [client, hasSequences, notificationsService]
+  );
+
+  const reloadContact = useCallback(async () => {
+    if (!contactId) return;
+    await loadContact(contactId);
+  }, [contactId, loadContact]);
+
   useEffect(() => {
     if (!contactId) return;
 
@@ -138,32 +172,8 @@ export const ContactBase = () => {
     if (didFetchRef.current) return;
 
     didFetchRef.current = true;
-    setIsLoading(true);
-
-    (async () => {
-      try {
-        const includeRelationsPath =
-          "/api/contacts/" +
-          contactId +
-          "?filter%5Binclude%5D=Account" +
-          "&filter%5Binclude%5D=Domain" +
-          "&filter%5Binclude%5D=Unsubscribe" +
-          (hasSequences ? "&filter%5Binclude%5D=Enrollments" : "");
-
-        const paramsWithIncludes = {
-          path: includeRelationsPath,
-        } as unknown as RequestParams;
-
-        const { data } = await client.api.contactsDetail(contactId, paramsWithIncludes);
-        contactDetailsCache.set(contactId, data);
-        setContact(data);
-      } catch (error) {
-        showApiError(error, notificationsService, undefined, "Could not retrieve contact details.");
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [client, contactId, notificationsService]);
+    loadContact(contactId);
+  }, [contactId, loadContact]);
 
   const handleTabChange = (_event: SyntheticEvent, newValue: ContactTabValue) => {
     setTabValue(newValue);
@@ -189,6 +199,7 @@ export const ContactBase = () => {
     contact,
     contactId,
     isLoading,
+    reloadContact,
   };
 
   return (
@@ -217,6 +228,20 @@ export const ContactBase = () => {
                     icon={<MailX size={14} />}
                     label="Unsubscribed"
                     color="error"
+                    size="small"
+                    variant="outlined"
+                    sx={{ mx: 1, gap: 0.5, pl: 1 }}
+                  />
+                </Tooltip>
+              )}
+              {pendingUpdatesCount > 0 && (
+                <Tooltip title="This contact has changes waiting for review" arrow>
+                  <Chip
+                    icon={<ShieldQuestion size={14} />}
+                    label={`${pendingUpdatesCount} pending ${
+                      pendingUpdatesCount === 1 ? "change" : "changes"
+                    }`}
+                    color="warning"
                     size="small"
                     variant="outlined"
                     sx={{ mx: 1, gap: 0.5, pl: 1 }}

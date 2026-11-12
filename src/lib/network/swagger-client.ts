@@ -9048,6 +9048,22 @@ export interface PendingContactUpdate {
   createdAt?: string;
 }
 
+export interface PendingContactUpdateDecisionDto {
+  /**
+   * Field
+   * @minLength 1
+   * @example "string"
+   */
+  field: string;
+  /**
+   * Created At
+   * @format date-time
+   * @pattern ^(\d{4})-(1[0-2]|0[1-9])-(3[01]|[12][0-9]|0[1-9])T(2[0-4]|1[0-9]|0[1-9]):(2[0-4]|1[0-9]|0[1-9]):([1-5]?0[0-9]).(\d{7})Z$
+   * @example "2023-04-18T12:00:00.0000000Z"
+   */
+  createdAt: string;
+}
+
 export interface ProblemDetails {
   type?: string | null;
   title?: string | null;
@@ -11466,6 +11482,52 @@ export class Api<
         path: `/api/accounts/${id}`,
         method: "DELETE",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
+     * @name ContactsPendingUpdatesAcceptCreate
+     * @request POST:/api/contacts/{id}/pending-updates/accept
+     * @secure
+     */
+    contactsPendingUpdatesAcceptCreate: (
+      id: number,
+      data: PendingContactUpdateDecisionDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContactDetailsDto, ProblemDetails | void>({
+        path: `/api/contacts/${id}/pending-updates/accept`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Contacts
+     * @name ContactsPendingUpdatesRejectCreate
+     * @request POST:/api/contacts/{id}/pending-updates/reject
+     * @secure
+     */
+    contactsPendingUpdatesRejectCreate: (
+      id: number,
+      data: PendingContactUpdateDecisionDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<ContactDetailsDto, void | ProblemDetails>({
+        path: `/api/contacts/${id}/pending-updates/reject`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
