@@ -15,7 +15,10 @@ import { ViewProps } from "./common";
 export const ArrayView = ({ value, label }: ViewProps<any>): ReactNode => {
   const [open, setOpen] = useState(false);
 
-  if (!value) return <ViewListItemText primary={label} secondary={"N/A"} />;
+  // An empty array has no first row to take the table headers from. The form starts array
+  // fields as [] until the item loads, and an unset one comes back as null.
+  if (!value || (Array.isArray(value) && value.length === 0))
+    return <ViewListItemText primary={label} secondary={"N/A"} />;
 
   if (!isJsonArray(value)) {
     const arrayString = value.join(",");
