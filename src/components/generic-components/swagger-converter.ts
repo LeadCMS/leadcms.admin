@@ -18,13 +18,11 @@ const convertSchemaToDtoSchema = (
       const refSchema = (refName && allSchemas[refName]) || undefined;
 
       if (refSchema && refSchema !== schema) {
-        const refDtoSchema = convertSchemaToDtoSchema(refSchema, allSchemas);
-
-        if (refDtoSchema.type === "string") {
+        if (refSchema.type === "string") {
           dtoSchema.properties[key] = {
             hide: false,
             type: "string",
-            enum: refDtoSchema.enum,
+            enum: refSchema.enum,
             title: value.title,
           };
         }
